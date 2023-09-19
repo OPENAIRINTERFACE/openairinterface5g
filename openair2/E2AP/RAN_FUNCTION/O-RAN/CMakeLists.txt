@@ -5,3 +5,5 @@ add_library(e2_ran_func_oran STATIC
   ../../flexric/test/rnd/fill_rnd_data_kpm.c             
   ../../flexric/test/rnd/fill_rnd_data_rc.c              
           )
+
+target_link_libraries(e2_ran_func_oran PUBLIC asn1_nr_rrc nr_rrc asn1_nr_rrc_hdrs)

@@ -36,23 +36,23 @@ c32_t dot_product(const c16_t *x,//! input vector
   const int16_t reflip[32] __attribute__((aligned(32))) = {1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1};
   const int8_t imshuffle[64] __attribute__((aligned(32))) = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 18, 19, 16, 17, 22, 23, 20, 21, 26, 27, 24, 25, 30, 31, 28, 29};
   const c16_t *end = x + N;
-  __m256i cumul_re = {0}, cumul_im = {0};
+  simde__m256i cumul_re = {0}, cumul_im = {0};
   while (x < end) {
-    const __m256i in1 = simde_mm256_loadu_si256((__m256i *)x);
-    const __m256i in2 = simde_mm256_loadu_si256((__m256i *)y);
-    const __m256i tmpRe = simde_mm256_madd_epi16(in1, in2);
+    const simde__m256i in1 = simde_mm256_loadu_si256((simde__m256i *)x);
+    const simde__m256i in2 = simde_mm256_loadu_si256((simde__m256i *)y);
+    const simde__m256i tmpRe = simde_mm256_madd_epi16(in1, in2);
     cumul_re = simde_mm256_add_epi32(cumul_re, simde_mm256_srai_epi32(tmpRe, output_shift));
-    const __m256i tmp1 = simde_mm256_shuffle_epi8(in2, *(__m256i *)imshuffle);
-    const __m256i tmp2 = simde_mm256_sign_epi16(tmp1, *(__m256i *)reflip);
-    const __m256i tmpIm = simde_mm256_madd_epi16(in1, tmp2);
+    const simde__m256i tmp1 = simde_mm256_shuffle_epi8(in2, *(simde__m256i *)imshuffle);
+    const simde__m256i tmp2 = simde_mm256_sign_epi16(tmp1, *(simde__m256i *)reflip);
+    const simde__m256i tmpIm = simde_mm256_madd_epi16(in1, tmp2);
     cumul_im = simde_mm256_add_epi32(cumul_im, simde_mm256_srai_epi32(tmpIm, output_shift));
     x += 8;
     y += 8;
   }
 
   // this gives Re Re Im Im Re Re Im Im
-  const __m256i cumulTmp = simde_mm256_hadd_epi32(cumul_re, cumul_im);
-  const __m256i cumul = simde_mm256_hadd_epi32(cumulTmp, cumulTmp);
+  const simde__m256i cumulTmp = simde_mm256_hadd_epi32(cumul_re, cumul_im);
+  const simde__m256i cumul = simde_mm256_hadd_epi32(cumulTmp, cumulTmp);
 
   c32_t ret;
   ret.r = simde_mm256_extract_epi32(cumul, 0) + simde_mm256_extract_epi32(cumul, 4);

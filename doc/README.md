@@ -19,6 +19,7 @@
 - [FEATURE_SET.md](./FEATURE_SET.md): lists supported features
 - [GET_SOURCES.md](./GET_SOURCES.md): how to download the sources
 - [BUILD.md](./BUILD.md): how to build the sources
+- [cross-compile.md](./cross-compile.md): how to cross-compile OAI for ARM
 - [clang-format.md](./clang-format.md): how to format the code
 - [environment-variables.md](./environment-variables.md): the environment variables used by OAI
 

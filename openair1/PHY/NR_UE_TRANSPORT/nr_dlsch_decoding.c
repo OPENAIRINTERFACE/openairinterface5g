@@ -265,10 +265,10 @@ static void nr_processDLSegment(void *arg)
     memcpy((z+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
 
     //Saturate coded bits before decoding into 8 bits values
-    __m128i *pv = (__m128i*)&z;
-    __m128i *pl = (__m128i*)&l;
+    simde__m128i *pv = (simde__m128i*)&z;
+    simde__m128i *pl = (simde__m128i*)&l;
     for (int i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
-      pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
+      pl[j] = simde_mm_packs_epi16(pv[i],pv[i+1]);
     }
 
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_IN);

@@ -41,11 +41,11 @@
 #include "ldpc_generate_coefficient.c"
 
 
-int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int Zc,int Kb,short block_length, short BG,unsigned char gen_code)
+int ldpc_encoder_orig(uint8_t *test_input,uint8_t *channel_input,int Zc,int Kb,short block_length, short BG,uint8_t gen_code)
 {
-  unsigned char c[22*384]; //padded input, unpacked, max size
-  unsigned char d[68*384]; //coded output, unpacked, max size
-  unsigned char channel_temp,temp;
+  uint8_t c[22*384]; //padded input, unpacked, max size
+  uint8_t d[68*384]; //coded output, unpacked, max size
+  uint8_t channel_temp,temp;
   short *Gen_shift_values, *no_shift_values, *pointer_shift_values;
 
   short nrows = 46;//parity check bits
@@ -103,8 +103,8 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
   //printf("%d\n",no_punctured_columns);
   //printf("%d\n",removed_bit);
   // unpack input
-  memset(c,0,sizeof(unsigned char) * ncols * Zc);
-  memset(d,0,sizeof(unsigned char) * nrows * Zc);
+  memset(c,0,sizeof(uint8_t) * ncols * Zc);
+  memset(d,0,sizeof(uint8_t) * nrows * Zc);
 
   for (i=0; i<block_length; i++)
   {
@@ -115,7 +115,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
 
   // parity check part
 
-  if (gen_code==1)
+  if (gen_code>=1)
   {
     char fname[100];
     sprintf(fname,"ldpc_BG%d_Zc%d_byte.c",BG,Zc);
@@ -136,24 +136,24 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
     fprintf(fd,"#include \"PHY/sse_intrin.h\"\n");
     fprintf(fd2,"#include \"PHY/sse_intrin.h\"\n");
 
-    if ((Zc&31)==0) {
+    if (gen_code == 1 && (Zc&31)==0) {
       shift=5; // AVX2 - 256-bit SIMD
       mask=31;
-      strcpy(data_type,"__m256i");
+      strcpy(data_type,"simde__m256i");
       strcpy(xor_command,"simde_mm256_xor_si256");
     }
     else if ((Zc&15)==0) {
       shift=4; // SSE4 - 128-bit SIMD
       mask=15;
-      strcpy(data_type,"__m128i");
-      strcpy(xor_command,"_mm_xor_si128");
+      strcpy(data_type,"simde__m128i");
+      strcpy(xor_command,"simde_mm_xor_si128");
 
     }
     else if ((Zc&7)==0) {
       shift=3; // MMX  - 64-bit SIMD
       mask=7;
-      strcpy(data_type,"__m64");
-      strcpy(xor_command,"_mm_xor_si64"); 
+      strcpy(data_type,"simde__m64");
+      strcpy(xor_command,"simde_mm_xor_si64"); 
     }
     else {
       shift=0;                 // no SIMD
@@ -209,10 +209,10 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
 	          
 	      var=(int)((i3*Zc + (Gen_shift_values[ pointer_shift_values[temp_prime]+i4 ]+1)%Zc)/Zc);
 	      int index =var*2*Zc + (i3*Zc + (Gen_shift_values[ pointer_shift_values[temp_prime]+i4 ]+1)%Zc) % Zc;
-	      
-	      indlist[nind] = ((index&mask)*((2*Zc)>>shift)*Kb)+(index>>shift);
-	      indlist2[nind++] = ((index&(mask>>1))*((2*Zc)>>(shift-1))*Kb)+(index>>(shift-1));
-	      
+	      printf("var %d, i3 %d, i4 %d, index %d, shift %d, Zc %d, pointer_shift_values[%d] %d gen_shift_value %d\n",var,i3,i4,index,shift,Zc,temp_prime,pointer_shift_values[temp_prime],Gen_shift_values[pointer_shift_values[temp_prime]]);
+	      indlist[nind] = ((index&mask)*((2*Zc*ncols)>>shift)/* *Kb */)+(index>>shift);
+	      printf("indlist[%d] %d, index&mask %d, index>>shift %d\n",nind,indlist[nind],index&mask,index>>shift);
+	      indlist2[nind++] = ((index&(mask>>1))*((2*Zc*ncols)>>(shift-1))*Kb)+(index>>(shift-1));
 	    }
 	  
 
@@ -244,7 +244,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
       for (i5=0; i5 < Kb; i5++)
       {
         temp = c[i5*Zc];
-        memmove(&c[i5*Zc], &c[i5*Zc+1], (Zc-1)*sizeof(unsigned char));
+        memmove(&c[i5*Zc], &c[i5*Zc+1], (Zc-1)*sizeof(uint8_t));
         c[i5*Zc+Zc-1] = temp;
       }
 
@@ -270,13 +270,13 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
   }
 
   // information part and puncture columns
-  memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(unsigned char));
-  memcpy(&channel_input[block_length-2*Zc], &d[0], ((nrows-no_punctured_columns) * Zc-removed_bit)*sizeof(unsigned char));
-  //memcpy(channel_input,c,Kb*Zc*sizeof(unsigned char));
+  memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(uint8_t));
+  memcpy(&channel_input[block_length-2*Zc], &d[0], ((nrows-no_punctured_columns) * Zc-removed_bit)*sizeof(uint8_t));
+  //memcpy(channel_input,c,Kb*Zc*sizeof(uint8_t));
   return 0;
 }
 
 
-int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, encoder_implemparams_t *impp) {
+int nrLDPC_encod(uint8_t **test_input,uint8_t **channel_input,int Zc,int Kb,short block_length, short BG, encoder_implemparams_t *impp) {
   return ldpc_encoder_orig(test_input[0],channel_input[0],Zc,Kb,block_length,BG,impp->gen_code);
 }

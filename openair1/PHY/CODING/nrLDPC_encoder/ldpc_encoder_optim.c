@@ -99,7 +99,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 
   if(impp->tinput != NULL) stop_meas(impp->tinput);
 
-  if ((BG==1 && Zc>176) || (BG==2 && Zc>64)) { 
+  if ((BG==1 && Zc>=176) || (BG==2 && Zc>=64)) { 
     // extend matrix
     if(impp->tprep != NULL) start_meas(impp->tprep);
     if(impp->tprep != NULL) stop_meas(impp->tprep);

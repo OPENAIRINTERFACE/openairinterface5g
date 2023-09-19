@@ -56,26 +56,23 @@
 
 #include "common/ran_context.h"
 
-#define SHUFFLE16(a,b,c,d,e,f,g,h) _mm_set_epi8(h==-1?-1:h*2+1, \
-    h==-1?-1:h*2, \
-    g==-1?-1:g*2+1, \
-    g==-1?-1:g*2, \
-    f==-1?-1:f*2+1, \
-    f==-1?-1:f*2, \
-    e==-1?-1:e*2+1, \
-    e==-1?-1:e*2, \
-    d==-1?-1:d*2+1, \
-    d==-1?-1:d*2, \
-    c==-1?-1:c*2+1, \
-    c==-1?-1:c*2, \
-    b==-1?-1:b*2+1, \
-    b==-1?-1:b*2, \
-    a==-1?-1:a*2+1, \
-    a==-1?-1:a*2);
-
-
-
-
+#define SHUFFLE16(a, b, c, d, e, f, g, h)     \
+  simde_mm_set_epi8(h == -1 ? -1 : h * 2 + 1, \
+                    h == -1 ? -1 : h * 2,     \
+                    g == -1 ? -1 : g * 2 + 1, \
+                    g == -1 ? -1 : g * 2,     \
+                    f == -1 ? -1 : f * 2 + 1, \
+                    f == -1 ? -1 : f * 2,     \
+                    e == -1 ? -1 : e * 2 + 1, \
+                    e == -1 ? -1 : e * 2,     \
+                    d == -1 ? -1 : d * 2 + 1, \
+                    d == -1 ? -1 : d * 2,     \
+                    c == -1 ? -1 : c * 2 + 1, \
+                    c == -1 ? -1 : c * 2,     \
+                    b == -1 ? -1 : b * 2 + 1, \
+                    b == -1 ? -1 : b * 2,     \
+                    a == -1 ? -1 : a * 2 + 1, \
+                    a == -1 ? -1 : a * 2);
 
 //#define DEBUG_LOGMAP
 
@@ -149,10 +146,10 @@ void compute_gamma8(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity,
                     unsigned short frame_length,unsigned char term_flag) {
   int k,K1;
 #if defined(__x86_64__)||defined(__i386__)
-  __m128i *systematic128 = (__m128i *)systematic;
-  __m128i *y_parity128   = (__m128i *)y_parity;
-  __m128i *m10_128        = (__m128i *)m10;
-  __m128i *m11_128        = (__m128i *)m11;
+  simde__m128i *systematic128 = (simde__m128i *)systematic;
+  simde__m128i *y_parity128 = (simde__m128i *)y_parity;
+  simde__m128i *m10_128 = (simde__m128i *)m10;
+  simde__m128i *m11_128 = (simde__m128i *)m11;
 #elif defined(__arm__) || defined(__aarch64__)
   int8x16_t *systematic128  = (int8x16_t *)systematic;
   int8x16_t *y_parity128    = (int8x16_t *)y_parity;
@@ -163,20 +160,20 @@ void compute_gamma8(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity,
   printf("compute_gamma, %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
 #endif
 #if defined(__x86_64__) || defined(__i386__)
-  register __m128i sl,sh,ypl,yph; //K128=_mm_set1_epi8(-128);
+  register simde__m128i sl, sh, ypl, yph; // K128=simde_mm_set1_epi8(-128);
 #endif
   K1 = (frame_length>>4);
 
   for (k=0; k<K1; k++) {
 #if defined(__x86_64__) || defined(__i386__)
-    sl  = _mm_cvtepi8_epi16(systematic128[k]);
-    sh  = _mm_cvtepi8_epi16(_mm_srli_si128(systematic128[k],8));
-    ypl = _mm_cvtepi8_epi16(y_parity128[k]);
-    yph = _mm_cvtepi8_epi16(_mm_srli_si128(y_parity128[k],8));
-    m11_128[k] = _mm_packs_epi16(_mm_srai_epi16(_mm_adds_epi16(sl,ypl),1),
-                                 _mm_srai_epi16(_mm_adds_epi16(sh,yph),1));
-    m10_128[k] = _mm_packs_epi16(_mm_srai_epi16(_mm_subs_epi16(sl,ypl),1),
-                                 _mm_srai_epi16(_mm_subs_epi16(sh,yph),1));
+    sl = simde_mm_cvtepi8_epi16(systematic128[k]);
+    sh = simde_mm_cvtepi8_epi16(simde_mm_srli_si128(systematic128[k], 8));
+    ypl = simde_mm_cvtepi8_epi16(y_parity128[k]);
+    yph = simde_mm_cvtepi8_epi16(simde_mm_srli_si128(y_parity128[k], 8));
+    m11_128[k] = simde_mm_packs_epi16(simde_mm_srai_epi16(simde_mm_adds_epi16(sl, ypl), 1),
+                                      simde_mm_srai_epi16(simde_mm_adds_epi16(sh, yph), 1));
+    m10_128[k] = simde_mm_packs_epi16(simde_mm_srai_epi16(simde_mm_subs_epi16(sl, ypl), 1),
+                                      simde_mm_srai_epi16(simde_mm_subs_epi16(sh, yph), 1));
 #elif defined(__arm__) || defined(__aarch64__)
     m11_128[k] = vhaddq_s8(systematic128[k],y_parity128[k]);
     m10_128[k] = vhsubq_s8(systematic128[k],y_parity128[k]);
@@ -185,14 +182,14 @@ void compute_gamma8(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity,
 
   // Termination
 #if defined(__x86_64__) || defined(__i386__)
-  sl  = _mm_cvtepi8_epi16(systematic128[k+term_flag]);
-  sh = _mm_cvtepi8_epi16(_mm_srli_si128(systematic128[k],8));
-  ypl = _mm_cvtepi8_epi16(y_parity128[k+term_flag]);
-  yph = _mm_cvtepi8_epi16(_mm_srli_si128(y_parity128[k],8));
-  m11_128[k] = _mm_packs_epi16(_mm_srai_epi16(_mm_adds_epi16(sl,ypl),1),
-                               _mm_srai_epi16(_mm_adds_epi16(sh,yph),1));
-  m10_128[k] = _mm_packs_epi16(_mm_srai_epi16(_mm_subs_epi16(sl,ypl),1),
-                               _mm_srai_epi16(_mm_subs_epi16(sh,yph),1));
+  sl = simde_mm_cvtepi8_epi16(systematic128[k + term_flag]);
+  sh = simde_mm_cvtepi8_epi16(simde_mm_srli_si128(systematic128[k], 8));
+  ypl = simde_mm_cvtepi8_epi16(y_parity128[k + term_flag]);
+  yph = simde_mm_cvtepi8_epi16(simde_mm_srli_si128(y_parity128[k], 8));
+  m11_128[k] = simde_mm_packs_epi16(simde_mm_srai_epi16(simde_mm_adds_epi16(sl, ypl), 1),
+                                    simde_mm_srai_epi16(simde_mm_adds_epi16(sh, yph), 1));
+  m10_128[k] = simde_mm_packs_epi16(simde_mm_srai_epi16(simde_mm_subs_epi16(sl, ypl), 1),
+                                    simde_mm_srai_epi16(simde_mm_subs_epi16(sh, yph), 1));
 #elif defined(__arm__) || defined(__aarch64__)
   m11_128[k] = vhaddq_s8(systematic128[k+term_flag],y_parity128[k]);
   m10_128[k] = vhsubq_s8(systematic128[k+term_flag],y_parity128[k]);
@@ -204,11 +201,11 @@ void compute_gamma8(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity,
 void compute_alpha8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned short frame_length,unsigned char F) {
   int k,loopval,rerun_flag;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *alpha128=(__m128i *)alpha,*alpha_ptr;
-  __m128i *m11p,*m10p;
-  __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
-  __m128i new0,new1,new2,new3,new4,new5,new6,new7;
-  __m128i alpha_max;
+  simde__m128i *alpha128 = (simde__m128i *)alpha, *alpha_ptr;
+  simde__m128i *m11p, *m10p;
+  simde__m128i m_b0, m_b1, m_b2, m_b3, m_b4, m_b5, m_b6, m_b7;
+  simde__m128i new0, new1, new2, new3, new4, new5, new6, new7;
+  simde__m128i alpha_max;
 #elif defined(__arm__) || defined(__aarch64__)
   int8x16_t *alpha128=(int8x16_t *)alpha,*alpha_ptr;
   int8x16_t *m11p,*m10p;
@@ -219,77 +216,197 @@ void compute_alpha8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sh
   // Set initial state: first colum is known
   // the other columns are unknown, so all states are set to same value
 #if defined(__x86_64__) || defined(__i386__)
-  alpha128[0] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,0);
-  alpha128[1] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
-  alpha128[2] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
-  alpha128[3] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
-  alpha128[4] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
-  alpha128[5] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
-  alpha128[6] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
-  alpha128[7] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
+  alpha128[0] = simde_mm_set_epi8(-MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  0);
+  alpha128[1] = simde_mm_set_epi8(-MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2);
+  alpha128[2] = simde_mm_set_epi8(-MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2);
+  alpha128[3] = simde_mm_set_epi8(-MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2);
+  alpha128[4] = simde_mm_set_epi8(-MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2);
+  alpha128[5] = simde_mm_set_epi8(-MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2);
+  alpha128[6] = simde_mm_set_epi8(-MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2);
+  alpha128[7] = simde_mm_set_epi8(-MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2,
+                                  -MAX8 / 2);
 
   for (loopval=frame_length>>4, rerun_flag=0; rerun_flag<2; loopval=L, rerun_flag++) {
     alpha_ptr = &alpha128[0];
-    m11p = (__m128i *)m_11;
-    m10p = (__m128i *)m_10;
+    m11p = (simde__m128i *)m_11;
+    m10p = (simde__m128i *)m_10;
 
     for (k=0;  k<loopval;  k++) {
-      m_b0 = _mm_adds_epi8(alpha_ptr[1],*m11p);  // m11
-      m_b4 = _mm_subs_epi8(alpha_ptr[1],*m11p);  // m00=-m11
-      m_b1 = _mm_subs_epi8(alpha_ptr[3],*m10p);  // m01=-m10
-      m_b5 = _mm_adds_epi8(alpha_ptr[3],*m10p);  // m10
-      m_b2 = _mm_adds_epi8(alpha_ptr[5],*m10p);  // m10
-      m_b6 = _mm_subs_epi8(alpha_ptr[5],*m10p);  // m01=-m10
-      m_b3 = _mm_subs_epi8(alpha_ptr[7],*m11p);  // m00=-m11
-      m_b7 = _mm_adds_epi8(alpha_ptr[7],*m11p);  // m11
-      new0 = _mm_subs_epi8(alpha_ptr[0],*m11p);  // m00=-m11
-      new4 = _mm_adds_epi8(alpha_ptr[0],*m11p);  // m11
-      new1 = _mm_adds_epi8(alpha_ptr[2],*m10p);  // m10
-      new5 = _mm_subs_epi8(alpha_ptr[2],*m10p);  // m01=-m10
-      new2 = _mm_subs_epi8(alpha_ptr[4],*m10p);  // m01=-m10
-      new6 = _mm_adds_epi8(alpha_ptr[4],*m10p);  // m10
-      new3 = _mm_adds_epi8(alpha_ptr[6],*m11p);  // m11
-      new7 = _mm_subs_epi8(alpha_ptr[6],*m11p);  // m00=-m11
+      m_b0 = simde_mm_adds_epi8(alpha_ptr[1], *m11p); // m11
+      m_b4 = simde_mm_subs_epi8(alpha_ptr[1], *m11p); // m00=-m11
+      m_b1 = simde_mm_subs_epi8(alpha_ptr[3], *m10p); // m01=-m10
+      m_b5 = simde_mm_adds_epi8(alpha_ptr[3], *m10p); // m10
+      m_b2 = simde_mm_adds_epi8(alpha_ptr[5], *m10p); // m10
+      m_b6 = simde_mm_subs_epi8(alpha_ptr[5], *m10p); // m01=-m10
+      m_b3 = simde_mm_subs_epi8(alpha_ptr[7], *m11p); // m00=-m11
+      m_b7 = simde_mm_adds_epi8(alpha_ptr[7], *m11p); // m11
+      new0 = simde_mm_subs_epi8(alpha_ptr[0], *m11p); // m00=-m11
+      new4 = simde_mm_adds_epi8(alpha_ptr[0], *m11p); // m11
+      new1 = simde_mm_adds_epi8(alpha_ptr[2], *m10p); // m10
+      new5 = simde_mm_subs_epi8(alpha_ptr[2], *m10p); // m01=-m10
+      new2 = simde_mm_subs_epi8(alpha_ptr[4], *m10p); // m01=-m10
+      new6 = simde_mm_adds_epi8(alpha_ptr[4], *m10p); // m10
+      new3 = simde_mm_adds_epi8(alpha_ptr[6], *m11p); // m11
+      new7 = simde_mm_subs_epi8(alpha_ptr[6], *m11p); // m00=-m11
       alpha_ptr += 8;
       m11p++;
       m10p++;
-      alpha_ptr[0] = _mm_max_epi8(m_b0,new0);
-      alpha_ptr[1] = _mm_max_epi8(m_b1,new1);
-      alpha_ptr[2] = _mm_max_epi8(m_b2,new2);
-      alpha_ptr[3] = _mm_max_epi8(m_b3,new3);
-      alpha_ptr[4] = _mm_max_epi8(m_b4,new4);
-      alpha_ptr[5] = _mm_max_epi8(m_b5,new5);
-      alpha_ptr[6] = _mm_max_epi8(m_b6,new6);
-      alpha_ptr[7] = _mm_max_epi8(m_b7,new7);
+      alpha_ptr[0] = simde_mm_max_epi8(m_b0, new0);
+      alpha_ptr[1] = simde_mm_max_epi8(m_b1, new1);
+      alpha_ptr[2] = simde_mm_max_epi8(m_b2, new2);
+      alpha_ptr[3] = simde_mm_max_epi8(m_b3, new3);
+      alpha_ptr[4] = simde_mm_max_epi8(m_b4, new4);
+      alpha_ptr[5] = simde_mm_max_epi8(m_b5, new5);
+      alpha_ptr[6] = simde_mm_max_epi8(m_b6, new6);
+      alpha_ptr[7] = simde_mm_max_epi8(m_b7, new7);
       // compute and subtract maxima
-      alpha_max = _mm_max_epi8(alpha_ptr[0],alpha_ptr[1]);
-      alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[2]);
-      alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[3]);
-      alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[4]);
-      alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[5]);
-      alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[6]);
-      alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[7]);
-      alpha_ptr[0] = _mm_subs_epi8(alpha_ptr[0],alpha_max);
-      alpha_ptr[1] = _mm_subs_epi8(alpha_ptr[1],alpha_max);
-      alpha_ptr[2] = _mm_subs_epi8(alpha_ptr[2],alpha_max);
-      alpha_ptr[3] = _mm_subs_epi8(alpha_ptr[3],alpha_max);
-      alpha_ptr[4] = _mm_subs_epi8(alpha_ptr[4],alpha_max);
-      alpha_ptr[5] = _mm_subs_epi8(alpha_ptr[5],alpha_max);
-      alpha_ptr[6] = _mm_subs_epi8(alpha_ptr[6],alpha_max);
-      alpha_ptr[7] = _mm_subs_epi8(alpha_ptr[7],alpha_max);
+      alpha_max = simde_mm_max_epi8(alpha_ptr[0], alpha_ptr[1]);
+      alpha_max = simde_mm_max_epi8(alpha_max, alpha_ptr[2]);
+      alpha_max = simde_mm_max_epi8(alpha_max, alpha_ptr[3]);
+      alpha_max = simde_mm_max_epi8(alpha_max, alpha_ptr[4]);
+      alpha_max = simde_mm_max_epi8(alpha_max, alpha_ptr[5]);
+      alpha_max = simde_mm_max_epi8(alpha_max, alpha_ptr[6]);
+      alpha_max = simde_mm_max_epi8(alpha_max, alpha_ptr[7]);
+      alpha_ptr[0] = simde_mm_subs_epi8(alpha_ptr[0], alpha_max);
+      alpha_ptr[1] = simde_mm_subs_epi8(alpha_ptr[1], alpha_max);
+      alpha_ptr[2] = simde_mm_subs_epi8(alpha_ptr[2], alpha_max);
+      alpha_ptr[3] = simde_mm_subs_epi8(alpha_ptr[3], alpha_max);
+      alpha_ptr[4] = simde_mm_subs_epi8(alpha_ptr[4], alpha_max);
+      alpha_ptr[5] = simde_mm_subs_epi8(alpha_ptr[5], alpha_max);
+      alpha_ptr[6] = simde_mm_subs_epi8(alpha_ptr[6], alpha_max);
+      alpha_ptr[7] = simde_mm_subs_epi8(alpha_ptr[7], alpha_max);
     }
 
     // Set intial state for next iteration from the last state
     // as acolum end states are the first states of the next column
     int K1= frame_length>>1;
-    alpha128[0] = _mm_slli_si128(alpha128[K1],1);
-    alpha128[1] = _mm_slli_si128(alpha128[1+K1],1);
-    alpha128[2] = _mm_slli_si128(alpha128[2+K1],1);
-    alpha128[3] = _mm_slli_si128(alpha128[3+K1],1);
-    alpha128[4] = _mm_slli_si128(alpha128[4+K1],1);
-    alpha128[5] = _mm_slli_si128(alpha128[5+K1],1);
-    alpha128[6] = _mm_slli_si128(alpha128[6+K1],1);
-    alpha128[7] = _mm_slli_si128(alpha128[7+K1],1);
+    alpha128[0] = simde_mm_slli_si128(alpha128[K1], 1);
+    alpha128[1] = simde_mm_slli_si128(alpha128[1 + K1], 1);
+    alpha128[2] = simde_mm_slli_si128(alpha128[2 + K1], 1);
+    alpha128[3] = simde_mm_slli_si128(alpha128[3 + K1], 1);
+    alpha128[4] = simde_mm_slli_si128(alpha128[4 + K1], 1);
+    alpha128[5] = simde_mm_slli_si128(alpha128[5 + K1], 1);
+    alpha128[6] = simde_mm_slli_si128(alpha128[6 + K1], 1);
+    alpha128[7] = simde_mm_slli_si128(alpha128[7 + K1], 1);
     alpha[16] =  -MAX8/2;
     alpha[32] = -MAX8/2;
     alpha[48] = -MAX8/2;
@@ -396,11 +513,11 @@ void compute_alpha8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sh
 void compute_beta8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned short frame_length,unsigned char F,int offset8_flag) {
   int k,rerun_flag, loopval;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i m11_128,m10_128;
-  __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
-  __m128i new0,new1,new2,new3,new4,new5,new6,new7;
-  __m128i *beta128,*alpha128,*beta_ptr;
-  __m128i beta_max;
+  simde__m128i m11_128, m10_128;
+  simde__m128i m_b0, m_b1, m_b2, m_b3, m_b4, m_b5, m_b6, m_b7;
+  simde__m128i new0, new1, new2, new3, new4, new5, new6, new7;
+  simde__m128i *beta128, *alpha128, *beta_ptr;
+  simde__m128i beta_max;
 #elif defined(__arm__) || defined(__aarch64__)
   int8x16_t m11_128,m10_128;
   int8x16_t m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
@@ -419,8 +536,8 @@ void compute_beta8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sho
   // we are supposed to run compute_alpha just before compute_beta
   // so the initial states of backward computation can be set from last value of alpha states (forward computation)
 #if defined(__x86_64__) || defined(__i386__)
-  beta_ptr   = (__m128i *)&beta[frame_length<<3];
-  alpha128   = (__m128i *)&alpha[0];
+  beta_ptr = (simde__m128i *)&beta[frame_length << 3];
+  alpha128 = (simde__m128i *)&alpha[0];
 #elif defined(__arm__) || defined(__aarch64__)
   beta_ptr   = (int8x16_t *)&beta[frame_length<<3];
   alpha128   = (int8x16_t *)&alpha[0];
@@ -443,14 +560,14 @@ void compute_beta8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sho
       // workaround: init with 0
       beta0 = beta1 = beta2 = beta3 = beta4 = beta5 = beta6 = beta7 = 0;
 #if defined(__x86_64__) || defined(__i386__)
-      beta_ptr[0] = _mm_insert_epi8(beta_ptr[0],beta0,15);
-      beta_ptr[1] = _mm_insert_epi8(beta_ptr[1],beta1,15);
-      beta_ptr[2] = _mm_insert_epi8(beta_ptr[2],beta2,15);
-      beta_ptr[3] = _mm_insert_epi8(beta_ptr[3],beta3,15);
-      beta_ptr[4] = _mm_insert_epi8(beta_ptr[4],beta4,15);
-      beta_ptr[5] = _mm_insert_epi8(beta_ptr[5],beta5,15);
-      beta_ptr[6] = _mm_insert_epi8(beta_ptr[6],beta6,15);
-      beta_ptr[7] = _mm_insert_epi8(beta_ptr[7],beta7,15);
+      beta_ptr[0] = simde_mm_insert_epi8(beta_ptr[0], beta0, 15);
+      beta_ptr[1] = simde_mm_insert_epi8(beta_ptr[1], beta1, 15);
+      beta_ptr[2] = simde_mm_insert_epi8(beta_ptr[2], beta2, 15);
+      beta_ptr[3] = simde_mm_insert_epi8(beta_ptr[3], beta3, 15);
+      beta_ptr[4] = simde_mm_insert_epi8(beta_ptr[4], beta4, 15);
+      beta_ptr[5] = simde_mm_insert_epi8(beta_ptr[5], beta5, 15);
+      beta_ptr[6] = simde_mm_insert_epi8(beta_ptr[6], beta6, 15);
+      beta_ptr[7] = simde_mm_insert_epi8(beta_ptr[7], beta7, 15);
 #elif defined(__arm__) || defined(__aarch64__)
       beta_ptr[0] = vsetq_lane_s8(beta0,beta_ptr[0],15);
       beta_ptr[1] = vsetq_lane_s8(beta1,beta_ptr[1],15);
@@ -464,7 +581,7 @@ void compute_beta8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sho
     }
 
 #if defined(__x86_64__) || defined(__i386__)
-    beta_ptr = (__m128i *)&beta[frame_length<<3];
+    beta_ptr = (simde__m128i *)&beta[frame_length << 3];
 #elif defined(__arm__) || defined(__aarch64__)
     beta_ptr = (int8x16_t *)&beta[frame_length<<3];
 #endif
@@ -473,48 +590,48 @@ void compute_beta8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sho
          k>=loopval;
          k--) {
 #if defined(__x86_64__) || defined(__i386__)
-      m11_128=((__m128i *)m_11)[k];
-      m10_128=((__m128i *)m_10)[k];
-      m_b0 = _mm_adds_epi8(beta_ptr[4],m11_128);  //m11
-      m_b1 = _mm_subs_epi8(beta_ptr[4],m11_128);  //m00
-      m_b2 = _mm_subs_epi8(beta_ptr[5],m10_128);  //m01
-      m_b3 = _mm_adds_epi8(beta_ptr[5],m10_128);  //m10
-      m_b4 = _mm_adds_epi8(beta_ptr[6],m10_128);  //m10
-      m_b5 = _mm_subs_epi8(beta_ptr[6],m10_128);  //m01
-      m_b6 = _mm_subs_epi8(beta_ptr[7],m11_128);  //m00
-      m_b7 = _mm_adds_epi8(beta_ptr[7],m11_128);  //m11
-      new0 = _mm_subs_epi8(beta_ptr[0],m11_128);  //m00
-      new1 = _mm_adds_epi8(beta_ptr[0],m11_128);  //m11
-      new2 = _mm_adds_epi8(beta_ptr[1],m10_128);  //m10
-      new3 = _mm_subs_epi8(beta_ptr[1],m10_128);  //m01
-      new4 = _mm_subs_epi8(beta_ptr[2],m10_128);  //m01
-      new5 = _mm_adds_epi8(beta_ptr[2],m10_128);  //m10
-      new6 = _mm_adds_epi8(beta_ptr[3],m11_128);  //m11
-      new7 = _mm_subs_epi8(beta_ptr[3],m11_128);  //m00
+      m11_128 = ((simde__m128i *)m_11)[k];
+      m10_128 = ((simde__m128i *)m_10)[k];
+      m_b0 = simde_mm_adds_epi8(beta_ptr[4], m11_128); // m11
+      m_b1 = simde_mm_subs_epi8(beta_ptr[4], m11_128); // m00
+      m_b2 = simde_mm_subs_epi8(beta_ptr[5], m10_128); // m01
+      m_b3 = simde_mm_adds_epi8(beta_ptr[5], m10_128); // m10
+      m_b4 = simde_mm_adds_epi8(beta_ptr[6], m10_128); // m10
+      m_b5 = simde_mm_subs_epi8(beta_ptr[6], m10_128); // m01
+      m_b6 = simde_mm_subs_epi8(beta_ptr[7], m11_128); // m00
+      m_b7 = simde_mm_adds_epi8(beta_ptr[7], m11_128); // m11
+      new0 = simde_mm_subs_epi8(beta_ptr[0], m11_128); // m00
+      new1 = simde_mm_adds_epi8(beta_ptr[0], m11_128); // m11
+      new2 = simde_mm_adds_epi8(beta_ptr[1], m10_128); // m10
+      new3 = simde_mm_subs_epi8(beta_ptr[1], m10_128); // m01
+      new4 = simde_mm_subs_epi8(beta_ptr[2], m10_128); // m01
+      new5 = simde_mm_adds_epi8(beta_ptr[2], m10_128); // m10
+      new6 = simde_mm_adds_epi8(beta_ptr[3], m11_128); // m11
+      new7 = simde_mm_subs_epi8(beta_ptr[3], m11_128); // m00
       beta_ptr-=8;
-      beta_ptr[0] = _mm_max_epi8(m_b0,new0);
-      beta_ptr[1] = _mm_max_epi8(m_b1,new1);
-      beta_ptr[2] = _mm_max_epi8(m_b2,new2);
-      beta_ptr[3] = _mm_max_epi8(m_b3,new3);
-      beta_ptr[4] = _mm_max_epi8(m_b4,new4);
-      beta_ptr[5] = _mm_max_epi8(m_b5,new5);
-      beta_ptr[6] = _mm_max_epi8(m_b6,new6);
-      beta_ptr[7] = _mm_max_epi8(m_b7,new7);
-      beta_max = _mm_max_epi8(beta_ptr[0],beta_ptr[1]);
-      beta_max = _mm_max_epi8(beta_max   ,beta_ptr[2]);
-      beta_max = _mm_max_epi8(beta_max   ,beta_ptr[3]);
-      beta_max = _mm_max_epi8(beta_max   ,beta_ptr[4]);
-      beta_max = _mm_max_epi8(beta_max   ,beta_ptr[5]);
-      beta_max = _mm_max_epi8(beta_max   ,beta_ptr[6]);
-      beta_max = _mm_max_epi8(beta_max   ,beta_ptr[7]);
-      beta_ptr[0] = _mm_subs_epi8(beta_ptr[0],beta_max);
-      beta_ptr[1] = _mm_subs_epi8(beta_ptr[1],beta_max);
-      beta_ptr[2] = _mm_subs_epi8(beta_ptr[2],beta_max);
-      beta_ptr[3] = _mm_subs_epi8(beta_ptr[3],beta_max);
-      beta_ptr[4] = _mm_subs_epi8(beta_ptr[4],beta_max);
-      beta_ptr[5] = _mm_subs_epi8(beta_ptr[5],beta_max);
-      beta_ptr[6] = _mm_subs_epi8(beta_ptr[6],beta_max);
-      beta_ptr[7] = _mm_subs_epi8(beta_ptr[7],beta_max);
+      beta_ptr[0] = simde_mm_max_epi8(m_b0, new0);
+      beta_ptr[1] = simde_mm_max_epi8(m_b1, new1);
+      beta_ptr[2] = simde_mm_max_epi8(m_b2, new2);
+      beta_ptr[3] = simde_mm_max_epi8(m_b3, new3);
+      beta_ptr[4] = simde_mm_max_epi8(m_b4, new4);
+      beta_ptr[5] = simde_mm_max_epi8(m_b5, new5);
+      beta_ptr[6] = simde_mm_max_epi8(m_b6, new6);
+      beta_ptr[7] = simde_mm_max_epi8(m_b7, new7);
+      beta_max = simde_mm_max_epi8(beta_ptr[0], beta_ptr[1]);
+      beta_max = simde_mm_max_epi8(beta_max, beta_ptr[2]);
+      beta_max = simde_mm_max_epi8(beta_max, beta_ptr[3]);
+      beta_max = simde_mm_max_epi8(beta_max, beta_ptr[4]);
+      beta_max = simde_mm_max_epi8(beta_max, beta_ptr[5]);
+      beta_max = simde_mm_max_epi8(beta_max, beta_ptr[6]);
+      beta_max = simde_mm_max_epi8(beta_max, beta_ptr[7]);
+      beta_ptr[0] = simde_mm_subs_epi8(beta_ptr[0], beta_max);
+      beta_ptr[1] = simde_mm_subs_epi8(beta_ptr[1], beta_max);
+      beta_ptr[2] = simde_mm_subs_epi8(beta_ptr[2], beta_max);
+      beta_ptr[3] = simde_mm_subs_epi8(beta_ptr[3], beta_max);
+      beta_ptr[4] = simde_mm_subs_epi8(beta_ptr[4], beta_max);
+      beta_ptr[5] = simde_mm_subs_epi8(beta_ptr[5], beta_max);
+      beta_ptr[6] = simde_mm_subs_epi8(beta_ptr[6], beta_max);
+      beta_ptr[7] = simde_mm_subs_epi8(beta_ptr[7], beta_max);
 #elif defined(__arm__) || defined(__aarch64__)
       m11_128=((int8x16_t *)m_11)[k];
       m10_128=((int8x16_t *)m_10)[k];
@@ -565,16 +682,16 @@ void compute_beta8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sho
     // as column last states are the first states of the next column
     // The initial state of column 0 is coming from tail bits (to be computed)
 #if defined(__x86_64__) || defined(__i386__)
-    beta128 = (__m128i *)&beta[0];
-    beta_ptr   = (__m128i *)&beta[frame_length<<3];
-    beta_ptr[0] = _mm_srli_si128(beta128[0],1);
-    beta_ptr[1] = _mm_srli_si128(beta128[1],1);
-    beta_ptr[2] = _mm_srli_si128(beta128[2],1);
-    beta_ptr[3] = _mm_srli_si128(beta128[3],1);
-    beta_ptr[4] = _mm_srli_si128(beta128[4],1);
-    beta_ptr[5] = _mm_srli_si128(beta128[5],1);
-    beta_ptr[6] = _mm_srli_si128(beta128[6],1);
-    beta_ptr[7] = _mm_srli_si128(beta128[7],1);
+    beta128 = (simde__m128i *)&beta[0];
+    beta_ptr = (simde__m128i *)&beta[frame_length << 3];
+    beta_ptr[0] = simde_mm_srli_si128(beta128[0], 1);
+    beta_ptr[1] = simde_mm_srli_si128(beta128[1], 1);
+    beta_ptr[2] = simde_mm_srli_si128(beta128[2], 1);
+    beta_ptr[3] = simde_mm_srli_si128(beta128[3], 1);
+    beta_ptr[4] = simde_mm_srli_si128(beta128[4], 1);
+    beta_ptr[5] = simde_mm_srli_si128(beta128[5], 1);
+    beta_ptr[6] = simde_mm_srli_si128(beta128[6], 1);
+    beta_ptr[7] = simde_mm_srli_si128(beta128[7], 1);
 #elif defined(__arm__) || defined(__aarch64__)
     beta128 = (int8x16_t *)&beta[0];
     beta_ptr   = (int8x16_t *)&beta[frame_length<<3];
@@ -600,14 +717,14 @@ void compute_beta8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sho
 
 void compute_ext8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,llr_t *ext, llr_t *systematic,unsigned short frame_length) {
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *alpha128=(__m128i *)alpha;
-  __m128i *beta128=(__m128i *)beta;
-  __m128i *m11_128,*m10_128,*ext_128;
-  __m128i *alpha_ptr,*beta_ptr;
-  __m128i m00_1,m00_2,m00_3,m00_4;
-  __m128i m01_1,m01_2,m01_3,m01_4;
-  __m128i m10_1,m10_2,m10_3,m10_4;
-  __m128i m11_1,m11_2,m11_3,m11_4;
+  simde__m128i *alpha128 = (simde__m128i *)alpha;
+  simde__m128i *beta128 = (simde__m128i *)beta;
+  simde__m128i *m11_128, *m10_128, *ext_128;
+  simde__m128i *alpha_ptr, *beta_ptr;
+  simde__m128i m00_1, m00_2, m00_3, m00_4;
+  simde__m128i m01_1, m01_2, m01_3, m01_4;
+  simde__m128i m10_1, m10_2, m10_3, m10_4;
+  simde__m128i m11_1, m11_2, m11_3, m11_4;
 #elif defined(__arm__) || defined(__aarch64__)
   int8x16_t *alpha128=(int8x16_t *)alpha;
   int8x16_t *beta128=(int8x16_t *)beta;
@@ -630,44 +747,44 @@ void compute_ext8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,llr_t *ext, l
 
   for (k=0; k<(frame_length>>4); k++) {
 #if defined(__x86_64__) || defined(__i386__)
-    m11_128        = (__m128i *)&m_11[k<<4];
-    m10_128        = (__m128i *)&m_10[k<<4];
-    ext_128        = (__m128i *)&ext[k<<4];
-    m00_4 = _mm_adds_epi8(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
-    m11_4 = _mm_adds_epi8(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
-    m00_3 = _mm_adds_epi8(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
-    m11_3 = _mm_adds_epi8(alpha_ptr[6],beta_ptr[3]); //ALPHA_BETA_3m11;
-    m00_2 = _mm_adds_epi8(alpha_ptr[1],beta_ptr[4]); //ALPHA_BETA_2m00;
-    m11_2 = _mm_adds_epi8(alpha_ptr[1],beta_ptr[0]); //ALPHA_BETA_2m11;
-    m11_1 = _mm_adds_epi8(alpha_ptr[0],beta_ptr[4]); //ALPHA_BETA_1m11;
-    m00_1 = _mm_adds_epi8(alpha_ptr[0],beta_ptr[0]); //ALPHA_BETA_1m00;
-    m01_4 = _mm_adds_epi8(alpha_ptr[5],beta_ptr[6]); //ALPHA_BETA_4m01;
-    m10_4 = _mm_adds_epi8(alpha_ptr[5],beta_ptr[2]); //ALPHA_BETA_4m10;
-    m01_3 = _mm_adds_epi8(alpha_ptr[4],beta_ptr[2]); //ALPHA_BETA_3m01;
-    m10_3 = _mm_adds_epi8(alpha_ptr[4],beta_ptr[6]); //ALPHA_BETA_3m10;
-    m01_2 = _mm_adds_epi8(alpha_ptr[3],beta_ptr[1]); //ALPHA_BETA_2m01;
-    m10_2 = _mm_adds_epi8(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
-    m10_1 = _mm_adds_epi8(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
-    m01_1 = _mm_adds_epi8(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
-    m01_1 = _mm_max_epi8(m01_1,m01_2);
-    m01_1 = _mm_max_epi8(m01_1,m01_3);
-    m01_1 = _mm_max_epi8(m01_1,m01_4);
-    m00_1 = _mm_max_epi8(m00_1,m00_2);
-    m00_1 = _mm_max_epi8(m00_1,m00_3);
-    m00_1 = _mm_max_epi8(m00_1,m00_4);
-    m10_1 = _mm_max_epi8(m10_1,m10_2);
-    m10_1 = _mm_max_epi8(m10_1,m10_3);
-    m10_1 = _mm_max_epi8(m10_1,m10_4);
-    m11_1 = _mm_max_epi8(m11_1,m11_2);
-    m11_1 = _mm_max_epi8(m11_1,m11_3);
-    m11_1 = _mm_max_epi8(m11_1,m11_4);
-    m01_1 = _mm_subs_epi8(m01_1,*m10_128);
-    m00_1 = _mm_subs_epi8(m00_1,*m11_128);
-    m10_1 = _mm_adds_epi8(m10_1,*m10_128);
-    m11_1 = _mm_adds_epi8(m11_1,*m11_128);
-    m01_1 = _mm_max_epi8(m01_1,m00_1);
-    m10_1 = _mm_max_epi8(m10_1,m11_1);
-    *ext_128 = _mm_subs_epi8(m10_1,m01_1);
+    m11_128 = (simde__m128i *)&m_11[k << 4];
+    m10_128 = (simde__m128i *)&m_10[k << 4];
+    ext_128 = (simde__m128i *)&ext[k << 4];
+    m00_4 = simde_mm_adds_epi8(alpha_ptr[7], beta_ptr[3]); // ALPHA_BETA_4m00;
+    m11_4 = simde_mm_adds_epi8(alpha_ptr[7], beta_ptr[7]); // ALPHA_BETA_4m11;
+    m00_3 = simde_mm_adds_epi8(alpha_ptr[6], beta_ptr[7]); // ALPHA_BETA_3m00;
+    m11_3 = simde_mm_adds_epi8(alpha_ptr[6], beta_ptr[3]); // ALPHA_BETA_3m11;
+    m00_2 = simde_mm_adds_epi8(alpha_ptr[1], beta_ptr[4]); // ALPHA_BETA_2m00;
+    m11_2 = simde_mm_adds_epi8(alpha_ptr[1], beta_ptr[0]); // ALPHA_BETA_2m11;
+    m11_1 = simde_mm_adds_epi8(alpha_ptr[0], beta_ptr[4]); // ALPHA_BETA_1m11;
+    m00_1 = simde_mm_adds_epi8(alpha_ptr[0], beta_ptr[0]); // ALPHA_BETA_1m00;
+    m01_4 = simde_mm_adds_epi8(alpha_ptr[5], beta_ptr[6]); // ALPHA_BETA_4m01;
+    m10_4 = simde_mm_adds_epi8(alpha_ptr[5], beta_ptr[2]); // ALPHA_BETA_4m10;
+    m01_3 = simde_mm_adds_epi8(alpha_ptr[4], beta_ptr[2]); // ALPHA_BETA_3m01;
+    m10_3 = simde_mm_adds_epi8(alpha_ptr[4], beta_ptr[6]); // ALPHA_BETA_3m10;
+    m01_2 = simde_mm_adds_epi8(alpha_ptr[3], beta_ptr[1]); // ALPHA_BETA_2m01;
+    m10_2 = simde_mm_adds_epi8(alpha_ptr[3], beta_ptr[5]); // ALPHA_BETA_2m10;
+    m10_1 = simde_mm_adds_epi8(alpha_ptr[2], beta_ptr[1]); // ALPHA_BETA_1m10;
+    m01_1 = simde_mm_adds_epi8(alpha_ptr[2], beta_ptr[5]); // ALPHA_BETA_1m01;
+    m01_1 = simde_mm_max_epi8(m01_1, m01_2);
+    m01_1 = simde_mm_max_epi8(m01_1, m01_3);
+    m01_1 = simde_mm_max_epi8(m01_1, m01_4);
+    m00_1 = simde_mm_max_epi8(m00_1, m00_2);
+    m00_1 = simde_mm_max_epi8(m00_1, m00_3);
+    m00_1 = simde_mm_max_epi8(m00_1, m00_4);
+    m10_1 = simde_mm_max_epi8(m10_1, m10_2);
+    m10_1 = simde_mm_max_epi8(m10_1, m10_3);
+    m10_1 = simde_mm_max_epi8(m10_1, m10_4);
+    m11_1 = simde_mm_max_epi8(m11_1, m11_2);
+    m11_1 = simde_mm_max_epi8(m11_1, m11_3);
+    m11_1 = simde_mm_max_epi8(m11_1, m11_4);
+    m01_1 = simde_mm_subs_epi8(m01_1, *m10_128);
+    m00_1 = simde_mm_subs_epi8(m00_1, *m11_128);
+    m10_1 = simde_mm_adds_epi8(m10_1, *m10_128);
+    m11_1 = simde_mm_adds_epi8(m11_1, *m11_128);
+    m01_1 = simde_mm_max_epi8(m01_1, m00_1);
+    m10_1 = simde_mm_max_epi8(m10_1, m11_1);
+    *ext_128 = simde_mm_subs_epi8(m10_1, m01_1);
     alpha_ptr+=8;
     beta_ptr+=8;
 #elif defined(__arm__) || defined(__aarch64__)
@@ -819,9 +936,9 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
   unsigned int crc, crc_len;
   uint8_t temp;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *yp128;
-  __m128i tmp128[(n+8)>>3];
-  __m128i tmp={0}, zeros=_mm_setzero_si128();
+  simde__m128i *yp128;
+  simde__m128i tmp128[(n + 8) >> 3];
+  simde__m128i tmp = {0}, zeros = simde_mm_setzero_si128();
 #elif defined(__arm__) || defined(__aarch64__)
   int8x16_t *yp128;
   int8x16_t tmp128[(n+8)>>3];
@@ -873,35 +990,41 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 
 #if defined(__x86_64__) || defined(__i386__)
   // note: this makes valgrind freak
-  __m128i avg=_mm_set1_epi32(0);
+  simde__m128i avg = simde_mm_set1_epi32(0);
 
   for (i=0; i<(3*(n>>4))+1; i++) {
-    __m128i tmp=_mm_abs_epi16(_mm_unpackhi_epi16(((__m128i *)y)[i],((__m128i *)y)[i]));
-    avg=_mm_add_epi32(_mm_cvtepi16_epi32(_mm_abs_epi16(((__m128i *)y)[i])),avg);
-    avg=_mm_add_epi32(_mm_cvtepi16_epi32(tmp),avg);
+    simde__m128i tmp = simde_mm_abs_epi16(simde_mm_unpackhi_epi16(((simde__m128i *)y)[i], ((simde__m128i *)y)[i]));
+    avg = simde_mm_add_epi32(simde_mm_cvtepi16_epi32(simde_mm_abs_epi16(((simde__m128i *)y)[i])), avg);
+    avg = simde_mm_add_epi32(simde_mm_cvtepi16_epi32(tmp), avg);
   }
 
-  int32_t round_avg=(_mm_extract_epi32(avg,0)+_mm_extract_epi32(avg,1)+_mm_extract_epi32(avg,2)+_mm_extract_epi32(avg,3))/(n*3);
+  int32_t round_avg = (simde_mm_extract_epi32(avg, 0) + simde_mm_extract_epi32(avg, 1) + simde_mm_extract_epi32(avg, 2)
+                       + simde_mm_extract_epi32(avg, 3))
+                      / (n * 3);
 
   //printf("avg input turbo: %d sum %d taille bloc %d\n",round_avg,round_sum,n);
 
   if (round_avg < 16 )
     for (i=0,j=0; i<(3*(n2>>4))+1; i++,j+=2)
-      ((__m128i *)y8)[i] = _mm_packs_epi16(((__m128i *)y)[j],((__m128i *)y)[j+1]);
+      ((simde__m128i *)y8)[i] = simde_mm_packs_epi16(((simde__m128i *)y)[j], ((simde__m128i *)y)[j + 1]);
   else if (round_avg < 32)
     for (i=0,j=0; i<(3*(n2>>4))+1; i++,j+=2)
-      ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],1),_mm_srai_epi16(((__m128i *)y)[j+1],1));
+      ((simde__m128i *)y8)[i] =
+          simde_mm_packs_epi16(simde_mm_srai_epi16(((simde__m128i *)y)[j], 1), simde_mm_srai_epi16(((simde__m128i *)y)[j + 1], 1));
   else if (round_avg < 64 )
     for (i=0,j=0; i<(3*(n2>>4))+1; i++,j+=2)
-      ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],2),_mm_srai_epi16(((__m128i *)y)[j+1],2));
+      ((simde__m128i *)y8)[i] =
+          simde_mm_packs_epi16(simde_mm_srai_epi16(((simde__m128i *)y)[j], 2), simde_mm_srai_epi16(((simde__m128i *)y)[j + 1], 2));
   else if (round_avg < 128)
     for (i=0,j=0; i<(3*(n2>>4))+1; i++,j+=2)
-      ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],3),_mm_srai_epi16(((__m128i *)y)[j+1],3));
+      ((simde__m128i *)y8)[i] =
+          simde_mm_packs_epi16(simde_mm_srai_epi16(((simde__m128i *)y)[j], 3), simde_mm_srai_epi16(((simde__m128i *)y)[j + 1], 3));
   else
     for (i=0,j=0; i<(3*(n2>>4))+1; i++,j+=2)
-      ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],3),_mm_srai_epi16(((__m128i *)y)[j+1],4));
+      ((simde__m128i *)y8)[i] =
+          simde_mm_packs_epi16(simde_mm_srai_epi16(((simde__m128i *)y)[j], 3), simde_mm_srai_epi16(((simde__m128i *)y)[j + 1], 4));
 
-  yp128 = (__m128i *)y8;
+  yp128 = (simde__m128i *)y8;
 #elif defined(__arm__) || defined(__aarch64__)
   int32x4_t avg=vdupq_n_s32(0);
 
@@ -1005,22 +1128,22 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 
     for (i=0; i<(n2>>4); i++) { // steady-state portion
 #if defined(__x86_64__) || defined(__i386__)
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],0);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],1);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],2);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],3);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],4);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],5);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],6);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],7);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],8);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],9);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],10);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],11);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],12);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],13);
-      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],14);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],15);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 0);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 1);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 2);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 3);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 4);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 5);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 6);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 7);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 8);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 9);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 10);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 11);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 12);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 13);
+      tmp = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 14);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi8(tmp, ((llr_t *)ext)[*pi4_p++], 15);
 #elif defined(__arm__) || defined(__aarch64__)
       tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,0);
       tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,1);
@@ -1051,24 +1174,25 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
     if ((n2&0x7f) == 0) {  // n2 is a multiple of 128 bits
       for (i=0; i<(n2>>4); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],0);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],1);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],2);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],3);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],4);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],5);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],6);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],7);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],8);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],9);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],10);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],11);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],12);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],13);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
-        decoded_bytes_interl[i]=(uint16_t) _mm_movemask_epi8(_mm_cmpgt_epi8(tmp,zeros));
-        ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i *)ext)[i]),((__m128i *)systematic0)[i]);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 0);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 1);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 2);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 3);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 4);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 5);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 6);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 7);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 8);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 9);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 10);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 11);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 12);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 13);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 14);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 15);
+        decoded_bytes_interl[i] = (uint16_t)simde_mm_movemask_epi8(simde_mm_cmpgt_epi8(tmp, zeros));
+        ((simde__m128i *)systematic1)[i] =
+            simde_mm_adds_epi8(simde_mm_subs_epi8(tmp, ((simde__m128i *)ext)[i]), ((simde__m128i *)systematic0)[i]);
 #elif defined(__arm__) || defined(__aarch64__)
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,0);
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,1);
@@ -1095,24 +1219,25 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
     } else {
       for (i=0; i<(n2>>4); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],0);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],1);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],2);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],3);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],4);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],5);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],6);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],7);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],8);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],9);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],10);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],11);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],12);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],13);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
-        tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
-        tmp128[i] = _mm_adds_epi8(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
-        ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i *)ext)[i]),((__m128i *)systematic0)[i]);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 0);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 1);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 2);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 3);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 4);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 5);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 6);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 7);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 8);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 9);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 10);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 11);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 12);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 13);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 14);
+        tmp = simde_mm_insert_epi8(tmp, ext2[*pi5_p++], 15);
+        tmp128[i] = simde_mm_adds_epi8(((simde__m128i *)ext2)[i], ((simde__m128i *)systematic2)[i]);
+        ((simde__m128i *)systematic1)[i] =
+            simde_mm_adds_epi8(simde_mm_subs_epi8(tmp, ((simde__m128i *)ext)[i]), ((simde__m128i *)systematic0)[i]);
 #elif defined(__arm__) || defined(__aarch64__)
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,0);
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,1);
@@ -1144,27 +1269,27 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
         // re-order the decoded bits in theregular order
         // as it is presently ordered as 16 sequential columns
 #if defined(__x86_64__) || defined(__i386__)
-        __m128i *dbytes=(__m128i *)decoded_bytes_interl;
-        __m128i shuffle=SHUFFLE16(7,6,5,4,3,2,1,0);
-        __m128i mask  __attribute__((aligned(16)));
+        simde__m128i *dbytes = (simde__m128i *)decoded_bytes_interl;
+        simde__m128i shuffle = SHUFFLE16(7, 6, 5, 4, 3, 2, 1, 0);
+        simde__m128i mask __attribute__((aligned(16)));
         int n_128=n2>>7;
 
         for (i=0; i<n_128; i++) {
-          mask=_mm_set1_epi16(1);
-          __m128i tmp __attribute__((aligned(16)));
-          tmp=_mm_shuffle_epi8(dbytes[i],shuffle);
-          __m128i tmp2 __attribute__((aligned(16))) ;
-          tmp2=_mm_and_si128(tmp,mask);
-          tmp2=_mm_cmpeq_epi16(tmp2,mask);
+          mask = simde_mm_set1_epi16(1);
+          simde__m128i tmp __attribute__((aligned(16)));
+          tmp = simde_mm_shuffle_epi8(dbytes[i], shuffle);
+          simde__m128i tmp2 __attribute__((aligned(16)));
+          tmp2 = simde_mm_and_si128(tmp, mask);
+          tmp2 = simde_mm_cmpeq_epi16(tmp2, mask);
           //    printf("decoded_bytes %p\n",decoded_bytes);
-          decoded_bytes[n_128*0+i]=(uint8_t) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
+          decoded_bytes[n_128 * 0 + i] = (uint8_t)simde_mm_movemask_epi8(simde_mm_packs_epi16(tmp2, zeros));
           int j;
 
           for (j=1; j<16; j++) {
-            mask=_mm_slli_epi16(mask,1);
-            tmp2=_mm_and_si128(tmp,mask);
-            tmp2=_mm_cmpeq_epi16(tmp2,mask);
-            decoded_bytes[n_128*j +i]=(uint8_t) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
+            mask = simde_mm_slli_epi16(mask, 1);
+            tmp2 = simde_mm_and_si128(tmp, mask);
+            tmp2 = simde_mm_cmpeq_epi16(tmp2, mask);
+            decoded_bytes[n_128 * j + i] = (uint8_t)simde_mm_movemask_epi8(simde_mm_packs_epi16(tmp2, zeros));
           }
         }
 
@@ -1192,24 +1317,24 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 
         for (i=0; i<(n2>>4); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],7);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],6);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],5);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],4);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],3);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],2);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],1);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],0);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],15);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],14);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],13);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],12);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],11);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],10);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],9);
-          tmp=_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++],8);
-          tmp=_mm_cmpgt_epi8(tmp,zeros);
-          ((uint16_t *)decoded_bytes)[i]=(uint16_t)_mm_movemask_epi8(tmp);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 7);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 6);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 5);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 4);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 3);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 2);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 1);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 0);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 15);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 14);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 13);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 12);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 11);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 10);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 9);
+          tmp = simde_mm_insert_epi8(tmp, ((llr_t *)tmp128)[*pi6_p++], 8);
+          tmp = simde_mm_cmpgt_epi8(tmp, zeros);
+          ((uint16_t *)decoded_bytes)[i] = (uint16_t)simde_mm_movemask_epi8(tmp);
 #elif defined(__arm__) || defined(__aarch64__)
           tmp=vsetq_lane_s8(((llr_t *)tmp128)[*pi6_p++],tmp,7);
           tmp=vsetq_lane_s8(((llr_t *)tmp128)[*pi6_p++],tmp,6);
@@ -1286,9 +1411,9 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
     if (iteration_cnt < max_iterations) {
       log_map8(systematic1,yparity1,m11,m10,alpha,beta,ext,n2,0,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
 #if defined(__x86_64__) || defined(__i386__)
-      __m128i *ext_128=(__m128i *) ext;
-      __m128i *s1_128=(__m128i *) systematic1;
-      __m128i *s0_128=(__m128i *) systematic0;
+      simde__m128i *ext_128 = (simde__m128i *)ext;
+      simde__m128i *s1_128 = (simde__m128i *)systematic1;
+      simde__m128i *s0_128 = (simde__m128i *)systematic0;
 #elif defined(__arm__) || defined(__aarch64__)
       int8x16_t *ext_128=(int8x16_t *) ext;
       int8x16_t *s1_128=(int8x16_t *) systematic1;
@@ -1298,7 +1423,7 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 
       for (i=0; i<myloop; i++) {
 #if defined(__x86_64__) || defined(__i386__)
-        *ext_128=_mm_adds_epi8(_mm_subs_epi8(*ext_128,*s1_128++),*s0_128++);
+        *ext_128 = simde_mm_adds_epi8(simde_mm_subs_epi8(*ext_128, *s1_128++), *s0_128++);
 #elif defined(__arm__) || defined(__aarch64__)
         *ext_128=vqaddq_s8(vqsubq_s8(*ext_128,*s1_128++),*s0_128++);
 #endif

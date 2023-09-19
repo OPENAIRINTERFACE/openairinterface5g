@@ -353,40 +353,18 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 
   int16_t rb;
   uint8_t aatx,aarx;
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *dl_ch128;
-  __m128i avg128P;
-#elif defined(__arm__) || defined(__aarch64__)
-  int16x8_t *dl_ch128;
-  int32x4_t *avg128P;
-#else
-  int16_t *dl_ch128;
-  int32_t *avg128P;
-#error Unsupported CPU architecture, cannot build __FILE__
-#endif
+  simde__m128i *dl_ch128;
+  simde__m128i avg128P;
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
-#if defined(__x86_64__) || defined(__i386__)
-      avg128P = _mm_setzero_si128();
-      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
-#elif defined(__arm__) || defined(__aarch64__)
-     dl_ch128=&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
-#error __arm__ or __aarch64__ not yet implemented, cannot build __FILE__
-#else
-      dl_ch128=&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
-#error Unsupported CPU architecture, cannot build __FILE__
-#endif
+      avg128P = simde_mm_setzero_si128();
+      dl_ch128=(simde__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
       for (rb=0; rb<nb_rb; rb++) {
 
-#if defined(__x86_64__) || defined(__i386__)
-        avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
-        avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
-        avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
-#elif defined(__arm__) || defined(__aarch64__)
-#else
-#error Unsupported CPU architecture, cannot build __FILE__
-#endif
+        avg128P = simde_mm_add_epi32(avg128P,simde_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
+        avg128P = simde_mm_add_epi32(avg128P,simde_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
+        avg128P = simde_mm_add_epi32(avg128P,simde_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
         dl_ch128+=3;
         /*
           if (rb==0) {
@@ -406,10 +384,8 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
       //      printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
 
-#if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
-#endif
+  simde_mm_empty();
+  simde_m_empty();
 
 }
 
@@ -425,82 +401,40 @@ void pdcch_detection_mrc_i(LTE_DL_FRAME_PARMS *frame_parms,
 
   uint8_t aatx;
 
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
-#elif defined(__arm__) || defined(__aarch64__)
-  int16x8_t *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
-#else
-#error Unsupported CPU architecture, cannot build __FILE__
-#endif
+  simde__m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*rxdataF_comp128_i0,*rxdataF_comp128_i1,*rho128_0,*rho128_1,*rho128_i0,*rho128_i1;
   int32_t i;
 
   if (frame_parms->nb_antennas_rx>1) {
     for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
       //if (frame_parms->mode1_flag && (aatx>0)) break;
 
-#if defined(__x86_64__) || defined(__i386__)
-      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
-#elif defined(__arm__) || defined(__aarch64__)
-      rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
-#else
-#error Unsupported CPU architecture, cannot build __FILE__
-#endif
+      rxdataF_comp128_0   = (simde__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
+      rxdataF_comp128_1   = (simde__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
       // MRC on each re of rb on MF output
       for (i=0; i<frame_parms->N_RB_DL*3; i++) {
-#if defined(__x86_64__) || defined(__i386__)
-        rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
-#elif defined(__arm__) || defined(__aarch64__)
-        rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
-#endif
+        rxdataF_comp128_0[i] = simde_mm_adds_epi16(simde_mm_srai_epi16(rxdataF_comp128_0[i],1),simde_mm_srai_epi16(rxdataF_comp128_1[i],1));
       }
     }
 
-#if defined(__x86_64__) || defined(__i386__)
-    rho128_0 = (__m128i *) &rho[0][symbol*frame_parms->N_RB_DL*12];
-    rho128_1 = (__m128i *) &rho[1][symbol*frame_parms->N_RB_DL*12];
-#elif defined(__arm__) || defined(__aarch64__)
-    rho128_0 = (int16x8_t *) &rho[0][symbol*frame_parms->N_RB_DL*12];
-    rho128_1 = (int16x8_t *) &rho[1][symbol*frame_parms->N_RB_DL*12];
-#endif
+    rho128_0 = (simde__m128i *) &rho[0][symbol*frame_parms->N_RB_DL*12];
+    rho128_1 = (simde__m128i *) &rho[1][symbol*frame_parms->N_RB_DL*12];
     for (i=0; i<frame_parms->N_RB_DL*3; i++) {
-#if defined(__x86_64__) || defined(__i386__)
-      rho128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rho128_0[i],1),_mm_srai_epi16(rho128_1[i],1));
-#elif defined(__arm__) || defined(__aarch64__)
-      rho128_0[i] = vhaddq_s16(rho128_0[i],rho128_1[i]);
-#endif
+      rho128_0[i] = simde_mm_adds_epi16(simde_mm_srai_epi16(rho128_0[i],1),simde_mm_srai_epi16(rho128_1[i],1));
     }
 
-#if defined(__x86_64__) || defined(__i386__)
-    rho128_i0 = (__m128i *) &rho_i[0][symbol*frame_parms->N_RB_DL*12];
-    rho128_i1 = (__m128i *) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
-    rxdataF_comp128_i0   = (__m128i *)&rxdataF_comp_i[0][symbol*frame_parms->N_RB_DL*12];
-    rxdataF_comp128_i1   = (__m128i *)&rxdataF_comp_i[1][symbol*frame_parms->N_RB_DL*12];
-#elif defined(__arm__) || defined(__aarch64__)
-    rho128_i0 = (int16x8_t*) &rho_i[0][symbol*frame_parms->N_RB_DL*12];
-    rho128_i1 = (int16x8_t*) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
-    rxdataF_comp128_i0   = (int16x8_t *)&rxdataF_comp_i[0][symbol*frame_parms->N_RB_DL*12];
-    rxdataF_comp128_i1   = (int16x8_t *)&rxdataF_comp_i[1][symbol*frame_parms->N_RB_DL*12];
-
-#endif
+    rho128_i0 = (simde__m128i *) &rho_i[0][symbol*frame_parms->N_RB_DL*12];
+    rho128_i1 = (simde__m128i *) &rho_i[1][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128_i0   = (simde__m128i *)&rxdataF_comp_i[0][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128_i1   = (simde__m128i *)&rxdataF_comp_i[1][symbol*frame_parms->N_RB_DL*12];
     // MRC on each re of rb on MF and rho
     for (i=0; i<frame_parms->N_RB_DL*3; i++) {
-#if defined(__x86_64__) || defined(__i386__)
-      rxdataF_comp128_i0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_i0[i],1),_mm_srai_epi16(rxdataF_comp128_i1[i],1));
-      rho128_i0[i]          = _mm_adds_epi16(_mm_srai_epi16(rho128_i0[i],1),_mm_srai_epi16(rho128_i1[i],1));
-#elif defined(__arm__) || defined(__aarch64__)
-      rxdataF_comp128_i0[i] = vhaddq_s16(rxdataF_comp128_i0[i],rxdataF_comp128_i1[i]);
-      rho128_i0[i]          = vhaddq_s16(rho128_i0[i],rho128_i1[i]);
-
-#endif
+      rxdataF_comp128_i0[i] = simde_mm_adds_epi16(simde_mm_srai_epi16(rxdataF_comp128_i0[i],1),simde_mm_srai_epi16(rxdataF_comp128_i1[i],1));
+      rho128_i0[i]          = simde_mm_adds_epi16(simde_mm_srai_epi16(rho128_i0[i],1),simde_mm_srai_epi16(rho128_i1[i],1));
     }
   }
 
-#if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
-#endif
+  simde_mm_empty();
+  simde_m_empty();
 }
 
 
@@ -962,13 +896,9 @@ void pdcch_channel_compensation(int32_t **rxdataF_ext,
 
   uint16_t rb;
 
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
-  __m128i *dl_ch128_2, *rho128;
-  __m128i mmtmpPD0,mmtmpPD1,mmtmpPD2,mmtmpPD3;
-#elif defined(__arm__) || defined(__aarch64__)
-
-#endif
+  simde__m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
+  simde__m128i *dl_ch128_2, *rho128;
+  simde__m128i mmtmpPD0,mmtmpPD1,mmtmpPD2,mmtmpPD3;
   uint8_t aatx,aarx,pilots=0;
 
 
@@ -986,75 +916,69 @@ void pdcch_channel_compensation(int32_t **rxdataF_ext,
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-#if defined(__x86_64__) || defined(__i386__)
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
-      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
-
-#elif defined(__arm__) || defined(__aarch64__)
-
-#endif
+      dl_ch128          = (simde__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
+      rxdataF128        = (simde__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+      rxdataF_comp128   = (simde__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
 
       for (rb=0; rb<frame_parms->N_RB_DL; rb++) {
 
-#if defined(__x86_64__) || defined(__i386__)
         // multiply by conjugated channel
-        mmtmpPD0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
+        mmtmpPD0 = simde_mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
         //  print_ints("re",&mmtmpPD0);
 
         // mmtmpPD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpPD1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_shufflehi_epi16(mmtmpPD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_sign_epi16(mmtmpPD1,*(__m128i*)&conjugate[0]);
+        mmtmpPD1 = simde_mm_shufflelo_epi16(dl_ch128[0], SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_shufflehi_epi16(mmtmpPD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_sign_epi16(mmtmpPD1,*(simde__m128i*)&conjugate[0]);
         //  print_ints("im",&mmtmpPD1);
-        mmtmpPD1 = _mm_madd_epi16(mmtmpPD1,rxdataF128[0]);
+        mmtmpPD1 = simde_mm_madd_epi16(mmtmpPD1,rxdataF128[0]);
         // mmtmpPD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpPD0 = _mm_srai_epi32(mmtmpPD0,output_shift);
+        mmtmpPD0 = simde_mm_srai_epi32(mmtmpPD0,output_shift);
         //  print_ints("re(shift)",&mmtmpPD0);
-        mmtmpPD1 = _mm_srai_epi32(mmtmpPD1,output_shift);
+        mmtmpPD1 = simde_mm_srai_epi32(mmtmpPD1,output_shift);
         //  print_ints("im(shift)",&mmtmpPD1);
-        mmtmpPD2 = _mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
-        mmtmpPD3 = _mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD2 = simde_mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD3 = simde_mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
         //        print_ints("c0",&mmtmpPD2);
         //  print_ints("c1",&mmtmpPD3);
-        rxdataF_comp128[0] = _mm_packs_epi32(mmtmpPD2,mmtmpPD3);
+        rxdataF_comp128[0] = simde_mm_packs_epi32(mmtmpPD2,mmtmpPD3);
         //  print_shorts("rx:",rxdataF128);
         //  print_shorts("ch:",dl_ch128);
         //  print_shorts("pack:",rxdataF_comp128);
 
         // multiply by conjugated channel
-        mmtmpPD0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
+        mmtmpPD0 = simde_mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
         // mmtmpPD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpPD1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_shufflehi_epi16(mmtmpPD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_sign_epi16(mmtmpPD1,*(__m128i*)conjugate);
-        mmtmpPD1 = _mm_madd_epi16(mmtmpPD1,rxdataF128[1]);
+        mmtmpPD1 = simde_mm_shufflelo_epi16(dl_ch128[1], SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_shufflehi_epi16(mmtmpPD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_sign_epi16(mmtmpPD1,*(simde__m128i*)conjugate);
+        mmtmpPD1 = simde_mm_madd_epi16(mmtmpPD1,rxdataF128[1]);
         // mmtmpPD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpPD0 = _mm_srai_epi32(mmtmpPD0,output_shift);
-        mmtmpPD1 = _mm_srai_epi32(mmtmpPD1,output_shift);
-        mmtmpPD2 = _mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
-        mmtmpPD3 = _mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD0 = simde_mm_srai_epi32(mmtmpPD0,output_shift);
+        mmtmpPD1 = simde_mm_srai_epi32(mmtmpPD1,output_shift);
+        mmtmpPD2 = simde_mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD3 = simde_mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
 
-        rxdataF_comp128[1] = _mm_packs_epi32(mmtmpPD2,mmtmpPD3);
+        rxdataF_comp128[1] = simde_mm_packs_epi32(mmtmpPD2,mmtmpPD3);
 
         //  print_shorts("rx:",rxdataF128+1);
         //  print_shorts("ch:",dl_ch128+1);
         //  print_shorts("pack:",rxdataF_comp128+1);
         // multiply by conjugated channel
         if (pilots == 0) {
-          mmtmpPD0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
+          mmtmpPD0 = simde_mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
           // mmtmpPD0 contains real part of 4 consecutive outputs (32-bit)
-          mmtmpPD1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
-          mmtmpPD1 = _mm_shufflehi_epi16(mmtmpPD1,_MM_SHUFFLE(2,3,0,1));
-          mmtmpPD1 = _mm_sign_epi16(mmtmpPD1,*(__m128i*)conjugate);
-          mmtmpPD1 = _mm_madd_epi16(mmtmpPD1,rxdataF128[2]);
+          mmtmpPD1 = simde_mm_shufflelo_epi16(dl_ch128[2], SIMDE_MM_SHUFFLE(2,3,0,1));
+          mmtmpPD1 = simde_mm_shufflehi_epi16(mmtmpPD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+          mmtmpPD1 = simde_mm_sign_epi16(mmtmpPD1,*(simde__m128i*)conjugate);
+          mmtmpPD1 = simde_mm_madd_epi16(mmtmpPD1,rxdataF128[2]);
           // mmtmpPD1 contains imag part of 4 consecutive outputs (32-bit)
-          mmtmpPD0 = _mm_srai_epi32(mmtmpPD0,output_shift);
-          mmtmpPD1 = _mm_srai_epi32(mmtmpPD1,output_shift);
-          mmtmpPD2 = _mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
-          mmtmpPD3 = _mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
+          mmtmpPD0 = simde_mm_srai_epi32(mmtmpPD0,output_shift);
+          mmtmpPD1 = simde_mm_srai_epi32(mmtmpPD1,output_shift);
+          mmtmpPD2 = simde_mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
+          mmtmpPD3 = simde_mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
 
-          rxdataF_comp128[2] = _mm_packs_epi32(mmtmpPD2,mmtmpPD3);
+          rxdataF_comp128[2] = simde_mm_packs_epi32(mmtmpPD2,mmtmpPD3);
         }
 
         //  print_shorts("rx:",rxdataF128+2);
@@ -1070,9 +994,6 @@ void pdcch_channel_compensation(int32_t **rxdataF_ext,
           rxdataF128+=2;
           rxdataF_comp128+=2;
         }
-#elif defined(__arm__) || defined(__aarch64__)
-
-#endif
       }
     }
   }
@@ -1082,74 +1003,69 @@ void pdcch_channel_compensation(int32_t **rxdataF_ext,
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-#if defined(__x86_64__) || defined(__i386__)
-      rho128        = (__m128i *)&rho[aarx][symbol*frame_parms->N_RB_DL*12];
-      dl_ch128      = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-      dl_ch128_2    = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
+      rho128        = (simde__m128i *)&rho[aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch128      = (simde__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch128_2    = (simde__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
 
-#elif defined(__arm__) || defined(__aarch64__)
-
-#endif
       for (rb=0; rb<frame_parms->N_RB_DL; rb++) {
-#if defined(__x86_64__) || defined(__i386__)
 
         // multiply by conjugated channel
-        mmtmpPD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128_2[0]);
+        mmtmpPD0 = simde_mm_madd_epi16(dl_ch128[0],dl_ch128_2[0]);
         //  print_ints("re",&mmtmpD0);
 
         // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpPD1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_shufflehi_epi16(mmtmpPD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_sign_epi16(mmtmpPD1,*(__m128i*)&conjugate[0]);
+        mmtmpPD1 = simde_mm_shufflelo_epi16(dl_ch128[0], SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_shufflehi_epi16(mmtmpPD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_sign_epi16(mmtmpPD1,*(simde__m128i*)&conjugate[0]);
         //  print_ints("im",&mmtmpPD1);
-        mmtmpPD1 = _mm_madd_epi16(mmtmpPD1,dl_ch128_2[0]);
+        mmtmpPD1 = simde_mm_madd_epi16(mmtmpPD1,dl_ch128_2[0]);
         // mmtmpPD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpPD0 = _mm_srai_epi32(mmtmpPD0,output_shift);
+        mmtmpPD0 = simde_mm_srai_epi32(mmtmpPD0,output_shift);
         //  print_ints("re(shift)",&mmtmpD0);
-        mmtmpPD1 = _mm_srai_epi32(mmtmpPD1,output_shift);
+        mmtmpPD1 = simde_mm_srai_epi32(mmtmpPD1,output_shift);
         //  print_ints("im(shift)",&mmtmpD1);
-        mmtmpPD2 = _mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
-        mmtmpPD3 = _mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD2 = simde_mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD3 = simde_mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
         //        print_ints("c0",&mmtmpPD2);
         //  print_ints("c1",&mmtmpPD3);
-        rho128[0] = _mm_packs_epi32(mmtmpPD2,mmtmpPD3);
+        rho128[0] = simde_mm_packs_epi32(mmtmpPD2,mmtmpPD3);
 
         //print_shorts("rx:",dl_ch128_2);
         //print_shorts("ch:",dl_ch128);
         //print_shorts("pack:",rho128);
 
         // multiply by conjugated channel
-        mmtmpPD0 = _mm_madd_epi16(dl_ch128[1],dl_ch128_2[1]);
+        mmtmpPD0 = simde_mm_madd_epi16(dl_ch128[1],dl_ch128_2[1]);
         // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpPD1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_shufflehi_epi16(mmtmpPD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_sign_epi16(mmtmpPD1,*(__m128i*)conjugate);
-        mmtmpPD1 = _mm_madd_epi16(mmtmpPD1,dl_ch128_2[1]);
+        mmtmpPD1 = simde_mm_shufflelo_epi16(dl_ch128[1], SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_shufflehi_epi16(mmtmpPD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_sign_epi16(mmtmpPD1,*(simde__m128i*)conjugate);
+        mmtmpPD1 = simde_mm_madd_epi16(mmtmpPD1,dl_ch128_2[1]);
         // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpPD0 = _mm_srai_epi32(mmtmpPD0,output_shift);
-        mmtmpPD1 = _mm_srai_epi32(mmtmpPD1,output_shift);
-        mmtmpPD2 = _mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
-        mmtmpPD3 = _mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD0 = simde_mm_srai_epi32(mmtmpPD0,output_shift);
+        mmtmpPD1 = simde_mm_srai_epi32(mmtmpPD1,output_shift);
+        mmtmpPD2 = simde_mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD3 = simde_mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
 
 
-        rho128[1] =_mm_packs_epi32(mmtmpPD2,mmtmpPD3);
+        rho128[1] =simde_mm_packs_epi32(mmtmpPD2,mmtmpPD3);
         //print_shorts("rx:",dl_ch128_2+1);
         //print_shorts("ch:",dl_ch128+1);
         //print_shorts("pack:",rho128+1);
         // multiply by conjugated channel
-        mmtmpPD0 = _mm_madd_epi16(dl_ch128[2],dl_ch128_2[2]);
+        mmtmpPD0 = simde_mm_madd_epi16(dl_ch128[2],dl_ch128_2[2]);
         // mmtmpPD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpPD1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_shufflehi_epi16(mmtmpPD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpPD1 = _mm_sign_epi16(mmtmpPD1,*(__m128i*)conjugate);
-        mmtmpPD1 = _mm_madd_epi16(mmtmpPD1,dl_ch128_2[2]);
+        mmtmpPD1 = simde_mm_shufflelo_epi16(dl_ch128[2], SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_shufflehi_epi16(mmtmpPD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+        mmtmpPD1 = simde_mm_sign_epi16(mmtmpPD1,*(simde__m128i*)conjugate);
+        mmtmpPD1 = simde_mm_madd_epi16(mmtmpPD1,dl_ch128_2[2]);
         // mmtmpPD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpPD0 = _mm_srai_epi32(mmtmpPD0,output_shift);
-        mmtmpPD1 = _mm_srai_epi32(mmtmpPD1,output_shift);
-        mmtmpPD2 = _mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
-        mmtmpPD3 = _mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD0 = simde_mm_srai_epi32(mmtmpPD0,output_shift);
+        mmtmpPD1 = simde_mm_srai_epi32(mmtmpPD1,output_shift);
+        mmtmpPD2 = simde_mm_unpacklo_epi32(mmtmpPD0,mmtmpPD1);
+        mmtmpPD3 = simde_mm_unpackhi_epi32(mmtmpPD0,mmtmpPD1);
 
-        rho128[2] = _mm_packs_epi32(mmtmpPD2,mmtmpPD3);
+        rho128[2] = simde_mm_packs_epi32(mmtmpPD2,mmtmpPD3);
         //print_shorts("rx:",dl_ch128_2+2);
         //print_shorts("ch:",dl_ch128+2);
         //print_shorts("pack:",rho128+2);
@@ -1157,20 +1073,13 @@ void pdcch_channel_compensation(int32_t **rxdataF_ext,
         dl_ch128+=3;
         dl_ch128_2+=3;
         rho128+=3;
-
-#elif defined(__arm_)
-
-
-#endif
       }
     }
 
   }
 
-#if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
-#endif
+  simde_mm_empty();
+  simde_m_empty();
 }
 
 void pdcch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
@@ -1180,37 +1089,22 @@ void pdcch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 
   uint8_t aatx;
 
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
-#elif defined(__arm__) || defined(__aarch64__)
- int16x8_t *rxdataF_comp128_0,*rxdataF_comp128_1;
-#endif
+  simde__m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
   int32_t i;
 
   if (frame_parms->nb_antennas_rx>1) {
     for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
-#if defined(__x86_64__) || defined(__i386__)
-      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
-#elif defined(__arm__) || defined(__aarch64__)
-      rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
-#endif
+      rxdataF_comp128_0   = (simde__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
+      rxdataF_comp128_1   = (simde__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
       // MRC on each re of rb
       for (i=0; i<frame_parms->N_RB_DL*3; i++) {
-#if defined(__x86_64__) || defined(__i386__)
-        rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
-#elif defined(__arm__) || defined(__aarch64__)
-        rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
-#endif
+        rxdataF_comp128_0[i] = simde_mm_adds_epi16(simde_mm_srai_epi16(rxdataF_comp128_0[i],1),simde_mm_srai_epi16(rxdataF_comp128_1[i],1));
       }
     }
   }
 
-#if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
-#endif
+  simde_mm_empty();
+  simde_m_empty();
 
 }
 

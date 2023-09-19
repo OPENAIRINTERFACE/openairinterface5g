@@ -37,7 +37,7 @@ void nr_codeword_scrambling(uint8_t *in,
 
   s=lte_gold_generic(&x1, &x2, 1);
   for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++) {
-    __m256i c = ((__m256i*)in)[i];
+    simde__m256i c = ((simde__m256i*)in)[i];
     uint32_t in32 = simde_mm256_movemask_epi8(simde_mm256_slli_epi16(c,7));
     out[i]=(in32^s);
     DEBUG_SCRAMBLING(LOG_D(PHY, "in[%d] %x => %x\n", i, in32, out[i]));
@@ -51,16 +51,16 @@ void nr_codeword_unscrambling(int16_t* llr, uint32_t size, uint8_t q, uint32_t N
   uint32_t x2 = (n_RNTI << 15) + (q << 14) + Nid;
   uint32_t s = 0;
 
-#if defined(__x86_64__) || defined(__i386__)
+#if defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__aarch64__)
   uint8_t *s8=(uint8_t *)&s;
-  __m128i *llr128 = (__m128i*)llr;
+  simde__m128i *llr128 = (simde__m128i*)llr;
   s = lte_gold_generic(&x1, &x2, 1);
 
   for (int i = 0, j = 0; i < ((size >> 5) + ((size & 0x1f) > 0 ? 1 : 0)); i++, j += 4) {
-    llr128[j]   = _mm_mullo_epi16(llr128[j],byte2m128i[s8[0]]);
-    llr128[j+1] = _mm_mullo_epi16(llr128[j+1],byte2m128i[s8[1]]);
-    llr128[j+2] = _mm_mullo_epi16(llr128[j+2],byte2m128i[s8[2]]);
-    llr128[j+3] = _mm_mullo_epi16(llr128[j+3],byte2m128i[s8[3]]);
+    llr128[j]   = simde_mm_mullo_epi16(llr128[j],byte2m128i[s8[0]]);
+    llr128[j+1] = simde_mm_mullo_epi16(llr128[j+1],byte2m128i[s8[1]]);
+    llr128[j+2] = simde_mm_mullo_epi16(llr128[j+2],byte2m128i[s8[2]]);
+    llr128[j+3] = simde_mm_mullo_epi16(llr128[j+3],byte2m128i[s8[3]]);
     s = lte_gold_generic(&x1, &x2, 0);
   }
 #else

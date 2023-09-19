@@ -30,17 +30,15 @@
    Modified in June, 2001, to include  the length non multiple of 8
 */
 
-#ifndef __SSE4_1__
+#if !defined(__SSE4_1__) && !defined(__aarch64__)
 #define USE_INTEL_CRC 0
 #else
-#define USE_INTEL_CRC __SSE4_1__
+#define USE_INTEL_CRC 1
+#include "crc.h"
 #endif
 
 #include "coding_defs.h"
 #include "assertions.h"
-#if USE_INTEL_CRC
-#include "crc.h"
-#endif
 /*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
 
@@ -103,14 +101,14 @@ static uint32_t crc6Table[256];
 
 #if USE_INTEL_CRC
 static const struct crc_pclmulqdq_ctx lte_crc24a_pclmulqdq __attribute__((aligned(16))) = {
-    0x64e4d700, /**< k1 */
-    0x2c8c9d00, /**< k2 */
-    0xd9fe8c00, /**< k3 */
-    0xf845fe24, /**< q */
-    0x864cfb00, /**< p */
-    0ULL /**< res */
+        0x64e4d700,     /**< k1 */
+        0x2c8c9d00,     /**< k2 */
+        0xd9fe8c00,     /**< k3 */
+        0xf845fe24,     /**< q */
+        0x864cfb00,     /**< p */
+        0ULL            /**< res */
 };
-__m128i crc_xmm_be_le_swap128;
+simde__m128i crc_xmm_be_le_swap128;
 
 const uint8_t crc_xmm_shift_tab[48]
     __attribute__((aligned(16))) = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -133,9 +131,9 @@ void crcTableInit (void)
     crc8Table[c] = crcbit(&c, 1, poly8) >> 24;
     crc6Table[c] = crcbit(&c, 1, poly6) >> 24;
   } while (++c);
-#if USE_INTEL_CRC
-    crc_xmm_be_le_swap128 = _mm_setr_epi32(0x0c0d0e0f, 0x08090a0b,
-					   0x04050607, 0x00010203);
+#if defined(__SSE4_1__) || defined(__aarch64__) 
+    crc_xmm_be_le_swap128 = simde_mm_setr_epi32(0x0c0d0e0f, 0x08090a0b,
+				    	        0x04050607, 0x00010203);
 
 #endif
 }
@@ -164,7 +162,7 @@ uint32_t crc24a(unsigned char* inptr, int bitlen)
     crc = (crc << resbit) ^ crc24aTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
   return crc;
   }
-  #if USE_INTEL_CRC
+  #if defined(__SSE4_1__) || defined(__aarch64__) 
   else {
   return crc32_calc_pclmulqdq(inptr, octetlen, 0,
                               &lte_crc24a_pclmulqdq);

@@ -125,10 +125,10 @@ void compute_gamma16avx2(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_pa
 {
   int k,K1;
 
-  __m256i *systematic128 = (__m256i *)systematic;
-  __m256i *y_parity128   = (__m256i *)y_parity;
-  __m256i *m10_128        = (__m256i *)m10;
-  __m256i *m11_128        = (__m256i *)m11;
+  simde__m256i *systematic128 = (simde__m256i *)systematic;
+  simde__m256i *y_parity128 = (simde__m256i *)y_parity;
+  simde__m256i *m10_128 = (simde__m256i *)m10;
+  simde__m256i *m11_128 = (simde__m256i *)m11;
 
 #ifdef DEBUG_LOGMAP
   fprintf(fdavx2,"compute_gamma (avx2_16bit), %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
@@ -170,11 +170,11 @@ void compute_alpha16avx2(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,uint16
 {
   int k,l,l2,K1,rerun_flag=0;
 
-  __m256i *alpha128=(__m256i *)alpha,*alpha_ptr;
-  __m256i a0,a1,a2,a3,a4,a5,a6,a7,*m11p,*m10p;
-  __m256i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
-  __m256i new0,new1,new2,new3,new4,new5,new6,new7;
-  __m256i alpha_max;
+  simde__m256i *alpha128 = (simde__m256i *)alpha, *alpha_ptr;
+  simde__m256i a0, a1, a2, a3, a4, a5, a6, a7, *m11p, *m10p;
+  simde__m256i m_b0, m_b1, m_b2, m_b3, m_b4, m_b5, m_b6, m_b7;
+  simde__m256i new0, new1, new2, new3, new4, new5, new6, new7;
+  simde__m256i alpha_max;
 
   unsigned long long timein,timeout;
 
@@ -187,7 +187,7 @@ void compute_alpha16avx2(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,uint16
   timein = rdtsc_oai();
 
   for (l=K1;; l=l2,rerun_flag=1) {
-    alpha128 = (__m256i *)alpha;
+    alpha128 = (simde__m256i *)alpha;
 
     if (rerun_flag == 0) {
 
@@ -253,8 +253,8 @@ void compute_alpha16avx2(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,uint16
     }
 
     alpha_ptr = &alpha128[0];
-    m11p = (__m256i*)m_11;
-    m10p = (__m256i*)m_10;
+    m11p = (simde__m256i *)m_11;
+    m10p = (simde__m256i *)m_10;
 
     for (k=0;
          k<l;
@@ -383,13 +383,13 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
 
   int k,rerun_flag=0;
 
-  __m256i *m11p,*m10p;
-  register __m256i b0,b1,b2,b3,b4,b5,b6,b7;
-  register __m256i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
-  register __m256i new0,new1,new2,new3,new4,new5,new6,new7;
+  simde__m256i *m11p, *m10p;
+  register simde__m256i b0, b1, b2, b3, b4, b5, b6, b7;
+  register simde__m256i m_b0, m_b1, m_b2, m_b3, m_b4, m_b5, m_b6, m_b7;
+  register simde__m256i new0, new1, new2, new3, new4, new5, new6, new7;
 
-  __m256i *beta128,*alpha128,*beta_ptr;
-  __m256i beta_max;
+  simde__m256i *beta128, *alpha128, *beta_ptr;
+  simde__m256i beta_max;
 
   llr_t m11,m10,beta0_16,beta1_16,beta2_16,beta3_16,beta4_16,beta5_16,beta6_16,beta7_16,beta0_2,beta1_2,beta2_2,beta3_2,beta_m;
   llr_t m11_cw2,m10_cw2,beta0_cw2_16,beta1_cw2_16,beta2_cw2_16,beta3_cw2_16,beta4_cw2_16,beta5_cw2_16,beta6_cw2_16,beta7_cw2_16,beta0_2_cw2,beta1_2_cw2,beta2_2_cw2,beta3_2_cw2,beta_m_cw2;
@@ -506,9 +506,8 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
   beta7_cw2_16=beta7_cw2_16-beta_m_cw2;
 
   for (rerun_flag=0;; rerun_flag=1) {
-
-    beta_ptr   = (__m256i*)&beta[frame_length<<4];
-    alpha128   = (__m256i*)&alpha[0];
+    beta_ptr = (simde__m256i *)&beta[frame_length << 4];
+    alpha128 = (simde__m256i *)&alpha[0];
 
     if (rerun_flag == 0) {
       beta_ptr[0] = alpha128[(frame_length)];
@@ -533,8 +532,7 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
       print_shorts("b7",(int16_t*)&beta_ptr[7]);
 #endif
     } else {
-
-      beta128 = (__m256i*)&beta[0];
+      beta128 = (simde__m256i *)&beta[0];
       beta_ptr[0] = simde_mm256_srli_si256(beta128[0],2);
       beta_ptr[1] = simde_mm256_srli_si256(beta128[1],2);
       beta_ptr[2] = simde_mm256_srli_si256(beta128[2],2);
@@ -594,8 +592,8 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
 
     timein = rdtsc_oai();
 
-    m11p = (frame_length>>3)-1+(__m256i*)m_11;
-    m10p = (frame_length>>3)-1+(__m256i*)m_10;
+    m11p = (frame_length >> 3) - 1 + (simde__m256i *)m_11;
+    m10p = (frame_length >> 3) - 1 + (simde__m256i *)m_10;
 
     for (k=(frame_length>>3)-1; k>=loopval; k--) {
 
@@ -686,15 +684,14 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
 
 void compute_ext16avx2(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,uint16_t frame_length)
 {
-
-  __m256i *alpha128=(__m256i *)alpha;
-  __m256i *beta128=(__m256i *)beta;
-  __m256i *m11_128,*m10_128,*ext_128;
-  __m256i *alpha_ptr,*beta_ptr;
-  __m256i m00_1,m00_2,m00_3,m00_4;
-  __m256i m01_1,m01_2,m01_3,m01_4;
-  __m256i m10_1,m10_2,m10_3,m10_4;
-  __m256i m11_1,m11_2,m11_3,m11_4;
+  simde__m256i *alpha128 = (simde__m256i *)alpha;
+  simde__m256i *beta128 = (simde__m256i *)beta;
+  simde__m256i *m11_128, *m10_128, *ext_128;
+  simde__m256i *alpha_ptr, *beta_ptr;
+  simde__m256i m00_1, m00_2, m00_3, m00_4;
+  simde__m256i m01_1, m01_2, m01_3, m01_4;
+  simde__m256i m10_1, m10_2, m10_3, m10_4;
+  simde__m256i m11_1, m11_2, m11_3, m11_4;
 
   int k;
 
@@ -712,11 +709,9 @@ void compute_ext16avx2(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* e
 
 
   for (k=0; k<(frame_length>>3); k++) {
-
-
-    m11_128        = (__m256i*)&m_11[k<<4];
-    m10_128        = (__m256i*)&m_10[k<<4];
-    ext_128        = (__m256i*)&ext[k<<4];
+    m11_128 = (simde__m256i *)&m_11[k << 4];
+    m10_128 = (simde__m256i *)&m_10[k << 4];
+    ext_128 = (simde__m256i *)&ext[k << 4];
 
     /*
       fprintf(fdavx2,"EXT %03d\n",k);
@@ -927,9 +922,7 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
   uint8_t temp;
   uint32_t db;
 
-
-  __m256i tmp={0}, zeros=simde_mm256_setzero_si256();
-
+  simde__m256i tmp = {0}, zeros = simde_mm256_setzero_si256();
 
   int offset8_flag=0;
 
@@ -1058,24 +1051,24 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
 
     for (i=0; i<(n>>3); i++) { // steady-state portion
 
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[*pi4_p],0);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[8+*pi4_p++],8);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[*pi4_p],1);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[8+*pi4_p++],9);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[*pi4_p],2);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[8+*pi4_p++],10);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[*pi4_p],3);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[8+*pi4_p++],11);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[*pi4_p],4);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[8+*pi4_p++],12);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[*pi4_p],5);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[8+*pi4_p++],13);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[*pi4_p],6);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[8+*pi4_p++],14);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[*pi4_p],7);
-      ((__m256i *)systematic2)[i]=simde_mm256_insert_epi16(((__m256i *)systematic2)[i],ext[8+*pi4_p++],15);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[*pi4_p], 0);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[8 + *pi4_p++], 8);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[*pi4_p], 1);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[8 + *pi4_p++], 9);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[*pi4_p], 2);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[8 + *pi4_p++], 10);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[*pi4_p], 3);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[8 + *pi4_p++], 11);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[*pi4_p], 4);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[8 + *pi4_p++], 12);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[*pi4_p], 5);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[8 + *pi4_p++], 13);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[*pi4_p], 6);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[8 + *pi4_p++], 14);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[*pi4_p], 7);
+      ((simde__m256i *)systematic2)[i] = simde_mm256_insert_epi16(((simde__m256i *)systematic2)[i], ext[8 + *pi4_p++], 15);
 #ifdef DEBUG_LOGMAP
-      print_shorts("syst2",(int16_t*)&((__m256i *)systematic2)[i]);
+      print_shorts("syst2", (int16_t *)&((simde__m256i *)systematic2)[i]);
 #endif
     }
 
@@ -1107,9 +1100,10 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
       tmp=simde_mm256_insert_epi16(tmp,ext2[8+*pi5_p++],14);
       tmp=simde_mm256_insert_epi16(tmp,ext2[*pi5_p],7);
       tmp=simde_mm256_insert_epi16(tmp,ext2[8+*pi5_p++],15);
-      ((__m256i *)systematic1)[i] = simde_mm256_adds_epi16(simde_mm256_subs_epi16(tmp,((__m256i*)ext)[i]),((__m256i *)systematic0)[i]);
+      ((simde__m256i *)systematic1)[i] =
+          simde_mm256_adds_epi16(simde_mm256_subs_epi16(tmp, ((simde__m256i *)ext)[i]), ((simde__m256i *)systematic0)[i]);
 #ifdef DEBUG_LOGMAP
-      print_shorts("syst1",(int16_t*)&((__m256i *)systematic1)[i]);
+      print_shorts("syst1", (int16_t *)&((simde__m256i *)systematic1)[i]);
 #endif
     }
 
@@ -1249,9 +1243,9 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
     if (iteration_cnt < max_iterations) {
       log_map16avx2(systematic1,yparity1,m11,m10,alpha,beta,ext,n,0,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
 
-      __m256i* ext_128=(__m256i*) ext;
-      __m256i* s1_128=(__m256i*) systematic1;
-      __m256i* s0_128=(__m256i*) systematic0;
+      simde__m256i *ext_128 = (simde__m256i *)ext;
+      simde__m256i *s1_128 = (simde__m256i *)systematic1;
+      simde__m256i *s0_128 = (simde__m256i *)systematic0;
       int myloop=n>>3;
 
       for (i=0; i<myloop; i++) {
@@ -1264,9 +1258,8 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
 
   //  fprintf(fdavx2,"crc %x, oldcrc %x\n",crc,oldcrc);
 
-
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
 
 #ifdef DEBUG_LOGMAP
   fclose(fdavx2);

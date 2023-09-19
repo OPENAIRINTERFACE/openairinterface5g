@@ -266,7 +266,8 @@ class Cluster:
 		baseTag = 'develop'
 		forceBaseImageBuild = False
 		if self.ranAllowMerge: # merging MR branch into develop -> temporary image
-			imageTag = f'{self.ranBranch}-{self.ranCommitID[0:8]}'
+			branchName = self.ranBranch.replace('/','-')
+			imageTag = f'{branchName}-{self.ranCommitID[0:8]}'
 			if self.ranTargetBranch == 'develop':
 				ret = self.cmd.run(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base.rhel9 | grep --colour=never -i INDEX')
 				result = re.search('index', ret.stdout)
@@ -412,7 +413,6 @@ class Cluster:
 		imageSize = {}
 		for image in attemptedImages:
 			self.cmd.run(f'mkdir -p cmake_targets/log/{image}')
-			self.cmd.run(f'python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/{image}.log')
 			tag = imageTag if image != 'ran-base' else baseTag
 			size = self._get_image_size(image, tag)
 			if size <= 0:

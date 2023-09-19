@@ -1,7 +1,7 @@
 #ifndef RAN_FUNC_SM_TC_READ_WRITE_AGENT_H
 #define RAN_FUNC_SM_TC_READ_WRITE_AGENT_H
 
-#include "../../flexric/src/agent/e2_agent_api.h"
+#include "openair2/E2AP/flexric/src/agent/../sm/sm_io.h"
 
 void read_tc_sm(void*);
 

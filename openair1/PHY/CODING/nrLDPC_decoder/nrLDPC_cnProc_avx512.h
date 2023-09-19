@@ -31,15 +31,15 @@
 
 #ifndef __NR_LDPC_CNPROC__H__
 #define __NR_LDPC_CNPROC__H__
-
-#define conditional_negate(a,b,z) _mm512_mask_sub_epi8(a,_mm512_movepi8_mask(b),z,a)
+#include <simde/x86/avx512.h>
+#define conditional_negate(a, b, z) simde_mm512_mask_sub_epi8(a, simde_mm512_movepi8_mask(b), z, a)
 static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    __m512i* p_cnProcBuf;
-    __m512i* p_cnProcBufRes;
+    simde__m512i* p_cnProcBuf;
+    simde__m512i* p_cnProcBufRes;
 
     // Number of CNs in Groups
     uint32_t M;
@@ -49,13 +49,13 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
     // Offset to each bit within a group in terms of 32 Byte
     uint32_t bitOffsetInGroup;
 
-    __m512i zmm0, min, sgn, zeros;
-    zeros  = _mm512_setzero_si512();
-//     maxLLR = _mm512_set1_epi8((char)127);
-    __m512i* p_cnProcBufResBit;
+    simde__m512i zmm0, min, sgn, zeros;
+    zeros = simde_mm512_setzero_si512();
+    //     maxLLR =simde_mm512_set1_epi8((char)127);
+    simde__m512i* p_cnProcBufResBit;
 
-    const __m512i* p_ones   = (__m512i*) ones512_epi8;
-    const __m512i* p_maxLLR = (__m512i*) maxLLR512_epi8;
+    const simde__m512i* p_ones = (simde__m512i*)ones512_epi8;
+    const simde__m512i* p_maxLLR = (simde__m512i*)maxLLR512_epi8;
 
     // LUT with offsets for bits that need to be processed
     // 1. bit proc requires LLRs of 2. and 3. bit, 2.bits of 1. and 3. etc.
@@ -74,8 +74,8 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[0]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 3
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[0]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[0]];
 
         // Loop over every BN
         for (j=0; j<3; j++)
@@ -83,8 +83,8 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
             // Set of results pointer to correct BN address
             p_cnProcBufResBit = p_cnProcBufRes + (j*bitOffsetInGroup);
 
-            __m512i *pj0 = &p_cnProcBuf[(lut_idxCnProcG3[j][0]/2)];
-            __m512i *pj1 = &p_cnProcBuf[(lut_idxCnProcG3[j][1]/2)];
+            simde__m512i* pj0 = &p_cnProcBuf[(lut_idxCnProcG3[j][0] / 2)];
+            simde__m512i* pj1 = &p_cnProcBuf[(lut_idxCnProcG3[j][1] / 2)];
 
             // Loop over CNs
             for (i=0; i<M; i++)
@@ -92,20 +92,20 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
                 // Abs and sign of 32 CNs (first BN)
               //                zmm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
                 zmm0 = pj0[i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // 32 CNs of second BN
                 //  zmm0 = p_cnProcBuf[(lut_idxCnProcG3[j][1]/2) + i];
                 zmm0 = pj1[i];
-                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                sgn  = _mm512_xor_si512(sgn, zmm0);
+                min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                sgn = simde_mm512_xor_si512(sgn, zmm0);
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
-                //p_cnProcBufResBit[i]=_mm512_sign_epi8(min, sgn);
+                // p_cnProcBufResBit[i]=simde_mm512_sign_epi8(min, sgn);
             }
         }
     }
@@ -125,8 +125,8 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[1]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 4
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[1]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[1]];
 
         // Loop over every BN
         for (j=0; j<4; j++)
@@ -139,19 +139,19 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG4[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<3; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG4[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -174,8 +174,8 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[2]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 5
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[2]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[2]];
 
         // Loop over every BN
         for (j=0; j<5; j++)
@@ -188,19 +188,19 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG5[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<4; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG5[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -224,8 +224,8 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[3]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 6
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[3]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[3]];
 
         // Loop over every BN
         for (j=0; j<6; j++)
@@ -238,19 +238,19 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG6[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<5; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG6[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -275,8 +275,8 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[4]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 8
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[4]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[4]];
 
         // Loop over every BN
         for (j=0; j<8; j++)
@@ -289,19 +289,19 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG8[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<7; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG8[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -327,8 +327,8 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[5]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 10
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[5]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[5]];
 
         // Loop over every BN
         for (j=0; j<10; j++)
@@ -341,19 +341,19 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcB
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG10[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<9; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG10[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -370,8 +370,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
     int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
     int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
 
-    __m512i* p_cnProcBuf;
-    __m512i* p_cnProcBufRes;
+    simde__m512i* p_cnProcBuf;
+    simde__m512i* p_cnProcBufRes;
 
     // Number of CNs in Groups
     uint32_t M;
@@ -381,18 +381,14 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
     // Offset to each bit within a group in terms of 32 Byte
     uint32_t bitOffsetInGroup;
 
-    __m512i zmm0, min, sgn, zeros;
+    simde__m512i zmm0, min, sgn, zeros;
 
-     zeros  = _mm512_setzero_si512();
-    // maxLLR = _mm512_set1_epi8((char)127);
-    __m512i* p_cnProcBufResBit;
+    zeros = simde_mm512_setzero_si512();
+    // maxLLR =simde_mm512_set1_epi8((char)127);
+    simde__m512i* p_cnProcBufResBit;
 
-
-    const __m512i* p_ones   = (__m512i*) ones512_epi8;
-    const __m512i* p_maxLLR = (__m512i*) maxLLR512_epi8;
-
-
-
+    const simde__m512i* p_ones = (simde__m512i*)ones512_epi8;
+    const simde__m512i* p_maxLLR = (simde__m512i*)maxLLR512_epi8;
 
     // LUT with offsets for bits that need to be processed
     // 1. bit proc requires LLRs of 2. and 3. bit, 2.bits of 1. and 3. etc.
@@ -412,8 +408,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 3
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[0]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[0]];
 
         // Loop over every BN
         for (j=0; j<3; j++)
@@ -426,17 +422,16 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG3[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // 32 CNs of second BN
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG3[j][1]/2) + i];
-                min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-               sgn  = _mm512_xor_si512(sgn, zmm0);
-
+                min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                sgn = simde_mm512_xor_si512(sgn, zmm0);
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -459,8 +454,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[1]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 4
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[1]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[1]];
 
         // Loop over every BN
         for (j=0; j<4; j++)
@@ -473,19 +468,19 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG4[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<3; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG4[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -509,8 +504,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[2]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 5
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[2]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[2]];
 
         // Loop over every BN
         for (j=0; j<5; j++)
@@ -523,19 +518,19 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG5[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<4; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG5[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -560,8 +555,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[3]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 6
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[3]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[3]];
 
         // Loop over every BN
         for (j=0; j<6; j++)
@@ -574,19 +569,19 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG6[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<5; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG6[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -612,8 +607,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[4]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 7
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[4]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[4]];
 
         // Loop over every BN
         for (j=0; j<7; j++)
@@ -626,19 +621,19 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG7[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<6; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG7[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -664,8 +659,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[5]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 8
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[5]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[5]];
 
         // Loop over every BN
         for (j=0; j<8; j++)
@@ -678,19 +673,19 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG8[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<7; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG8[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -717,8 +712,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[6]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 9
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[6]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[6]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[6]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[6]];
 
         // Loop over every BN
         for (j=0; j<9; j++)
@@ -731,19 +726,19 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG9[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<8; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG9[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -770,8 +765,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[7]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 10
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[7]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[7]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[7]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[7]];
 
         // Loop over every BN
         for (j=0; j<10; j++)
@@ -784,19 +779,19 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG10[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<9; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG10[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }
@@ -828,8 +823,8 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[8]*NR_LDPC_ZMAX)>>6;
 
         // Set pointers to start of group 19
-        p_cnProcBuf    = (__m512i*) &cnProcBuf   [lut_startAddrCnGroups[8]];
-        p_cnProcBufRes = (__m512i*) &cnProcBufRes[lut_startAddrCnGroups[8]];
+        p_cnProcBuf = (simde__m512i*)&cnProcBuf[lut_startAddrCnGroups[8]];
+        p_cnProcBufRes = (simde__m512i*)&cnProcBufRes[lut_startAddrCnGroups[8]];
 
         // Loop over every BN
         for (j=0; j<19; j++)
@@ -842,19 +837,19 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
             {
                 // Abs and sign of 32 CNs (first BN)
                 zmm0 = p_cnProcBuf[(lut_idxCnProcG19[j][0]/2) + i];
-                sgn  = _mm512_xor_si512(*p_ones, zmm0);
-                min  = _mm512_abs_epi8(zmm0);
+                sgn = simde_mm512_xor_si512(*p_ones, zmm0);
+                min = simde_mm512_abs_epi8(zmm0);
 
                 // Loop over BNs
                 for (k=1; k<18; k++)
                 {
                     zmm0 = p_cnProcBuf[(lut_idxCnProcG19[j][k]/2) + i];
-                    min  = _mm512_min_epu8(min, _mm512_abs_epi8(zmm0));
-                   sgn  = _mm512_xor_si512(sgn, zmm0);
+                    min = simde_mm512_min_epu8(min, simde_mm512_abs_epi8(zmm0));
+                    sgn = simde_mm512_xor_si512(sgn, zmm0);
                 }
 
                 // Store result
-                min = _mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
+                min = simde_mm512_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 *p_cnProcBufResBit = conditional_negate(min, sgn,zeros);
                 p_cnProcBufResBit++;
             }

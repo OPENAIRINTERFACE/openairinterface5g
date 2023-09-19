@@ -39,9 +39,6 @@
 
 #ifndef __CRC_H__
 #define __CRC_H__
-
-#include <x86intrin.h>
-
 #include "crcext.h"
 #include "types.h"
 #include "PHY/sse_intrin.h"
@@ -305,14 +302,20 @@ uint32_t crc32_calc_slice4(const uint8_t *data,
  * @return New 16 byte folded data
  */
 __forceinline
-__m128i crc32_folding_round(const __m128i data_block,
-                            const __m128i k1_k2,
-                            const __m128i fold)
+simde__m128i crc32_folding_round(const simde__m128i data_block,
+                            const simde__m128i k1_k2,
+                            const simde__m128i fold)
 {
-        __m128i tmp = _mm_clmulepi64_si128(fold, k1_k2, 0x11);
+#ifdef __x86_64__
+  simde__m128i tmp = _mm_clmulepi64_si128(fold, k1_k2, 0x11);
 
-        return _mm_xor_si128(_mm_clmulepi64_si128(fold, k1_k2, 0x00),
-                             _mm_xor_si128(data_block, tmp));
+  return simde_mm_xor_si128(_mm_clmulepi64_si128(fold, k1_k2, 0x00), simde_mm_xor_si128(data_block, tmp));
+#else	
+        simde__m128i tmp = simde_mm_clmulepi64_si128(fold, k1_k2, 0x11);
+
+        return simde_mm_xor_si128(simde_mm_clmulepi64_si128(fold, k1_k2, 0x00),
+                             simde_mm_xor_si128(data_block, tmp));
+#endif
 }
 
 /**
@@ -324,17 +327,23 @@ __m128i crc32_folding_round(const __m128i data_block,
  * @return data reduced to 64 bits
  */
 __forceinline
-__m128i crc32_reduce_128_to_64(__m128i data128, const __m128i k3_q)
+simde__m128i crc32_reduce_128_to_64(simde__m128i data128, const simde__m128i k3_q)
 {
-        __m128i tmp;
+        simde__m128i tmp;
 
-        tmp = _mm_xor_si128(_mm_clmulepi64_si128(data128, k3_q, 0x01 /* k3 */),
+#ifdef __x86_64__
+        tmp = simde_mm_xor_si128(_mm_clmulepi64_si128(data128, k3_q, 0x01 /* k3 */),
                             data128);
 
-        data128 = _mm_xor_si128(_mm_clmulepi64_si128(tmp, k3_q, 0x01 /* k3 */),
+        data128 = simde_mm_xor_si128(_mm_clmulepi64_si128(tmp, k3_q, 0x01 /* k3 */),
                                 data128);
+#else
+        tmp = simde_mm_xor_si128(simde_mm_clmulepi64_si128(data128, k3_q, 0x01 /* k3 */), data128);
 
-        return _mm_srli_si128(_mm_slli_si128(data128, 8), 8);
+        data128 = simde_mm_xor_si128(simde_mm_clmulepi64_si128(tmp, k3_q, 0x01 /* k3 */), data128);
+
+#endif
+        return simde_mm_srli_si128(simde_mm_slli_si128(data128, 8), 8);
 }
 
 /**
@@ -348,15 +357,22 @@ __m128i crc32_reduce_128_to_64(__m128i data128, const __m128i k3_q)
  */
 __forceinline
 uint32_t
-crc32_reduce_64_to_32(__m128i fold, const __m128i k3_q, const __m128i p_res)
+crc32_reduce_64_to_32(simde__m128i fold, const simde__m128i k3_q, const simde__m128i p_res)
 {
-        __m128i temp;
-
-        temp = _mm_clmulepi64_si128(_mm_srli_si128(fold, 4),
+        simde__m128i temp;
+#ifdef __x86_64__
+        temp = _mm_clmulepi64_si128(simde_mm_srli_si128(fold, 4),
                                     k3_q, 0x10 /* Q */);
-        temp = _mm_srli_si128(_mm_xor_si128(temp, fold), 4);
+        temp = simde_mm_srli_si128(simde_mm_xor_si128(temp, fold), 4);
         temp = _mm_clmulepi64_si128(temp, p_res, 0 /* P */);
-        return _mm_extract_epi32(_mm_xor_si128(temp, fold), 0);
+
+#else
+        temp = simde_mm_clmulepi64_si128(simde_mm_srli_si128(fold, 4),
+                                    k3_q, 0x10 /* Q */);
+        temp = simde_mm_srli_si128(simde_mm_xor_si128(temp, fold), 4);
+        temp = simde_mm_clmulepi64_si128(temp, p_res, 0 /* P */);
+#endif	
+        return simde_mm_extract_epi32(simde_mm_xor_si128(temp, fold), 0);
 }
 
 /**
@@ -379,7 +395,7 @@ crc32_calc_pclmulqdq(const uint8_t *data,
                      uint32_t data_len, uint32_t crc,
                      const struct crc_pclmulqdq_ctx *params)
 {
-        __m128i temp, fold, k, swap;
+        simde__m128i temp, fold, k, swap;
         uint32_t n;
 
         if (unlikely(data == NULL || data_len == 0 || params == NULL))
@@ -405,7 +421,7 @@ crc32_calc_pclmulqdq(const uint8_t *data,
          * Load first 16 data bytes in \a fold and
          * set \a swap BE<->LE 16 byte conversion variable
          */
-        fold = _mm_loadu_si128((__m128i *)data);
+        fold = simde_mm_loadu_si128((simde__m128i *)data);
         swap = crc_xmm_be_le_swap128;
 
         /**
@@ -420,20 +436,20 @@ crc32_calc_pclmulqdq(const uint8_t *data,
                  * - adjust data block
                  * - 4 least significant bytes need to be zero
                  */
-                fold = _mm_shuffle_epi8(fold, swap);
-                fold = _mm_slli_si128(xmm_shift_right(fold, 20 - data_len), 4);
+                fold = simde_mm_shuffle_epi8(fold, swap);
+                fold = simde_mm_slli_si128(xmm_shift_right(fold, 20 - data_len), 4);
 
                 /**
                  * Apply CRC init value
                  */
-                temp = _mm_insert_epi32(_mm_setzero_si128(), bswap4(crc), 0);
+                temp = simde_mm_insert_epi32(simde_mm_setzero_si128(), bswap4(crc), 0);
                 temp = xmm_shift_left(temp, data_len - 4);
-                fold = _mm_xor_si128(fold, temp);
+                fold = simde_mm_xor_si128(fold, temp);
         } else {
                 /**
                  * There are 2x16 data blocks or more
                  */
-                __m128i next_data;
+                simde__m128i next_data;
 
                 /**
                  * n = number of bytes required to align \a data_len
@@ -445,10 +461,10 @@ crc32_calc_pclmulqdq(const uint8_t *data,
                  * Apply CRC initial value and
                  * get \a fold to BE format
                  */
-                fold = _mm_xor_si128(fold,
-                                     _mm_insert_epi32(_mm_setzero_si128(),
+                fold = simde_mm_xor_si128(fold,
+                                     simde_mm_insert_epi32(simde_mm_setzero_si128(),
                                                       crc, 0));
-                fold = _mm_shuffle_epi8(fold, swap);
+                fold = simde_mm_shuffle_epi8(fold, swap);
 
                 /**
                  * Load next 16 bytes of data and
@@ -456,9 +472,9 @@ crc32_calc_pclmulqdq(const uint8_t *data,
                  *
                  * CONCAT(fold,next_data) >> (n*8)
                  */
-                next_data = _mm_loadu_si128((__m128i *)&data[16]);
-                next_data = _mm_shuffle_epi8(next_data, swap);
-                next_data = _mm_or_si128(xmm_shift_right(next_data, n),
+                next_data = simde_mm_loadu_si128((simde__m128i *)&data[16]);
+                next_data = simde_mm_shuffle_epi8(next_data, swap);
+                next_data = simde_mm_or_si128(xmm_shift_right(next_data, n),
                                          xmm_shift_left(fold, 16 - n));
                 fold = xmm_shift_right(fold, n);
 
@@ -467,12 +483,12 @@ crc32_calc_pclmulqdq(const uint8_t *data,
                          * In such unlikely case clear 4 least significant bytes
                          */
                         next_data =
-                                _mm_slli_si128(_mm_srli_si128(next_data, 4), 4);
+                                simde_mm_slli_si128(simde_mm_srli_si128(next_data, 4), 4);
 
                 /**
                  * Do the initial folding round on 2 first 16 byte chunks
                  */
-                k = _mm_load_si128((__m128i *)(&params->k1));
+                k = simde_mm_load_si128((simde__m128i *)(&params->k1));
                 fold = crc32_folding_round(next_data, k, fold);
 
                 if (likely(data_len > 32)) {
@@ -480,7 +496,7 @@ crc32_calc_pclmulqdq(const uint8_t *data,
                          * \a data_block needs to be at least 48 bytes long
                          * in order to get here
                          */
-                        __m128i new_data;
+                        simde__m128i new_data;
 
                         /**
                          * Main folding loop
@@ -493,8 +509,8 @@ crc32_calc_pclmulqdq(const uint8_t *data,
                          * - the last 16 bytes is processed separately
                          */
                         for (n = 16 + 16 - n; n < (data_len - 16); n += 16) {
-                                new_data = _mm_loadu_si128((__m128i *)&data[n]);
-                                new_data = _mm_shuffle_epi8(new_data, swap);
+                                new_data = simde_mm_loadu_si128((simde__m128i *)&data[n]);
+                                new_data = simde_mm_shuffle_epi8(new_data, swap);
                                 fold = crc32_folding_round(new_data, k, fold);
                         }
 
@@ -504,9 +520,9 @@ crc32_calc_pclmulqdq(const uint8_t *data,
                          * Read from offset -4 is to avoid one
                          * shift right operation.
                          */
-                        new_data = _mm_loadu_si128((__m128i *)&data[n - 4]);
-                        new_data = _mm_shuffle_epi8(new_data, swap);
-                        new_data = _mm_slli_si128(new_data, 4);
+                        new_data = simde_mm_loadu_si128((simde__m128i *)&data[n - 4]);
+                        new_data = simde_mm_shuffle_epi8(new_data, swap);
+                        new_data = simde_mm_slli_si128(new_data, 4);
                         fold = crc32_folding_round(new_data, k, fold);
                 } /* if (data_len > 32) */
         }
@@ -520,14 +536,14 @@ crc32_calc_pclmulqdq(const uint8_t *data,
         /**
          * REDUCTION 128 -> 64
          */
-        k = _mm_load_si128((__m128i *)(&params->k3));
+        k = simde_mm_load_si128((simde__m128i *)(&params->k3));
         fold = crc32_reduce_128_to_64(fold, k);
 
         /**
          * REDUCTION 64 -> 32
          */
         n = crc32_reduce_64_to_32(fold, k,
-                                  _mm_load_si128((__m128i *)(&params->p)));
+                                  simde_mm_load_si128((simde__m128i *)(&params->p)));
 
 #ifdef __KERNEL__
         /**

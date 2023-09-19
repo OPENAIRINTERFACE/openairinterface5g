@@ -33,7 +33,7 @@ extern short nr_qpsk_mod_table[8];
 
 extern int32_t nr_16qam_mod_table[16];
 #if defined(__SSE2__)
-extern __m128i nr_qpsk_byte_mod_table[2048];
+extern simde__m128i nr_qpsk_byte_mod_table[2048];
 #endif
 
 extern int64_t nr_16qam_byte_mod_table[1024];

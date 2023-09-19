@@ -102,8 +102,6 @@ int hex_char_to_hex_value (char c);
 // Converts an hexadecimal ASCII coded string into its value.**
 int hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size);
 
-void *memcpy1(void *dst,const void *src,size_t n);
-
 void set_priority(int priority);
 
 char *itoa(int i);

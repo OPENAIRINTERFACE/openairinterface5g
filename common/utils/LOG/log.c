@@ -52,7 +52,11 @@
 
 // Fixme: a better place to be shure it is called 
 void read_cpu_hardware (void) __attribute__ ((constructor));
-void read_cpu_hardware (void) {__builtin_cpu_init(); }
+#if !defined(__arm__) && !defined(__aarch64__) 
+  void read_cpu_hardware (void) {__builtin_cpu_init(); }
+#else 
+  void read_cpu_hardware (void) {}
+#endif
 
 log_mem_cnt_t log_mem_d[2];
 int log_mem_flag = 0;

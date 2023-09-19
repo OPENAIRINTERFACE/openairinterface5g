@@ -298,7 +298,7 @@ typedef struct {
   int8_t p0;          // INTEGER (-202..24)
   /// \brief A reference signal (e.g. a CSI-RS config or a SSblock) to be used for SRS path loss estimation.
   /// Corresponds to L1 parameter 'srs-pathlossReference-rs-config' (see 38.213, section 7.3)
-  pathlossReferenceRS_t pathlossReferenceRS_t;
+  pathlossReferenceRS_t pathlossReferenceRS;
   uint8_t path_loss_SSB_Index;
   uint8_t path_loss_NZP_CSI_RS_ResourceId;
   /// \brief Indicates whether hsrs,c(i) = fc(i,1) or hsrs,c(i) = fc(i,2) (if twoPUSCH-PC-AdjustmentStates are configured)

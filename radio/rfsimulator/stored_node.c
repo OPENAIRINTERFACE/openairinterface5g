@@ -48,10 +48,10 @@ int fullread(int fd, void *_buf, int count) {
 int32_t signal_energy(int32_t *input,uint32_t length) {
   int32_t i;
   int32_t temp,temp2;
-  register __m64 mm0,mm1,mm2,mm3;
-  __m64 *in = (__m64 *)input;
-  mm0 = _mm_setzero_si64();//pxor(mm0,mm0);
-  mm3 = _mm_setzero_si64();//pxor(mm3,mm3);
+  register simde__m64 mm0, mm1, mm2, mm3;
+  simde__m64 *in = (simde__m64 *)input;
+  mm0 = simde_mm_setzero_si64(); // pxor(mm0,mm0);
+  mm3 = simde_mm_setzero_si64(); // pxor(mm3,mm3);
 
   for (i=0; i<length>>1; i++) {
     mm1 = in[i];
@@ -77,8 +77,6 @@ int32_t signal_energy(int32_t *input,uint32_t length) {
   temp2/=(length*length);
   //  temp2<<=(2*shift_DC);
   temp -= temp2;
-  _mm_empty();
-  _m_empty();
   return((temp>0)?temp:1);
 }
 

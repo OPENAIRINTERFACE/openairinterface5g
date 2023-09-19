@@ -40,4 +40,4 @@ RUN /bin/sh oaienv && \
     mkdir -p log && \
     export CC=/usr/bin/clang && \
     export CXX=/usr/bin/clang++ && \
-    ./build_oai --phy_simulators --gNB --eNB --nrUE --UE --ninja --verbose-ci --noavx512 --disable-T-Tracer -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror
+    ./build_oai --phy_simulators --gNB --eNB --nrUE --UE --ninja --noavx512 --disable-T-Tracer -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror

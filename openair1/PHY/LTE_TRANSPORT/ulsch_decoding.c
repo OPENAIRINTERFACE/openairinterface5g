@@ -620,16 +620,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
       cseq[i2++] = (int16_t)((((s>>j)&1)<<1)-1);
     }
     */
-#if defined(__x86_64__) || defined(__i386__)
-    ((__m256i *)cseq)[i2++] = ((__m256i *)unscrambling_lut)[s&65535];
-    ((__m256i *)cseq)[i2++] = ((__m256i *)unscrambling_lut)[(s>>16)&65535];
-#elif defined(__arm__) || defined(__aarch64__)
-    ((int16x8_t *)cseq)[i2++] = ((int16x8_t *)unscrambling_lut)[(s&65535)<<1];
-    ((int16x8_t *)cseq)[i2++] = ((int16x8_t *)unscrambling_lut)[1+((s&65535)<<1)];
-    s>>=16;
-    ((int16x8_t *)cseq)[i2++] = ((int16x8_t *)unscrambling_lut)[(s&65535)<<1];
-    ((int16x8_t *)cseq)[i2++] = ((int16x8_t *)unscrambling_lut)[1+((s&65535)<<1)];
-#endif
+    ((simde__m256i *)cseq)[i2++] = ((simde__m256i *)unscrambling_lut)[s & 65535];
+    ((simde__m256i *)cseq)[i2++] = ((simde__m256i *)unscrambling_lut)[(s >> 16) & 65535];
     s = lte_gold_unscram(&x1, &x2, 0);
   }
 
@@ -727,7 +719,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
                 i2=(i2+(Cmux<<2)-3);
           */
           // slightly more optimized version (equivalent to above) for 16QAM to improve computational performance
-          *(__m64 *)&y[i2] = _mm_sign_pi16(*(__m64 *)&ulsch_llr[i],*(__m64 *)&cseq[i]);
+          *(simde__m64 *)&y[i2] = simde_mm_sign_pi16(*(simde__m64 *)&ulsch_llr[i],*(simde__m64 *)&cseq[i]);
           i+=4;
           i2+=(Cmux<<2);
         }
@@ -961,13 +953,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
     }
 
     /* To be improved according to alignment of j2
-    #if defined(__x86_64__)||defined(__i386__)
     for (iprime=0; iprime<G;iprime+=16,j2+=16)
-      *((__m256i *)&ulsch_harq->e[iprime]) = *((__m256i *)&y[j2]);
-    #elif defined(__arm__) || defined(__aarch64__)
-    for (iprime=0; iprime<G;iprime+=8,j2+=8)
-      *((int16x8_t *)&ulsch_harq->e[iprime]) = *((int16x8_t *)&y[j2]);
-    #endif
+      *((simde__m256i *)&ulsch_harq->e[iprime]) = *((simde__m256i *)&y[j2]);
     */
     int16_t *yp,*ep;
 

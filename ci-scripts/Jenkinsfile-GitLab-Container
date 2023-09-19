@@ -589,6 +589,7 @@ def triggerCN5GSlaveJob (jobName, gitlabStatusName) {
   if ("MERGE".equals(env.gitlabActionType)) {
     shortenShaOne = sh returnStdout: true, script: 'git log -1 --pretty=format:"%h" --abbrev=8 ' + env.gitlabMergeRequestLastCommit
     shortenShaOne = shortenShaOne.trim()
+    branchName = env.gitlabSourceBranch.replaceAll("/", "-").trim()
     fullRanTag = 'porcepix.sboai.cs.eurecom.fr/oai-gnb:' + env.gitlabSourceBranch + '-' + shortenShaOne
   } else {
     shortenShaOne = sh returnStdout: true, script: 'git log -1 --pretty=format:"%h" --abbrev=8 ' + env.GIT_COMMIT

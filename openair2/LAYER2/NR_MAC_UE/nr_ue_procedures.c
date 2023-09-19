@@ -1182,24 +1182,43 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   current_harq->active = true;
   current_harq->ack_received = false;
   current_harq->pucch_resource_indicator = pucch_id;
-  current_harq->feedback_to_ul = data_toul_fb;
   current_harq->dai = dai;
+  current_harq->j_dai = 0;
   current_harq->n_CCE = n_CCE;
   current_harq->N_CCE = N_CCE;
   current_harq->delta_pucch = delta_pucch;
   // FIXME k0 != 0 currently not taken into consideration
-  current_harq->dl_frame = frame;
-  current_harq->dl_slot = slot;
   int scs = get_softmodem_params()->numerology;
   int slots_per_frame = nr_slots_per_frame[scs];
-  slot += data_toul_fb;
-  if (slot >= slots_per_frame) {
-    frame = (frame + 1) % 1024;
-    slot %= slots_per_frame;
+  current_harq->ul_frame = frame;
+  current_harq->ul_slot = slot + data_toul_fb;
+  if (current_harq->ul_slot >= slots_per_frame) {
+    current_harq->ul_frame = (frame + 1) % 1024;
+    current_harq->ul_slot %= slots_per_frame;
   }
-
-  LOG_D(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d\n",
-        harq_id, current_harq->dl_frame, current_harq->dl_slot, frame, slot);
+  // counter DAI in DCI ranges from 0 to 3
+  // we might have more than 4 HARQ processes to report per PUCCH
+  // we need to keep track of how many same DAI were received
+  int count = 0;
+  for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++) {
+    if (i == harq_id)
+      continue;
+    NR_UE_HARQ_STATUS_t *harq = &mac->dl_harq_info[i];
+    if (harq->active &&
+        harq->ul_frame == current_harq->ul_frame &&
+        harq->ul_slot == current_harq->ul_slot) {
+      if (harq->dai == dai) {
+        // need to take into account possible
+        // missed DCI detections
+        int missed_detections = count / (4 * (current_harq->j_dai + 1));
+        current_harq->j_dai += (missed_detections + 1);
+        count += missed_detections;
+      }
+      count++;
+    }
+  }
+  LOG_D(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d fb time %d\n",
+        harq_id, frame, slot, current_harq->ul_frame, current_harq->ul_slot, data_toul_fb);
 }
 
 void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
@@ -2099,60 +2118,42 @@ void multiplex_pucch_resource(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch, int n
 
 bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sched_t *pucch)
 {
-  uint32_t ack_data[NR_DL_MAX_NB_CW][NR_DL_MAX_DAI] = {{0},{0}};
-  uint32_t dai[NR_DL_MAX_NB_CW][NR_DL_MAX_DAI] = {{0},{0}};       /* for serving cell */
-  uint32_t dai_total[NR_DL_MAX_NB_CW][NR_DL_MAX_DAI] = {{0},{0}}; /* for multiple cells */
+  uint32_t ack_data[NR_DL_MAX_NB_CW][NR_MAX_HARQ_PROCESSES] = {{0},{0}};
+  uint32_t dai[NR_DL_MAX_NB_CW][NR_MAX_HARQ_PROCESSES] = {{0},{0}};       /* for serving cell */
+  uint32_t dai_total[NR_DL_MAX_NB_CW][NR_MAX_HARQ_PROCESSES] = {{0},{0}}; /* for multiple cells */
   int number_harq_feedback = 0;
-  uint32_t dai_current = 0;
   uint32_t dai_max = 0;
-  bool two_transport_blocks = false;
-  int number_of_code_word = 1;
-  int U_DAI_c = 0;
-  int N_m_c_rx = 0;
-  int V_DAI_m_DL = 0;
-  NR_UE_HARQ_STATUS_t *current_harq;
-  int sched_frame,sched_slot;
-  int slots_per_frame;
 
   NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
 
+  bool two_transport_blocks = false;
+  int number_of_code_word = 1;
   if (current_DL_BWP && current_DL_BWP->pdsch_Config && current_DL_BWP->pdsch_Config->maxNrofCodeWordsScheduledByDCI && current_DL_BWP->pdsch_Config->maxNrofCodeWordsScheduledByDCI[0] == 2) {
     two_transport_blocks = true;
     number_of_code_word = 2;
   }
 
-  int scs = current_UL_BWP->scs;
-
-  slots_per_frame = nr_slots_per_frame[scs];
   int res_ind = -1;
 
   /* look for dl acknowledgment which should be done on current uplink slot */
   for (int code_word = 0; code_word < number_of_code_word; code_word++) {
 
-    for (int dl_harq_pid = 0; dl_harq_pid < 16; dl_harq_pid++) {
+    for (int dl_harq_pid = 0; dl_harq_pid < NR_MAX_HARQ_PROCESSES; dl_harq_pid++) {
 
-      current_harq = &mac->dl_harq_info[dl_harq_pid];
+      NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dl_harq_pid];
 
       if (current_harq->active) {
-
-        sched_slot = current_harq->dl_slot + current_harq->feedback_to_ul;
-        sched_frame = current_harq->dl_frame;
-        if (sched_slot >= slots_per_frame) {
-          sched_slot %= slots_per_frame;
-          sched_frame = (sched_frame + 1) % 1024;
-        }
-        AssertFatal(sched_slot < slots_per_frame, "sched_slot was calculated incorrect %d\n", sched_slot);
-        LOG_D(PHY, "HARQ pid %d is active for %d.%d (dl_slot %d, feedback_to_ul %d\n", dl_harq_pid, sched_frame, sched_slot, current_harq->dl_slot, current_harq->feedback_to_ul);
+        LOG_D(PHY, "HARQ pid %d is active for %d.%d\n",
+              dl_harq_pid, current_harq->ul_frame, current_harq->ul_slot);
         /* check if current tx slot should transmit downlink acknowlegment */
-        if (sched_frame == frame && sched_slot == slot) {
+        if (current_harq->ul_frame == frame && current_harq->ul_slot == slot) {
           if (get_softmodem_params()->emulate_l1) {
             mac->nr_ue_emul_l1.harq[dl_harq_pid].active = true;
             mac->nr_ue_emul_l1.harq[dl_harq_pid].active_dl_harq_sfn = frame;
             mac->nr_ue_emul_l1.harq[dl_harq_pid].active_dl_harq_slot = slot;
           }
-
-          if (current_harq->dai > NR_DL_MAX_DAI) {
+          if (current_harq->dai >= NR_DL_MAX_DAI) {
             LOG_E(MAC,"PUCCH Downlink DAI has an invalid value of %d\n", current_harq->dai);
           }
           else {
@@ -2162,7 +2163,7 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
                     current_harq->pucch_resource_indicator,
                     res_ind);
             else{
-              dai_current = current_harq->dai + 1; // DCI DAI to counter DAI conversion
+              int dai_current = current_harq->dai + (current_harq->j_dai * 4) + 1; // DCI DAI to counter DAI conversion
 
               if (dai_current == 0) {
                 LOG_E(MAC,"PUCCH Downlink dai is invalid\n");
@@ -2177,10 +2178,10 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
                 current_harq->active = false;
                 current_harq->ack_received = false;
               } else {
-                LOG_W(NR_MAC, "DLSCH ACK/NACK reporting initiated for harq pid %d before DLSCH decoding completed\n", dl_harq_pid);
+                LOG_E(NR_MAC, "DLSCH ACK/NACK reporting initiated for harq pid %d before DLSCH decoding completed\n", dl_harq_pid);
                 ack_data[code_word][dai_current - 1] = 0;
               }
-              dai[code_word][dai_current - 1] = dai_current;
+              dai[code_word][dai_current - 1] = current_harq->dai + 1;
               int temp_ind = current_harq->pucch_resource_indicator;
               AssertFatal(res_ind == -1 || res_ind == temp_ind,
                           "Current resource index %d does not match with previous resource index %d\n",
@@ -2207,37 +2208,11 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
     return false;
   }
 
-  /* for computing n_HARQ_ACK for power */
-  V_DAI_m_DL = dai_max;
-  U_DAI_c = number_harq_feedback/number_of_code_word;
-  N_m_c_rx = number_harq_feedback;
-  int N_SPS_c = 0; /* FFS TODO_NR multicells and SPS are not supported at the moment */
-  int n_HARQ_ACK = 0;
-  if (current_UL_BWP->harq_ACK_SpatialBundlingPUCCH != NULL) {
-    int N_TB_max_DL = current_DL_BWP->pdsch_Config->maxNrofCodeWordsScheduledByDCI[0];
-    n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c) % 4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
-    LOG_D(MAC,
-          "PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n",
-          n_HARQ_ACK,
-          V_DAI_m_DL,
-          U_DAI_c,
-          N_TB_max_DL,
-          N_m_c_rx);
-  }
-
-  /*
-  * For a monitoring occasion of a PDCCH with DCI format 1_0 or DCI format 1_1 in at least one serving cell,
-  * when a UE receives a PDSCH with one transport block and the value of higher layer parameter maxNrofCodeWordsScheduledByDCI is 2,
-  * the HARQ-ACK response is associated with the first transport block and the UE generates a NACK for the second transport block
-  * if spatial bundling is not applied (HARQ-ACK-spatial-bundling-PUCCH = false) and generates HARQ-ACK value of ACK for the second
-  * transport block if spatial bundling is applied.
-  */
-
   for (int code_word = 0; code_word < number_of_code_word; code_word++) {
     for (uint32_t i = 0; i < dai_max ; i++ ) {
-      if (dai[code_word][i] != i + 1) { /* fill table with consistent value for each dai */
-        dai[code_word][i] = i + 1;      /* it covers case for which PDCCH DCI has not been successfully decoded and so it has been missed */
-        ack_data[code_word][i] = 0;     /* nack data transport block which has been missed */
+      if (dai[code_word][i] == 0) {
+        dai[code_word][i] = (i % 4) + 1; // it covers case for which PDCCH DCI has not been successfully decoded and so it has been missed
+        ack_data[code_word][i] = 0;      // nack data transport block which has been missed
         number_harq_feedback++;
       }
       if (two_transport_blocks == true) {
@@ -2256,7 +2231,6 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
   int O_bit_number_cw1 = 0;
 
   for (int m = 0; m < M ; m++) {
-
     if (dai[0][m] <= V_temp) {
       j = j + 1;
     }

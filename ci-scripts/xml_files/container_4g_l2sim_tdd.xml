@@ -32,7 +32,7 @@
  000001
  000002
  000003
- 000011
+ 000004
  200000
  020001
  020002
@@ -82,10 +82,10 @@
                 <nb_healthy>10</nb_healthy>
         </testCase>
 
-        <testCase id="000011">
-                <class>IdleSleep</class>
-                <desc>Sleep</desc>
-                <idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+        <testCase id="000004">
+                <class>Attach_UE</class>
+                <desc>Attach OAI UE</desc>
+                <id>l2sim4g_ue</id>
         </testCase>
 
         <testCase id="020001">

@@ -40,7 +40,6 @@
 #define DL_ACKNACK_NO_SET                        (2)
 #define DL_NACK                                  (0)
 #define DL_ACK                                   (1)
-#define DL_MAX_NB_FEEDBACK                       (NR_DL_MAX_DAI * NR_DL_MAX_NB_CW)
 #define DL_DAI_NO_SET                            (0xFF)
 #define UL_DAI_NO_SET                            (DL_DAI_NO_SET)
 

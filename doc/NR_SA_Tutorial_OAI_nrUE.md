@@ -81,7 +81,7 @@ sudo apt install -y libforms-dev libforms-bin
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets
-./build_oai -w USRP --ninja --nrUE --gNB --build-lib "nrscope" -c
+./build_oai -w USRP --ninja --nrUE --gNB --build-lib "nrscope" -C
 ```
 
 # 4. Run OAI CN5G and OAI gNB

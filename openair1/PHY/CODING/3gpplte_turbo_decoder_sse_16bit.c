@@ -114,10 +114,10 @@ void compute_gamma16(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity
                      unsigned short frame_length,unsigned char term_flag) {
   int k,K1;
 #if defined(__x86_64__)||defined(__i386__)
-  __m128i *systematic128 = (__m128i *)systematic;
-  __m128i *y_parity128   = (__m128i *)y_parity;
-  __m128i *m10_128        = (__m128i *)m10;
-  __m128i *m11_128        = (__m128i *)m11;
+  simde__m128i *systematic128 = (simde__m128i *)systematic;
+  simde__m128i *y_parity128 = (simde__m128i *)y_parity;
+  simde__m128i *m10_128 = (simde__m128i *)m10;
+  simde__m128i *m11_128 = (simde__m128i *)m11;
 #elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *systematic128  = (int16x8_t *)systematic;
   int16x8_t *y_parity128    = (int16x8_t *)y_parity;
@@ -131,8 +131,8 @@ void compute_gamma16(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity
 
   for (k=0; k<K1; k++) {
 #if defined(__x86_64__) || defined(__i386__)
-    m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k],y_parity128[k]),1);
-    m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k],y_parity128[k]),1);
+    m11_128[k] = simde_mm_srai_epi16(simde_mm_adds_epi16(systematic128[k], y_parity128[k]), 1);
+    m10_128[k] = simde_mm_srai_epi16(simde_mm_subs_epi16(systematic128[k], y_parity128[k]), 1);
 #elif defined(__arm__) || defined(__aarch64__)
     m11_128[k] = vhaddq_s16(systematic128[k],y_parity128[k]);
     m10_128[k] = vhsubq_s16(systematic128[k],y_parity128[k]);
@@ -149,11 +149,11 @@ void compute_gamma16(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity
   k=frame_length>>3;
   // Termination
 #if defined(__x86_64__) || defined(__i386__)
-  m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k+term_flag],y_parity128[k]),1);
+  m11_128[k] = simde_mm_srai_epi16(simde_mm_adds_epi16(systematic128[k + term_flag], y_parity128[k]), 1);
 #if 1
-  m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k+term_flag],y_parity128[k]),1);
+  m10_128[k] = simde_mm_srai_epi16(simde_mm_subs_epi16(systematic128[k + term_flag], y_parity128[k]), 1);
 #else
-  m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(y_parity128[k],systematic128[k+term_flag]),1);
+  m10_128[k] = simde_mm_srai_epi16(simde_mm_subs_epi16(y_parity128[k], systematic128[k + term_flag]), 1);
 #endif
 #elif defined(__arm__) || defined(__aarch64__)
   m11_128[k] = vhaddq_s16(systematic128[k+term_flag],y_parity128[k]);
@@ -173,18 +173,18 @@ void compute_gamma16(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity
 void compute_alpha16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned short frame_length,unsigned char F) {
   int k,l,l2,K1,rerun_flag=0;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *alpha128=(__m128i *)alpha,*alpha_ptr,*m11p,*m10p;
+  simde__m128i *alpha128 = (simde__m128i *)alpha, *alpha_ptr, *m11p, *m10p;
 #if 1
-  __m128i a0,a1,a2,a3,a4,a5,a6,a7;
-  __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
-  __m128i new0,new1,new2,new3,new4,new5,new6,new7;
-  __m128i alpha_max;
+  simde__m128i a0, a1, a2, a3, a4, a5, a6, a7;
+  simde__m128i m_b0, m_b1, m_b2, m_b3, m_b4, m_b5, m_b6, m_b7;
+  simde__m128i new0, new1, new2, new3, new4, new5, new6, new7;
+  simde__m128i alpha_max;
 #else
-  __m256i *alpha256=(__m256i *)alpha,*alpha_ptr256,m11,m10;
-  __m256i a01,a23,a45,a67,a02,a13,a64,a75;
-  __m256i m_b01,m_b23,m_b45,m_b67,new01,new23,new45,new67;
-  __m256i m11m10_256;
-  __m256i alpha_max;
+  simde__m256i *alpha256 = (simde__m256i *)alpha, *alpha_ptr256, m11, m10;
+  simde__m256i a01, a23, a45, a67, a02, a13, a64, a75;
+  simde__m256i m_b01, m_b23, m_b45, m_b67, new01, new23, new45, new67;
+  simde__m256i m11m10_256;
+  simde__m256i alpha_max;
 #endif
 #elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *alpha128=(int16x8_t *)alpha,*alpha_ptr;
@@ -201,21 +201,21 @@ void compute_alpha16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned s
 
   for (l=K1;; l=l2,rerun_flag=1) {
 #if defined(__x86_64__) || defined(__i386__)
-    alpha128 = (__m128i *)alpha;
+    alpha128 = (simde__m128i *)alpha;
 #elif defined(__arm__) || defined(__aarch64__)
     alpha128 = (int16x8_t *)alpha;
 #endif
 
     if (rerun_flag == 0) {
 #if defined(__x86_64__) || defined(__i386__)
-      alpha128[0] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,0);
-      alpha128[1] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[2] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[3] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[4] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[5] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[6] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
-      alpha128[7] = _mm_set_epi16(-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2,-MAX/2);
+      alpha128[0] = simde_mm_set_epi16(-MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, 0);
+      alpha128[1] = simde_mm_set_epi16(-MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2);
+      alpha128[2] = simde_mm_set_epi16(-MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2);
+      alpha128[3] = simde_mm_set_epi16(-MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2);
+      alpha128[4] = simde_mm_set_epi16(-MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2);
+      alpha128[5] = simde_mm_set_epi16(-MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2);
+      alpha128[6] = simde_mm_set_epi16(-MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2);
+      alpha128[7] = simde_mm_set_epi16(-MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2, -MAX / 2);
 #elif defined(__arm__) || defined(__aarch64__)
       alpha128[0] = vdupq_n_s16(-MAX/2);
       alpha128[0] = vsetq_lane_s16(0,alpha128[0],0);
@@ -241,14 +241,14 @@ void compute_alpha16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned s
     } else {
       //set initial alpha in columns 1-7 from final alpha from last run in columns 0-6
 #if defined(__x86_64__) || defined(__i386__)
-      alpha128[0] = _mm_slli_si128(alpha128[frame_length],2);
-      alpha128[1] = _mm_slli_si128(alpha128[1+frame_length],2);
-      alpha128[2] = _mm_slli_si128(alpha128[2+frame_length],2);
-      alpha128[3] = _mm_slli_si128(alpha128[3+frame_length],2);
-      alpha128[4] = _mm_slli_si128(alpha128[4+frame_length],2);
-      alpha128[5] = _mm_slli_si128(alpha128[5+frame_length],2);
-      alpha128[6] = _mm_slli_si128(alpha128[6+frame_length],2);
-      alpha128[7] = _mm_slli_si128(alpha128[7+frame_length],2);
+      alpha128[0] = simde_mm_slli_si128(alpha128[frame_length], 2);
+      alpha128[1] = simde_mm_slli_si128(alpha128[1 + frame_length], 2);
+      alpha128[2] = simde_mm_slli_si128(alpha128[2 + frame_length], 2);
+      alpha128[3] = simde_mm_slli_si128(alpha128[3 + frame_length], 2);
+      alpha128[4] = simde_mm_slli_si128(alpha128[4 + frame_length], 2);
+      alpha128[5] = simde_mm_slli_si128(alpha128[5 + frame_length], 2);
+      alpha128[6] = simde_mm_slli_si128(alpha128[6 + frame_length], 2);
+      alpha128[7] = simde_mm_slli_si128(alpha128[7 + frame_length], 2);
 #elif defined(__arm__) || defined(__aarch64__)
       alpha128[0] = (int16x8_t)vshlq_n_s64((int64x2_t)alpha128[frame_length],16);
       alpha128[0] = vsetq_lane_s16(alpha[8],alpha128[0],3);
@@ -290,8 +290,8 @@ void compute_alpha16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned s
 
     alpha_ptr = &alpha128[0];
 #if defined(__x86_64__) || defined(__i386__)
-    m11p = (__m128i *)m_11;
-    m10p = (__m128i *)m_10;
+    m11p = (simde__m128i *)m_11;
+    m10p = (simde__m128i *)m_10;
 #elif defined(__arm__) || defined(__aarch64__)
     m11p = (int16x8_t *)m_11;
     m10p = (int16x8_t *)m_10;
@@ -301,45 +301,45 @@ void compute_alpha16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned s
          k<l;
          k++) {
 #if defined(__x86_64__) || defined(__i386__)
-      a1=_mm_load_si128(&alpha_ptr[1]);
-      a3=_mm_load_si128(&alpha_ptr[3]);
-      a5=_mm_load_si128(&alpha_ptr[5]);
-      a7=_mm_load_si128(&alpha_ptr[7]);
-      m_b0 = _mm_adds_epi16(a1,*m11p);  // m11
-      m_b4 = _mm_subs_epi16(a1,*m11p);  // m00=-m11
-      m_b1 = _mm_subs_epi16(a3,*m10p);  // m01=-m10
-      m_b5 = _mm_adds_epi16(a3,*m10p);  // m10
-      m_b2 = _mm_adds_epi16(a5,*m10p);  // m10
-      m_b6 = _mm_subs_epi16(a5,*m10p);  // m01=-m10
-      m_b3 = _mm_subs_epi16(a7,*m11p);  // m00=-m11
-      m_b7 = _mm_adds_epi16(a7,*m11p);  // m11
-      a0=_mm_load_si128(&alpha_ptr[0]);
-      a2=_mm_load_si128(&alpha_ptr[2]);
-      a4=_mm_load_si128(&alpha_ptr[4]);
-      a6=_mm_load_si128(&alpha_ptr[6]);
-      new0 = _mm_subs_epi16(a0,*m11p);  // m00=-m11
-      new4 = _mm_adds_epi16(a0,*m11p);  // m11
-      new1 = _mm_adds_epi16(a2,*m10p);  // m10
-      new5 = _mm_subs_epi16(a2,*m10p);  // m01=-m10
-      new2 = _mm_subs_epi16(a4,*m10p);  // m01=-m10
-      new6 = _mm_adds_epi16(a4,*m10p);  // m10
-      new3 = _mm_adds_epi16(a6,*m11p);  // m11
-      new7 = _mm_subs_epi16(a6,*m11p);  // m00=-m11
-      a0 = _mm_max_epi16(m_b0,new0);
-      a1 = _mm_max_epi16(m_b1,new1);
-      a2 = _mm_max_epi16(m_b2,new2);
-      a3 = _mm_max_epi16(m_b3,new3);
-      a4 = _mm_max_epi16(m_b4,new4);
-      a5 = _mm_max_epi16(m_b5,new5);
-      a6 = _mm_max_epi16(m_b6,new6);
-      a7 = _mm_max_epi16(m_b7,new7);
-      alpha_max = _mm_max_epi16(a0,a1);
-      alpha_max = _mm_max_epi16(alpha_max,a2);
-      alpha_max = _mm_max_epi16(alpha_max,a3);
-      alpha_max = _mm_max_epi16(alpha_max,a4);
-      alpha_max = _mm_max_epi16(alpha_max,a5);
-      alpha_max = _mm_max_epi16(alpha_max,a6);
-      alpha_max = _mm_max_epi16(alpha_max,a7);
+      a1 = simde_mm_load_si128(&alpha_ptr[1]);
+      a3 = simde_mm_load_si128(&alpha_ptr[3]);
+      a5 = simde_mm_load_si128(&alpha_ptr[5]);
+      a7 = simde_mm_load_si128(&alpha_ptr[7]);
+      m_b0 = simde_mm_adds_epi16(a1, *m11p); // m11
+      m_b4 = simde_mm_subs_epi16(a1, *m11p); // m00=-m11
+      m_b1 = simde_mm_subs_epi16(a3, *m10p); // m01=-m10
+      m_b5 = simde_mm_adds_epi16(a3, *m10p); // m10
+      m_b2 = simde_mm_adds_epi16(a5, *m10p); // m10
+      m_b6 = simde_mm_subs_epi16(a5, *m10p); // m01=-m10
+      m_b3 = simde_mm_subs_epi16(a7, *m11p); // m00=-m11
+      m_b7 = simde_mm_adds_epi16(a7, *m11p); // m11
+      a0 = simde_mm_load_si128(&alpha_ptr[0]);
+      a2 = simde_mm_load_si128(&alpha_ptr[2]);
+      a4 = simde_mm_load_si128(&alpha_ptr[4]);
+      a6 = simde_mm_load_si128(&alpha_ptr[6]);
+      new0 = simde_mm_subs_epi16(a0, *m11p); // m00=-m11
+      new4 = simde_mm_adds_epi16(a0, *m11p); // m11
+      new1 = simde_mm_adds_epi16(a2, *m10p); // m10
+      new5 = simde_mm_subs_epi16(a2, *m10p); // m01=-m10
+      new2 = simde_mm_subs_epi16(a4, *m10p); // m01=-m10
+      new6 = simde_mm_adds_epi16(a4, *m10p); // m10
+      new3 = simde_mm_adds_epi16(a6, *m11p); // m11
+      new7 = simde_mm_subs_epi16(a6, *m11p); // m00=-m11
+      a0 = simde_mm_max_epi16(m_b0, new0);
+      a1 = simde_mm_max_epi16(m_b1, new1);
+      a2 = simde_mm_max_epi16(m_b2, new2);
+      a3 = simde_mm_max_epi16(m_b3, new3);
+      a4 = simde_mm_max_epi16(m_b4, new4);
+      a5 = simde_mm_max_epi16(m_b5, new5);
+      a6 = simde_mm_max_epi16(m_b6, new6);
+      a7 = simde_mm_max_epi16(m_b7, new7);
+      alpha_max = simde_mm_max_epi16(a0, a1);
+      alpha_max = simde_mm_max_epi16(alpha_max, a2);
+      alpha_max = simde_mm_max_epi16(alpha_max, a3);
+      alpha_max = simde_mm_max_epi16(alpha_max, a4);
+      alpha_max = simde_mm_max_epi16(alpha_max, a5);
+      alpha_max = simde_mm_max_epi16(alpha_max, a6);
+      alpha_max = simde_mm_max_epi16(alpha_max, a7);
 #elif defined(__arm__) || defined(__aarch64__)
       m_b0 = vqaddq_s16(alpha_ptr[1],*m11p);  // m11
       m_b4 = vqsubq_s16(alpha_ptr[1],*m11p);  // m00=-m11
@@ -378,14 +378,14 @@ void compute_alpha16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned s
       m11p++;
       m10p++;
 #if defined(__x86_64__) || defined(__i386__)
-      alpha_ptr[0] = _mm_subs_epi16(a0,alpha_max);
-      alpha_ptr[1] = _mm_subs_epi16(a1,alpha_max);
-      alpha_ptr[2] = _mm_subs_epi16(a2,alpha_max);
-      alpha_ptr[3] = _mm_subs_epi16(a3,alpha_max);
-      alpha_ptr[4] = _mm_subs_epi16(a4,alpha_max);
-      alpha_ptr[5] = _mm_subs_epi16(a5,alpha_max);
-      alpha_ptr[6] = _mm_subs_epi16(a6,alpha_max);
-      alpha_ptr[7] = _mm_subs_epi16(a7,alpha_max);
+      alpha_ptr[0] = simde_mm_subs_epi16(a0, alpha_max);
+      alpha_ptr[1] = simde_mm_subs_epi16(a1, alpha_max);
+      alpha_ptr[2] = simde_mm_subs_epi16(a2, alpha_max);
+      alpha_ptr[3] = simde_mm_subs_epi16(a3, alpha_max);
+      alpha_ptr[4] = simde_mm_subs_epi16(a4, alpha_max);
+      alpha_ptr[5] = simde_mm_subs_epi16(a5, alpha_max);
+      alpha_ptr[6] = simde_mm_subs_epi16(a6, alpha_max);
+      alpha_ptr[7] = simde_mm_subs_epi16(a7, alpha_max);
 #elif defined(__arm__) || defined(__aarch64__)
       alpha_ptr[0] = vqsubq_s16(a0,alpha_max);
       alpha_ptr[1] = vqsubq_s16(a1,alpha_max);
@@ -445,11 +445,11 @@ void compute_alpha16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned s
 void compute_beta16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned short frame_length,unsigned char F,int offset8_flag) {
   int k,rerun_flag=0;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i m11_128,m10_128;
-  __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
-  __m128i new0,new1,new2,new3,new4,new5,new6,new7;
-  __m128i *beta128,*alpha128,*beta_ptr;
-  __m128i beta_max;
+  simde__m128i m11_128, m10_128;
+  simde__m128i m_b0, m_b1, m_b2, m_b3, m_b4, m_b5, m_b6, m_b7;
+  simde__m128i new0, new1, new2, new3, new4, new5, new6, new7;
+  simde__m128i *beta128, *alpha128, *beta_ptr;
+  simde__m128i beta_max;
 #elif defined(__arm__) || defined(__aarch64__)
   int16x8_t m11_128,m10_128;
   int16x8_t m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
@@ -516,8 +516,8 @@ void compute_beta16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sh
 
   for (rerun_flag=0;; rerun_flag=1) {
 #if defined(__x86_64__) || defined(__i386__)
-    beta_ptr   = (__m128i *)&beta[frame_length<<3];
-    alpha128   = (__m128i *)&alpha[0];
+    beta_ptr = (simde__m128i *)&beta[frame_length << 3];
+    alpha128 = (simde__m128i *)&alpha[0];
 #elif defined(__arm__) || defined(__aarch64__)
     beta_ptr   = (int16x8_t *)&beta[frame_length<<3];
     alpha128   = (int16x8_t *)&alpha[0];
@@ -545,15 +545,15 @@ void compute_beta16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sh
 #endif
     } else {
 #if defined(__x86_64__) || defined(__i386__)
-      beta128 = (__m128i *)&beta[0];
-      beta_ptr[0] = _mm_srli_si128(beta128[0],2);
-      beta_ptr[1] = _mm_srli_si128(beta128[1],2);
-      beta_ptr[2] = _mm_srli_si128(beta128[2],2);
-      beta_ptr[3] = _mm_srli_si128(beta128[3],2);
-      beta_ptr[4] = _mm_srli_si128(beta128[4],2);
-      beta_ptr[5] = _mm_srli_si128(beta128[5],2);
-      beta_ptr[6] = _mm_srli_si128(beta128[6],2);
-      beta_ptr[7] = _mm_srli_si128(beta128[7],2);
+      beta128 = (simde__m128i *)&beta[0];
+      beta_ptr[0] = simde_mm_srli_si128(beta128[0], 2);
+      beta_ptr[1] = simde_mm_srli_si128(beta128[1], 2);
+      beta_ptr[2] = simde_mm_srli_si128(beta128[2], 2);
+      beta_ptr[3] = simde_mm_srli_si128(beta128[3], 2);
+      beta_ptr[4] = simde_mm_srli_si128(beta128[4], 2);
+      beta_ptr[5] = simde_mm_srli_si128(beta128[5], 2);
+      beta_ptr[6] = simde_mm_srli_si128(beta128[6], 2);
+      beta_ptr[7] = simde_mm_srli_si128(beta128[7], 2);
 #elif defined(__arm__) || defined(__aarch64__)
       beta128 = (int16x8_t *)&beta[0];
       beta_ptr   = (int16x8_t *)&beta[frame_length<<3];
@@ -588,14 +588,14 @@ void compute_beta16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sh
     }
 
 #if defined(__x86_64__) || defined(__i386__)
-    beta_ptr[0] = _mm_insert_epi16(beta_ptr[0],beta0_16,7);
-    beta_ptr[1] = _mm_insert_epi16(beta_ptr[1],beta1_16,7);
-    beta_ptr[2] = _mm_insert_epi16(beta_ptr[2],beta2_16,7);
-    beta_ptr[3] = _mm_insert_epi16(beta_ptr[3],beta3_16,7);
-    beta_ptr[4] = _mm_insert_epi16(beta_ptr[4],beta4_16,7);
-    beta_ptr[5] = _mm_insert_epi16(beta_ptr[5],beta5_16,7);
-    beta_ptr[6] = _mm_insert_epi16(beta_ptr[6],beta6_16,7);
-    beta_ptr[7] = _mm_insert_epi16(beta_ptr[7],beta7_16,7);
+    beta_ptr[0] = simde_mm_insert_epi16(beta_ptr[0], beta0_16, 7);
+    beta_ptr[1] = simde_mm_insert_epi16(beta_ptr[1], beta1_16, 7);
+    beta_ptr[2] = simde_mm_insert_epi16(beta_ptr[2], beta2_16, 7);
+    beta_ptr[3] = simde_mm_insert_epi16(beta_ptr[3], beta3_16, 7);
+    beta_ptr[4] = simde_mm_insert_epi16(beta_ptr[4], beta4_16, 7);
+    beta_ptr[5] = simde_mm_insert_epi16(beta_ptr[5], beta5_16, 7);
+    beta_ptr[6] = simde_mm_insert_epi16(beta_ptr[6], beta6_16, 7);
+    beta_ptr[7] = simde_mm_insert_epi16(beta_ptr[7], beta7_16, 7);
 #elif defined(__arm__) || defined(__aarch64__)
     beta_ptr[0] = vsetq_lane_s16(beta0_16,beta_ptr[0],7);
     beta_ptr[1] = vsetq_lane_s16(beta1_16,beta_ptr[1],7);
@@ -621,49 +621,49 @@ void compute_beta16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sh
 
     for (k=(frame_length>>3)-1; k>=loopval; k--) {
 #if defined(__x86_64__) || defined(__i386__)
-      m11_128=((__m128i *)m_11)[k];
-      m10_128=((__m128i *)m_10)[k];
-      m_b0 = _mm_adds_epi16(beta_ptr[4],m11_128);  //m11
-      m_b1 = _mm_subs_epi16(beta_ptr[4],m11_128);  //m00
-      m_b2 = _mm_subs_epi16(beta_ptr[5],m10_128);  //m01
-      m_b3 = _mm_adds_epi16(beta_ptr[5],m10_128);  //m10
-      m_b4 = _mm_adds_epi16(beta_ptr[6],m10_128);  //m10
-      m_b5 = _mm_subs_epi16(beta_ptr[6],m10_128);  //m01
-      m_b6 = _mm_subs_epi16(beta_ptr[7],m11_128);  //m00
-      m_b7 = _mm_adds_epi16(beta_ptr[7],m11_128);  //m11
-      new0 = _mm_subs_epi16(beta_ptr[0],m11_128);  //m00
-      new1 = _mm_adds_epi16(beta_ptr[0],m11_128);  //m11
-      new2 = _mm_adds_epi16(beta_ptr[1],m10_128);  //m10
-      new3 = _mm_subs_epi16(beta_ptr[1],m10_128);  //m01
-      new4 = _mm_subs_epi16(beta_ptr[2],m10_128);  //m01
-      new5 = _mm_adds_epi16(beta_ptr[2],m10_128);  //m10
-      new6 = _mm_adds_epi16(beta_ptr[3],m11_128);  //m11
-      new7 = _mm_subs_epi16(beta_ptr[3],m11_128);  //m00
+      m11_128 = ((simde__m128i *)m_11)[k];
+      m10_128 = ((simde__m128i *)m_10)[k];
+      m_b0 = simde_mm_adds_epi16(beta_ptr[4], m11_128); // m11
+      m_b1 = simde_mm_subs_epi16(beta_ptr[4], m11_128); // m00
+      m_b2 = simde_mm_subs_epi16(beta_ptr[5], m10_128); // m01
+      m_b3 = simde_mm_adds_epi16(beta_ptr[5], m10_128); // m10
+      m_b4 = simde_mm_adds_epi16(beta_ptr[6], m10_128); // m10
+      m_b5 = simde_mm_subs_epi16(beta_ptr[6], m10_128); // m01
+      m_b6 = simde_mm_subs_epi16(beta_ptr[7], m11_128); // m00
+      m_b7 = simde_mm_adds_epi16(beta_ptr[7], m11_128); // m11
+      new0 = simde_mm_subs_epi16(beta_ptr[0], m11_128); // m00
+      new1 = simde_mm_adds_epi16(beta_ptr[0], m11_128); // m11
+      new2 = simde_mm_adds_epi16(beta_ptr[1], m10_128); // m10
+      new3 = simde_mm_subs_epi16(beta_ptr[1], m10_128); // m01
+      new4 = simde_mm_subs_epi16(beta_ptr[2], m10_128); // m01
+      new5 = simde_mm_adds_epi16(beta_ptr[2], m10_128); // m10
+      new6 = simde_mm_adds_epi16(beta_ptr[3], m11_128); // m11
+      new7 = simde_mm_subs_epi16(beta_ptr[3], m11_128); // m00
 
       beta_ptr-=8;
-      beta_ptr[0] = _mm_max_epi16(m_b0,new0);
-      beta_ptr[1] = _mm_max_epi16(m_b1,new1);
-      beta_ptr[2] = _mm_max_epi16(m_b2,new2);
-      beta_ptr[3] = _mm_max_epi16(m_b3,new3);
-      beta_ptr[4] = _mm_max_epi16(m_b4,new4);
-      beta_ptr[5] = _mm_max_epi16(m_b5,new5);
-      beta_ptr[6] = _mm_max_epi16(m_b6,new6);
-      beta_ptr[7] = _mm_max_epi16(m_b7,new7);
-      beta_max = _mm_max_epi16(beta_ptr[0],beta_ptr[1]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[2]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[3]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[4]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[5]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[6]);
-      beta_max = _mm_max_epi16(beta_max   ,beta_ptr[7]);
-      beta_ptr[0] = _mm_subs_epi16(beta_ptr[0],beta_max);
-      beta_ptr[1] = _mm_subs_epi16(beta_ptr[1],beta_max);
-      beta_ptr[2] = _mm_subs_epi16(beta_ptr[2],beta_max);
-      beta_ptr[3] = _mm_subs_epi16(beta_ptr[3],beta_max);
-      beta_ptr[4] = _mm_subs_epi16(beta_ptr[4],beta_max);
-      beta_ptr[5] = _mm_subs_epi16(beta_ptr[5],beta_max);
-      beta_ptr[6] = _mm_subs_epi16(beta_ptr[6],beta_max);
-      beta_ptr[7] = _mm_subs_epi16(beta_ptr[7],beta_max);
+      beta_ptr[0] = simde_mm_max_epi16(m_b0, new0);
+      beta_ptr[1] = simde_mm_max_epi16(m_b1, new1);
+      beta_ptr[2] = simde_mm_max_epi16(m_b2, new2);
+      beta_ptr[3] = simde_mm_max_epi16(m_b3, new3);
+      beta_ptr[4] = simde_mm_max_epi16(m_b4, new4);
+      beta_ptr[5] = simde_mm_max_epi16(m_b5, new5);
+      beta_ptr[6] = simde_mm_max_epi16(m_b6, new6);
+      beta_ptr[7] = simde_mm_max_epi16(m_b7, new7);
+      beta_max = simde_mm_max_epi16(beta_ptr[0], beta_ptr[1]);
+      beta_max = simde_mm_max_epi16(beta_max, beta_ptr[2]);
+      beta_max = simde_mm_max_epi16(beta_max, beta_ptr[3]);
+      beta_max = simde_mm_max_epi16(beta_max, beta_ptr[4]);
+      beta_max = simde_mm_max_epi16(beta_max, beta_ptr[5]);
+      beta_max = simde_mm_max_epi16(beta_max, beta_ptr[6]);
+      beta_max = simde_mm_max_epi16(beta_max, beta_ptr[7]);
+      beta_ptr[0] = simde_mm_subs_epi16(beta_ptr[0], beta_max);
+      beta_ptr[1] = simde_mm_subs_epi16(beta_ptr[1], beta_max);
+      beta_ptr[2] = simde_mm_subs_epi16(beta_ptr[2], beta_max);
+      beta_ptr[3] = simde_mm_subs_epi16(beta_ptr[3], beta_max);
+      beta_ptr[4] = simde_mm_subs_epi16(beta_ptr[4], beta_max);
+      beta_ptr[5] = simde_mm_subs_epi16(beta_ptr[5], beta_max);
+      beta_ptr[6] = simde_mm_subs_epi16(beta_ptr[6], beta_max);
+      beta_ptr[7] = simde_mm_subs_epi16(beta_ptr[7], beta_max);
 #elif defined(__arm__) || defined(__aarch64__)
       m11_128=((int16x8_t *)m_11)[k];
       m10_128=((int16x8_t *)m_10)[k];
@@ -729,14 +729,14 @@ void compute_beta16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned sh
 
 void compute_ext16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,llr_t *ext, llr_t *systematic,unsigned short frame_length) {
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *alpha128=(__m128i *)alpha;
-  __m128i *beta128=(__m128i *)beta;
-  __m128i *m11_128,*m10_128,*ext_128;
-  __m128i *alpha_ptr,*beta_ptr;
-  __m128i m00_1,m00_2,m00_3,m00_4;
-  __m128i m01_1,m01_2,m01_3,m01_4;
-  __m128i m10_1,m10_2,m10_3,m10_4;
-  __m128i m11_1,m11_2,m11_3,m11_4;
+  simde__m128i *alpha128 = (simde__m128i *)alpha;
+  simde__m128i *beta128 = (simde__m128i *)beta;
+  simde__m128i *m11_128, *m10_128, *ext_128;
+  simde__m128i *alpha_ptr, *beta_ptr;
+  simde__m128i m00_1, m00_2, m00_3, m00_4;
+  simde__m128i m01_1, m01_2, m01_3, m01_4;
+  simde__m128i m10_1, m10_2, m10_3, m10_4;
+  simde__m128i m11_1, m11_2, m11_3, m11_4;
 #elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *alpha128=(int16x8_t *)alpha;
   int16x8_t *beta128=(int16x8_t *)beta;
@@ -759,9 +759,9 @@ void compute_ext16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,llr_t *ext, 
 
   for (k=0; k<(frame_length>>3); k++) {
 #if defined(__x86_64__) || defined(__i386__)
-    m11_128        = (__m128i *)&m_11[k<<3];
-    m10_128        = (__m128i *)&m_10[k<<3];
-    ext_128        = (__m128i *)&ext[k<<3];
+    m11_128 = (simde__m128i *)&m_11[k << 3];
+    m10_128 = (simde__m128i *)&m_10[k << 3];
+    ext_128 = (simde__m128i *)&ext[k << 3];
     /*
       fprintf(fdsse4,"EXT %03d\n",k);
       print_shorts("a0:",&alpha_ptr[0]);
@@ -782,39 +782,39 @@ void compute_ext16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,llr_t *ext, 
       print_shorts("b7:",&beta_ptr[7]);
     */
 #if 1
-    m00_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
-    m11_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
-    m00_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
-    m11_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[3]); //ALPHA_BETA_3m11;
-    m00_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[4]); //ALPHA_BETA_2m00;
-    m11_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[0]); //ALPHA_BETA_2m11;
-    m11_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[4]); //ALPHA_BETA_1m11;
-    m00_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[0]); //ALPHA_BETA_1m00;
-    m01_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[6]); //ALPHA_BETA_4m01;
-    m10_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[2]); //ALPHA_BETA_4m10;
-    m01_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[2]); //ALPHA_BETA_3m01;
-    m10_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[6]); //ALPHA_BETA_3m10;
-    m01_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[1]); //ALPHA_BETA_2m01;
-    m10_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
-    m10_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
-    m01_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
+    m00_4 = simde_mm_adds_epi16(alpha_ptr[7], beta_ptr[3]); // ALPHA_BETA_4m00;
+    m11_4 = simde_mm_adds_epi16(alpha_ptr[7], beta_ptr[7]); // ALPHA_BETA_4m11;
+    m00_3 = simde_mm_adds_epi16(alpha_ptr[6], beta_ptr[7]); // ALPHA_BETA_3m00;
+    m11_3 = simde_mm_adds_epi16(alpha_ptr[6], beta_ptr[3]); // ALPHA_BETA_3m11;
+    m00_2 = simde_mm_adds_epi16(alpha_ptr[1], beta_ptr[4]); // ALPHA_BETA_2m00;
+    m11_2 = simde_mm_adds_epi16(alpha_ptr[1], beta_ptr[0]); // ALPHA_BETA_2m11;
+    m11_1 = simde_mm_adds_epi16(alpha_ptr[0], beta_ptr[4]); // ALPHA_BETA_1m11;
+    m00_1 = simde_mm_adds_epi16(alpha_ptr[0], beta_ptr[0]); // ALPHA_BETA_1m00;
+    m01_4 = simde_mm_adds_epi16(alpha_ptr[5], beta_ptr[6]); // ALPHA_BETA_4m01;
+    m10_4 = simde_mm_adds_epi16(alpha_ptr[5], beta_ptr[2]); // ALPHA_BETA_4m10;
+    m01_3 = simde_mm_adds_epi16(alpha_ptr[4], beta_ptr[2]); // ALPHA_BETA_3m01;
+    m10_3 = simde_mm_adds_epi16(alpha_ptr[4], beta_ptr[6]); // ALPHA_BETA_3m10;
+    m01_2 = simde_mm_adds_epi16(alpha_ptr[3], beta_ptr[1]); // ALPHA_BETA_2m01;
+    m10_2 = simde_mm_adds_epi16(alpha_ptr[3], beta_ptr[5]); // ALPHA_BETA_2m10;
+    m10_1 = simde_mm_adds_epi16(alpha_ptr[2], beta_ptr[1]); // ALPHA_BETA_1m10;
+    m01_1 = simde_mm_adds_epi16(alpha_ptr[2], beta_ptr[5]); // ALPHA_BETA_1m01;
 #else
-    m00_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[0]); //ALPHA_BETA_1m00;
-    m10_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
-    m11_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[4]); //ALPHA_BETA_1m11;
-    m01_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
-    m11_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[0]); //ALPHA_BETA_2m11;
-    m01_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[1]); //ALPHA_BETA_2m01;
-    m00_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[4]); //ALPHA_BETA_2m00;
-    m10_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
-    m11_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[3]); //ALPHA_BETA_3m11;
-    m01_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[2]); //ALPHA_BETA_3m01;
-    m00_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
-    m10_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[6]); //ALPHA_BETA_3m10;
-    m00_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
-    m10_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[2]); //ALPHA_BETA_4m10;
-    m11_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
-    m01_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[6]); //ALPHA_BETA_4m01;
+    m00_1 = simde_mm_adds_epi16(alpha_ptr[0], beta_ptr[0]); // ALPHA_BETA_1m00;
+    m10_1 = simde_mm_adds_epi16(alpha_ptr[2], beta_ptr[1]); // ALPHA_BETA_1m10;
+    m11_1 = simde_mm_adds_epi16(alpha_ptr[0], beta_ptr[4]); // ALPHA_BETA_1m11;
+    m01_1 = simde_mm_adds_epi16(alpha_ptr[2], beta_ptr[5]); // ALPHA_BETA_1m01;
+    m11_2 = simde_mm_adds_epi16(alpha_ptr[1], beta_ptr[0]); // ALPHA_BETA_2m11;
+    m01_2 = simde_mm_adds_epi16(alpha_ptr[3], beta_ptr[1]); // ALPHA_BETA_2m01;
+    m00_2 = simde_mm_adds_epi16(alpha_ptr[1], beta_ptr[4]); // ALPHA_BETA_2m00;
+    m10_2 = simde_mm_adds_epi16(alpha_ptr[3], beta_ptr[5]); // ALPHA_BETA_2m10;
+    m11_3 = simde_mm_adds_epi16(alpha_ptr[6], beta_ptr[3]); // ALPHA_BETA_3m11;
+    m01_3 = simde_mm_adds_epi16(alpha_ptr[4], beta_ptr[2]); // ALPHA_BETA_3m01;
+    m00_3 = simde_mm_adds_epi16(alpha_ptr[6], beta_ptr[7]); // ALPHA_BETA_3m00;
+    m10_3 = simde_mm_adds_epi16(alpha_ptr[4], beta_ptr[6]); // ALPHA_BETA_3m10;
+    m00_4 = simde_mm_adds_epi16(alpha_ptr[7], beta_ptr[3]); // ALPHA_BETA_4m00;
+    m10_4 = simde_mm_adds_epi16(alpha_ptr[5], beta_ptr[2]); // ALPHA_BETA_4m10;
+    m11_4 = simde_mm_adds_epi16(alpha_ptr[7], beta_ptr[7]); // ALPHA_BETA_4m11;
+    m01_4 = simde_mm_adds_epi16(alpha_ptr[5], beta_ptr[6]); // ALPHA_BETA_4m01;
 #endif
     /*
       print_shorts("m11_1:",&m11_1);
@@ -834,30 +834,30 @@ void compute_ext16(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,llr_t *ext, 
       print_shorts("m01_3:",&m01_3);
       print_shorts("m01_4:",&m01_4);
     */
-    m01_1 = _mm_max_epi16(m01_1,m01_2);
-    m01_1 = _mm_max_epi16(m01_1,m01_3);
-    m01_1 = _mm_max_epi16(m01_1,m01_4);
-    m00_1 = _mm_max_epi16(m00_1,m00_2);
-    m00_1 = _mm_max_epi16(m00_1,m00_3);
-    m00_1 = _mm_max_epi16(m00_1,m00_4);
-    m10_1 = _mm_max_epi16(m10_1,m10_2);
-    m10_1 = _mm_max_epi16(m10_1,m10_3);
-    m10_1 = _mm_max_epi16(m10_1,m10_4);
-    m11_1 = _mm_max_epi16(m11_1,m11_2);
-    m11_1 = _mm_max_epi16(m11_1,m11_3);
-    m11_1 = _mm_max_epi16(m11_1,m11_4);
+    m01_1 = simde_mm_max_epi16(m01_1, m01_2);
+    m01_1 = simde_mm_max_epi16(m01_1, m01_3);
+    m01_1 = simde_mm_max_epi16(m01_1, m01_4);
+    m00_1 = simde_mm_max_epi16(m00_1, m00_2);
+    m00_1 = simde_mm_max_epi16(m00_1, m00_3);
+    m00_1 = simde_mm_max_epi16(m00_1, m00_4);
+    m10_1 = simde_mm_max_epi16(m10_1, m10_2);
+    m10_1 = simde_mm_max_epi16(m10_1, m10_3);
+    m10_1 = simde_mm_max_epi16(m10_1, m10_4);
+    m11_1 = simde_mm_max_epi16(m11_1, m11_2);
+    m11_1 = simde_mm_max_epi16(m11_1, m11_3);
+    m11_1 = simde_mm_max_epi16(m11_1, m11_4);
     //      print_shorts("m11_1:",&m11_1);
-    m01_1 = _mm_subs_epi16(m01_1,*m10_128);
-    m00_1 = _mm_subs_epi16(m00_1,*m11_128);
-    m10_1 = _mm_adds_epi16(m10_1,*m10_128);
-    m11_1 = _mm_adds_epi16(m11_1,*m11_128);
+    m01_1 = simde_mm_subs_epi16(m01_1, *m10_128);
+    m00_1 = simde_mm_subs_epi16(m00_1, *m11_128);
+    m10_1 = simde_mm_adds_epi16(m10_1, *m10_128);
+    m11_1 = simde_mm_adds_epi16(m11_1, *m11_128);
     //      print_shorts("m10_1:",&m10_1);
     //      print_shorts("m11_1:",&m11_1);
-    m01_1 = _mm_max_epi16(m01_1,m00_1);
-    m10_1 = _mm_max_epi16(m10_1,m11_1);
+    m01_1 = simde_mm_max_epi16(m01_1, m00_1);
+    m10_1 = simde_mm_max_epi16(m10_1, m11_1);
     //      print_shorts("m01_1:",&m01_1);
     //      print_shorts("m10_1:",&m10_1);
-    *ext_128 = _mm_subs_epi16(m10_1,m01_1);
+    *ext_128 = simde_mm_subs_epi16(m10_1, m01_1);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"ext %p\n",ext_128);
     print_shorts("ext:",(int16_t *)ext_128);
@@ -1006,9 +1006,9 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
   uint32_t crc, oldcrc, crc_len;
   uint8_t temp;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *yp128;
-  __m128i tmp={0}, zeros=_mm_setzero_si128();
-  __m128i tmpe;
+  simde__m128i *yp128;
+  simde__m128i tmp = {0}, zeros = simde_mm_setzero_si128();
+  simde__m128i tmpe;
 #elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *yp128;
   //  int16x8_t tmp128[(n+8)>>3];
@@ -1056,7 +1056,7 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
   }
 
 #if defined(__x86_64__) || defined(__i386__)
-  yp128 = (__m128i *)y;
+  yp128 = (simde__m128i *)y;
 #elif defined(__arm__) || defined(__aarch64__)
   yp128 = (int16x8_t *)y;
 #endif
@@ -1070,63 +1070,63 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
     pi2_p = &pi2tab16[iind][i];
     j=pi2_p[0];
 #if defined(__x86_64__) || defined(__i386__)
-    tmpe = _mm_load_si128(yp128);
+    tmpe = simde_mm_load_si128(yp128);
     //    fprintf(fdsse4,"yp128 %p\n",yp128);
     //    print_shorts("tmpe",(int16_t *)&tmpe);
-    s[j]   = _mm_extract_epi16(tmpe,0);
-    yp1[j] = _mm_extract_epi16(tmpe,1);
-    yp2[j] = _mm_extract_epi16(tmpe,2);
+    s[j] = simde_mm_extract_epi16(tmpe, 0);
+    yp1[j] = simde_mm_extract_epi16(tmpe, 1);
+    yp2[j] = simde_mm_extract_epi16(tmpe, 2);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"init0: j %u, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 #endif
     j=pi2_p[1];
-    s[j]   = _mm_extract_epi16(tmpe,3);
-    yp1[j] = _mm_extract_epi16(tmpe,4);
-    yp2[j] = _mm_extract_epi16(tmpe,5);
+    s[j] = simde_mm_extract_epi16(tmpe, 3);
+    yp1[j] = simde_mm_extract_epi16(tmpe, 4);
+    yp2[j] = simde_mm_extract_epi16(tmpe, 5);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"init1: j %u, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 #endif
     j=pi2_p[2];
-    s[j]   = _mm_extract_epi16(tmpe,6);
-    yp1[j] = _mm_extract_epi16(tmpe,7);
-    tmpe = _mm_load_si128(&yp128[1]);
-    yp2[j] = _mm_extract_epi16(tmpe,0);
+    s[j] = simde_mm_extract_epi16(tmpe, 6);
+    yp1[j] = simde_mm_extract_epi16(tmpe, 7);
+    tmpe = simde_mm_load_si128(&yp128[1]);
+    yp2[j] = simde_mm_extract_epi16(tmpe, 0);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"init2: j %u, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 #endif
     j=pi2_p[3];
-    s[j]   = _mm_extract_epi16(tmpe,1);
-    yp1[j] = _mm_extract_epi16(tmpe,2);
-    yp2[j] = _mm_extract_epi16(tmpe,3);
+    s[j] = simde_mm_extract_epi16(tmpe, 1);
+    yp1[j] = simde_mm_extract_epi16(tmpe, 2);
+    yp2[j] = simde_mm_extract_epi16(tmpe, 3);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"init3: j %u, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 #endif
     j=pi2_p[4];
-    s[j]   = _mm_extract_epi16(tmpe,4);
-    yp1[j] = _mm_extract_epi16(tmpe,5);
-    yp2[j] = _mm_extract_epi16(tmpe,6);
+    s[j] = simde_mm_extract_epi16(tmpe, 4);
+    yp1[j] = simde_mm_extract_epi16(tmpe, 5);
+    yp2[j] = simde_mm_extract_epi16(tmpe, 6);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"init4: j %u, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 #endif
     j=pi2_p[5];
-    s[j]   = _mm_extract_epi16(tmpe,7);
-    tmpe = _mm_load_si128(&yp128[2]);
-    yp1[j] = _mm_extract_epi16(tmpe,0);
-    yp2[j] = _mm_extract_epi16(tmpe,1);
+    s[j] = simde_mm_extract_epi16(tmpe, 7);
+    tmpe = simde_mm_load_si128(&yp128[2]);
+    yp1[j] = simde_mm_extract_epi16(tmpe, 0);
+    yp2[j] = simde_mm_extract_epi16(tmpe, 1);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"init5: j %u, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 #endif
     j=pi2_p[6];
-    s[j]   = _mm_extract_epi16(tmpe,2);
-    yp1[j] = _mm_extract_epi16(tmpe,3);
-    yp2[j] = _mm_extract_epi16(tmpe,4);
+    s[j] = simde_mm_extract_epi16(tmpe, 2);
+    yp1[j] = simde_mm_extract_epi16(tmpe, 3);
+    yp2[j] = simde_mm_extract_epi16(tmpe, 4);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"init6: j %u, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 #endif
     j=pi2_p[7];
-    s[j]   = _mm_extract_epi16(tmpe,5);
-    yp1[j] = _mm_extract_epi16(tmpe,6);
-    yp2[j] = _mm_extract_epi16(tmpe,7);
+    s[j] = simde_mm_extract_epi16(tmpe, 5);
+    yp1[j] = simde_mm_extract_epi16(tmpe, 6);
+    yp2[j] = simde_mm_extract_epi16(tmpe, 7);
 #ifdef DEBUG_LOGMAP
     fprintf(fdsse4,"init7: j %u, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
 #endif
@@ -1209,14 +1209,14 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
 
     for (i=0; i<(n>>3); i++) { // steady-state portion
 #if defined(__x86_64__) || defined(__i386__)
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],0);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],1);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],2);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],3);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],4);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],5);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],6);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],7);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi16(((simde__m128i *)systematic2)[i], ext[*pi4_p++], 0);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi16(((simde__m128i *)systematic2)[i], ext[*pi4_p++], 1);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi16(((simde__m128i *)systematic2)[i], ext[*pi4_p++], 2);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi16(((simde__m128i *)systematic2)[i], ext[*pi4_p++], 3);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi16(((simde__m128i *)systematic2)[i], ext[*pi4_p++], 4);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi16(((simde__m128i *)systematic2)[i], ext[*pi4_p++], 5);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi16(((simde__m128i *)systematic2)[i], ext[*pi4_p++], 6);
+      ((simde__m128i *)systematic2)[i] = simde_mm_insert_epi16(((simde__m128i *)systematic2)[i], ext[*pi4_p++], 7);
 #elif defined(__arm__) || defined(__aarch64__)
       ((int16x8_t *)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t *)systematic2)[i],0);
       ((int16x8_t *)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t *)systematic2)[i],1);
@@ -1228,7 +1228,7 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
       ((int16x8_t *)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t *)systematic2)[i],7);
 #endif
 #ifdef DEBUG_LOGMAP
-      print_shorts("syst2",(int16_t *)&((__m128i *)systematic2)[i]);
+      print_shorts("syst2", (int16_t *)&((simde__m128i *)systematic2)[i]);
 #endif
     }
 
@@ -1239,15 +1239,16 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
 
     for (i=0; i<(n>>3); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-      tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],0);
-      tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],1);
-      tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],2);
-      tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],3);
-      tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],4);
-      tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],5);
-      tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],6);
-      tmp=_mm_insert_epi16(tmp,ext2[*pi5_p++],7);
-      ((__m128i *)systematic1)[i] = _mm_adds_epi16(_mm_subs_epi16(tmp,((__m128i *)ext)[i]),((__m128i *)systematic0)[i]);
+      tmp = simde_mm_insert_epi16(tmp, ext2[*pi5_p++], 0);
+      tmp = simde_mm_insert_epi16(tmp, ext2[*pi5_p++], 1);
+      tmp = simde_mm_insert_epi16(tmp, ext2[*pi5_p++], 2);
+      tmp = simde_mm_insert_epi16(tmp, ext2[*pi5_p++], 3);
+      tmp = simde_mm_insert_epi16(tmp, ext2[*pi5_p++], 4);
+      tmp = simde_mm_insert_epi16(tmp, ext2[*pi5_p++], 5);
+      tmp = simde_mm_insert_epi16(tmp, ext2[*pi5_p++], 6);
+      tmp = simde_mm_insert_epi16(tmp, ext2[*pi5_p++], 7);
+      ((simde__m128i *)systematic1)[i] =
+          simde_mm_adds_epi16(simde_mm_subs_epi16(tmp, ((simde__m128i *)ext)[i]), ((simde__m128i *)systematic0)[i]);
 #elif defined(__arm__) || defined(__aarch64__)
       tmp=vsetq_lane_s16(ext2[*pi5_p++],tmp,0);
       tmp=vsetq_lane_s16(ext2[*pi5_p++],tmp,1);
@@ -1260,7 +1261,7 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
       ((int16x8_t *)systematic1)[i] = vqaddq_s16(vqsubq_s16(tmp,((int16x8_t *)ext)[i]),((int16x8_t *)systematic0)[i]);
 #endif
 #ifdef DEBUG_LOGMAP
-      print_shorts("syst1",(int16_t *)&((__m128i *)systematic1)[i]);
+      print_shorts("syst1", (int16_t *)&((simde__m128i *)systematic1)[i]);
 #endif
     }
 
@@ -1270,19 +1271,19 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
 
       for (i=0; i<(n>>3); i++) {
 #if defined(__x86_64__) || defined(__i386__)
-        tmp=_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++],7);
-        tmp=_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++],6);
-        tmp=_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++],5);
-        tmp=_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++],4);
-        tmp=_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++],3);
-        tmp=_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++],2);
-        tmp=_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++],1);
-        tmp=_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++],0);
+        tmp = simde_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++], 7);
+        tmp = simde_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++], 6);
+        tmp = simde_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++], 5);
+        tmp = simde_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++], 4);
+        tmp = simde_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++], 3);
+        tmp = simde_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++], 2);
+        tmp = simde_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++], 1);
+        tmp = simde_mm_insert_epi16(tmp, ((llr_t *)ext2)[*pi6_p++], 0);
 #ifdef DEBUG_LOGMAP
         print_shorts("tmp",(int16_t *)&tmp);
 #endif
-        tmp=_mm_cmpgt_epi8(_mm_packs_epi16(tmp,zeros),zeros);
-        decoded_bytes[i]=(unsigned char)_mm_movemask_epi8(tmp);
+        tmp = simde_mm_cmpgt_epi8(simde_mm_packs_epi16(tmp, zeros), zeros);
+        decoded_bytes[i] = (unsigned char)simde_mm_movemask_epi8(tmp);
 #elif defined(__arm__) || defined(__aarch64__)
         tmp=vsetq_lane_s16(ext2[*pi6_p++],tmp,7);
         tmp=vsetq_lane_s16(ext2[*pi6_p++],tmp,6);
@@ -1299,7 +1300,7 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
         // Mask64 = 2^b0 + 2^b1 + 2^b2 + 2^b3 + 2^b4 + 2^b5 + 2^b6 + 2^b7
         uint64x2_t Mask   = vpaddlq_u32(vpaddlq_u16(vandq_u16(vcgtq_s16(tmp,zeros), Powers)));
         uint64x1_t Mask64 = vget_high_u64(Mask)+vget_low_u64(Mask);
-        decoded_bytes[i] = (uint8_t)Mask64;
+        decoded_bytes[i] = *(uint8_t*)&Mask64;
 #endif
 #ifdef DEBUG_LOGMAP
         print_shorts("tmp",(int16_t *)&tmp);
@@ -1364,9 +1365,9 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
     if (iteration_cnt < max_iterations) {
       log_map16(systematic1,yparity1,m11,m10,alpha,beta,ext,n,0,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
 #if defined(__x86_64__) || defined(__i386__)
-      __m128i *ext_128=(__m128i *) ext;
-      __m128i *s1_128=(__m128i *) systematic1;
-      __m128i *s0_128=(__m128i *) systematic0;
+      simde__m128i *ext_128 = (simde__m128i *)ext;
+      simde__m128i *s1_128 = (simde__m128i *)systematic1;
+      simde__m128i *s0_128 = (simde__m128i *)systematic0;
 #elif defined(__arm__) || defined(__aarch64__)
       int16x8_t *ext_128=(int16x8_t *) ext;
       int16x8_t *s1_128=(int16x8_t *) systematic1;
@@ -1376,7 +1377,7 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
 
       for (i=0; i<myloop; i++) {
 #if defined(__x86_64__) || defined(__i386__)
-        *ext_128=_mm_adds_epi16(_mm_subs_epi16(*ext_128,*s1_128++),*s0_128++);
+        *ext_128 = simde_mm_adds_epi16(simde_mm_subs_epi16(*ext_128, *s1_128++), *s0_128++);
 #elif defined(__arm__) || defined(__aarch64__)
         *ext_128=vqaddq_s16(vqsubq_s16(*ext_128,*s1_128++),*s0_128++);
 #endif
@@ -1390,8 +1391,8 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
   fclose(fdsse4);
 #endif
 #if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
 #endif
   if (iteration_cnt > max_iterations)
     set_abort(ab, true);

@@ -750,7 +750,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'WaitEndBuild_eNB':
 					RAN.WaitBuildeNBisFinished(HTML)
 				elif action == 'Custom_Command':
-					logging.info(f"Executing custom command")
 					RAN.CustomCommand(HTML)
 					if RAN.prematureExit:
 						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)

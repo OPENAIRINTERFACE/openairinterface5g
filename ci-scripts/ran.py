@@ -260,6 +260,7 @@ class RANManagement():
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)], HTML)
 
 	def CustomCommand(self, HTML):
+		logging.info(f"Executing custom command on {self.node}")
 		cmd = cls_cmd.getConnection(self.node)
 		ret = cmd.run(self.command)
 		cmd.close()

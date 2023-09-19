@@ -233,11 +233,6 @@ compilations() {
     $CMAKE --build . $verbose --target $targets -- -j$(nproc)
     ret=$?
   } > $dlog/$logfile 2>&1
-  if [ "$VERBOSE_CI" == "1" ]; then
-     echo "====== Start of log for $logfile ======"
-     cat $dlog/$logfile
-     echo "====== End of log for $logfile ======"
-  fi
   check_warnings "$dlog/$logfile"
   if [[ $ret -eq 0 ]]; then
      echo_success "$targets compiled"

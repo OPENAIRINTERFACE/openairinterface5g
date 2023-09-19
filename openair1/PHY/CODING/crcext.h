@@ -33,7 +33,7 @@
 #ifndef __CRCEXT_H__
 #define __CRCEXT_H__
 
-#include <x86intrin.h>
+#include "PHY/sse_intrin.h"
 #include "types.h"
 /**
  * Flag indicating availability of PCLMULQDQ instruction
@@ -45,7 +45,7 @@ extern int pclmulqdq_available;
  * Flag indicating availability of PCLMULQDQ instruction
  * Only valid after running CRCInit() function.
  */
-extern __m128i crc_xmm_be_le_swap128;
+extern simde__m128i crc_xmm_be_le_swap128;
 extern const uint8_t crc_xmm_shift_tab[48];
 
 /**
@@ -57,11 +57,11 @@ extern const uint8_t crc_xmm_shift_tab[48];
  * @return \a reg >> (\a num * 8)
  */
 __forceinline
-__m128i xmm_shift_right(__m128i reg, const unsigned int num)
+simde__m128i xmm_shift_right(simde__m128i reg, const unsigned int num)
 {
-        const __m128i *p = (const __m128i *)(crc_xmm_shift_tab + 16 + num);
+        const simde__m128i *p = (const simde__m128i *)(crc_xmm_shift_tab + 16 + num);
 
-        return _mm_shuffle_epi8(reg, _mm_loadu_si128(p));
+        return simde_mm_shuffle_epi8(reg, simde_mm_loadu_si128(p));
 }
 
 /**
@@ -73,11 +73,11 @@ __m128i xmm_shift_right(__m128i reg, const unsigned int num)
  * @return \a reg << (\a num * 8)
  */
 __forceinline
-__m128i xmm_shift_left(__m128i reg, const unsigned int num)
+simde__m128i xmm_shift_left(simde__m128i reg, const unsigned int num)
 {
-        const __m128i *p = (const __m128i *)(crc_xmm_shift_tab + 16 - num);
+        const simde__m128i *p = (const simde__m128i *)(crc_xmm_shift_tab + 16 - num);
 
-        return _mm_shuffle_epi8(reg, _mm_loadu_si128(p));
+        return simde_mm_shuffle_epi8(reg, simde_mm_loadu_si128(p));
 }
 
 /**

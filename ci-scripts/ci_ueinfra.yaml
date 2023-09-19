@@ -185,9 +185,12 @@ rfsim4g_enb_nos1:
 
 l2sim5g_ue:
   Host: localhost
+  AttachScript: docker start l2sim-oai-nr-ue0
+  DetachScript: docker stop l2sim-oai-nr-ue0
   NetworkScript: docker exec l2sim-oai-nr-ue0 ip a show dev oaitun_ue1
   CmdPrefix: docker exec l2sim-oai-nr-ue0
   IF: oaitun_ue1
+  MTU: 1500
 
 l2sim5g_ext_dn:
   Host: localhost
@@ -196,9 +199,12 @@ l2sim5g_ext_dn:
 
 l2sim4g_ue:
   Host: localhost
+  AttachScript: docker start l2sim4g-oai-lte-ue1
+  DetachScript: docker stop l2sim4g-oai-lte-ue1
   NetworkScript: docker exec l2sim4g-oai-lte-ue1 ip a show dev oaitun_ue1
   CmdPrefix: docker exec l2sim4g-oai-lte-ue1
   IF: oaitun_ue1
+  MTU: 1500
 
 l2sim4g_ext_dn:
   Host: localhost

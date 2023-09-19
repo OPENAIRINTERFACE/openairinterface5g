@@ -919,13 +919,13 @@ rlc_op_status_t rrc_rlc_config_req   (
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, ctxt_pP->rntiMaybeUEid);
   if (srb_flagP) {
     if (ue->srb[rb_idP-1] != NULL) {
-      ue->srb[rb_idP-1]->delete(ue->srb[rb_idP-1]);
+      ue->srb[rb_idP-1]->delete_entity(ue->srb[rb_idP-1]);
       ue->srb[rb_idP-1] = NULL;
     } else
       LOG_W(RLC, "removing non allocated SRB %ld, do nothing\n", rb_idP);
   } else {
     if (ue->drb[rb_idP-1] != NULL) {
-      ue->drb[rb_idP-1]->delete(ue->drb[rb_idP-1]);
+      ue->drb[rb_idP-1]->delete_entity(ue->drb[rb_idP-1]);
       ue->drb[rb_idP-1] = NULL;
     } else
       LOG_W(RLC, "removing non allocated DRB %ld, do nothing\n", rb_idP);
@@ -1072,6 +1072,12 @@ const bool nr_rlc_get_statistics(
   if (rb != NULL) {
     rb->get_stats(rb, out);
     ret = true;
+
+    // Patch buffer status using OAI results (no need to change anything in the RB)
+    // rb->set_time(rb, nr_rlc_current_time);
+    nr_rlc_entity_buffer_status_t oai_stat = rb->buffer_status(rb, 1000*1000);
+    out->rxbuf_occ_bytes = oai_stat.status_size;
+    out->txbuf_occ_bytes = oai_stat.tx_size + oai_stat.retx_size;
   } else {
     ret = false;
   }

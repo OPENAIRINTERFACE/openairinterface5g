@@ -23,8 +23,8 @@
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
-// This is 4096/(1:4096) in __m128i format
-__m128i inv_ch[4096];/* = {512,512,512,512,512,512,512,512,
+// This is 4096/(1:4096) in simde__m128i format
+simde__m128i inv_ch[4096];/* = {512,512,512,512,512,512,512,512,
                          256,256,256,256,256,256,256,256,
                          170,170,170,170,170,170,170,170,
                          128,128,128,128,128,128,128,128,
@@ -283,7 +283,7 @@ __m128i inv_ch[4096];/* = {512,512,512,512,512,512,512,512,
                         };*/
 
 void init_fde() {
-  for (int i=1;i<4096;i++) inv_ch[i] = _mm_set1_epi16(4096/i);
+  for (int i=1;i<4096;i++) inv_ch[i] = simde_mm_set1_epi16(4096/i);
 }
 
 void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
@@ -296,17 +296,10 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
 {
   uint16_t re;
   int16_t amp;
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *ul_ch_mag128,*ul_ch_magb128,*rxdataF_comp128;
-  rxdataF_comp128   = (__m128i *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
-  ul_ch_mag128      = (__m128i *)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
-  ul_ch_magb128      = (__m128i *)&ul_ch_magb[0][symbol*frame_parms->N_RB_DL*12];
-#elif defined(__arm__) || defined(__aarch64__)
-  int16x8_t *ul_ch_mag128,*ul_ch_magb128,*rxdataF_comp128;
-  rxdataF_comp128   = (int16x8_t*)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
-  ul_ch_mag128      = (int16x8_t*)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
-  ul_ch_magb128     = (int16x8_t*)&ul_ch_magb[0][symbol*frame_parms->N_RB_DL*12];
-#endif
+  simde__m128i *ul_ch_mag128,*ul_ch_magb128,*rxdataF_comp128;
+  rxdataF_comp128   = (simde__m128i *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
+  ul_ch_mag128      = (simde__m128i *)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
+  ul_ch_magb128      = (simde__m128i *)&ul_ch_magb[0][symbol*frame_parms->N_RB_DL*12];
 
   AssertFatal(symbol<frame_parms->symbols_per_tti,"symbol %d >= %d\n",
 	      symbol,frame_parms->symbols_per_tti);
@@ -320,26 +313,16 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
     if (amp>4095)
       amp=4095;
 
-    //printf("freq_eq: symbol %d re %d => mag %d,amp %d,inv %d, prod %d (%d,%d)\n",symbol,re,*((int16_t*)(&ul_ch_mag128[re])),amp,_mm_extract_epi16(inv_ch[amp],0),(*((int16_t*)(&ul_ch_mag128[re]))*_mm_extract_epi16(inv_ch[amp],0))>>3,*(int16_t*)&(rxdataF_comp128[re]),*(1+(int16_t*)&(rxdataF_comp128[re])));
-#if defined(__x86_64__) || defined(__i386__)
-    rxdataF_comp128[re] = _mm_srai_epi16(_mm_mullo_epi16(rxdataF_comp128[re],inv_ch[amp]),3);
+    // printf("freq_eq: symbol %d re %d => mag %d,amp %d,inv %d, prod %d
+    // (%d,%d)\n",symbol,re,*((int16_t*)(&ul_ch_mag128[re])),amp,simde_mm_extract_epi16(inv_ch[amp],0),(*((int16_t*)(&ul_ch_mag128[re]))*_mm_extract_epi16(inv_ch[amp],0))>>3,*(int16_t*)&(rxdataF_comp128[re]),*(1+(int16_t*)&(rxdataF_comp128[re])));
+    rxdataF_comp128[re] = simde_mm_srai_epi16(simde_mm_mullo_epi16(rxdataF_comp128[re],inv_ch[amp]),3);
 
     if (Qm==4)
-      ul_ch_mag128[re]  = _mm_set1_epi16(324);  // this is 512*2/sqrt(10)
+      ul_ch_mag128[re]  = simde_mm_set1_epi16(324);  // this is 512*2/sqrt(10)
     else {
-      ul_ch_mag128[re]  = _mm_set1_epi16(316);  // this is 512*4/sqrt(42)
-      ul_ch_magb128[re] = _mm_set1_epi16(158);  // this is 512*2/sqrt(42)
+      ul_ch_mag128[re]  = simde_mm_set1_epi16(316);  // this is 512*4/sqrt(42)
+      ul_ch_magb128[re] = simde_mm_set1_epi16(158);  // this is 512*2/sqrt(42)
     }
-#elif defined(__arm__) || defined(__aarch64__)
-    rxdataF_comp128[re] = vmulq_s16(rxdataF_comp128[re],inv_ch[amp]);
-
-    if (Qm==4)
-      ul_ch_mag128[re]  = vdupq_n_s16(324);  // this is 512*2/sqrt(10)
-    else {
-      ul_ch_mag128[re]  = vdupq_n_s16(316);  // this is 512*4/sqrt(42)
-      ul_ch_magb128[re] = vdupq_n_s16(158);  // this is 512*2/sqrt(42)
-    }
-#endif
     //            printf("(%d,%d)\n",*(int16_t*)&(rxdataF_comp128[re]),*(1+(int16_t*)&(rxdataF_comp128[re])));
 
   }

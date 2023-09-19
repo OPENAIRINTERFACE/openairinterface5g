@@ -519,6 +519,7 @@ class OaiCiTest():
 		ping_cmd = f'{ue.getCmdPrefix()} ping {interface} {self.ping_args} 2>&1 | tee /tmp/{ping_log_file}'
 		cmd = cls_cmd.getConnection(ue.getHost())
 		response = cmd.run(ping_cmd, timeout=int(ping_time[0])*1.5)
+		ue_header = f'UE {ue.getName()} ({ueIP})'
 		if response.returncode != 0:
 			message = ue_header + ': ping crashed: TIMEOUT?'
 			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
@@ -528,7 +529,6 @@ class OaiCiTest():
 		cmd.copyin(src=f'/tmp/{ping_log_file}', tgt=local_ping_log_file)
 		cmd.close()
 
-		ue_header = f'UE {ue.getName()} ({ueIP})'
 		with open(local_ping_log_file, 'r') as f:
 			ping_output = "".join(f.readlines())
 		result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', ping_output)

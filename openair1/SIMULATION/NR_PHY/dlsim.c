@@ -276,7 +276,7 @@ int NB_UE_INST = 1;
 int main(int argc, char **argv)
 {
   setbuf(stdout, NULL);
-  char c;
+  int c;
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
@@ -314,6 +314,7 @@ int main(int argc, char **argv)
   //uint8_t frame_mod4,num_pdcch_symbols = 0;
 
   SCM_t channel_model = AWGN; // AWGN Rayleigh1 Rayleigh1_anticorr;
+  double DS_TDL = .03;
   int delay = 0;
 
   //double pbch_sinr;
@@ -378,42 +379,25 @@ int main(int argc, char **argv)
       break;*/
 
     case 'g':
-      switch((char)*optarg) {
-      case 'A':
-        channel_model=SCM_A;
-        break;
-
-      case 'B':
-        channel_model=SCM_B;
-        break;
-
-      case 'C':
-        channel_model=SCM_C;
-        break;
-
-      case 'D':
-        channel_model=SCM_D;
-        break;
-
-      case 'E':
-        channel_model=EPA;
-        break;
-
-      case 'F':
-        channel_model=EVA;
-        break;
-
-      case 'G':
-        channel_model=ETU;
-        break;
-
-      case 'R':
-        channel_model=Rayleigh1;
-        break;
-
-      default:
-        printf("Unsupported channel model!\n");
-        exit(-1);
+      switch ((char)*optarg) {
+        case 'A':
+          channel_model = TDL_A;
+          DS_TDL = 0.030; // 30 ns
+          printf("Channel model: TDLA30\n");
+          break;
+        case 'B':
+          channel_model = TDL_B;
+          DS_TDL = 0.100; // 100ns
+          printf("Channel model: TDLB100\n");
+          break;
+        case 'C':
+          channel_model = TDL_C;
+          DS_TDL = 0.300; // 300 ns
+          printf("Channel model: TDLC300\n");
+          break;
+        default:
+          printf("Unsupported channel model!\n");
+          exit(-1);
       }
 
       break;
@@ -578,7 +562,7 @@ int main(int argc, char **argv)
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       //printf("-t Delay spread for multipath channel\n");
-      printf("-g [A,B,C,D,E,F,G,R] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models or R for MIMO model (ignores delay spread and Ricean factor)\n");
+      printf("-g Channel model: [A] TDLA30, [B] TDLB100, [C] TDLC300, e.g. -g A\n");
       printf("-o Introduce delay in terms of number of samples\n");
       printf("-y Number of TX antennas used in gNB\n");
       printf("-z Number of RX antennas used in UE\n");
@@ -779,7 +763,7 @@ int main(int argc, char **argv)
                                 fs/1e6,//sampling frequency in MHz
                                 0,
                                 txbw,
-                                30e-9,
+                                DS_TDL,
                                 0.0,
                                 CORR_LEVEL_LOW,
                                 0,
@@ -1115,11 +1099,7 @@ int main(int argc, char **argv)
         }
 
         // Apply MIMO Channel
-        if (channel_model == AWGN) {
-          multipath_channel(gNB2UE, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials == 1) ? 1 : 0);
-        } else {
-          multipath_tv_channel(gNB2UE, s_re, s_im, r_re, r_im, slot_length, 0);
-        }
+        multipath_channel(gNB2UE, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials == 1) ? 1 : 0);
         add_noise(UE->common_vars.rxdata, (const double **) r_re, (const double **) r_im, sigma2, slot_length, slot_offset, ts, delay, pdu_bit_map, 0x1, frame_parms->nb_antennas_rx);
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later

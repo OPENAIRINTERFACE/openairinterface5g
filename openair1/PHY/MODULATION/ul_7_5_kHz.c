@@ -32,14 +32,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
   int32_t **rxdata_7_5kHz=ru->common.rxdata_7_5kHz;
   uint16_t len;
   uint32_t *kHz7_5ptr;
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *rxptr128,*rxptr128_7_5kHz,*kHz7_5ptr128,kHz7_5_2,mmtmp_re,mmtmp_im,mmtmp_re2,mmtmp_im2;
-#elif defined(__arm__) || defined(__aarch64__)
-  int16x8_t *rxptr128,*kHz7_5ptr128,*rxptr128_7_5kHz;
-  int32x4_t mmtmp_re,mmtmp_im;
-  int32x4_t mmtmp0,mmtmp1;
-
-#endif
+  simde__m128i *rxptr128, *rxptr128_7_5kHz, *kHz7_5ptr128, kHz7_5_2, mmtmp_re, mmtmp_im, mmtmp_re2, mmtmp_im2;
   uint32_t slot_offset,slot_offset2;
   uint8_t aa;
   uint32_t i;
@@ -83,65 +76,29 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
   len = frame_parms->samples_per_tti/2;
 
   for (aa=0; aa<ru->nb_rx; aa++) {
-
-#if defined(__x86_64__) || defined(__i386__)
-    rxptr128        = (__m128i *)&rxdata[aa][slot_offset];
-    rxptr128_7_5kHz = (__m128i *)&rxdata_7_5kHz[aa][slot_offset2];
-    kHz7_5ptr128    = (__m128i *)kHz7_5ptr;
-#elif defined(__arm__) || defined(__aarch64__)
-    rxptr128        = (int16x8_t *)&rxdata[aa][slot_offset];
-    rxptr128_7_5kHz = (int16x8_t *)&rxdata_7_5kHz[aa][slot_offset2];
-    kHz7_5ptr128    = (int16x8_t *)kHz7_5ptr;
-#endif
+    rxptr128 = (simde__m128i *)&rxdata[aa][slot_offset];
+    rxptr128_7_5kHz = (simde__m128i *)&rxdata_7_5kHz[aa][slot_offset2];
+    kHz7_5ptr128 = (simde__m128i *)kHz7_5ptr;
     // apply 7.5 kHz
 
     //      if (((slot>>1)&1) == 0) { // apply the sinusoid from the table directly
     for (i=0; i<(len>>2); i++) {
-
-#if defined(__x86_64__) || defined(__i386__)
-      kHz7_5_2 = _mm_sign_epi16(*kHz7_5ptr128,*(__m128i*)&conjugate75_2[0]);
-      mmtmp_re = _mm_madd_epi16(*rxptr128,kHz7_5_2);
+      kHz7_5_2 = simde_mm_sign_epi16(*kHz7_5ptr128, *(simde__m128i *)&conjugate75_2[0]);
+      mmtmp_re = simde_mm_madd_epi16(*rxptr128, kHz7_5_2);
       // Real part of complex multiplication (note: 7_5kHz signal is conjugated for this to work)
-      mmtmp_im = _mm_shufflelo_epi16(kHz7_5_2,_MM_SHUFFLE(2,3,0,1));
-      mmtmp_im = _mm_shufflehi_epi16(mmtmp_im,_MM_SHUFFLE(2,3,0,1));
-      mmtmp_im = _mm_sign_epi16(mmtmp_im,*(__m128i*)&conjugate75[0]);
-      mmtmp_im = _mm_madd_epi16(mmtmp_im,rxptr128[0]);
-      mmtmp_re = _mm_srai_epi32(mmtmp_re,15);
-      mmtmp_im = _mm_srai_epi32(mmtmp_im,15);
-      mmtmp_re2 = _mm_unpacklo_epi32(mmtmp_re,mmtmp_im);
-      mmtmp_im2 = _mm_unpackhi_epi32(mmtmp_re,mmtmp_im);
+      mmtmp_im = simde_mm_shufflelo_epi16(kHz7_5_2, SIMDE_MM_SHUFFLE(2, 3, 0, 1));
+      mmtmp_im = simde_mm_shufflehi_epi16(mmtmp_im, SIMDE_MM_SHUFFLE(2, 3, 0, 1));
+      mmtmp_im = simde_mm_sign_epi16(mmtmp_im, *(simde__m128i *)&conjugate75[0]);
+      mmtmp_im = simde_mm_madd_epi16(mmtmp_im, rxptr128[0]);
+      mmtmp_re = simde_mm_srai_epi32(mmtmp_re, 15);
+      mmtmp_im = simde_mm_srai_epi32(mmtmp_im, 15);
+      mmtmp_re2 = simde_mm_unpacklo_epi32(mmtmp_re, mmtmp_im);
+      mmtmp_im2 = simde_mm_unpackhi_epi32(mmtmp_re, mmtmp_im);
 
-      rxptr128_7_5kHz[0] = _mm_packs_epi32(mmtmp_re2,mmtmp_im2);
+      rxptr128_7_5kHz[0] = simde_mm_packs_epi32(mmtmp_re2, mmtmp_im2);
       rxptr128++;
       rxptr128_7_5kHz++;
       kHz7_5ptr128++;
-
-#elif defined(__arm__) || defined(__aarch64__)
-
-      kHz7_5ptr128[0] = vmulq_s16(kHz7_5ptr128[0],((int16x8_t*)conjugate75_2)[0]);
-      mmtmp0 = vmull_s16(((int16x4_t*)rxptr128)[0],((int16x4_t*)kHz7_5ptr128)[0]);
-        //mmtmp0 = [Re(ch[0])Re(rx[0]) Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1]) Im(ch[1])Im(ch[1])]
-      mmtmp1 = vmull_s16(((int16x4_t*)rxptr128)[1],((int16x4_t*)kHz7_5ptr128)[1]);
-        //mmtmp1 = [Re(ch[2])Re(rx[2]) Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3]) Im(ch[3])Im(ch[3])]
-      mmtmp_re = vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),
-                              vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
-        //mmtmp_re = [Re(ch[0])Re(rx[0])+Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1])+Im(ch[1])Im(ch[1]) Re(ch[2])Re(rx[2])+Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3])+Im(ch[3])Im(ch[3])]
-
-      mmtmp0 = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)rxptr128)[0],*(int16x4_t*)conjugate75_2)), ((int16x4_t*)kHz7_5ptr128)[0]);
-        //mmtmp0 = [-Im(ch[0])Re(rx[0]) Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1]) Re(ch[1])Im(rx[1])]
-      mmtmp1 = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)rxptr128)[1],*(int16x4_t*)conjugate75_2)), ((int16x4_t*)kHz7_5ptr128)[1]);
-        //mmtmp1 = [-Im(ch[2])Re(rx[2]) Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3]) Re(ch[3])Im(rx[3])]
-      mmtmp_im = vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),
-                              vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
-        //mmtmp_im = [-Im(ch[0])Re(rx[0])+Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1])+Re(ch[1])Im(rx[1]) -Im(ch[2])Re(rx[2])+Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3])+Re(ch[3])Im(rx[3])]
-
-      rxptr128_7_5kHz[0] = vcombine_s16(vmovn_s32(mmtmp_re),vmovn_s32(mmtmp_im));
-      rxptr128_7_5kHz++;
-      rxptr128++;
-      kHz7_5ptr128++;
-
-
-#endif
     }
     // undo 7.5 kHz offset for symbol 3 in case RU is slave (for OTA synchronization)
     if (ru->is_slave == 1 && slot == 2){

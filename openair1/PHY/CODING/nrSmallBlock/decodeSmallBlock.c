@@ -33,6 +33,12 @@
 #include "PHY/CODING/nrSmallBlock/nr_small_block_defs.h"
 #include "assertions.h"
 #include "PHY/sse_intrin.h"
+#if defined(__AVX512F__)
+#include <simde/x86/avx512.h>
+// simde current version missed this instruction
+#define simde_mm512_reduce_add_epi32 _mm512_reduce_add_epi32
+#define simde_mm512_cvtepi8_epi32 _mm512_cvtepi8_epi32
+#endif
 
 //#define DEBUG_DECODESMALLBLOCK
 
@@ -54,9 +60,9 @@ uint16_t decodeSmallBlock(int8_t *in, uint8_t len){
 				Rhat[j] += in[k] * hadamard32InterleavedTransposed[j][k];
 
 		for (int i = 0; i < NR_SMALL_BLOCK_CODED_BITS; i += 16) {
-			__m256i a15_a0 = simde_mm256_loadu_si256((__m256i*)&Rhat[i]);
+			simde__m256i a15_a0 = simde_mm256_loadu_si256((simde__m256i*)&Rhat[i]);
 			a15_a0 = simde_mm256_abs_epi16(a15_a0);
-			simde_mm256_storeu_si256((__m256i*)(&Rhatabs[i]), a15_a0);
+			simde_mm256_storeu_si256((simde__m256i*)(&Rhatabs[i]), a15_a0);
 		}
 		maxVal = Rhatabs[0];
 		for (int k = 1; k < jmax; ++k){
@@ -82,23 +88,20 @@ uint16_t decodeSmallBlock(int8_t *in, uint8_t len){
 #if !defined(__AVX512F__)
 		int8_t DmatrixElement[NR_SMALL_BLOCK_CODED_BITS] = {0};
 #endif		
-		__m256i _in_256 = simde_mm256_loadu_si256 ((__m256i*)&in[0]);
-		__m256i _maskD_256, _Dmatrixj_256, _maskH_256, _DmatrixElement_256;
+		simde__m256i _in_256 = simde_mm256_loadu_si256 ((simde__m256i*)&in[0]);
+		simde__m256i _maskD_256, _Dmatrixj_256, _maskH_256, _DmatrixElement_256;
 		for (int j = 0; j < ( 1<<(len-6) ); ++j) {
-			_maskD_256 = simde_mm256_loadu_si256 ((__m256i*)(&maskD[j][0]));
+			_maskD_256 = simde_mm256_loadu_si256 ((simde__m256i*)(&maskD[j][0]));
 			_Dmatrixj_256 = simde_mm256_sign_epi8 (_in_256, _maskD_256);
 			for (int k = 0; k < NR_SMALL_BLOCK_CODED_BITS; ++k) {
-				_maskH_256 = simde_mm256_loadu_si256 ((__m256i*)(&hadamard32InterleavedTransposed[k][0]));
+				_maskH_256 = simde_mm256_loadu_si256 ((simde__m256i*)(&hadamard32InterleavedTransposed[k][0]));
 				_DmatrixElement_256 = simde_mm256_sign_epi8 (_Dmatrixj_256, _maskH_256);
 #if defined(__AVX512F__)
-			    DmatrixElementVal = _mm512_reduce_add_epi32 (
-			    		            _mm512_add_epi32(
-			    				    _mm512_cvtepi8_epi32 (simde_mm256_extracti128_si256 (_DmatrixElement_256, 1)),
-								    _mm512_cvtepi8_epi32 (simde_mm256_castsi256_si128 (_DmatrixElement_256))
-			    		            				)
-															);
+        DmatrixElementVal = simde_mm512_reduce_add_epi32(
+            simde_mm512_add_epi32(simde_mm512_cvtepi8_epi32(simde_mm256_extracti128_si256(_DmatrixElement_256, 1)),
+                                  simde_mm512_cvtepi8_epi32(simde_mm256_castsi256_si128(_DmatrixElement_256))));
 #else
-				simde_mm256_storeu_si256((__m256i*)(&DmatrixElement[0]), _DmatrixElement_256);
+				simde_mm256_storeu_si256((simde__m256i*)(&DmatrixElement[0]), _DmatrixElement_256);
 				for (int i = 0; i < NR_SMALL_BLOCK_CODED_BITS; ++i)
 					DmatrixElementVal += DmatrixElement[i];
 #endif

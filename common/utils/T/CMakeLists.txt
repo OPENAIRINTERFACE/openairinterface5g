@@ -1,8 +1,13 @@
-add_executable(genids genids.c)
-set_target_properties(genids PROPERTIES RUNTIME_OUTPUT_DIRECTORY .)
-
+if (CROSS_COMPILE)
+  find_package(genids)
+else()
+  add_executable(genids genids.c)
+  set_target_properties(genids PROPERTIES RUNTIME_OUTPUT_DIRECTORY .)
+  export(TARGETS genids FILE
+          "${CMAKE_BINARY_DIR}/genidsConfig.cmake")
+endif()
 add_custom_command(OUTPUT T_IDs.h
-                   COMMAND ./genids ${CMAKE_CURRENT_SOURCE_DIR}/T_messages.txt T_IDs.h
+                   COMMAND genids ${CMAKE_CURRENT_SOURCE_DIR}/T_messages.txt T_IDs.h
                    DEPENDS genids
                    COMMENT "Generating T_IDs.h from T_messages.txt"
 )
@@ -12,14 +17,19 @@ add_custom_command(OUTPUT T_messages.txt.h
                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(_check_vcd check_vcd.c tracer/database.c tracer/utils.c T_IDs.h T_messages.txt.h)
-target_include_directories(_check_vcd PRIVATE
-                           .. ../itti ../../../openair2/COMMON tracer
-                           ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(_check_vcd PRIVATE -Wall)
-target_link_libraries(_check_vcd PRIVATE m pthread)
-set_target_properties(_check_vcd PROPERTIES RUNTIME_OUTPUT_DIRECTORY .)
-
+if (CROSS_COMPILE)
+  find_package(_check_vcd)
+else ()
+  add_executable(_check_vcd check_vcd.c tracer/database.c tracer/utils.c T_IDs.h T_messages.txt.h)
+  target_include_directories(_check_vcd PRIVATE
+                             .. ../itti ../../../openair2/COMMON tracer
+                             ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+  target_compile_options(_check_vcd PRIVATE -Wall)
+  target_link_libraries(_check_vcd PRIVATE m pthread)
+  set_target_properties(_check_vcd PROPERTIES RUNTIME_OUTPUT_DIRECTORY .)
+  export(TARGETS _check_vcd FILE
+            "${CMAKE_BINARY_DIR}/_check_vcdConfig.cmake")
+endif()
 add_custom_target(check_vcd
                   COMMAND _check_vcd ${CMAKE_CURRENT_SOURCE_DIR}/T_messages.txt ${CMAKE_CURRENT_SOURCE_DIR}/../LOG/vcd_signal_dumper.h
                   DEPENDS _check_vcd

@@ -38,32 +38,49 @@
 
 
 #include "ldpc384_byte.c"
+#include "ldpc384_byte_128.c"
 #include "ldpc352_byte.c"
+#include "ldpc352_byte_128.c"
 #include "ldpc320_byte.c"
+#include "ldpc320_byte_128.c"
 #include "ldpc288_byte.c"
+#include "ldpc288_byte_128.c"
 #include "ldpc256_byte.c"
+#include "ldpc256_byte_128.c"
 #include "ldpc240_byte.c"
 #include "ldpc224_byte.c"
+#include "ldpc224_byte_128.c"
 #include "ldpc208_byte.c"
 #include "ldpc192_byte.c"
+#include "ldpc192_byte_128.c"
 #include "ldpc176_byte.c"
 #include "ldpc_BG2_Zc384_byte.c"
+#include "ldpc_BG2_Zc384_byte_128.c"
 #include "ldpc_BG2_Zc352_byte.c"
+#include "ldpc_BG2_Zc352_byte_128.c"
 #include "ldpc_BG2_Zc320_byte.c"
+#include "ldpc_BG2_Zc320_byte_128.c"
 #include "ldpc_BG2_Zc288_byte.c"
+#include "ldpc_BG2_Zc288_byte_128.c"
 #include "ldpc_BG2_Zc256_byte.c"
+#include "ldpc_BG2_Zc256_byte_128.c"
 #include "ldpc_BG2_Zc240_byte.c"
 #include "ldpc_BG2_Zc224_byte.c"
+#include "ldpc_BG2_Zc224_byte_128.c"
 #include "ldpc_BG2_Zc208_byte.c"
 #include "ldpc_BG2_Zc192_byte.c"
+#include "ldpc_BG2_Zc192_byte_128.c"
 #include "ldpc_BG2_Zc176_byte.c"
+#include "ldpc_BG2_Zc160_byte_128.c"
 #include "ldpc_BG2_Zc160_byte.c"
 #include "ldpc_BG2_Zc144_byte.c"
 #include "ldpc_BG2_Zc128_byte.c"
+#include "ldpc_BG2_Zc128_byte_128.c"
 #include "ldpc_BG2_Zc120_byte.c"
 #include "ldpc_BG2_Zc112_byte.c"
 #include "ldpc_BG2_Zc104_byte.c"
 #include "ldpc_BG2_Zc96_byte.c"
+#include "ldpc_BG2_Zc96_byte_128.c"
 #include "ldpc_BG2_Zc88_byte.c"
 #include "ldpc_BG2_Zc80_byte.c"
 #include "ldpc_BG2_Zc72_byte.c"
@@ -73,7 +90,6 @@
 static void encode_parity_check_part_optim(uint8_t *cc,uint8_t *d, short BG,short Zc,short Kb, int simd_size, int ncols)
 {
   unsigned char c[2*22*Zc*simd_size] __attribute__((aligned(32)));      //double size matrix of c
-  
   for (int i1=0; i1 < ncols; i1++)   {
     memcpy(&c[2*i1*Zc], &cc[i1*Zc], Zc*sizeof(unsigned char));
     memcpy(&c[(2*i1+1)*Zc], &cc[i1*Zc], Zc*sizeof(unsigned char));

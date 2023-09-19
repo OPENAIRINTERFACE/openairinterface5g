@@ -679,7 +679,7 @@ class EPCManagement():
 			mySSH.copyout(self.IPAddress, self.UserName, self.Password, './' + self.yamlPath + '/mme.conf', self.SourceCodePath + '/scripts')
 			mySSH.command('chmod 775 entrypoint.sh', '\$', 60)
 		mySSH.command('wget --quiet --tries=3 --retry-connrefused https://raw.githubusercontent.com/OPENAIRINTERFACE/openair-hss/develop/src/hss_rel14/db/oai_db.cql', '\$', 30)
-		mySSH.command('docker-compose down', '\$', 60)
+		mySSH.command('docker-compose down -v', '\$', 60)
 		mySSH.command('docker-compose up -d db_init', '\$', 60)
 		# databases take time...
 		time.sleep(10)
@@ -831,8 +831,7 @@ class EPCManagement():
 			listOfContainers += ' prod-trf-gen'
 			nbContainers += 1
 
-		mySSH.command('docker-compose down', '\$', 60)
-		mySSH.command('docker volume prune --force || true', '\$', 60)
+		mySSH.command('docker-compose down -v', '\$', 60)
 		mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' ' + listOfContainers, '\$', 10)
 		noMoreContainerNb = mySSH.getBefore().count('No such object')
 		mySSH.command('docker inspect --format=\'{{.Name}}\' prod-oai-public-net prod-oai-private-net', '\$', 10)
