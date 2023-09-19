@@ -645,8 +645,8 @@ static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_
   AssertFatal(dl_config->number_pdus < sizeof(dl_config->dl_config_list) / sizeof(dl_config->dl_config_list[0]),
               "Too many dl_config pdus %d", dl_config->number_pdus);
   for (int i = 0; i < dl_config->number_pdus; i++) {
-    LOG_D(PHY, "In %s: filling DCI with a total of %d total DL PDUs (dl_config %p) \n",
-          __FUNCTION__, dl_config->number_pdus, dl_config);
+    LOG_D(PHY, "Filling DCI with a total of %d total DL PDUs (dl_config %p) \n",
+          dl_config->number_pdus, dl_config);
     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15_dci = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
     int num_dci_options = rel15_dci->num_dci_options;
     if (num_dci_options <= 0)
@@ -662,14 +662,14 @@ static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_
                   "dl_config->number_pdus %d > dci_ind->dci_list array\n", num_dcis);
       for (int k = 0; k < num_dcis; k++) {
         LOG_T(NR_PHY, "Received len %d, length options[%d] %d, format assigned %d, format options[%d] %d\n",
-                  dl_ind->dci_ind->dci_list[k].payloadSize, j, rel15_dci->dci_length_options[j],
-                  dl_ind->dci_ind->dci_list[k].dci_format, j, rel15_dci->dci_format_options[j]);
+              dl_ind->dci_ind->dci_list[k].payloadSize, j, rel15_dci->dci_length_options[j],
+              dl_ind->dci_ind->dci_list[k].dci_format, j, rel15_dci->dci_format_options[j]);
         if (rel15_dci->dci_length_options[j] == dl_ind->dci_ind->dci_list[k].payloadSize) {
-            dl_ind->dci_ind->dci_list[k].dci_format = rel15_dci->dci_format_options[j];
-            dl_ind->dci_ind->dci_list[k].ss_type = rel15_dci->dci_type_options[j];
-            dl_ind->dci_ind->dci_list[k].coreset_type = rel15_dci->coreset.CoreSetType;
-            LOG_D(NR_PHY, "format assigned dl_ind->dci_ind->dci_list[k].dci_format %d\n",
-                  dl_ind->dci_ind->dci_list[k].dci_format);
+          dl_ind->dci_ind->dci_list[k].dci_format = rel15_dci->dci_format_options[j];
+          dl_ind->dci_ind->dci_list[k].ss_type = rel15_dci->ss_type_options[j];
+          dl_ind->dci_ind->dci_list[k].coreset_type = rel15_dci->coreset.CoreSetType;
+          LOG_D(NR_PHY, "format assigned dl_ind->dci_ind->dci_list[k].dci_format %d\n",
+                dl_ind->dci_ind->dci_list[k].dci_format);
         }
       }
     }
