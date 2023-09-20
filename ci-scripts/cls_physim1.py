@@ -161,7 +161,7 @@ class PhySim:
 		isRunning = False
 		count = 0
 		# Check whether the containers are in Running state or not under 2 mins
-		while(count < 2 and isRunning == False):
+		while(count < 5 and isRunning == False):
 			time.sleep(60)
 			mySSH.command('oc get pods -o wide -l app=physim | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 30, resync=True)
 			running_count = mySSH.getBefore().count('Running')
