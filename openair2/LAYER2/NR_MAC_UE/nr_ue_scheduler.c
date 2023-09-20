@@ -424,14 +424,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                         uint16_t rnti,
                         const nr_dci_format_t dci_format)
 {
-
-  int f_alloc;
-  int mask;
-  uint8_t nb_dmrs_re_per_rb;
-
-  uint16_t        l_prime_mask = 0;
-  uint16_t number_dmrs_symbols = 0;
-  int                N_PRB_oh  = 0;
+  uint16_t l_prime_mask = 0;
+  int N_PRB_oh  = 0;
 
   int rnti_type = get_rnti_type(mac, rnti);
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
@@ -467,12 +461,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     //// Resource assignment from RAR
     // Frequency domain allocation according to 8.3 of TS 38.213
+    int mask;
     if (ibwp_size < 180)
       mask = (1 << ((int) ceil(log2((ibwp_size*(ibwp_size+1))>>1)))) - 1;
     else
       mask = (1 << (28 - (int)(ceil(log2((ibwp_size*(ibwp_size+1))>>1))))) - 1;
 
-    f_alloc = rar_grant->Msg3_f_alloc & mask;
+    int f_alloc = rar_grant->Msg3_f_alloc & mask;
     if (nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu, NULL, ibwp_size, 0, f_alloc) < 0)
       return -1;
 
@@ -702,19 +697,15 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
   }
 
-  LOG_D(NR_MAC, "In %s: received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d) for RNTI type %s \n",
-    __FUNCTION__,
-    pusch_config_pdu->rb_start,
-    pusch_config_pdu->rb_size,
-    pusch_config_pdu->start_symbol_index,
-    pusch_config_pdu->nr_of_symbols,
-    rnti_types[rnti_type]);
+  LOG_D(NR_MAC, "Received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d) for RNTI type %s \n",
+        pusch_config_pdu->rb_start,
+        pusch_config_pdu->rb_size,
+        pusch_config_pdu->start_symbol_index,
+        pusch_config_pdu->nr_of_symbols,
+        rnti_types[rnti_type]);
 
   pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
-  uint16_t R = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
-  pusch_config_pdu->target_code_rate = R;
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
-
   if (pusch_config_pdu->qam_mod_order == 0) {
     LOG_W(NR_MAC, "Invalid Mod order, likely due to unexpected UL DCI. Ignoring DCI! \n");
     return -1;
@@ -722,25 +713,35 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   int start_symbol = pusch_config_pdu->start_symbol_index;
   int number_of_symbols = pusch_config_pdu->nr_of_symbols;
+  int number_dmrs_symbols = 0;
   for (int i = start_symbol; i < start_symbol + number_of_symbols; i++) {
     if((pusch_config_pdu->ul_dmrs_symb_pos >> i) & 0x01)
       number_dmrs_symbols += 1;
   }
 
-  nb_dmrs_re_per_rb = ((pusch_config_pdu->dmrs_config_type == pusch_dmrs_type1) ? 6:4)*pusch_config_pdu->num_dmrs_cdm_grps_no_data;
+  int nb_dmrs_re_per_rb = ((pusch_config_pdu->dmrs_config_type == pusch_dmrs_type1) ? 6 : 4) * pusch_config_pdu->num_dmrs_cdm_grps_no_data;
 
   // Compute TBS
-  if (R > 0)
+  uint16_t R = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+  int pid = pusch_config_pdu->pusch_data.harq_process_id;
+  if (R > 0) {
+    pusch_config_pdu->target_code_rate = R;
     pusch_config_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_config_pdu->qam_mod_order,
                                                           R,
                                                           pusch_config_pdu->rb_size,
                                                           pusch_config_pdu->nr_of_symbols,
-                                                          nb_dmrs_re_per_rb*number_dmrs_symbols,
+                                                          nb_dmrs_re_per_rb * number_dmrs_symbols,
                                                           N_PRB_oh,
                                                           0, // TBR to verify tb scaling
-                                                          pusch_config_pdu->nrOfLayers)>>3;
+                                                          pusch_config_pdu->nrOfLayers) >> 3;
+    mac->ul_harq_info[pid].TBS = pusch_config_pdu->pusch_data.tb_size;
+    mac->ul_harq_info[pid].R = R;
+  }
+  else {
+    pusch_config_pdu->target_code_rate = mac->ul_harq_info[pid].R;
+    pusch_config_pdu->pusch_data.tb_size = mac->ul_harq_info[pid].TBS;
+  }
   return 0;
-
 }
 
 void configure_srs_pdu(NR_UE_MAC_INST_t *mac,

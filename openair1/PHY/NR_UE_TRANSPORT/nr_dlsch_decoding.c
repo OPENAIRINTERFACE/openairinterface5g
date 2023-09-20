@@ -101,27 +101,23 @@ static bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue,
     LOG_D(PHY, "DLSCH %d in error\n", rdata->dlsch_id);
   }
 
-  uint32_t tbs;
-  if (dlsch->dlsch_config.targetCodeRate > 0)
-    tbs = dlsch->dlsch_config.TBS;
-  else
-    tbs = harq_process->tb_size;
-
   // if all segments are done
   if (last) {
     kpiStructure.nb_total++;
-    kpiStructure.blockSize = tbs;
+    kpiStructure.blockSize = dlsch->dlsch_config.TBS;
     kpiStructure.dl_mcs = dlsch->dlsch_config.mcs;
     kpiStructure.nofRBs = dlsch->dlsch_config.number_rbs;
 
     if (*num_seg_ok == harq_process->C) {
       if (harq_process->C > 1) {
+        int A = dlsch->dlsch_config.TBS;
         /* check global CRC */
 	// we have regrouped the transport block, so it is "1" segment
-        if (!check_crc(b, lenWithCrc(1, tbs), crcType(1, tbs))) {
+        if (!check_crc(b, lenWithCrc(1, A), crcType(1, A))) {
           harq_process->ack = 0;
           dlsch->last_iteration_cnt = dlsch->max_ldpc_iterations + 1;
-          LOG_E(PHY, " Frame %d.%d LDPC global CRC fails, but individual LDPC CRC succeeded. %d segs\n", proc->frame_rx, proc->nr_slot_rx, harq_process->C);
+          LOG_E(PHY, " Frame %d.%d LDPC global CRC fails, but individual LDPC CRC succeeded. %d segs\n",
+                proc->frame_rx, proc->nr_slot_rx, harq_process->C);
           LOG_D(PHY, "DLSCH received nok \n");
           return true; //stop
         }
@@ -343,13 +339,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   */
   nb_rb = dlsch->dlsch_config.number_rbs;
-  uint32_t A;
-  if (dlsch->dlsch_config.targetCodeRate > 0) {
-    A = dlsch->dlsch_config.TBS;
-    harq_process->tb_size = A;
-  }
-  else
-    A = harq_process->tb_size;
+  uint32_t A = dlsch->dlsch_config.TBS;
   ret = dlsch->max_ldpc_iterations + 1;
   dlsch->last_iteration_cnt = ret;
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, dmrs_length, dlsch->dlsch_config.qamModOrder,dlsch->Nl);
