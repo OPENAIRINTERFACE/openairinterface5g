@@ -1188,8 +1188,7 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   current_harq->N_CCE = N_CCE;
   current_harq->delta_pucch = delta_pucch;
   // FIXME k0 != 0 currently not taken into consideration
-  int scs = get_softmodem_params()->numerology;
-  int slots_per_frame = nr_slots_per_frame[scs];
+  int slots_per_frame = nr_slots_per_frame[mac->current_DL_BWP.scs];
   current_harq->ul_frame = frame;
   current_harq->ul_slot = slot + data_toul_fb;
   if (current_harq->ul_slot >= slots_per_frame) {
