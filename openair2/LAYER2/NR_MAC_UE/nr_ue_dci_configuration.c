@@ -134,12 +134,13 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
   rel15->coreset.precoder_granularity = coreset->precoderGranularity;
 
   // Scrambling RNTI
+  rel15->coreset.scrambling_rnti = 0;
   if (coreset->pdcch_DMRS_ScramblingID) {
     rel15->coreset.pdcch_dmrs_scrambling_id = *coreset->pdcch_DMRS_ScramblingID;
-    rel15->coreset.scrambling_rnti = mac->crnti;
+    if (ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific)
+      rel15->coreset.scrambling_rnti = mac->crnti;
   } else {
     rel15->coreset.pdcch_dmrs_scrambling_id = mac->physCellId;
-    rel15->coreset.scrambling_rnti = 0;
   }
 
   rel15->num_dci_options = (mac->ra.ra_state == WAIT_RAR ||
@@ -166,7 +167,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
 
   // loop over RNTI type and configure resource allocation for DCI
   for (int i = 0; i < rel15->num_dci_options; i++) {
-    rel15->dci_type_options[i] = ss->searchSpaceType->present;
+    rel15->ss_type_options[i] = ss->searchSpaceType->present;
     const int dci_format = rel15->dci_format_options[i];
     uint16_t alt_size = 0;
     if(current_DL_BWP) {
