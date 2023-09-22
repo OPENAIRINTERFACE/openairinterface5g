@@ -980,16 +980,14 @@ void *nas_nrue_task(void *args_p)
             LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
             decodeRegistrationAccept(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length, nas);
 
-            as_nas_info_t initialNasMsg;
-            memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+            as_nas_info_t initialNasMsg = {0};
             generateRegistrationComplete(nas, &initialNasMsg, NULL);
             if (initialNasMsg.length > 0) {
               send_nas_uplink_data_req(instance, &initialNasMsg);
               LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
             }
 
-            as_nas_info_t pduEstablishMsg;
-            memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
+            as_nas_info_t pduEstablishMsg = {0};
             generatePduSessionEstablishRequest(nas, &pduEstablishMsg);
             if (pduEstablishMsg.length > 0) {
               send_nas_uplink_data_req(instance, &pduEstablishMsg);
@@ -1060,37 +1058,57 @@ void *nas_nrue_task(void *args_p)
           case FGS_DOWNLINK_NAS_TRANSPORT:
             decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
             break;
+          case REGISTRATION_ACCEPT:
+            LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
+            decodeRegistrationAccept(pdu_buffer, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length, nas);
+
+            as_nas_info_t initialNasMsg = {0};
+            generateRegistrationComplete(nas, &initialNasMsg, NULL);
+            if (initialNasMsg.length > 0) {
+              send_nas_uplink_data_req(instance, &initialNasMsg);
+              LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
+            }
+
+            as_nas_info_t pduEstablishMsg = {0};
+            generatePduSessionEstablishRequest(nas, &pduEstablishMsg);
+            if (pduEstablishMsg.length > 0) {
+              send_nas_uplink_data_req(instance, &pduEstablishMsg);
+              LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+            }
+            break;
           case FGS_DEREGISTRATION_ACCEPT:
             LOG_I(NAS, "received deregistration accept\n");
             break;
-	case FGS_PDU_SESSION_ESTABLISHMENT_ACC:
-	  {
-	    uint8_t offset = 0;
-	    uint8_t *payload_container = pdu_buffer;
-	    offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
-	    uint32_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
-	    if ((payload_container_length >= PAYLOAD_CONTAINER_LENGTH_MIN) &&
-		(payload_container_length <= PAYLOAD_CONTAINER_LENGTH_MAX))
-	      offset += (PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH + 3);
-	    if (offset < NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length) 
-	      payload_container = pdu_buffer + offset;
-	    
-	    while(offset < payload_container_length) {
-	      if (*(payload_container + offset) == 0x29) { // PDU address IEI
-		if ((*(payload_container+offset+1) == 0x05) && (*(payload_container +offset+2) == 0x01)) { // IPV4
-		  nas_getparams();
-		  sprintf(baseNetAddress, "%d.%d", *(payload_container+offset+3), *(payload_container+offset+4));
-		  int third_octet = *(payload_container+offset+5);
-		  int fourth_octet = *(payload_container+offset+6);
-		  LOG_I(NAS, "Received PDU Session Establishment Accept, UE IP: %d.%d.%d.%d\n",
-			*(payload_container+offset+3), *(payload_container+offset+4),
-			*(payload_container+offset+5), *(payload_container+offset+6));
-		  nas_config(1,third_octet,fourth_octet,"oaitun_ue");
-		  break;
-		}
-	      }
-	      offset++;
-	    }
+          case FGS_PDU_SESSION_ESTABLISHMENT_ACC: {
+            uint8_t offset = 0;
+            uint8_t *payload_container = pdu_buffer;
+            offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+            uint32_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
+            if ((payload_container_length >= PAYLOAD_CONTAINER_LENGTH_MIN)
+                && (payload_container_length <= PAYLOAD_CONTAINER_LENGTH_MAX))
+              offset += (PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH + 3);
+            if (offset < NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length)
+              payload_container = pdu_buffer + offset;
+
+            while (offset < payload_container_length) {
+              if (*(payload_container + offset) == 0x29) { // PDU address IEI
+                if ((*(payload_container + offset + 1) == 0x05) && (*(payload_container + offset + 2) == 0x01)) { // IPV4
+                  nas_getparams();
+                  sprintf(baseNetAddress, "%d.%d", *(payload_container + offset + 3), *(payload_container + offset + 4));
+                  int third_octet = *(payload_container + offset + 5);
+                  int fourth_octet = *(payload_container + offset + 6);
+                  LOG_I(NAS,
+                        "Received PDU Session Establishment Accept, UE IP: %d.%d.%d.%d\n",
+                        *(payload_container + offset + 3),
+                        *(payload_container + offset + 4),
+                        *(payload_container + offset + 5),
+                        *(payload_container + offset + 6));
+                  nas_config(1, third_octet, fourth_octet, "oaitun_ue");
+                  break;
+                }
+              }
+              offset++;
+            }
 	  }
 	  break;
           default:
