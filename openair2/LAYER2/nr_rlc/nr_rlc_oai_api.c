@@ -1046,7 +1046,7 @@ void nr_rlc_activate_avg_time_to_tx(
 }
 
 /* returns false in case of error, true if everything ok */
-const bool nr_rlc_get_statistics(
+bool nr_rlc_get_statistics(
   int rnti,
   int srb_flag,
   int rb_id,
