@@ -169,6 +169,8 @@ nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb, bool has_sdap_rx, bool has_sdap
 /* Entity Handling Related Functions */
 nr_sdap_entity_t *nr_sdap_get_entity(ue_id_t ue_id, int pdusession_id);
 
+void nr_sdap_release_drb(ue_id_t ue_id, int drb_id, int pdusession_id);
+
 /**
  * @brief Function to delete a single SDAP Entity based on the ue_id and pdusession_id.
  * @note  1. SDAP entities may have the same ue_id.

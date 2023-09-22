@@ -468,6 +468,21 @@ nr_sdap_entity_t *nr_sdap_get_entity(ue_id_t ue_id, int pdusession_id)
   return NULL;
 }
 
+void nr_sdap_release_drb(ue_id_t ue_id, int drb_id, int pdusession_id)
+{
+  // remove all QoS flow to DRB mappings associated with the released DRB
+  nr_sdap_entity_t *sdap = nr_sdap_get_entity(ue_id, pdusession_id);
+  if (sdap) {
+    for (int i = 0; i < SDAP_MAX_QFI; i++) {
+      if (sdap->qfi2drb_table[i].drb_id == drb_id)
+        sdap->qfi2drb_table[i].drb_id = SDAP_NO_MAPPING_RULE;
+    }
+  }
+  else
+    LOG_E(SDAP, "Couldn't find a SDAP entity associated with PDU session ID %d\n",
+          pdusession_id);
+}
+
 bool nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id)
 {
   nr_sdap_entity_t *entityPtr = sdap_info.sdap_entity_llist;
