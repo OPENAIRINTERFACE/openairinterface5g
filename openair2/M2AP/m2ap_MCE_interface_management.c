@@ -43,8 +43,9 @@ extern m2ap_setup_req_t *m2ap_mce_data_from_enb;
 /*
  * MBMS Session start
  */
-int MCE_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id*/,m2ap_session_start_req_t* m2ap_session_start_req){
-
+int MCE_send_MBMS_SESSION_START_REQUEST(instance_t instance /*, sctp_assoc_t assoc_id*/,
+                                        m2ap_session_start_req_t *m2ap_session_start_req)
+{
   //AssertFatal(1==0,"Not implemented yet\n");
     
   //module_id_t enb_mod_idP=0;
@@ -153,13 +154,10 @@ int MCE_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
   //MCE_m2ap_itti_send_sctp_data_req(instance, m2ap_mce_data_from_mce->assoid,buffer,len,0); 
   m2ap_MCE_itti_send_sctp_data_req(instance,m2ap_mce_data_from_enb->assoc_id,buffer,len,0);
   return 0;
-
 }
 
-int MCE_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu){
+int MCE_handle_MBMS_SESSION_START_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   //AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M2AP, "MCE_handle_MBMS_SESSION_START_RESPONSE\n");
 
@@ -215,13 +213,10 @@ int MCE_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
    itti_send_msg_to_task(TASK_MCE_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_g);
    return 0;
-
 }
-int MCE_handle_MBMS_SESSION_START_FAILURE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu){
-  AssertFatal(1==0,"Not implemented yet\n");
+int MCE_handle_MBMS_SESSION_START_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
+   AssertFatal(1 == 0, "Not implemented yet\n");
 }
 
 /*
@@ -285,10 +280,8 @@ int MCE_send_MBMS_SESSION_STOP_REQUEST(instance_t instance, m2ap_session_stop_re
                         
 }
 
-int MCE_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu){
+int MCE_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   //AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M2AP, "MCE_handle_MBMS_SESSION_STOP_RESPONSE\n");
 
@@ -347,14 +340,9 @@ int MCE_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
 	return 0;
 }
 
-
-
-int MCE_handle_MBMS_SESSION_STOP_FAILURE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu){
+int MCE_handle_MBMS_SESSION_STOP_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
-                      
 }
  typedef struct M2AP_MBSFN_Area_Configuration{
 	M2AP_PMCH_Configuration_List_t   PMCH_Configuration_List;
@@ -375,8 +363,8 @@ int MCE_handle_MBMS_SESSION_STOP_FAILURE(instance_t instance,
                             0x00, 0x18, 0x00, 0x01, 0x80, 0x00, 0x1d, 0x00, 0x01, 0x01};
 
 
-int MCE_send_MBMS_SCHEDULING_INFORMATION(instance_t instance, /*uint32_t assoc_id,*/m2ap_mbms_scheduling_information_t * m2ap_mbms_scheduling_information){
-   
+int MCE_send_MBMS_SCHEDULING_INFORMATION(instance_t instance, /*sctp_assoc_t assoc_id,*/ m2ap_mbms_scheduling_information_t * m2ap_mbms_scheduling_information)
+{
   //module_id_t enb_mod_idP=0;
   //module_id_t du_mod_idP=0;
 
@@ -573,14 +561,13 @@ ASN_SET_ADD(&ie->value.choice.MBSFN_Area_Configuration_List,m2ap_mbsfn_area_conf
  }
   m2ap_MCE_itti_send_sctp_data_req(instance,m2ap_mce_data_from_enb->assoc_id,buffer,len,0);
   return 0;
-                        
-}
+ }
 
-int MCE_handle_MBMS_SCHEDULING_INFORMATION_RESPONSE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu){
-
+ int MCE_handle_MBMS_SCHEDULING_INFORMATION_RESPONSE(instance_t instance,
+                                                     sctp_assoc_t assoc_id,
+                                                     uint32_t stream,
+                                                     M2AP_M2AP_PDU_t *pdu)
+ {
   LOG_D(M2AP, "MCE_handle_MBMS_SCHEDULING_INFORMATION_RESPONSE\n");
 
    AssertFatal(pdu->present == M2AP_M2AP_PDU_PR_successfulOutcome,
@@ -636,8 +623,7 @@ int MCE_handle_MBMS_SCHEDULING_INFORMATION_RESPONSE(instance_t instance,
     itti_send_msg_to_task(TASK_MCE_APP, ENB_MODULE_ID_TO_INSTANCE(instance), msg_g);
 //
    return 0;
-                       
-}
+ }
 
 /*
  * Reset
@@ -649,19 +635,13 @@ int MCE_send_RESET(instance_t instance, m2ap_reset_t * m2ap_reset) {
                         
 }
 
-
-int MCE_handle_RESET_ACKKNOWLEDGE(instance_t instance,
-                                  uint32_t assoc_id,
-                                  uint32_t stream,
-                                  M2AP_M2AP_PDU_t *pdu) {
+int MCE_handle_RESET_ACKKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
-
 }
 
-int MCE_handle_RESET(instance_t instance,
-                     uint32_t assoc_id,
-                     uint32_t stream,
-                     M2AP_M2AP_PDU_t *pdu) {
+int MCE_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -672,10 +652,7 @@ int MCE_send_RESET_ACKNOWLEDGE(instance_t instance, M2AP_ResetAcknowledge_t *Res
 /*
  *    M2 Setup
  */
-int MCE_handle_M2_SETUP_REQUEST(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               M2AP_M2AP_PDU_t *pdu)
+int MCE_handle_M2_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
 {
   LOG_D(M2AP, "MCE_handle_M2_SETUP_REQUEST assoc_id %d\n",assoc_id);
 
@@ -832,7 +809,7 @@ int MCE_handle_M2_SETUP_REQUEST(instance_t instance,
     return 0;
 }
 
-int MCE_send_M2_SETUP_RESPONSE(instance_t instance, /*uint32_t assoc_id,*/
+int MCE_send_M2_SETUP_RESPONSE(instance_t instance, /*sctp_assoc_t assoc_id,*/
                                m2ap_setup_resp_t *m2ap_setup_resp) {
   
   //module_id_t mce_mod_idP;
@@ -1144,11 +1121,8 @@ int MCE_send_MCE_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_id
   
 }
 
-
-int MCE_handle_MCE_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M2AP_M2AP_PDU_t *pdu){
+int MCE_handle_MCE_CONFIGURATION_UPDATE_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 
     LOG_D(M2AP, "MCE_handle_MCE_CONFIGURATION_UPDATE_FAILURE\n");
@@ -1192,11 +1166,12 @@ int MCE_handle_MCE_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
 
 }
 
-
 int MCE_handle_MCE_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M2AP_M2AP_PDU_t *pdu){
+                                                    sctp_assoc_t assoc_id,
+                                                    uint32_t stream,
+                                                    M2AP_M2AP_PDU_t *pdu)
+{
+
   AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M2AP, "MCE_handle_MCE_CONFIGURATION_UPDATE_ACKNOWLEDGE assoc_id %d\n",assoc_id);
 
@@ -1221,19 +1196,14 @@ int MCE_handle_MCE_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
   itti_send_msg_to_task(TASK_MCE_APP, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
 
   return 0;
-
 }
-
 
 /*
  * ENB Configuration Update
  */
 
-
-int MCE_handle_ENB_CONFIGURATION_UPDATE(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          M2AP_M2AP_PDU_t *pdu){
+int MCE_handle_ENB_CONFIGURATION_UPDATE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M2AP, "MCE_handle_MCE_CONFIGURATION_UPDATE_ACKNOWLEDGE assoc_id %d\n",assoc_id);
 
@@ -1280,13 +1250,9 @@ int MCE_send_ENB_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
  * Error Indication
  */
 
-int MCE_handle_ERROR_INDICATION(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu) {
+int MCE_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
-
-
 }
 
 int MCE_send_ERROR_INDICATION(instance_t instance, M2AP_ErrorIndication_t *ErrorIndication) {
@@ -1304,17 +1270,10 @@ int MCE_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m2ap_mbms_session_
   //M2AP_SessionUpdateRequest_t      SessionUpdateRequest;
 }
 
-
-
-int MCE_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M2AP_M2AP_PDU_t *pdu){
+int MCE_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
-
 }
-
-
 
 int MCE_handle_MBMS_SESSION_UPDATE_FAILURE(instance_t instance,module_id_t du_mod_idP){
 
@@ -1330,12 +1289,8 @@ int MCE_send_MBMS_SERVICE_COUNTING_REQUEST(instance_t instance, module_id_t du_m
   //M2AP_MbmsServiceCountingRequest_t        MbmsServiceCountingRequest;
 }
 
-
-
-int MCE_handle_MBMS_SERVICE_COUNTING_RESPONSE(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M2AP_M2AP_PDU_t *pdu){
+int MCE_handle_MBMS_SERVICE_COUNTING_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   //int i;
   //AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M2AP, "MCE_handle_MBMS_SERVICE_COUNTING_RESPONSE\n");
@@ -1468,9 +1423,10 @@ int MCE_handle_MBMS_SESSION_COUNTING_FAILURE(instance_t instance,  module_id_t d
  */
 
 int MCE_handle_MBMS_SESSION_COUNTING_RESULTS_REPORT(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M2AP_M2AP_PDU_t *pdu){
+                                                    sctp_assoc_t assoc_id,
+                                                    uint32_t stream,
+                                                    M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 
 }
@@ -1479,10 +1435,8 @@ int MCE_handle_MBMS_SESSION_COUNTING_RESULTS_REPORT(instance_t instance,
 /*
  * Overload Notification
  */
-int MCE_handle_MBMS_OVERLOAD_NOTIFICATION(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M2AP_M2AP_PDU_t *pdu){
+int MCE_handle_MBMS_OVERLOAD_NOTIFICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
  
 }

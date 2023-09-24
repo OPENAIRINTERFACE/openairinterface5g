@@ -40,8 +40,9 @@
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 
-void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1ap_setup_req) {
-  DevAssert(f1ap_setup_req != NULL);
+void du_task_send_sctp_association_req(instance_t instance, f1ap_net_config_t *nc)
+{
+  DevAssert(nc != NULL);
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
   message_p = itti_alloc_new_message(TASK_DU_F1, 0, SCTP_NEW_ASSOCIATION_REQ);
@@ -49,42 +50,37 @@ void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1
   sctp_new_association_req_p->ulp_cnx_id = instance;
   sctp_new_association_req_p->port = F1AP_PORT_NUMBER;
   sctp_new_association_req_p->ppid = F1AP_SCTP_PPID;
-  sctp_new_association_req_p->in_streams  = f1ap_setup_req->sctp_in_streams;
-  sctp_new_association_req_p->out_streams = f1ap_setup_req->sctp_out_streams;
+  sctp_new_association_req_p->in_streams = 2; //du_inst->sctp_in_streams;
+  sctp_new_association_req_p->out_streams = 2; //du_inst->sctp_out_streams;
   // remote
-  memcpy(&sctp_new_association_req_p->remote_address,
-         &f1ap_setup_req->CU_f1_ip_address,
-         sizeof(f1ap_setup_req->CU_f1_ip_address));
+  memcpy(&sctp_new_association_req_p->remote_address, &nc->CU_f1_ip_address, sizeof(nc->CU_f1_ip_address));
   // local
-  memcpy(&sctp_new_association_req_p->local_address,
-         &f1ap_setup_req->DU_f1_ip_address,
-         sizeof(f1ap_setup_req->DU_f1_ip_address));
-  //printf("sib itti message %s\n", f1ap_setup_req_t->sib1[0]);
-  //printf("nr_cellid : %llx (%lld)",f1ap_setup_req->nr_cellid[0],f1ap_setup_req->nr_cellid[0]);
-  //du_f1ap_register_to_sctp
+  memcpy(&sctp_new_association_req_p->local_address, &nc->DU_f1_ip_address, sizeof(nc->DU_f1_ip_address));
+  // du_f1ap_register_to_sctp
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 
 void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
   DevAssert(sctp_new_association_resp != NULL);
+  f1ap_cudu_inst_t *f1ap_du_data = getCxt(instance);
+  DevAssert(f1ap_du_data != NULL);
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-    LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
+    LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u, retrying...\n",
           sctp_new_association_resp->sctp_state,
           instance,
           sctp_new_association_resp->ulp_cnx_id);
-    //f1ap_handle_setup_message(instance, sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
+    sleep(3);
+    du_task_send_sctp_association_req(instance, &f1ap_du_data->net_config);
     return; // exit -1 for debugging
   }
 
   // save the assoc id
-  f1ap_setup_req_t *f1ap_du_data=f1ap_req(false, instance);
   f1ap_du_data->assoc_id         = sctp_new_association_resp->assoc_id;
   f1ap_du_data->sctp_in_streams  = sctp_new_association_resp->in_streams;
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
-  f1ap_du_data->default_sctp_stream_id = 0;
   /* setup parameters for F1U and start the server */
-  DU_send_F1_SETUP_REQUEST(instance);
+  DU_send_F1_SETUP_REQUEST(instance, &f1ap_du_data->setupReq);
 }
 
 void du_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {
@@ -109,14 +105,19 @@ void *F1AP_DU_task(void *arg) {
     LOG_D(F1AP, "DU Task Received %s for instance %ld\n",
           ITTI_MSG_NAME(msg),myInstance);
     switch (ITTI_MSG_ID(msg)) {
-      case F1AP_SETUP_REQ: {
+      case F1AP_SETUP_REQ:
+        AssertFatal(false, "the F1AP_SETUP_REQ should not be received; use the F1AP_DU_REGISTER_REQ instead\n");
+        break;
+
+      case F1AP_DU_REGISTER_REQ: {
         // this is not a true F1 message, but rather an ITTI message sent by gnb_app
         // 1. save the itti msg so that you can use it to sen f1ap_setup_req, fill the f1ap_setup_req message,
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
-        f1ap_setup_req_t *msgSetup = &F1AP_SETUP_REQ(msg);
-        createF1inst(false, myInstance, msgSetup);
-        du_task_send_sctp_association_req(myInstance, msgSetup);
+        f1ap_setup_req_t *msgSetup = &F1AP_DU_REGISTER_REQ(msg).setup_req;
+        f1ap_net_config_t *nc = &F1AP_DU_REGISTER_REQ(msg).net_config;
+        createF1inst(myInstance, msgSetup, nc);
+        du_task_send_sctp_association_req(myInstance, nc);
       } break;
 
       case F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE:

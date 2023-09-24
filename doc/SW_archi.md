@@ -211,7 +211,7 @@ The scheduler also calls "run_pdcp()", as this is not a autonomous thread, it ne
 After calling run_pdcp, it updates "rlc" time data but it doesn't actually process rlc 
 it sends a iiti message to activate the thread for RRC, the answer will be asynchronous in ????  
 
-Calls schedule_nr_mib() that calls mac_rrc_nr_data_req() to fill MIB,  
+Calls schedule_nr_mib() that fills MIB,
 
 Calls schedule_nr_prach() which schedules the (fixed) PRACH region one frame in
 advance.

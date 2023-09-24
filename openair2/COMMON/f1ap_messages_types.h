@@ -22,6 +22,8 @@
 #ifndef F1AP_MESSAGES_TYPES_H_
 #define F1AP_MESSAGES_TYPES_H_
 
+#include <netinet/in.h>
+#include <netinet/sctp.h>
 #include "rlc.h"
 #include "s1ap_messages_types.h"
 
@@ -30,12 +32,16 @@
 
 #define F1AP_CU_SCTP_REQ(mSGpTR)                   (mSGpTR)->ittiMsg.f1ap_cu_sctp_req
 
+#define F1AP_DU_REGISTER_REQ(mSGpTR)               (mSGpTR)->ittiMsg.f1ap_du_register_req
+
 #define F1AP_SETUP_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.f1ap_setup_req
 #define F1AP_SETUP_RESP(mSGpTR)                    (mSGpTR)->ittiMsg.f1ap_setup_resp
 #define F1AP_GNB_CU_CONFIGURATION_UPDATE(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_gnb_cu_configuration_update
 #define F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_gnb_cu_configuration_update_acknowledge
 #define F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_gnb_cu_configuration_update_failure
 #define F1AP_SETUP_FAILURE(mSGpTR)                 (mSGpTR)->ittiMsg.f1ap_setup_failure
+
+#define F1AP_LOST_CONNECTION(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_lost_connection
 
 #define F1AP_INITIAL_UL_RRC_MESSAGE(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_initial_ul_rrc_message
 #define F1AP_UL_RRC_MESSAGE(mSGpTR)                (mSGpTR)->ittiMsg.f1ap_ul_rrc_message
@@ -75,133 +81,96 @@ typedef struct f1ap_net_ip_address_s {
   char ipv6_address[46];
 } f1ap_net_ip_address_t;
 
-typedef struct f1ap_cu_setup_req_s {
-  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
-  // To be removed if the structure is filled
-  uint32_t dummy;
-} f1ap_cu_setup_req_t;
-
-typedef struct cellIDs_s {
-
-  // Served Cell Information
-  /* Tracking area code */
-  uint32_t tac;
-
-  /* Mobile Country Codes
-   * Mobile Network Codes
-   */
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
-
-  // NR Global Cell Id
-  uint64_t nr_cellid;
-  // NR Physical Cell Ids
-  uint16_t nr_pci;
-  // Number of slide support items (max 16, could be increased to as much as 1024)
-  uint16_t num_ssi;
-  uint8_t sst;
-  uint8_t sd;
-} cellIDs_t;
-
-typedef struct f1ap_setup_req_s {
-
-  // Midhaul networking parameters
-
-  /* Connexion id used between SCTP/F1AP */
-  uint16_t cnx_id;
-
-  /* SCTP association id */
-  int32_t  assoc_id;
-
-  /* The eNB IP address to bind */
+typedef struct f1ap_net_config_t {
   f1ap_net_ip_address_t CU_f1_ip_address;
   f1ap_net_ip_address_t DU_f1_ip_address;
   uint16_t CUport;
   uint16_t DUport;
+} f1ap_net_config_t;
 
-  /* Number of SCTP streams used for a mme association */
-  uint16_t sctp_in_streams;
-  uint16_t sctp_out_streams;
+typedef struct f1ap_plmn_t {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_digit_length;
+} f1ap_plmn_t;
 
-  uint16_t default_sctp_stream_id;
+typedef enum f1ap_mode_t { F1AP_MODE_TDD = 0, F1AP_MODE_FDD = 1 } f1ap_mode_t;
+
+typedef struct f1ap_nr_frequency_info_t {
+  uint32_t arfcn;
+  int band;
+} f1ap_nr_frequency_info_t;
+
+typedef struct f1ap_transmission_bandwidth_t {
+  uint8_t scs;
+  uint16_t nrb;
+} f1ap_transmission_bandwidth_t;
+
+typedef struct f1ap_fdd_info_t {
+  f1ap_nr_frequency_info_t ul_freqinfo;
+  f1ap_nr_frequency_info_t dl_freqinfo;
+  f1ap_transmission_bandwidth_t ul_tbw;
+  f1ap_transmission_bandwidth_t dl_tbw;
+} f1ap_fdd_info_t;
+
+typedef struct f1ap_tdd_info_t {
+  f1ap_nr_frequency_info_t freqinfo;
+  f1ap_transmission_bandwidth_t tbw;
+} f1ap_tdd_info_t;
+
+typedef struct f1ap_served_cell_info_t {
+  // NR CGI
+  f1ap_plmn_t plmn;
+  uint64_t nr_cellid; // NR Global Cell Id
+
+  // NR Physical Cell Ids
+  uint16_t nr_pci;
+
+  /* Tracking area code */
+  uint32_t *tac;
+
+  // Number of slide support items (max 16, could be increased to as much as 1024)
+  uint16_t num_ssi;
+  uint8_t sst;
+  uint8_t sd;
+
+  f1ap_mode_t mode;
+  union {
+    f1ap_fdd_info_t fdd;
+    f1ap_tdd_info_t tdd;
+  };
+
+  char *measurement_timing_information;
+} f1ap_served_cell_info_t;
+
+typedef struct f1ap_gnb_du_system_info_t {
+  uint8_t *mib;
+  int mib_length;
+  uint8_t *sib1;
+  int sib1_length;
+} f1ap_gnb_du_system_info_t;
+
+typedef struct f1ap_setup_req_s {
 
   // F1_Setup_Req payload
   uint64_t gNB_DU_id;
   char *gNB_DU_name;
-
-  /* The type of the cell */
-  enum cell_type_e cell_type;
   
   /// number of DU cells available
   uint16_t num_cells_available; //0< num_cells_available <= 512;
-  cellIDs_t cell[F1AP_MAX_NB_CELLS];
-  // fdd_flag = 1 means FDD, 0 means TDD
-  int  fdd_flag;
-
-  union {
-    struct fdd_s {
-      uint32_t ul_nr_arfcn;
-      uint8_t ul_scs;
-      uint16_t ul_nrb;
-
-      uint32_t dl_nr_arfcn;
-      uint8_t dl_scs;
-      uint16_t dl_nrb;
-
-      uint32_t sul_active;
-      uint32_t sul_nr_arfcn;
-      uint8_t sul_scs;
-      uint16_t sul_nrb;
-
-      uint8_t ul_num_frequency_bands;
-      uint16_t ul_nr_band[32];
-      uint8_t ul_num_sul_frequency_bands;
-      uint16_t ul_nr_sul_band[32];
-
-      uint8_t dl_num_frequency_bands;
-      uint16_t dl_nr_band[32];
-      uint8_t dl_num_sul_frequency_bands;
-      uint16_t dl_nr_sul_band[32];
-    } fdd;
-    struct tdd_s {
-
-      uint32_t nr_arfcn;
-      uint8_t scs;
-      uint16_t nrb;
-
-      uint32_t sul_active;
-      uint32_t sul_nr_arfcn;
-      uint8_t sul_scs;
-      uint16_t sul_nrb;
-
-      uint8_t num_frequency_bands;
-      uint16_t nr_band[32];
-      uint8_t num_sul_frequency_bands;
-      uint16_t nr_sul_band[32];
-
-    } tdd;
-  } nr_mode_info[F1AP_MAX_NB_CELLS];
-
-  char *measurement_timing_information[F1AP_MAX_NB_CELLS];
-  uint8_t ranac[F1AP_MAX_NB_CELLS];
-
-  // System Information
-  uint8_t *mib[F1AP_MAX_NB_CELLS];
-  int     mib_length[F1AP_MAX_NB_CELLS];
-  uint8_t *sib1[F1AP_MAX_NB_CELLS];
-  int     sib1_length[F1AP_MAX_NB_CELLS];
-
-
+  struct {
+    f1ap_served_cell_info_t info;
+    f1ap_gnb_du_system_info_t *sys_info;
+  } cell[F1AP_MAX_NB_CELLS];
 } f1ap_setup_req_t;
 
+typedef struct f1ap_du_register_req_t {
+  f1ap_setup_req_t setup_req;
+  f1ap_net_config_t net_config;
+} f1ap_du_register_req_t;
+
 typedef struct served_cells_to_activate_s {
-  /// mcc of DU cells
-  uint16_t mcc;
-  /// mnc of DU cells
-  uint16_t mnc;
-  /// mnc digit length of DU cells
-  uint8_t mnc_digit_length;
+  f1ap_plmn_t plmn;
   // NR Global Cell Id
   uint64_t nr_cellid;
   /// NRPCI
@@ -215,16 +184,6 @@ typedef struct served_cells_to_activate_s {
 } served_cells_to_activate_t;
 
 typedef struct f1ap_setup_resp_s {
-  /* Connexion id used between SCTP/F1AP */
-  uint16_t cnx_id;
-
-  /* SCTP association id */
-  int32_t  assoc_id;
-
-  /* Number of SCTP streams used for a mme association */
-  uint16_t sctp_in_streams;
-  uint16_t sctp_out_streams;
-
   /// string holding gNB_CU_name
   char     *gNB_CU_name;
   /// number of DU cells to activate
@@ -237,7 +196,7 @@ typedef struct f1ap_gnb_cu_configuration_update_s {
   uint16_t cnx_id;
 
   /* SCTP association id */
-  int32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;
@@ -258,9 +217,7 @@ typedef struct f1ap_setup_failure_s {
 
 typedef struct f1ap_gnb_cu_configuration_update_acknowledge_s {
   uint16_t num_cells_failed_to_be_activated;
-  uint16_t mcc[F1AP_MAX_NB_CELLS];
-  uint16_t mnc[F1AP_MAX_NB_CELLS];
-  uint8_t mnc_digit_length[F1AP_MAX_NB_CELLS];
+  f1ap_plmn_t plmn[F1AP_MAX_NB_CELLS];
   uint64_t nr_cellid[F1AP_MAX_NB_CELLS];
   uint16_t cause[F1AP_MAX_NB_CELLS];
   int have_criticality;
@@ -273,9 +230,7 @@ typedef struct f1ap_gnb_cu_configuration_update_acknowledge_s {
   uint16_t cause_failed[F1AP_MAX_NO_OF_TNL_ASSOCIATIONS];
   uint16_t noofDedicatedSIDeliveryNeededUEs;
   uint32_t gNB_CU_ue_id[F1AP_MAX_NO_UE_ID]; 
-  uint16_t ue_mcc[F1AP_MAX_NO_UE_ID]; 
-  uint16_t ue_mnc[F1AP_MAX_NO_UE_ID]; 
-  uint8_t  ue_mnc_digit_length[F1AP_MAX_NO_UE_ID]; 
+  f1ap_plmn_t ue_plmn[F1AP_MAX_NO_UE_ID];
   uint64_t ue_nr_cellid[F1AP_MAX_NO_UE_ID];  
 } f1ap_gnb_cu_configuration_update_acknowledge_t;
 
@@ -303,12 +258,7 @@ typedef struct f1ap_dl_rrc_message_s {
 
 typedef struct f1ap_initial_ul_rrc_message_s {
   uint32_t gNB_DU_ue_id;
-  /// mcc of DU cell
-  uint16_t mcc;
-  /// mnc of DU cell
-  uint16_t mnc;
-  /// mnc digit length of DU cells
-  uint8_t mnc_digit_length;
+  f1ap_plmn_t plmn;
   /// nr cell id
   uint64_t nr_cellid;
   /// crnti
@@ -384,9 +334,7 @@ typedef struct f1ap_ue_context_setup_s {
   uint32_t gNB_CU_ue_id;
   uint32_t gNB_DU_ue_id;
   // SpCell Info
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
+  f1ap_plmn_t plmn;
   uint64_t nr_cellid;
   uint8_t servCellIndex;
   uint8_t *cellULConfigured;
@@ -456,11 +404,13 @@ typedef struct f1ap_paging_ind_s {
   uint16_t ueidentityindexvalue;
   uint64_t fiveg_s_tmsi;
   uint8_t  fiveg_s_tmsi_length;
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
+  f1ap_plmn_t plmn;
   uint64_t nr_cellid;
   uint8_t  paging_drx;
 } f1ap_paging_ind_t;
+
+typedef struct f1ap_lost_connection_t {
+  int dummy;
+} f1ap_lost_connection_t;
 
 #endif /* F1AP_MESSAGES_TYPES_H_ */

@@ -332,6 +332,12 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
    cfg->ssb_table.ssb_subcarrier_offset.value =
        get_ssb_subcarrier_offset(*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
                                  scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+   AssertFatal(cfg->ssb_table.ssb_subcarrier_offset.value < 16,
+               "cannot handle ssb_subcarrier_offset %d resulting from Point A %ld SSB %ld: please increase dl_absoluteFrequencyPointA "
+               "in the config by 16\n",
+               cfg->ssb_table.ssb_subcarrier_offset.value,
+               scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+               *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB);
    cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
    cfg->num_tlv++;
 
@@ -437,48 +443,13 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
    }
 }
 
-int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_SubcarrierSpacing_t subcarrierSpacing, uint32_t rrc_reconfiguration_delay)
-{
-  if (rrc_reconfiguration_delay == 0) {
-    return -1;
-  }
-
-  gNB_MAC_INST *nrmac = RC.nrmac[Mod_idP];
-  NR_SCHED_LOCK(&nrmac->sched_lock);
-
-  NR_UE_info_t *UE_info = find_nr_UE(&nrmac->UE_info,rnti);
-  if (!UE_info) {
-    LOG_W(NR_MAC, "Could not find UE for RNTI 0x%04x\n", rnti);
-    NR_SCHED_UNLOCK(&nrmac->sched_lock);
-    return -1;
-  }
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
-  const uint16_t sl_ahead = nrmac->if_inst->sl_ahead;
-  sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
-  LOG_I(NR_MAC, "Activating RRC processing timer for UE %04x with %d ms\n", UE_info->rnti, rrc_reconfiguration_delay);
-
-  // it might happen that timing advance command should be sent during the RRC
-  // processing timer. To prevent this, set a variable as if we would have just
-  // sent it. This way, another TA command will for sure be sent in some
-  // frames, after RRC processing timer.
-  sched_ctrl->ta_frame = (nrmac->frame - 1 + 1024) % 1024;
-
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
-  return 0;
-}
-
-void nr_mac_config_scc(gNB_MAC_INST *nrmac,
-                       rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
-                       int pusch_AntennaPorts,
-                       int sib1_tda,
-                       int minRXTXTIMEpdsch,
-                       NR_ServingCellConfigCommon_t *scc)
+void nr_mac_config_scc(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, const nr_mac_config_t *config)
 {
   DevAssert(nrmac != NULL);
-  AssertFatal(nrmac->common_channels[0].ServingCellConfigCommon == NULL, "logic error: multiple configurations of SCC\n");
-  NR_SCHED_LOCK(&nrmac->sched_lock);
-
   DevAssert(scc != NULL);
+  DevAssert(config != NULL);
+  //NR_SCHED_LOCK(&nrmac->sched_lock);
+
   AssertFatal(scc->ssb_PositionsInBurst->present > 0 && scc->ssb_PositionsInBurst->present < 4,
               "SSB Bitmap type %d is not valid\n",
               scc->ssb_PositionsInBurst->present);
@@ -493,9 +464,8 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
 
   LOG_I(NR_MAC, "Configuring common parameters from NR ServingCellConfig\n");
 
-  int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
-  nrmac->xp_pdsch_antenna_ports = pdsch_AntennaPorts.XP;
-  config_common(nrmac, num_pdsch_antenna_ports, pusch_AntennaPorts, scc);
+  int num_pdsch_antenna_ports = config->pdsch_AntennaPorts.N1 * config->pdsch_AntennaPorts.N2 * config->pdsch_AntennaPorts.XP;
+  config_common(nrmac, num_pdsch_antenna_ports, config->pusch_AntennaPorts, scc);
 
   if (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
     // fake that the gNB is configured in nFAPI mode, which would normally be
@@ -507,7 +477,6 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
     nrmac->if_inst->NR_PHY_config_req(&phycfg);
   }
 
-  nrmac->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
   find_SSB_and_RO_available(nrmac);
 
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
@@ -528,7 +497,7 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
     nrmac->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
     nrmac->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "slot %d DL %d UL %d\n",
           slot,
           (nrmac->dlsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0,
@@ -545,7 +514,6 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
 
   if (get_softmodem_params()->sa > 0) {
     NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
-    nrmac->sib1_tda = sib1_tda;
     for (int n = 0; n < NR_NB_RA_PROC_MAX; n++) {
       NR_RA_t *ra = &cc->ra[n];
       ra->cfra = false;
@@ -556,31 +524,19 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
         ra->preambles.preamble_list[i] = i;
     }
   }
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
+  //NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
-void nr_mac_config_mib(gNB_MAC_INST *nrmac, NR_BCCH_BCH_Message_t *mib)
+void nr_mac_configure_sib1(gNB_MAC_INST *nrmac, const f1ap_plmn_t *plmn, uint64_t cellID, int tac)
 {
-  DevAssert(nrmac != NULL);
-  DevAssert(mib != NULL);
-  NR_SCHED_LOCK(&nrmac->sched_lock);
+  AssertFatal(get_softmodem_params()->sa > 0, "error: SIB1 only applicable for SA\n");
+
   NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
-
-  AssertFatal(cc->mib == NULL, "logic bug: updated MIB multiple times\n");
-  cc->mib = mib;
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
-}
-
-void nr_mac_config_sib1(gNB_MAC_INST *nrmac, NR_BCCH_DL_SCH_Message_t *sib1)
-{
-  DevAssert(nrmac != NULL);
-  DevAssert(sib1 != NULL);
-  NR_SCHED_LOCK(&nrmac->sched_lock);
-  NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
-
-  AssertFatal(cc->sib1 == NULL, "logic bug: updated SIB1 multiple times\n");
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  NR_BCCH_DL_SCH_Message_t *sib1 = get_SIB1_NR(scc, plmn, cellID, tac);
   cc->sib1 = sib1;
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
+  cc->sib1_bcch_length = encode_SIB1_NR(sib1, cc->sib1_bcch_pdu, sizeof(cc->sib1_bcch_pdu));
+  AssertFatal(cc->sib1_bcch_length > 0, "could not encode SIB1\n");
 }
 
 bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
@@ -640,28 +596,24 @@ bool nr_mac_prepare_ra_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig
   return true;
 }
 
-bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
+/* Prepare a new CellGroupConfig to be applied for this UE. We cannot
+ * immediatly apply it, as we have to wait for the reconfiguration through RRC.
+ * This function sets up everything to apply the reconfiguration. Later, we
+ * will trigger the timer with nr_mac_enable_ue_rrc_processing_timer(); upon
+ * expiry nr_mac_apply_cellgroup() will apply the CellGroupConfig (radio config
+ * etc). */
+bool nr_mac_prepare_cellgroup_update(gNB_MAC_INST *nrmac, NR_UE_info_t *UE, NR_CellGroupConfig_t *CellGroup)
 {
   DevAssert(nrmac != NULL);
+  DevAssert(UE != NULL);
+  DevAssert(CellGroup != NULL);
+
   /* we assume that this function is mutex-protected from outside */
   NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
 
-  DevAssert(CellGroup != NULL);
-
-  NR_UE_info_t *UE = find_nr_UE(&nrmac->UE_info, rnti);
-  AssertFatal(UE != NULL, "Can't find UE %04x for CellGroup update\n", rnti);
-
-  /* copy CellGroup by calling asn1c encode this is a temporary hack to avoid the gNB having a pointer to RRC CellGroup structure
-   * (otherwise it would be applied to early)
-   * TODO remove once we have a proper implementation */
-  UE->enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, (void *)CellGroup, UE->cg_buf, 32768);
-
-  if (UE->enc_rval.encoded == -1) {
-    LOG_E(NR_MAC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n", UE->enc_rval.failed_type->name, UE->enc_rval.encoded);
-    exit(1);
-  }
-
   process_CellGroup(CellGroup, UE);
+  UE->reconfigCellGroup = CellGroup;
+  UE->expect_reconfiguration = true;
 
   return true;
 }

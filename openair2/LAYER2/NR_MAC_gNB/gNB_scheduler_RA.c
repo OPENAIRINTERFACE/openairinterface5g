@@ -159,7 +159,7 @@ static int16_t ssb_index_from_prach(module_id_t module_idP,
 void find_SSB_and_RO_available(gNB_MAC_INST *nrmac)
 {
   /* already mutex protected through nr_mac_config_scc() */
-  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+  //NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
 
   NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
@@ -1893,14 +1893,9 @@ static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, s
 
         // Pause scheduling according to:
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-        const NR_ServingCellConfig_t *servingCellConfig = UE->CellGroup && UE->CellGroup->spCellConfig ? UE->CellGroup->spCellConfig->spCellConfigDedicated : NULL;
-        uint32_t delay_ms = servingCellConfig && servingCellConfig->downlinkBWP_ToAddModList ?
-            NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
-
-        sched_ctrl->rrc_processing_timer = (delay_ms << ra->DL_BWP.scs);
-        LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frame, slot, UE->rnti, delay_ms);
+        nr_mac_enable_ue_rrc_processing_timer(RC.nrmac[module_id], UE, false);
       } else {
-        LOG_I(NR_MAC, "(ue rnti 0x%04x) RA Procedure failed at Msg4!\n", ra->rnti);
+        LOG_I(NR_MAC, "%4d.%2d UE %04x: RA Procedure failed at Msg4!\n", frame, slot, ra->rnti);
       }
 
       nr_clear_ra_proc(module_id, CC_id, frame, ra);

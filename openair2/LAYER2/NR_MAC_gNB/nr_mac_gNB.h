@@ -71,6 +71,7 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_BCCH-DL-SCH-Message.h"
+#include "openair2/RRC/NR/nr_rrc_config.h"
 
 /* PHY */
 #include "time_meas.h"
@@ -119,6 +120,24 @@ typedef enum {
   Msg4 = 5,
   WAIT_Msg4_ACK = 6
 } RA_gNB_state_t;
+
+typedef struct nr_pdsch_AntennaPorts_t {
+  int N1;
+  int N2;
+  int XP;
+} nr_pdsch_AntennaPorts_t;
+
+typedef struct nr_mac_config_t {
+  int sib1_tda;
+  nr_pdsch_AntennaPorts_t pdsch_AntennaPorts;
+  int pusch_AntennaPorts;
+  int minRXTXTIME;
+  int do_CSIRS;
+  int do_SRS;
+  bool force_256qam_off;
+  //int pusch_TargetSNRx10;
+  //int pucch_TargetSNRx10;
+} nr_mac_config_t;
 
 typedef struct NR_preamble_ue {
   uint8_t num_preambles;
@@ -220,12 +239,15 @@ typedef struct {
   NR_BCCH_BCH_Message_t *mib;
   NR_BCCH_DL_SCH_Message_t *sib1;
   NR_ServingCellConfigCommon_t *ServingCellConfigCommon;
+  /// pre-configured ServingCellConfig that is default for every UE
+  NR_ServingCellConfig_t *pre_ServingCellConfig;
   NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
   long ul_Bandwidth;
   /// Outgoing MIB PDU for PHY
-  MIB_PDU MIB_pdu;
+  uint8_t MIB_pdu[3];
   /// Outgoing BCCH pdu for PHY
-  BCCH_PDU BCCH_pdu;
+  uint8_t sib1_bcch_pdu[NR_MAX_SIB_LENGTH / 8];
+  int sib1_bcch_length;
   /// Outgoing BCCH DCI allocation
   uint32_t BCCH_alloc_pdu;
   /// Outgoing CCCH pdu for PHY
@@ -656,6 +678,7 @@ typedef struct NR_bler_options {
 } NR_bler_options_t;
 
 typedef struct nr_mac_rrc_ul_if_s {
+  f1_setup_request_func_t f1_setup_request;
   ue_context_setup_response_func_t ue_context_setup_response;
   ue_context_modification_response_func_t ue_context_modification_response;
   ue_context_modification_required_func_t ue_context_modification_required;
@@ -677,10 +700,10 @@ typedef struct {
   /// currently active CellGroupConfig
   NR_CellGroupConfig_t *CellGroup;
   /// CellGroupConfig that is to be activated after the next reconfiguration
-  NR_CellGroupConfig_t *reconfigCellGroup;
   bool expect_reconfiguration;
-  char cg_buf[32768]; /* arbitrary size */
-  asn_enc_rval_t enc_rval;
+  NR_CellGroupConfig_t *reconfigCellGroup;
+  bool apply_cellgroup;
+  NR_UE_NR_Capability_t *capability;
   // UE selected beam index
   uint8_t UE_beam_index;
   bool Msg4_ACKed;
@@ -708,6 +731,11 @@ typedef bool (*nr_pp_impl_ul)(module_id_t mod_id,
                               frame_t frame,
                               sub_frame_t slot);
 
+typedef struct f1_config_t {
+  f1ap_setup_req_t *setup_req;
+  f1ap_setup_resp_t *setup_resp;
+} f1_config_t;
+
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
@@ -734,9 +762,7 @@ typedef struct gNB_MAC_INST_s {
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
   int                             ssb_OffsetPointA;
-  /// SIB1 Time domain allocation
-  int                             sib1_tda;
-  int                             minRXTXTIMEpdsch;
+
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
@@ -802,12 +828,12 @@ typedef struct gNB_MAC_INST_s {
   /// UL preprocessor for differentiated scheduling
   nr_pp_impl_ul pre_processor_ul;
 
+  nr_mac_config_t radio_config;
+
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
   uint16_t cset0_bwp_start;
   uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
-
-  int xp_pdsch_antenna_ports;
 
   bool first_MIB;
   NR_bler_options_t dl_bler;
@@ -815,7 +841,9 @@ typedef struct gNB_MAC_INST_s {
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
   bool identity_pm;
+
   nr_mac_rrc_ul_if_t mac_rrc;
+  f1_config_t f1_config;
 
   int16_t frame;
   int16_t slot;

@@ -22,6 +22,8 @@
 #ifndef X2AP_MESSAGES_TYPES_H_
 #define X2AP_MESSAGES_TYPES_H_
 
+#include <netinet/in.h>
+#include <netinet/sctp.h>
 #include "s1ap_messages_types.h"
 #include "LTE_PhysCellId.h"
 
@@ -425,7 +427,7 @@ typedef struct x2ap_ENDC_reconf_complete_s {
 typedef struct x2ap_ENDC_sgnb_release_request_s {
   int          rnti;
   x2ap_cause_t cause;
-  int          assoc_id;
+  sctp_assoc_t assoc_id;
 } x2ap_ENDC_sgnb_release_request_t;
 
 typedef struct x2ap_ENDC_sgnb_release_required_s {

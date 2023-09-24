@@ -156,7 +156,7 @@ typedef struct s1ap_eNB_mme_data_s {
   uint16_t cnx_id;
 
   /* SCTP association id */
-  int32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* This is served PLMN IDs communicated to the MME via an index over the
    * MCC/MNC array in s1ap_eNB_instance */

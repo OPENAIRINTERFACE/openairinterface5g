@@ -89,9 +89,7 @@ void ngap_gNB_insert_new_instance(ngap_gNB_instance_t *new_instance_p)
                      new_instance_p, ngap_gNB_entries);
 }
 
-struct ngap_gNB_amf_data_s *ngap_gNB_get_AMF(
-  ngap_gNB_instance_t *instance_p,
-  int32_t assoc_id, uint16_t cnx_id)
+struct ngap_gNB_amf_data_s *ngap_gNB_get_AMF(ngap_gNB_instance_t *instance_p, sctp_assoc_t assoc_id, uint16_t cnx_id)
 {
   struct ngap_gNB_amf_data_s  temp;
   struct ngap_gNB_amf_data_s *found;

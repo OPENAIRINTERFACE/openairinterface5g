@@ -97,7 +97,7 @@ static F1AP_F1AP_PDU_t *f1ap_decode_pdu(const uint8_t *const buffer, uint32_t le
 }
 
 int f1ap_handle_message(instance_t instance,
-                        uint32_t assoc_id,
+                        sctp_assoc_t assoc_id,
                         int32_t stream,
                         const uint8_t *const data,
                         const uint32_t data_length)

@@ -30,8 +30,11 @@
 
 #include "x2ap_eNB_itti_messaging.h"
 
-void x2ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,
-                                      uint32_t buffer_length, uint16_t stream)
+void x2ap_eNB_itti_send_sctp_data_req(instance_t instance,
+                                      sctp_assoc_t assoc_id,
+                                      uint8_t *buffer,
+                                      uint32_t buffer_length,
+                                      uint16_t stream)
 {
   MessageDef      *message_p;
   sctp_data_req_t *sctp_data_req;
@@ -49,7 +52,7 @@ void x2ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uin
 }
 
 
-void x2ap_eNB_itti_send_sctp_close_association(instance_t instance, int32_t assoc_id)
+void x2ap_eNB_itti_send_sctp_close_association(instance_t instance, sctp_assoc_t assoc_id)
 {
   MessageDef               *message_p = NULL;
   sctp_close_association_t *sctp_close_association_p = NULL;

@@ -52,50 +52,6 @@
 
 extern RAN_CONTEXT_t RC;
 
-void nr_rrc_mac_update_cellgroup(rnti_t rntiMaybeUEid, NR_CellGroupConfig_t *cgc)
-{
-  gNB_MAC_INST *nrmac = RC.nrmac[0];
-  NR_SCHED_LOCK(&nrmac->sched_lock);
-  nr_mac_update_cellgroup(nrmac, rntiMaybeUEid, cgc);
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
-}
-
-uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
-                             const int         CC_id,
-                             const frame_t     frameP,
-                             const rb_id_t     Srb_id,
-                             const rnti_t      rnti,
-                             const uint8_t     Nb_tb,
-                             uint8_t *const    buffer_pP)
-{
-
-  LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
-
-  // MIBCH
-  if ((Srb_id & RAB_OFFSET) == MIBCH) {
-
-    int encode_size = 3;
-    rrc_gNB_carrier_data_t *carrier = &RC.nrrrc[Mod_idP]->carrier;
-    int encoded = encode_MIB_NR(carrier->mib, frameP, buffer_pP, encode_size);
-    DevAssert(encoded == encode_size);
-    LOG_D(NR_RRC, "MIB PDU buffer_pP[0]=%x , buffer_pP[1]=%x, buffer_pP[2]=%x\n", buffer_pP[0], buffer_pP[1],
-          buffer_pP[2]);
-    return encode_size;
-  }
-
-  if ((Srb_id & RAB_OFFSET) == BCCH) {
-    memcpy(&buffer_pP[0], RC.nrrrc[Mod_idP]->carrier.SIB1, RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1);
-    return RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1;
-  }
-
-  // CCCH
-  if ((Srb_id & RAB_OFFSET) == CCCH) {
-    AssertFatal(0, "CCCH is managed by rlc of srb 0, not anymore by mac_rrc_nr_data_req\n");
-  }
-
-  return 0;
-}
-
 int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
                                  const frame_t         frameP,
                                  const sub_frame_t     sub_frameP,

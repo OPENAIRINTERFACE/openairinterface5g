@@ -69,9 +69,11 @@ static char *m3ap_direction_String[] = {
 return(m3ap_direction_String[m3ap_dir]);
 }
 
-
-int m3ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                            const uint8_t * const data, const uint32_t data_length)
+int m3ap_handle_message(instance_t instance,
+                        sctp_assoc_t assoc_id,
+                        int32_t stream,
+                        const uint8_t *const data,
+                        const uint32_t data_length)
 {
   M3AP_M3AP_PDU_t pdu;
   int ret;

@@ -24,6 +24,24 @@
 #include "mac_rrc_dl.h"
 #include "nr_rrc_defs.h"
 
+static void f1_setup_response_f1ap(const f1ap_setup_resp_t *resp)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_SETUP_RESP);
+  f1ap_setup_resp_t *f1ap_msg = &F1AP_SETUP_RESP(msg);
+  *f1ap_msg = *resp;
+  if (resp->gNB_CU_name != NULL)
+    f1ap_msg->gNB_CU_name = strdup(resp->gNB_CU_name);
+  itti_send_msg_to_task(TASK_CU_F1, 0, msg);
+}
+
+static void f1_setup_failure_f1ap(const f1ap_setup_failure_t *fail)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_SETUP_FAILURE);
+  f1ap_setup_failure_t *f1ap_msg = &F1AP_SETUP_FAILURE(msg);
+  *f1ap_msg = *fail;
+  itti_send_msg_to_task(TASK_CU_F1, 0, msg);
+}
+
 static void ue_context_setup_request_f1ap(const f1ap_ue_context_setup_t *req)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
@@ -46,7 +64,21 @@ static void ue_context_modification_request_f1ap(const f1ap_ue_context_modif_req
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REQ);
   f1ap_ue_context_modif_req_t *f1ap_msg = &F1AP_UE_CONTEXT_MODIFICATION_REQ(msg);
   *f1ap_msg = *req;
-  AssertFatal(req->cu_to_du_rrc_information == NULL, "cu_to_du_rrc_information not supported yet\n");
+  if (req->cu_to_du_rrc_information != NULL) {
+    f1ap_msg->cu_to_du_rrc_information = calloc(1, sizeof(*f1ap_msg->cu_to_du_rrc_information));
+    AssertFatal(f1ap_msg->cu_to_du_rrc_information != NULL, "out of memory\n");
+    AssertFatal(req->cu_to_du_rrc_information->cG_ConfigInfo == NULL && req->cu_to_du_rrc_information->cG_ConfigInfo_length == 0, "cg_ConfigInfo not implemented\n");
+    AssertFatal(req->cu_to_du_rrc_information->measConfig == NULL && req->cu_to_du_rrc_information->measConfig_length == 0, "cg_ConfigInfo not implemented\n");
+    if (req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList != NULL) {
+      const cu_to_du_rrc_information_t *du2cu_req = req->cu_to_du_rrc_information;
+      cu_to_du_rrc_information_t* du2cu_new = f1ap_msg->cu_to_du_rrc_information;
+      DevAssert(du2cu_req->uE_CapabilityRAT_ContainerList_length > 0);
+      du2cu_new->uE_CapabilityRAT_ContainerList_length = du2cu_req->uE_CapabilityRAT_ContainerList_length;
+      du2cu_new->uE_CapabilityRAT_ContainerList = malloc(du2cu_new->uE_CapabilityRAT_ContainerList_length);
+      AssertFatal(du2cu_new->uE_CapabilityRAT_ContainerList != NULL, "out of memory\n");
+      memcpy(du2cu_new->uE_CapabilityRAT_ContainerList, du2cu_req->uE_CapabilityRAT_ContainerList, du2cu_new->uE_CapabilityRAT_ContainerList_length);
+    }
+  }
   AssertFatal(req->drbs_to_be_modified_length == 0, "drbs_to_be_modified not supported yet\n");
   if (req->drbs_to_be_setup_length > 0) {
     int n = req->drbs_to_be_setup_length;
@@ -133,6 +165,8 @@ static void dl_rrc_message_transfer_f1ap(const f1ap_dl_rrc_message_t *dl_rrc)
 
 void mac_rrc_dl_f1ap_init(nr_mac_rrc_dl_if_t *mac_rrc)
 {
+  mac_rrc->f1_setup_response = f1_setup_response_f1ap;
+  mac_rrc->f1_setup_failure = f1_setup_failure_f1ap;
   mac_rrc->ue_context_setup_request = ue_context_setup_request_f1ap;
   mac_rrc->ue_context_modification_request = ue_context_modification_request_f1ap;
   mac_rrc->ue_context_modification_confirm = ue_context_modification_confirm_f1ap;

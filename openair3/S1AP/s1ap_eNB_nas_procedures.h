@@ -22,10 +22,7 @@
 #ifndef S1AP_ENB_NAS_PROCEDURES_H_
 #define S1AP_ENB_NAS_PROCEDURES_H_
 
-int s1ap_eNB_handle_nas_downlink(
-  uint32_t         assoc_id,
-  uint32_t         stream,
-  S1AP_S1AP_PDU_t *pdu);
+int s1ap_eNB_handle_nas_downlink(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
 int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_p);
 

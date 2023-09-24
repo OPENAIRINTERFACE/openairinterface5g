@@ -24,6 +24,8 @@
 #ifndef E1AP_MESSAGES_TYPES_H
 #define E1AP_MESSAGES_TYPES_H
 
+#include <netinet/in.h>
+#include <netinet/sctp.h>
 #include "common/ngran_types.h"
 #include "f1ap_messages_types.h"
 #include "ngap_messages_types.h"
@@ -55,7 +57,7 @@ typedef struct PLMN_ID_s {
 typedef struct e1ap_setup_req_s {
   uint64_t              gNB_cu_up_id;
   char *                gNB_cu_up_name;
-  int                   assoc_id;
+  sctp_assoc_t assoc_id;
   uint64_t              transac_id;
   int                   supported_plmns; 
   PLMN_ID_t             plmns[E1AP_MAX_NUM_PLMNS];

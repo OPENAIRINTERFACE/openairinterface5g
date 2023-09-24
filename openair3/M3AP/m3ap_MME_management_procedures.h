@@ -47,8 +47,6 @@ m3ap_MME_data_t* m3ap_is_MME_assoc_id_in_list(uint32_t sctp_assoc_id);
 
 m3ap_MME_data_t* m3ap_is_MME_pci_in_list (const uint32_t pci);
 
-struct m3ap_MME_data_s *m3ap_get_MME(m3ap_MME_instance_t *instance_p,
-                                     int32_t assoc_id,
-                                     uint16_t cnx_id);
+struct m3ap_MME_data_s *m3ap_get_MME(m3ap_MME_instance_t *instance_p, sctp_assoc_t assoc_id, uint16_t cnx_id);
 
 #endif /* __M3AP_MME_MANAGEMENT_PROCEDURES__H__ */

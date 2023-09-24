@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/* F1AP -> SCTP */
-MESSAGE_DEF(F1AP_CU_SCTP_REQ        , MESSAGE_PRIORITY_MED, f1ap_cu_setup_req_t       , f1ap_cu_setup_req)
+/* To setup F1 at DU */
+MESSAGE_DEF(F1AP_DU_REGISTER_REQ, MESSAGE_PRIORITY_MED, f1ap_du_register_req_t, f1ap_du_register_req)
 
 /* eNB_DU application layer -> F1AP messages or CU F1AP -> RRC*/
 MESSAGE_DEF(F1AP_SETUP_REQ          , MESSAGE_PRIORITY_MED, f1ap_setup_req_t          , f1ap_setup_req)
@@ -31,6 +31,9 @@ MESSAGE_DEF(F1AP_GNB_CU_CONFIGURATION_UPDATE_FAILURE         , MESSAGE_PRIORITY_
 MESSAGE_DEF(F1AP_SETUP_RESP         , MESSAGE_PRIORITY_MED, f1ap_setup_resp_t          , f1ap_setup_resp)
 MESSAGE_DEF(F1AP_SETUP_FAILURE         , MESSAGE_PRIORITY_MED, f1ap_setup_failure_t          , f1ap_setup_failure)
 MESSAGE_DEF(F1AP_GNB_CU_CONFIGURATION_UPDATE         , MESSAGE_PRIORITY_MED, f1ap_gnb_cu_configuration_update_t          , f1ap_gnb_cu_configuration_update)
+
+/* F1AP -> RRC to inform about lost connection */
+MESSAGE_DEF(F1AP_LOST_CONNECTION, MESSAGE_PRIORITY_MED, f1ap_lost_connection_t, f1ap_lost_connection)
 
 /* MAC -> F1AP messages */
 MESSAGE_DEF(F1AP_INITIAL_UL_RRC_MESSAGE           , MESSAGE_PRIORITY_MED, f1ap_initial_ul_rrc_message_t             , f1ap_initial_ul_rrc_message)

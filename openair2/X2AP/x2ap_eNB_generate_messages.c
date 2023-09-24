@@ -489,7 +489,7 @@ int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_instance_t *instance_p, x2ap_eN
 }
 
 int x2ap_eNB_generate_x2_setup_failure(instance_t instance,
-                                       uint32_t assoc_id,
+                                       sctp_assoc_t assoc_id,
                                        X2AP_Cause_PR cause_type,
                                        long cause_value,
                                        long time_to_wait)

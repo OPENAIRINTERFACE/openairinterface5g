@@ -52,30 +52,13 @@
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "openair2/E1AP/e1ap.h"
 #include "gnb_config.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+
 extern unsigned char NB_gNB_INST;
 
 extern RAN_CONTEXT_t RC;
 
 #define GNB_REGISTER_RETRY_DELAY 10
-
-/*------------------------------------------------------------------------------*/
-void configure_nr_rrc(uint32_t gnb_id)
-{
-  MessageDef *msg_p = NULL;
-  //  int CC_id;
-
-  msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
-
-  if (RC.nrrrc[gnb_id]) {
-    RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
-    
-    LOG_I(GNB_APP, "RRC starting with node type %d\n", RC.nrrrc[gnb_id]->node_type);
-    LOG_I(GNB_APP,"Sending configuration message to NR_RRC task\n");
-    itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-
-  }
-  else AssertFatal(0,"NRRRC context for gNB %u not allocated\n",gnb_id);
-}
 
 /*------------------------------------------------------------------------------*/
 
@@ -179,12 +162,10 @@ void *gNB_app_task(void *args_p)
         LOG_E(F1AP, "Create task for F1AP DU failed\n");
         AssertFatal(1==0,"exiting");
       }
-      // configure F1AP here for F1C
-      LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
-      msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_SETUP_REQ);
-      RCconfig_NR_DU_F1(msg_p, 0);
-
-      itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(0), msg_p);
+    }
+    if (NODE_IS_DU(node_type) || NODE_IS_MONOLITHIC(node_type)) {
+      // need to check SA?
+      nr_mac_send_f1_setup_req();
     }
   }
   do {
@@ -249,15 +230,9 @@ void *gNB_app_task(void *args_p)
       break;
 
     case F1AP_SETUP_RESP:
-      AssertFatal(NODE_IS_DU(node_type), "Should not have received F1AP_SETUP_RESP in CU/gNB\n");
-
-      LOG_I(GNB_APP, "Received %s: associated ngran_gNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
-      F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
-      cell_to_activate = F1AP_SETUP_RESP(msg_p).num_cells_to_activate;
-      
-      gNB_app_handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
-
+      AssertFatal(false, "Should not received this, logic bug\n");
       break;
+
     case F1AP_GNB_CU_CONFIGURATION_UPDATE:
       AssertFatal(NODE_IS_DU(node_type), "Should not have received F1AP_GNB_CU_CONFIGURATION_UPDATE in CU/gNB\n");
 

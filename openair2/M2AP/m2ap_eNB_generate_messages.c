@@ -311,7 +311,7 @@
 //}
 
 //int m2ap_MCE_generate_m2_setup_failure(instance_t instance,
-//                                       uint32_t assoc_id,
+//                                       sctp_assoc_t assoc_id,
 //                                       M2AP_Cause_PR cause_type,
 //                                       long cause_value,
 //                                       long time_to_wait)

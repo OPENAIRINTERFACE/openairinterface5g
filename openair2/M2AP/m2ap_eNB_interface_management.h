@@ -37,10 +37,7 @@
  * Session Start 
  */
 
-int eNB_handle_MBMS_SESSION_START_REQUEST(instance_t instance, 
-					uint32_t assoc_id,
-                                	uint32_t stream,
-                                	M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_MBMS_SESSION_START_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
 int eNB_send_MBMS_SESSION_START_RESPONSE(instance_t instance, m2ap_session_start_resp_t * m2ap_session_start_resp);
 int eNB_send_MBMS_SESSION_START_FAILURE(instance_t instance, m2ap_session_start_failure_t * m2ap_session_start_failure  );
@@ -49,10 +46,7 @@ int eNB_send_MBMS_SESSION_START_FAILURE(instance_t instance, m2ap_session_start_
  * Session Stop
  */
 
-int eNB_handle_MBMS_SESSION_STOP_REQUEST(instance_t instance, 
-					uint32_t assoc_id,
-                                	uint32_t stream,
-                                	M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_MBMS_SESSION_STOP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 int eNB_send_MBMS_SESSION_STOP_RESPONSE(instance_t instance, m2ap_session_stop_resp_t * m2ap_session_stop_resp);
 
 
@@ -60,10 +54,7 @@ int eNB_send_MBMS_SESSION_STOP_RESPONSE(instance_t instance, m2ap_session_stop_r
  * MBMS Scheduling Information
  */
 
-int eNB_handle_MBMS_SCHEDULING_INFORMATION(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_MBMS_SCHEDULING_INFORMATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
 int eNB_send_MBMS_SCHEDULING_INFORMATION_RESPONSE(instance_t instance, m2ap_mbms_scheduling_information_resp_t * m2ap_mbms_scheduling_information_resp);
 
@@ -71,54 +62,36 @@ int eNB_send_MBMS_SCHEDULING_INFORMATION_RESPONSE(instance_t instance, m2ap_mbms
 /*
  * Reset
  */
-int eNB_handle_RESET(instance_t instance,
-                    uint32_t assoc_id,
-                    uint32_t stream,
-                    M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 int eNB_send_RESET_ACKKNOWLEDGE(instance_t instance, M2AP_ResetAcknowledge_t *ResetAcknowledge);
 int eNB_send_RESET(instance_t instance, M2AP_Reset_t *Reset);
-int eNB_handle_RESET_ACKNOWLEDGE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_RESET_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
 /*
  * M2AP Setup
  */
 int eNB_send_M2_SETUP_REQUEST( m2ap_eNB_instance_t *instance_p, m2ap_eNB_data_t *m2ap_eNB_data_p);
 
-int eNB_handle_M2_SETUP_RESPONSE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_M2_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
-int eNB_handle_M2_SETUP_FAILURE(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_M2_SETUP_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
 /*
  * eNB Configuration Update
  */ 
 int eNB_send_eNB_CONFIGURATION_UPDATE(instance_t instance, m2ap_enb_configuration_update_t * m2ap_enb_configuration_update);
 
-int eNB_handle_eNB_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-					 uint32_t assoc_id,
-                                         uint32_t stream,
-                                         M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_eNB_CONFIGURATION_UPDATE_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
 int eNB_handle_eNB_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-				         uint32_t assoc_id,
-                                         uint32_t stream,
-                                         M2AP_M2AP_PDU_t *pdu);
+                                                    sctp_assoc_t assoc_id,
+                                                    uint32_t stream,
+                                                    M2AP_M2AP_PDU_t *pdu);
 
 /*
  * MCE Configuration Update
  */
-int eNB_handle_MCE_CONFIGURATION_UPDATE(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_MCE_CONFIGURATION_UPDATE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
 int eNB_send_MCE_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
                     M2AP_MCEConfigurationUpdateFailure_t *MCEConfigurationUpdateFailure);
@@ -130,19 +103,12 @@ int eNB_send_MCE_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
  * Error Indication
  */
 int eNB_send_ERROR_INDICATION(instance_t instance, m2ap_error_indication_t * m2ap_error_indication);
-int eNB_handle_ERROR_INDICATION(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               M2AP_M2AP_PDU_t *pdu);
-
+int eNB_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
 /*
  * Session Update Request
  */
-int eNB_handle_MBMS_SESSION_UPDATE_REQUEST(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 
 int eNB_send_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance, m2ap_mbms_session_update_resp_t * m2ap_mbms_session_update_resp); //??
 
@@ -152,10 +118,7 @@ int eNB_send_MBMS_SESSION_UPDATE_FAILURE(instance_t instance, m2ap_mbms_session_
  * Service Counting
  */ 
 
-int eNB_handle_MBMS_SERVICE_COUNTING_REQ(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M2AP_M2AP_PDU_t *pdu);
+int eNB_handle_MBMS_SERVICE_COUNTING_REQ(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu);
 int eNB_send_MBMS_SERVICE_COUNTING_REPORT(instance_t instance, m2ap_mbms_service_counting_report_t * m2ap_mbms_service_counting_report);
 int eNB_send_MBMS_SERVICE_COUNTING_RESP(instance_t instance, m2ap_mbms_service_counting_resp_t * m2ap_mbms_service_counting_resp);
 int eNB_send_MBMS_SERVICE_COUNTING_FAILURE(instance_t instance, m2ap_mbms_service_counting_failure_t * m2ap_mbms_service_counting_failure);

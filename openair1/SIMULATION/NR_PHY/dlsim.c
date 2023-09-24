@@ -239,7 +239,7 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 
 
-void validate_input_pmi(rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts, int nrOfLayers, int pmi)
+void validate_input_pmi(nr_pdsch_AntennaPorts_t pdsch_AntennaPorts, int nrOfLayers, int pmi)
 {
   if (pmi == 0)
     return;
@@ -622,11 +622,32 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
 
+  AssertFatal((gNB->if_inst = NR_IF_Module_init(0)) != NULL, "Cannot register interface");
+  gNB->if_inst->NR_PHY_config_req = nr_phy_config_request;
+
+  NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(*scc));;
+  prepare_scc(scc);
+  uint64_t ssb_bitmap = 1; // Enable only first SSB with index ssb_indx=0
+  fill_scc_sim(scc, &ssb_bitmap, N_RB_DL, N_RB_DL, mu, mu);
+  fix_scc(scc, ssb_bitmap);
+
+  // TODO do a UECAP for phy-sim
+  nr_pdsch_AntennaPorts_t pdsch_AntennaPorts = {0};
+  pdsch_AntennaPorts.N1 = n_tx > 1 ? n_tx >> 1 : 1;
+  pdsch_AntennaPorts.N2 = 1;
+  pdsch_AntennaPorts.XP = n_tx > 1 ? 2 : 1;
+  const nr_mac_config_t conf = {.pdsch_AntennaPorts = pdsch_AntennaPorts,
+                                .pusch_AntennaPorts = n_tx,
+                                .minRXTXTIME = 6,
+                                .do_CSIRS = 0,
+                                .do_SRS = 0,
+                                .force_256qam_off = false};
+
   RC.nb_nr_macrlc_inst = 1;
   RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
     RC.nb_nr_mac_CC[i] = 1;
-  mac_top_init_gNB(ngran_gNB);
+  mac_top_init_gNB(ngran_gNB, scc, NULL, &conf);
   gNB_mac = RC.nrmac[0];
 
   gNB_mac->dl_bler.harq_round_max = num_rounds;
@@ -673,19 +694,9 @@ int main(int argc, char **argv)
   NR_ServingCellConfigCommon_t *scc = secondaryCellGroup->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
   */
 
-  NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(*scc));;
-  prepare_scc(scc);
-  uint64_t ssb_bitmap = 1; // Enable only first SSB with index ssb_indx=0
-  fill_scc_sim(scc, &ssb_bitmap, N_RB_DL, N_RB_DL, mu, mu);
-  fix_scc(scc, ssb_bitmap);
-
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(*scd));
   prepare_scd(scd);
 
-  rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts = {0};
-  pdsch_AntennaPorts.N1 = n_tx>1 ? n_tx>>1 : 1;
-  pdsch_AntennaPorts.N2 = 1;
-  pdsch_AntennaPorts.XP = n_tx>1 ? 2 : 1;
   gNB->ap_N1 = pdsch_AntennaPorts.N1;
   gNB->ap_N2 = pdsch_AntennaPorts.N2;
   gNB->ap_XP = pdsch_AntennaPorts.XP;
@@ -696,12 +707,6 @@ int main(int argc, char **argv)
   prepare_sim_uecap(UE_Capability_nr,scc,mu,
                     N_RB_DL,g_mcsTableIdx,0);
 
-  // TODO do a UECAP for phy-sim
-  const gNB_RrcConfigurationReq conf = {.pdsch_AntennaPorts = pdsch_AntennaPorts,
-                                        .minRXTXTIME = 6,
-                                        .do_CSIRS = 0,
-                                        .do_SRS = 0,
-                                        .force_256qam_off = false};
   NR_CellGroupConfig_t *secondaryCellGroup = get_default_secondaryCellGroup(scc, scd, UE_Capability_nr, 0, 1, &conf, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
@@ -719,11 +724,6 @@ int main(int argc, char **argv)
 
   //xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
-  AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
-  gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
-
-  // common configuration
-  nr_mac_config_scc(RC.nrmac[0], pdsch_AntennaPorts, n_tx, 0, 6, scc);
   // UE dedicated configuration
   nr_mac_add_test_ue(RC.nrmac[0], secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during

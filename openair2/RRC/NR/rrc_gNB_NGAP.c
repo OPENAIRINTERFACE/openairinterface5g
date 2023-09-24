@@ -190,8 +190,10 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
   req->establishment_cause = UE->establishment_cause;
 
   /* Forward NAS message */
-  req->nas_pdu.buffer = rrcSetupComplete->dedicatedNAS_Message.buf;
   req->nas_pdu.length = rrcSetupComplete->dedicatedNAS_Message.size;
+  req->nas_pdu.buffer = malloc(req->nas_pdu.length);
+  AssertFatal(req->nas_pdu.buffer != NULL, "out of memory\n");
+  memcpy(req->nas_pdu.buffer, rrcSetupComplete->dedicatedNAS_Message.buf, req->nas_pdu.length);
   // extract_imsi(NGAP_NAS_FIRST_REQ (message_p).nas_pdu.buffer,
   //              NGAP_NAS_FIRST_REQ (message_p).nas_pdu.length,
   //              ue_context_pP);
@@ -588,7 +590,7 @@ int rrc_gNB_process_NGAP_DOWNLINK_NAS(MessageDef *msg_p, instance_t instance, mu
 //------------------------------------------------------------------------------
 {
   uint32_t length;
-  uint8_t *buffer;
+  uint8_t buffer[4096];
   protocol_ctxt_t ctxt = {0};
   ngap_downlink_nas_t *req = &NGAP_DOWNLINK_NAS(msg_p);
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[instance], req->gNB_ue_ngap_id);
@@ -611,7 +613,12 @@ int rrc_gNB_process_NGAP_DOWNLINK_NAS(MessageDef *msg_p, instance_t instance, mu
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, UE->rrc_ue_id, 0, 0);
 
   /* Create message for PDCP (DLInformationTransfer_t) */
-  length = do_NR_DLInformationTransfer(instance, &buffer, rrc_gNB_get_next_transaction_identifier(instance), req->nas_pdu.length, req->nas_pdu.buffer);
+  length = do_NR_DLInformationTransfer(instance,
+                                       buffer,
+                                       sizeof(buffer),
+                                       rrc_gNB_get_next_transaction_identifier(instance),
+                                       req->nas_pdu.length,
+                                       req->nas_pdu.buffer);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, buffer, length, "[MSG] RRC DL Information Transfer\n");
   /*
    * switch UL or DL NAS message without RRC piggybacked to SRB2 if active.
@@ -632,19 +639,19 @@ rrc_gNB_send_NGAP_UPLINK_NAS(
 )
 //------------------------------------------------------------------------------
 {
-    uint32_t pdu_length;
-    uint8_t *pdu_buffer;
     MessageDef *msg_p;
     NR_ULInformationTransfer_t *ulInformationTransfer = ul_dcch_msg->message.choice.c1->choice.ulInformationTransfer;
     gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
 
     if (ulInformationTransfer->criticalExtensions.present == NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer) {
-        pdu_length = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->size;
-        pdu_buffer = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->buf;
+      NR_DedicatedNAS_Message_t *nas = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message;
+        uint8_t *buf = malloc(nas->size);
+        AssertFatal(buf != NULL, "out of memory\n");
+        memcpy(buf, nas->buf, nas->size);
         msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_UPLINK_NAS);
         NGAP_UPLINK_NAS(msg_p).gNB_ue_ngap_id = UE->rrc_ue_id;
-        NGAP_UPLINK_NAS (msg_p).nas_pdu.length = pdu_length;
-        NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer = pdu_buffer;
+        NGAP_UPLINK_NAS (msg_p).nas_pdu.length = nas->size;
+        NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer = buf;
         // extract_imsi(NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer,
         //               NGAP_UPLINK_NAS (msg_p).nas_pdu.length,
         //               ue_context_pP);
@@ -1333,9 +1340,9 @@ int rrc_gNB_process_PAGING_IND(MessageDef *msg_p, instance_t instance)
         for (uint8_t CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
           if (NODE_IS_CU(RC.nrrrc[instance]->node_type)) {
             MessageDef *m = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_PAGING_IND);
-            F1AP_PAGING_IND (m).mcc              = RC.nrrrc[j]->configuration.mcc[0];
-            F1AP_PAGING_IND (m).mnc              = RC.nrrrc[j]->configuration.mnc[0];
-            F1AP_PAGING_IND (m).mnc_digit_length = RC.nrrrc[j]->configuration.mnc_digit_length[0];
+            F1AP_PAGING_IND(m).plmn.mcc = RC.nrrrc[j]->configuration.mcc[0];
+            F1AP_PAGING_IND(m).plmn.mnc = RC.nrrrc[j]->configuration.mnc[0];
+            F1AP_PAGING_IND(m).plmn.mnc_digit_length = RC.nrrrc[j]->configuration.mnc_digit_length[0];
             F1AP_PAGING_IND (m).nr_cellid        = RC.nrrrc[j]->nr_cellid;
             F1AP_PAGING_IND (m).ueidentityindexvalue = (uint16_t)(NGAP_PAGING_IND(msg_p).ue_paging_identity.s_tmsi.m_tmsi%1024);
             F1AP_PAGING_IND (m).fiveg_s_tmsi = NGAP_PAGING_IND(msg_p).ue_paging_identity.s_tmsi.m_tmsi;

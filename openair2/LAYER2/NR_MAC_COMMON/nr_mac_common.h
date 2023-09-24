@@ -207,7 +207,7 @@ uint32_t nr_compute_tbslbrm(uint16_t table,
 
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,
-                                           NR_MIB_t *mib,
+                                           const NR_MIB_t *mib,
                                            uint8_t num_slot_per_frame,
                                            uint8_t ssb_subcarrier_offset,
                                            uint16_t ssb_start_symbol,

@@ -19,10 +19,12 @@
  *      contact@openairinterface.org
  */
 
-#include "queue.h"
-
 #ifndef SCTP_ENB_DEFS_H_
 #define SCTP_ENB_DEFS_H_
+
+#include "queue.h"
+#include <netinet/in.h>
+#include <netinet/sctp.h>
 
 typedef struct sctp_queue_item_s {
   /* Pair of stream on which we received this packet */
@@ -32,7 +34,7 @@ typedef struct sctp_queue_item_s {
   uint16_t remote_port;
   /* Remote address */
   uint32_t remote_addr;
-  uint32_t assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* PPID used for the packet */
   uint32_t ppid;
@@ -52,7 +54,7 @@ typedef struct {
   /* Unique SCTP association ID (Local to host), used to distinguish
    * associations between MME and eNB.
    */
-  int32_t assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* Current remote port used for transmission */
   uint16_t  remote_port;

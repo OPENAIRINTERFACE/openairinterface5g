@@ -292,9 +292,7 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
 }
 
 //------------------------------------------------------------------------------
-int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
-                                 uint32_t         stream,
-                                 NGAP_NGAP_PDU_t *pdu)
+int ngap_gNB_handle_nas_downlink(sctp_assoc_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu)
 //------------------------------------------------------------------------------
 {
 

@@ -54,6 +54,7 @@ extern void kill_gNB_proc(int inst);
 // In nr-ru.c
 extern void init_NR_RU(char *);
 extern void init_RU_proc(RU_t *ru);
+extern void start_NR_RU(void);
 extern void stop_RU(int nb_ru);
 extern void kill_NR_RU_proc(int inst);
 extern void set_function_spec_param(RU_t *ru);

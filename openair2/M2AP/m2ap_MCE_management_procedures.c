@@ -122,9 +122,7 @@ dump_mce_tree_m2(zz->m2ap_mce_head.rbh_root);
 }
 }
 
-struct m2ap_MCE_data_s *m2ap_get_MCE(m2ap_MCE_instance_t *instance_p,
-				     int32_t assoc_id,
-				     uint16_t cnx_id)
+struct m2ap_MCE_data_s *m2ap_get_MCE(m2ap_MCE_instance_t *instance_p, sctp_assoc_t assoc_id, uint16_t cnx_id)
 {
   struct m2ap_MCE_data_s  temp;
   struct m2ap_MCE_data_s *found;

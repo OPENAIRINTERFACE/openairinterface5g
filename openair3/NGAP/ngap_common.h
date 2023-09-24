@@ -127,11 +127,7 @@ extern int asn1_xer_print;
 
 /** \brief Function callback prototype.
  **/
-typedef int (*ngap_message_decoded_callback)(
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    NGAP_NGAP_PDU_t *pdu
-);
+typedef int (*ngap_message_decoded_callback)(sctp_assoc_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu);
 
 /** \brief Handle criticality
  \param criticality Criticality of the IE

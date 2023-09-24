@@ -91,6 +91,8 @@ typedef struct ru_config_s {
   uint8_t   if_compress;
 } ru_config_t;
 */
+
+void RCconfig_verify(ngran_node_t node_type);
 extern void NRRCconfig_RU(void);
 extern void RCconfig_nr_prs(void);
 extern void RCconfig_NR_L1(void);
@@ -100,13 +102,11 @@ extern void NRRCConfig(void);
 //void                          enb_config_display(void);
 //void                          ru_config_display(void);
 
-void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc);
+void RCconfig_NRRRC(gNB_RRC_INST *rrc);
 int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i);
 int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i);
-int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i);
-int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp);
+void wait_f1_setup_response(void);
 int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_update_t *gnb_cu_cfg_update);
-void nr_read_config_and_init(void);
 MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process);
 ngran_node_t get_node_type(void);
 
