@@ -389,8 +389,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
                    ue_context_p->ue_context.rb_config->drb_ToAddModList,
                    (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
                    kUPenc,
-                   kUPint,
-                   ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+                   kUPint);
 
   ctxt.rntiMaybeUEid = du_ue_id;
   // assume only a single bearer

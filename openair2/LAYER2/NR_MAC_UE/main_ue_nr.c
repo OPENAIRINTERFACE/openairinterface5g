@@ -51,7 +51,7 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
     
     //init mac here
-    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(sizeof(NR_UE_MAC_INST_t), NB_NR_UE_MAC_INST);
+    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(NB_NR_UE_MAC_INST, sizeof(NR_UE_MAC_INST_t));
 
     for (int j = 0; j < NB_NR_UE_MAC_INST; j++)
       nr_ue_init_mac(j);
@@ -73,15 +73,16 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
         NR_RadioBearerConfig_t *rbconfig = NULL;
         NR_RLC_BearerConfig_t *rlc_rbconfig = NULL;
         fill_nr_noS1_bearer_config(&rbconfig, &rlc_rbconfig);
-        struct NR_CellGroupConfig__rlc_BearerToAddModList rlc_bearer_list = {
-          .list = { .array = &rlc_rbconfig, .count = 1, .size = 1, }
-        };
 
         // set up PDCP, RLC, MAC
         nr_pdcp_layer_init();
-        nr_pdcp_add_drbs(ENB_FLAG_NO, nr_ue_mac_inst->crnti, rbconfig->drb_ToAddModList, 0, NULL, NULL, &rlc_bearer_list);
+        nr_pdcp_add_drbs(ENB_FLAG_NO, nr_ue_mac_inst->crnti, rbconfig->drb_ToAddModList, 0, NULL, NULL);
         nr_rlc_add_drb(nr_ue_mac_inst->crnti, rbconfig->drb_ToAddModList->list.array[0]->drb_Identity, rlc_rbconfig);
-        nr_ue_mac_inst->logicalChannelBearer_exist[4] = true;
+        struct NR_CellGroupConfig__rlc_BearerToAddModList rlc_toadd_list;
+        rlc_toadd_list.list.count = 1;
+        rlc_toadd_list.list.array = calloc(1, sizeof(NR_RLC_BearerConfig_t));
+        rlc_toadd_list.list.array[0] = rlc_rbconfig;
+        nr_rrc_mac_config_req_ue_logicalChannelBearer(0, &rlc_toadd_list, NULL);
 
         // free memory
         free_nr_noS1_bearer_config(&rbconfig, &rlc_rbconfig);

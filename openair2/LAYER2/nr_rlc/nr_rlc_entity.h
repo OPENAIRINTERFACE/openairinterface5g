@@ -176,4 +176,15 @@ nr_rlc_entity_t *new_nr_rlc_entity_tm(
                       char *buf, int size),
     void *deliver_sdu_data);
 
+void nr_rlc_entity_um_reconfigure(nr_rlc_entity_t *_entity, int t_reassembly, int *sn_field_length);
+
+void nr_rlc_entity_am_reconfigure(nr_rlc_entity_t *_entity,
+                                  int t_poll_retransmit,
+                                  int t_reassembly,
+                                  int t_status_prohibit,
+                                  int poll_pdu,
+                                  int poll_byte,
+                                  int max_retx_threshold,
+                                  int *sn_field_length);
+
 #endif /* _NR_RLC_ENTITY_H_ */

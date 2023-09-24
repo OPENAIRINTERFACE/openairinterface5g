@@ -511,18 +511,27 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
     mac->BWP_coresets[i] = NULL;
 }
 
-// todo handle mac_LogicalChannelConfig
-int nr_rrc_mac_config_req_ue_logicalChannelBearer(
-    module_id_t                     module_id,
-    int                             cc_idP,
-    uint8_t                         gNB_index,
-    long                            logicalChannelIdentity,
-    bool                            status){
-    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-    mac->logicalChannelBearer_exist[logicalChannelIdentity] = status;
-    return 0;
+void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
+                                                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
+                                                   struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list)
+{
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  if (rlc_toadd_list) {
+    for (int i = 0; i < rlc_toadd_list->list.count; i++) {
+      NR_RLC_BearerConfig_t *rlc_bearer = rlc_toadd_list->list.array[i];
+      int id = rlc_bearer->logicalChannelIdentity - 1;
+      mac->active_RLC_bearer[id] = true;
+    }
+  }
+  if (rlc_torelease_list) {
+    for (int i = 0; i < rlc_torelease_list->list.count; i++) {
+      if (rlc_torelease_list->list.array[i]) {
+        int id = *rlc_torelease_list->list.array[i] - 1;
+        mac->active_RLC_bearer[id] = false;
+      }
+    }
+  }
 }
-
 
 void configure_current_BWP(NR_UE_MAC_INST_t *mac,
                            NR_ServingCellConfigCommonSIB_t *scc,

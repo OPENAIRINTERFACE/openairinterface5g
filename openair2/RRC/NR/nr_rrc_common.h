@@ -28,11 +28,12 @@
 
 #define NR_RRC_HEADER_SIZE_MAX 64
 #define NR_RRC_BUFFER_SIZE_MAX 1024
+#define NR_NUM_SRB 4
 
 typedef struct {
-  char                                                Payload[NR_RRC_BUFFER_SIZE_MAX];
-  char                                                Header[NR_RRC_HEADER_SIZE_MAX];
-  uint16_t                                            payload_size;
+  char Payload[NR_RRC_BUFFER_SIZE_MAX];
+  char Header[NR_RRC_HEADER_SIZE_MAX];
+  uint16_t payload_size;
 } NR_RRC_BUFFER;
 
 typedef enum UE_STATE_NR_e {
@@ -45,17 +46,17 @@ typedef enum UE_STATE_NR_e {
 } NR_UE_STATE_t;
 
 typedef struct {
-  unsigned short                                      transport_block_size;      /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
-  unsigned short                                      max_transport_blocks;      /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */
-  unsigned long                                       Guaranteed_bit_rate;       /*!< \brief Guaranteed Bit Rate (average) to be offered by MAC layer scheduling*/
-  unsigned long                                       Max_bit_rate;              /*!< \brief Maximum Bit Rate that can be offered by MAC layer scheduling*/
-  uint8_t                                             Delay_class;               /*!< \brief Delay class offered by MAC layer scheduling*/
-  uint8_t                                             Target_bler;               /*!< \brief Target Average Transport Block Error rate*/
-  uint8_t                                             Lchan_t;                   /*!< \brief Logical Channel Type (BCCH,CCCH,DCCH,DTCH_B,DTCH,MRBCH)*/
+  unsigned short transport_block_size; /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
+  unsigned short max_transport_blocks; /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */
+  unsigned long Guaranteed_bit_rate; /*!< \brief Guaranteed Bit Rate (average) to be offered by MAC layer scheduling*/
+  unsigned long Max_bit_rate; /*!< \brief Maximum Bit Rate that can be offered by MAC layer scheduling*/
+  uint8_t Delay_class; /*!< \brief Delay class offered by MAC layer scheduling*/
+  uint8_t Target_bler; /*!< \brief Target Average Transport Block Error rate*/
+  uint8_t Lchan_t; /*!< \brief Logical Channel Type (BCCH,CCCH,DCCH,DTCH_B,DTCH,MRBCH)*/
 } __attribute__ ((__packed__))  NR_LCHAN_DESC;
 
 typedef struct RB_INFO_NR_s {
-  uint16_t                                            Rb_id;  //=Lchan_id
+  uint16_t Rb_id; //=Lchan_id
   NR_LCHAN_DESC Lchan_desc[2];
   //MAC_MEAS_REQ_ENTRY *Meas_entry; //may not needed for NB-IoT
 } NR_RB_INFO;
@@ -66,8 +67,8 @@ typedef struct NR_SRB_INFO_s {
 } NR_SRB_INFO;
 
 typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
-  NR_SRB_INFO                                         Srb_info;
-  uint8_t                                             Active;
+  NR_SRB_INFO Srb_info;
+  uint8_t Active;
   uint8_t status;
 } NR_SRB_INFO_TABLE_ENTRY;
 
