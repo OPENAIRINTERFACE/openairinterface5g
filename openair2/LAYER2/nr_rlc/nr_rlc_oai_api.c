@@ -62,7 +62,7 @@ static void release_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t chan
     return;
   if (rb->type == NR_RLC_SRB) {
     int id = rb->choice.srb_id - 1;
-    AssertFatal(id > 0, "logic bug: impossible to have srb0 here\n");
+    AssertFatal(id >= 0, "logic bug: impossible to have srb0 here\n");
     if (ue->srb[id]) {
       ue->srb[id]->delete_entity(ue->srb[id]);
       ue->srb[id] = NULL;

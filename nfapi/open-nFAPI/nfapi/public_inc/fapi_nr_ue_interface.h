@@ -673,7 +673,7 @@ typedef struct
 } fapi_nr_prach_config_t;
 
 typedef struct {
-  uint16_t target_Nid_cell;
+  int16_t target_Nid_cell;
 } fapi_nr_synch_request_t;
 
 typedef struct {

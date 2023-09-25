@@ -166,6 +166,11 @@ typedef enum {
 } NR_UE_L2_STATE_t;
 
 typedef enum {
+  GO_TO_IDLE,
+  RE_ESTABLISHMENT
+} NR_UE_MAC_reset_cause_t;
+
+typedef enum {
   RA_2STEP = 0,
   RA_4STEP
 } nr_ra_type_e;

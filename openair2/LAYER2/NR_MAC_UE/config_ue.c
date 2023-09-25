@@ -675,9 +675,8 @@ static int lcid_cmp(const void *lc1, const void *lc2, void *mac_inst)
   return (lc_config[id1 - 1]->ul_SpecificParameters->priority - lc_config[id2 - 1]->ul_SpecificParameters->priority);
 }
 
-void nr_release_mac_config_logicalChannelBearer(module_id_t module_id, long channel_identity)
+void nr_release_mac_config_logicalChannelBearer(NR_UE_MAC_INST_t *mac, long channel_identity)
 {
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   if (mac->logicalChannelConfig[channel_identity - 1] != NULL) {
     ASN_STRUCT_FREE(asn_DEF_NR_LogicalChannelConfig, mac->logicalChannelConfig[channel_identity - 1]);
     mac->logicalChannelConfig[channel_identity - 1] = NULL;
@@ -750,7 +749,7 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
     for (int i = 0; i < rlc_torelease_list->list.count; i++) {
       if (rlc_torelease_list->list.array[i]) {
         int lc_identity = *rlc_torelease_list->list.array[i];
-        nr_release_mac_config_logicalChannelBearer(module_id, lc_identity);
+        nr_release_mac_config_logicalChannelBearer(mac, lc_identity);
       }
     }
   }
@@ -1351,18 +1350,19 @@ static void configure_common_BWP_ul(NR_UE_MAC_INST_t *mac, int bwp_id, NR_BWP_Up
   }
 }
 
-void nr_rrc_mac_config_req_reset(module_id_t module_id)
+void nr_rrc_mac_config_req_reset(module_id_t module_id,
+                                 NR_UE_MAC_reset_cause_t reset_cause)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   reset_mac_inst(mac);
-}
-
-void nr_rrc_mac_config_req_release(module_id_t module_id)
-{
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-
   reset_ra(&mac->ra);
+
   release_mac_configuration(mac);
+
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+    nr_release_mac_config_logicalChannelBearer(mac, i + 1);
+    memset(&mac->lc_ordered_info[i], 0, sizeof(nr_lcordered_info_t));
+  }
 
   mac->first_sync_frame = -1;
   mac->get_sib1 = false;
@@ -1375,6 +1375,7 @@ void nr_rrc_mac_config_req_release(module_id_t module_id)
   mac->synch_request.CC_id = 0;
   mac->synch_request.synch_req.target_Nid_cell = -1;
   mac->if_module->synch_request(&mac->synch_request);
+
 }
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,

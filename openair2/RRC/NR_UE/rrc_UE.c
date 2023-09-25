@@ -49,7 +49,6 @@
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
-#include "COMMON/mac_rrc_primitives.h"
 
 #include "intertask_interface.h"
 
@@ -1846,8 +1845,7 @@ void nr_rrc_going_to_IDLE(instance_t instance,
 {
   NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
   NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
-  // reset MAC
-  nr_rrc_mac_config_req_reset(instance);
+
   // if going to RRC_IDLE was triggered by reception
   // of the RRCRelease message including a waitTime
   NR_RejectWaitTime_t *waitTime = NULL;
@@ -1915,11 +1913,30 @@ void nr_rrc_going_to_IDLE(instance_t instance,
   // discard the keys (only kgnb is stored)
   memset(rrc->kgnb, 0, sizeof(rrc->kgnb));
 
-  // TODO release all radio resources, including release of the RLC entity,
+  // release all radio resources, including release of the RLC entity,
   // the MAC configuration and the associated PDCP entity
   // and SDAP for all established RBs
-  nr_pdcp_remove_UE(rrc->rnti);
-  nr_rlc_remove_ue(rrc->rnti);
+  for (int j = 0; j < NB_CNX_UE; j++) {
+    rrcPerNB_t *nb = &rrc->perNB[j];
+    for (int i = 0; i < MAX_DRBS_PER_UE; i++) {
+      if (nb->status_DRBs[i] != RB_NOT_PRESENT) {
+        nb->status_DRBs[i] = RB_NOT_PRESENT;
+        nr_pdcp_release_drb(rrc->rnti, i);
+      }
+    }
+    for (int i = 1; i < NR_NUM_SRB; i++) {
+      if (nb->Srb[i] != RB_NOT_PRESENT) {
+        nb->Srb[i] = RB_NOT_PRESENT;
+        nr_pdcp_release_srb(rrc->rnti, i);
+      }
+    }
+    for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+      if (nb->active_RLC_entity[i]) {
+        nb->active_RLC_entity[i] = false;
+        nr_rlc_release_entity(rrc->rnti, i);
+      }
+    }
+  }
 
   if(rrc->meas_config) {
     ASN_STRUCT_FREE(asn_DEF_NR_MeasConfig, rrc->meas_config);
@@ -1987,7 +2004,9 @@ void nr_rrc_going_to_IDLE(instance_t instance,
     }
   }
 
-  nr_rrc_mac_config_req_release(instance);
+  // reset MAC
+  NR_UE_MAC_reset_cause_t cause = GO_TO_IDLE;
+  nr_rrc_mac_config_req_reset(instance, cause);
 
   // enter RRC_IDLE
   rrc->nrRrcState = RRC_STATE_IDLE_NR;

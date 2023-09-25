@@ -181,17 +181,21 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
 
 void release_mac_configuration(NR_UE_MAC_INST_t *mac)
 {
-  if(mac->mib)
+  if(mac->mib) {
     ASN_STRUCT_FREE(asn_DEF_NR_MIB, mac->mib);
+    mac->mib = NULL;
+  }
   for (int i = 0; i < 5; i++) {
     NR_BWP_PDCCH_t *pdcch = &mac->config_BWP_PDCCH[5];
     release_common_ss_cset(pdcch);
     for (int j = 0; j < pdcch->list_Coreset.count; j++)
       asn_sequence_del(&pdcch->list_Coreset, j, 1);
     for (int j = 0; j < pdcch->list_SS.count; j++)
-      asn_sequence_del(&pdcch->list_SS, j, 1);
+      asn_sequence_del(&pdcch->list_SS, j, 1);    
   }
 
+  memset(&mac->current_DL_BWP, 0, sizeof(mac->current_DL_BWP));
+  memset(&mac->current_UL_BWP, 0, sizeof(mac->current_UL_BWP));
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->csirs_measurements, 0, sizeof(mac->csirs_measurements));
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));

@@ -491,7 +491,7 @@ bool nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id)
   int upperBound = 0;
 
   if (entityPtr == NULL && (pdusession_id) * (pdusession_id - NGAP_MAX_PDU_SESSION) > 0) {
-    LOG_W(SDAP, "SDAP entities not established or Invalid range of pdusession_id [0, 256].\n");
+    LOG_E(SDAP, "SDAP entities not established or Invalid range of pdusession_id [0, 256].\n");
     return ret;
   }
   LOG_D(SDAP, "Deleting SDAP entity for UE %lx and PDU Session id %d\n", ue_id, entityPtr->pdusession_id);
@@ -516,7 +516,7 @@ bool nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id)
       ret = true;
     }
   }
-  LOG_W(SDAP, "Entity does not exist or it was not found.\n");
+  LOG_E(SDAP, "Entity does not exist or it was not found.\n");
   return ret;
 }
 

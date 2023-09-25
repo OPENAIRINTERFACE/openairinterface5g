@@ -170,8 +170,7 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 NR_SI_SchedulingInfo_t *si_SchedulingInfo,
                                 NR_ServingCellConfigCommonSIB_t *scc);
 
-void nr_rrc_mac_config_req_reset(module_id_t module_id);
-void nr_rrc_mac_config_req_release(module_id_t module_id);
+void nr_rrc_mac_config_req_reset(module_id_t module_id, NR_UE_MAC_reset_cause_t cause);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 NR_UE_MAC_INST_t * nr_l2_init_ue();
