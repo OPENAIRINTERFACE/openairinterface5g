@@ -22,6 +22,8 @@
 #ifndef S1AP_MESSAGES_TYPES_H_
 #define S1AP_MESSAGES_TYPES_H_
 
+#include <netinet/in.h>
+#include <netinet/sctp.h>
 #include "LTE_asn_constant.h"
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.

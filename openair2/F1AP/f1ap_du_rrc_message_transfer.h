@@ -36,10 +36,7 @@
 
 #include "f1ap_common.h"
 
-int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
-                                      uint32_t         assoc_id,
-                                      uint32_t         stream,
-                                      F1AP_F1AP_PDU_t *pdu);
+int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu);
 
 int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg);
 

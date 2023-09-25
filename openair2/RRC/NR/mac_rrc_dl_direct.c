@@ -26,6 +26,8 @@
 
 void mac_rrc_dl_direct_init(nr_mac_rrc_dl_if_t *mac_rrc)
 {
+  mac_rrc->f1_setup_response = f1_setup_response;
+  mac_rrc->f1_setup_failure = f1_setup_failure;
   mac_rrc->ue_context_setup_request = ue_context_setup_request;
   mac_rrc->ue_context_modification_request = ue_context_modification_request;
   mac_rrc->ue_context_modification_confirm = ue_context_modification_confirm;

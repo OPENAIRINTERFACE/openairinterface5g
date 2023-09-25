@@ -50,64 +50,28 @@
 #include "assertions.h"
 #include "conversions.h"
 
-static
-int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
-                                      uint32_t               stream,
-                                      S1AP_S1AP_PDU_t       *pdu);
-static
-int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
-                                     uint32_t               stream,
-                                     S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_s1_setup_response(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
+static int s1ap_eNB_handle_s1_setup_failure(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_error_indication(uint32_t               assoc_id,
-                                     uint32_t               stream,
-                                     S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_error_indication(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_initial_context_request(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_initial_context_request(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_ue_context_release_command(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_ue_context_release_command(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
-                                        uint32_t               stream,
-                                        S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_e_rab_setup_request(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_paging(uint32_t               assoc_id,
-                           uint32_t               stream,
-                           S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_paging(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_e_rab_modify_request(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_e_rab_release_command(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_s1_path_switch_request_ack(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_s1_path_switch_request_failure(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
-static
-int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu);
+static int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
 static int s1ap_eNB_snd_s1_setup_request(
   s1ap_eNB_instance_t *instance_p,
@@ -228,8 +192,8 @@ void s1ap_handle_s1_setup_message(s1ap_eNB_mme_data_t *mme_desc_p, int sctp_shut
   }
 }
 
-int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
-                            const uint8_t *const data, const uint32_t data_length) {
+int s1ap_eNB_handle_message(sctp_assoc_t assoc_id, int32_t stream, const uint8_t *const data, const uint32_t data_length)
+{
   S1AP_S1AP_PDU_t pdu;
   int ret;
   DevAssert(data != NULL);
@@ -268,10 +232,8 @@ int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
   return ret;
 }
 
-static
-int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
-                                     uint32_t               stream,
-                                     S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_s1_setup_failure(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   S1AP_S1SetupFailure_t      *container;
   S1AP_S1SetupFailureIEs_t   *ie;
   s1ap_eNB_mme_data_t        *mme_desc_p;
@@ -361,10 +323,8 @@ int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
   return 0;
 }
 
-static
-int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
-                                      uint32_t               stream,
-                                      S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_s1_setup_response(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   S1AP_S1SetupResponse_t    *container;
   S1AP_S1SetupResponseIEs_t *ie;
   s1ap_eNB_mme_data_t       *mme_desc_p;
@@ -478,11 +438,8 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
   return 0;
 }
 
-
-static
-int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
-                                     uint32_t         stream,
-                                     S1AP_S1AP_PDU_t *pdu) {
+static int s1ap_eNB_handle_error_indication(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   S1AP_ErrorIndication_t    *container;
   S1AP_ErrorIndicationIEs_t *ie;
   s1ap_eNB_mme_data_t        *mme_desc_p;
@@ -817,11 +774,8 @@ int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
   return 0;
 }
 
-
-static
-int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_initial_context_request(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   int i;
   s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
   s1ap_eNB_ue_context_t *ue_desc_p        = NULL;
@@ -987,11 +941,8 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
   return 0;
 }
 
-
-static
-int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_ue_context_release_command(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
   s1ap_eNB_ue_context_t *ue_desc_p        = NULL;
   MessageDef            *message_p        = NULL;
@@ -1078,13 +1029,10 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
     S1AP_ERROR( "Mandatory Element Nothing : UEContextReleaseCommand(UE_S1AP_IDs)\n" );
     return -1;
   }
-
 }
 
-static
-int s1ap_eNB_handle_e_rab_setup_request(uint32_t         assoc_id,
-                                        uint32_t         stream,
-                                        S1AP_S1AP_PDU_t *pdu) {
+static int s1ap_eNB_handle_e_rab_setup_request(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   int i;
   S1AP_MME_UE_S1AP_ID_t         mme_ue_s1ap_id;
   S1AP_ENB_UE_S1AP_ID_t         enb_ue_s1ap_id;
@@ -1204,10 +1152,8 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t         assoc_id,
   return 0;
 }
 
-static
-int s1ap_eNB_handle_paging(uint32_t               assoc_id,
-                           uint32_t               stream,
-                           S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_paging(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   s1ap_eNB_mme_data_t   *mme_desc_p        = NULL;
   s1ap_eNB_instance_t   *s1ap_eNB_instance = NULL;
   MessageDef            *message_p         = NULL;
@@ -1374,10 +1320,8 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
   return 0;
 }
 
-static
-int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_e_rab_modify_request(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   int i, nb_of_e_rabs_failed;
   s1ap_eNB_mme_data_t           *mme_desc_p       = NULL;
   s1ap_eNB_ue_context_t         *ue_desc_p        = NULL;
@@ -1510,10 +1454,8 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
   return 0;
 }
 // handle e-rab release command and send it to rrc_end
-static
-int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_e_rab_release_command(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   int i;
   s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
   s1ap_eNB_ue_context_t *ue_desc_p        = NULL;
@@ -1614,10 +1556,8 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
   return 0;
 }
 
-static
-int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_s1_path_switch_request_ack(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
   s1ap_eNB_ue_context_t *ue_desc_p        = NULL;
   MessageDef            *message_p        = NULL;
@@ -1776,10 +1716,8 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
   return 0;
 }
 
-static
-int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu) {
+static int s1ap_eNB_handle_s1_path_switch_request_failure(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
   s1ap_eNB_mme_data_t   *mme_desc_p       = NULL;
   S1AP_PathSwitchRequestFailure_t    *pathSwitchRequestFailure;
   S1AP_PathSwitchRequestFailureIEs_t *ie;
@@ -1843,12 +1781,9 @@ int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_
   return 0;
 }
 
-static
-int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(uint32_t               assoc_id,
-    uint32_t               stream,
-    S1AP_S1AP_PDU_t       *pdu){
-
-	LOG_I(S1AP, "Received S1AP E-RAB Modification confirm message \n");
+static int s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
+{
+  LOG_I(S1AP, "Received S1AP E-RAB Modification confirm message \n");
 	return 0;
 }
 

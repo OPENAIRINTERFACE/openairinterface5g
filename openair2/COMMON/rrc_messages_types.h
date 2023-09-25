@@ -69,8 +69,6 @@
 
 #define NBIOTRRC_CONFIGURATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.nbiotrrc_configuration_req
 
-#define NRRRC_CONFIGURATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.nrrrc_configuration_req
-
 #define NAS_KENB_REFRESH_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_kenb_refresh_req
 #define NAS_CELL_SELECTION_REQ(mSGpTR)  (mSGpTR)->ittiMsg.nas_cell_selection_req
 #define NAS_CONN_ESTABLI_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_conn_establi_req
@@ -403,12 +401,6 @@ typedef struct NbIoTRrcConfigurationReq_s {
   long                    ue_TimersAndConstants_n311_NB;
 } NbIoTRrcConfigurationReq;
 
-typedef struct {
-  int N1;
-  int N2;
-  int XP;
-} rrc_pdsch_AntennaPorts_t;
-
 // gNB: GNB_APP -> RRC messages
 typedef struct NRRrcConfigurationReq_s {
   uint64_t                cell_identity;
@@ -417,17 +409,7 @@ typedef struct NRRrcConfigurationReq_s {
   uint16_t                mnc[PLMN_LIST_MAX_SIZE];
   uint8_t                 mnc_digit_length[PLMN_LIST_MAX_SIZE];
   uint8_t                 num_plmn;
-  NR_ServingCellConfigCommon_t *scc;
-  NR_ServingCellConfig_t  *scd;
-  int                     sib1_tda;
-  rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts;
-  int                     pusch_AntennaPorts;
-  int                     minRXTXTIME;
-  int                     do_CSIRS;
-  int                     do_SRS;
-  bool                    force_256qam_off;
-  int                     pusch_TargetSNRx10;
-  int                     pucch_TargetSNRx10;
+
   bool                    enable_sdap;
   int                     drbs;
 } gNB_RrcConfigurationReq;

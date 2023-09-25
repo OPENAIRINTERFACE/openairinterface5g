@@ -77,7 +77,7 @@ typedef struct sctp_cnx_list_elm_s {
     uint16_t   in_streams;      ///< Number of input streams negociated for this connection
     uint16_t   out_streams;     ///< Number of output streams negotiated for this connection
     uint16_t   ppid;            ///< Payload protocol Identifier
-    int32_t    assoc_id;        ///< SCTP association id for the connection     (note4debug host byte order)
+    sctp_assoc_t assoc_id;      ///< SCTP association id for the connection     (note4debug host byte order)
     uint32_t   messages_recv;   ///< Number of messages received on this connection
     uint32_t   messages_sent;   ///< Number of messages sent on this connection
     task_id_t  task_id;         ///< Task id of the task who asked for this connection
@@ -93,7 +93,7 @@ static STAILQ_HEAD(sctp_cnx_list_head, sctp_cnx_list_elm_s) sctp_cnx_list;
 static uint16_t sctp_nb_cnx = 0;
 
 //------------------------------------------------------------------------------
-struct sctp_cnx_list_elm_s *sctp_get_cnx(int32_t assoc_id, int sd)
+struct sctp_cnx_list_elm_s *sctp_get_cnx(sctp_assoc_t assoc_id, int sd)
 {
     struct sctp_cnx_list_elm_s *elm;
 
@@ -225,7 +225,7 @@ sctp_handle_new_association_req_multi(
     int                           ns;
     int sd;
 
-    int32_t                       assoc_id = 0;
+    sctp_assoc_t assoc_id = 0;
 
     struct sctp_cnx_list_elm_s   *sctp_cnx = NULL;
     enum sctp_connection_type_e   connection_type = SCTP_TYPE_CLIENT;
@@ -362,7 +362,7 @@ sctp_handle_new_association_req(
     const sctp_new_association_req_t * const sctp_new_association_req_p)
 {
     int                           sd       = 0;
-    int32_t                       assoc_id = 0;
+    sctp_assoc_t assoc_id = 0;
 
     struct sctp_event_subscribe   events={0};
 

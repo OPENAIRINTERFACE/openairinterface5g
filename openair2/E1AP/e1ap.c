@@ -67,8 +67,8 @@ const char *const e1ap_direction2String(int e1ap_dir)
   return(e1ap_direction_String[e1ap_dir]);
 }
 
-int e1ap_handle_message(instance_t instance, uint32_t assoc_id,
-                        const uint8_t *const data, const uint32_t data_length) {
+int e1ap_handle_message(instance_t instance, sctp_assoc_t assoc_id, const uint8_t *const data, const uint32_t data_length)
+{
   E1AP_E1AP_PDU_t pdu= {0};
   int ret;
   DevAssert(data != NULL);
@@ -128,18 +128,14 @@ int e1ap_send_RESET_ACKNOWLEDGE(instance_t instance, E1AP_Reset_t *Reset) {
   return -1;
 }
 
-int e1ap_handle_RESET(instance_t instance,
-                      uint32_t assoc_id,
-                      uint32_t stream,
-                      E1AP_E1AP_PDU_t *pdu) {
+int e1ap_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
 
-int e1ap_handle_RESET_ACKNOWLEDGE(instance_t instance,
-                                  uint32_t assoc_id,
-                                  uint32_t stream,
-                                  E1AP_E1AP_PDU_t *pdu) {
+int e1ap_handle_RESET_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
@@ -147,10 +143,8 @@ int e1ap_handle_RESET_ACKNOWLEDGE(instance_t instance,
 /*
     Error Indication
 */
-int e1ap_handle_ERROR_INDICATION(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 E1AP_E1AP_PDU_t *pdu) {
+int e1ap_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
@@ -465,13 +459,19 @@ int e1apCUCP_handle_CONFIGURATION_UPDATE(e1ap_setup_req_t *setupReq, E1AP_E1AP_P
   return -1;
 }
 
-int e1apCUUP_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(e1ap_setup_req_t *setupReq, uint32_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+int e1apCUUP_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(e1ap_setup_req_t *setupReq,
+                                                            sctp_assoc_t assoc_id,
+                                                            uint32_t stream,
+                                                            E1AP_E1AP_PDU_t *pdu)
 {
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
 
-int e1apCUUP_handle_gNB_DU_CONFIGURATION_FAILURE(e1ap_setup_req_t *setupReq, uint32_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+int e1apCUUP_handle_gNB_DU_CONFIGURATION_FAILURE(e1ap_setup_req_t *setupReq,
+                                                 sctp_assoc_t assoc_id,
+                                                 uint32_t stream,
+                                                 E1AP_E1AP_PDU_t *pdu)
 {
   AssertFatal(false,"Not implemented yet\n");
   return -1;
@@ -491,18 +491,14 @@ int e1ap_send_RELEASE_ACKNOWLEDGE(instance_t instance) {
   return -1;
 }
 
-int e1ap_handle_RELEASE_REQUEST(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                E1AP_E1AP_PDU_t *pdu) {
+int e1ap_handle_RELEASE_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
 
-int e1ap_handle_RELEASE_ACKNOWLEDGE(instance_t instance,
-                                    uint32_t assoc_id,
-                                    uint32_t stream,
-                                    E1AP_E1AP_PDU_t *pdu) {
+int e1ap_handle_RELEASE_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
@@ -1251,17 +1247,19 @@ int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST(e1ap_upcp_inst_t *e1_ins
 }
 
 int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_RESPONSE(instance_t instance,
-                                                         uint32_t assoc_id,
+                                                         sctp_assoc_t assoc_id,
                                                          uint32_t stream,
-                                                         E1AP_E1AP_PDU_t *pdu) {
+                                                         E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
 
 int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_FAILURE(instance_t instance,
-                                                        uint32_t assoc_id,
+                                                        sctp_assoc_t assoc_id,
                                                         uint32_t stream,
-                                                        E1AP_E1AP_PDU_t *pdu) {
+                                                        E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
@@ -1277,17 +1275,19 @@ int e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_CONFIRM(instance_t instance) {
 }
 
 int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_REQUIRED(instance_t instance,
-                                                         uint32_t assoc_id,
+                                                         sctp_assoc_t assoc_id,
                                                          uint32_t stream,
-                                                         E1AP_E1AP_PDU_t *pdu) {
+                                                         E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
 
 int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_CONFIRM(instance_t instance,
-                                                        uint32_t assoc_id,
+                                                        sctp_assoc_t assoc_id,
                                                         uint32_t stream,
-                                                        E1AP_E1AP_PDU_t *pdu) {
+                                                        E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
@@ -1464,9 +1464,10 @@ int e1apCUCP_handle_BEARER_CONTEXT_RELEASE_COMPLETE(e1ap_upcp_inst_t *e1_inst, c
 }
 
 int e1apCUCP_handle_BEARER_CONTEXT_RELEASE_REQUEST(instance_t instance,
-                                                   uint32_t assoc_id,
+                                                   sctp_assoc_t assoc_id,
                                                    uint32_t stream,
-                                                   E1AP_E1AP_PDU_t *pdu) {
+                                                   E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
@@ -1481,9 +1482,10 @@ int e1apCUUP_send_BEARER_CONTEXT_INACTIVITY_NOTIFICATION(instance_t instance) {
 }
 
 int e1apCUCP_handle_BEARER_CONTEXT_INACTIVITY_NOTIFICATION(instance_t instance,
-                                                           uint32_t assoc_id,
+                                                           sctp_assoc_t assoc_id,
                                                            uint32_t stream,
-                                                           E1AP_E1AP_PDU_t *pdu) {
+                                                           E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
@@ -1501,18 +1503,14 @@ int e1apCUUP_send_DATA_USAGE_REPORT(instance_t instance) {
   return -1;
 }
 
-int e1apCUCP_handle_DL_DATA_NOTIFICATION(instance_t instance,
-                                         uint32_t assoc_id,
-                                         uint32_t stream,
-                                         E1AP_E1AP_PDU_t *pdu) {
+int e1apCUCP_handle_DL_DATA_NOTIFICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }
 
-int e1apCUCP_handle_send_DATA_USAGE_REPORT(instance_t instance,
-                                           uint32_t assoc_id,
-                                           uint32_t stream,
-                                           E1AP_E1AP_PDU_t *pdu) {
+int e1apCUCP_handle_send_DATA_USAGE_REPORT(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
+{
   AssertFatal(false,"Not implemented yet\n");
   return -1;
 }

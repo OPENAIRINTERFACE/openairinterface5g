@@ -154,8 +154,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
                    DRB_configList,
                    (UE->integrity_algorithm << 4) | UE->ciphering_algorithm,
                    kUPenc,
-                   kUPint,
-                   get_softmodem_params()->sa ? UE->masterCellGroup->rlc_BearerToAddModList : NULL);
+                   kUPint);
 
   return ret;
 }
@@ -195,7 +194,7 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
   } else {
     int remote_port = RC.nrrrc[ctxt.module_id]->eth_params_s.remote_portd;
     in_addr_t my_addr = inet_addr(RC.nrrrc[ctxt.module_id]->eth_params_s.my_addr);
-    instance_t gtpInst = getCxt(CUtype, instance)->gtpInst;
+    instance_t gtpInst = getCxt(instance)->gtpInst;
     // GTP tunnel for DL
     fill_e1ap_bearer_setup_resp(&resp, req, gtpInst, UE->rrc_ue_id, remote_port, my_addr);
   }
@@ -210,7 +209,7 @@ static void cucp_cuup_bearer_context_mod_direct(e1ap_bearer_setup_req_t *const r
   // only update GTP tunnels if it is really a CU
   if (!NODE_IS_CU(RC.nrrrc[0]->node_type))
     return;
-  instance_t gtpInst = getCxt(CUtype, instance)->gtpInst;
+  instance_t gtpInst = getCxt(instance)->gtpInst;
   CU_update_UP_DL_tunnel(req, gtpInst, req->gNB_cu_cp_ue_id);
 }
 

@@ -48,27 +48,40 @@ static instance_t cu_task_create_gtpu_instance(eth_params_t *IPaddrs) {
   return gtpv1Init(tmp);
 }
 
-static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind,
-    eth_params_t *IPaddrs) {
-  createF1inst(true, instance, NULL);
+static void cu_task_handle_sctp_association_ind(instance_t instance,
+                                                sctp_new_association_ind_t *sctp_new_association_ind,
+                                                eth_params_t *IPaddrs)
+{
+  createF1inst(instance, NULL, NULL);
   // save the assoc id
-  f1ap_setup_req_t *f1ap_cu_data=f1ap_req(true, instance);
+  f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
   f1ap_cu_data->assoc_id         = sctp_new_association_ind->assoc_id;
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
-  f1ap_cu_data->default_sctp_stream_id = 0;
   if (RC.nrrrc[instance]->node_type != ngran_gNB_CUCP) {
-    getCxt(CUtype, instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
-    AssertFatal(getCxt(CUtype, instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
+    getCxt(instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
+    AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
   } else
     LOG_I(F1AP, "In F1AP connection, don't start GTP-U, as we have also E1AP\n");
   // Fixme: fully inconsistent instances management
   // dirty global var is a bad fix
-  CUuniqInstance=getCxt(CUtype, instance)->gtpInst;
+  CUuniqInstance=getCxt(instance)->gtpInst;
 }
 
 static void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
   DevAssert(sctp_new_association_resp != NULL);
+
+  if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN) {
+    f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
+    AssertFatal(f1ap_cu_data != NULL, "illegal state: SCTP shutdown for non-existing F1AP endpoint\n");
+    LOG_I(F1AP, "Received SCTP shutdown for assoc_id %d, removing endpoint\n", sctp_new_association_resp->assoc_id);
+    destroyF1inst(instance);
+    /* inform RRC that the DU is gone */
+    MessageDef *message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_LOST_CONNECTION);
+    message_p->ittiMsgHeader.originInstance = sctp_new_association_resp->assoc_id;
+    itti_send_msg_to_task(TASK_RRC_GNB, instance, message_p);
+    return;
+  }
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
     LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",

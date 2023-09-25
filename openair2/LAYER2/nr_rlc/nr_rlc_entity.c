@@ -243,3 +243,31 @@ nr_rlc_entity_t *new_nr_rlc_entity_tm(
 
   return (nr_rlc_entity_t *)ret;
 }
+
+void nr_rlc_entity_um_reconfigure(nr_rlc_entity_t *_entity, int t_reassembly, int *sn_field_length)
+{
+  nr_rlc_entity_um_t *entity = (nr_rlc_entity_um_t *)_entity;
+  entity->t_reassembly = t_reassembly;
+  if (sn_field_length)
+    entity->sn_field_length = *sn_field_length;
+}
+
+void nr_rlc_entity_am_reconfigure(nr_rlc_entity_t *_entity,
+                                  int t_poll_retransmit,
+                                  int t_reassembly,
+                                  int t_status_prohibit,
+                                  int poll_pdu,
+                                  int poll_byte,
+                                  int max_retx_threshold,
+                                  int *sn_field_length)
+{
+  nr_rlc_entity_am_t *entity = (nr_rlc_entity_am_t *)_entity;
+  entity->t_poll_retransmit = t_poll_retransmit;
+  entity->t_reassembly = t_reassembly;
+  entity->t_status_prohibit = t_status_prohibit;
+  entity->poll_pdu = poll_pdu;
+  entity->poll_byte = poll_byte;
+  entity->max_retx_threshold = max_retx_threshold;
+  if (sn_field_length)
+    entity->sn_field_length = *sn_field_length;
+}

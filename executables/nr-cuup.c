@@ -106,7 +106,7 @@ void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_contex
   abort();
 }
 
-f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP)
+f1ap_cudu_inst_t *getCxt(instance_t instanceP)
 {
   abort();
   return NULL;

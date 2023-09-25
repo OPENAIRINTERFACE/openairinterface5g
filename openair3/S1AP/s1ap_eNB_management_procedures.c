@@ -89,9 +89,7 @@ void s1ap_eNB_insert_new_instance(s1ap_eNB_instance_t *new_instance_p)
                      new_instance_p, s1ap_eNB_entries);
 }
 
-struct s1ap_eNB_mme_data_s *s1ap_eNB_get_MME(
-  s1ap_eNB_instance_t *instance_p,
-  int32_t assoc_id, uint16_t cnx_id)
+struct s1ap_eNB_mme_data_s *s1ap_eNB_get_MME(s1ap_eNB_instance_t *instance_p, sctp_assoc_t assoc_id, uint16_t cnx_id)
 {
   struct s1ap_eNB_mme_data_s  temp;
   struct s1ap_eNB_mme_data_s *found;

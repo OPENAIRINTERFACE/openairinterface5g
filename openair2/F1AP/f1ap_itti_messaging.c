@@ -22,26 +22,27 @@
 #include "f1ap_common.h"
 #include "f1ap_itti_messaging.h"
 
-void f1ap_itti_send_sctp_data_req(bool isCu, instance_t instance, uint8_t *buffer,
-                                  uint32_t buffer_length, uint16_t stream) {
+void f1ap_itti_send_sctp_data_req(instance_t instance, uint8_t *buffer, uint32_t buffer_length)
+{
   MessageDef      *message_p;
   sctp_data_req_t *sctp_data_req;
-  message_p = itti_alloc_new_message(isCu?TASK_CU_F1:TASK_DU_F1, 0, SCTP_DATA_REQ);
+  message_p = itti_alloc_new_message(TASK_CU_F1, 0, SCTP_DATA_REQ);
   sctp_data_req = &message_p->ittiMsg.sctp_data_req;
-  sctp_data_req->assoc_id      =  f1ap_assoc_id(isCu,instance);
+  sctp_data_req->assoc_id = getCxt(instance)->assoc_id;
   sctp_data_req->buffer        = buffer;
   sctp_data_req->buffer_length = buffer_length;
-  sctp_data_req->stream = stream;
+  sctp_data_req->stream = 0;
   LOG_D(F1AP, "Sending ITTI message to SCTP Task\n");
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 
-void f1ap_itti_send_sctp_close_association(bool isCu, instance_t instance) {
+void f1ap_itti_send_sctp_close_association(instance_t instance)
+{
   MessageDef               *message_p = NULL;
   sctp_close_association_t *sctp_close_association_p = NULL;
   message_p = itti_alloc_new_message(TASK_S1AP, 0, SCTP_CLOSE_ASSOCIATION);
   sctp_close_association_p = &message_p->ittiMsg.sctp_close_association;
-  sctp_close_association_p->assoc_id      = f1ap_assoc_id(isCu,instance);
+  sctp_close_association_p->assoc_id = getCxt(instance)->assoc_id;
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 

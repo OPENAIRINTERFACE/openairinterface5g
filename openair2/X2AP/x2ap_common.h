@@ -20,6 +20,8 @@
  */
 #ifndef X2AP_COMMON_H_
 #define X2AP_COMMON_H_
+#include <netinet/in.h>
+#include <netinet/sctp.h>
 #include "oai_asn1.h"
 #include "X2AP_ProtocolIE-Field.h"
 #include "X2AP_X2AP-PDU.h"
@@ -72,11 +74,7 @@ extern int asn1_xer_print;
 
 /** \brief Function callback prototype.
  **/
-typedef int (*x2ap_message_decoded_callback)(
-  instance_t instance,
-  uint32_t assocId,
-  uint32_t stream,
-  X2AP_X2AP_PDU_t *pdu);
+typedef int (*x2ap_message_decoded_callback)(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
 
 /** \brief Encode a successfull outcome message
  \param buffer pointer to buffer in which data will be encoded

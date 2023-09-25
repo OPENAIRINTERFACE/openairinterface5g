@@ -55,10 +55,8 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
 /*  DL RRC Message Transfer */
-int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
-                                      uint32_t         assoc_id,
-                                      uint32_t         stream,
-                                      F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_DLRRCMessageTransfer_t    *container;
   F1AP_DLRRCMessageTransferIEs_t *ie;
   int             executeDuplication;
@@ -85,7 +83,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     /* strange: it is not named OLD_GNB_DU_UE... */
     old_gNB_DU_ue_id_stack = ie->value.choice.GNB_DU_UE_F1AP_ID_1;
     old_gNB_DU_ue_id = &old_gNB_DU_ue_id_stack;
-    gtpv1u_update_ue_id(getCxt(false, instance)->gtpInst, old_gNB_DU_ue_id_stack, du_ue_f1ap_id);
+    gtpv1u_update_ue_id(getCxt(instance)->gtpInst, old_gNB_DU_ue_id_stack, du_ue_f1ap_id);
   }
 
   /* mandatory */
@@ -172,7 +170,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_ini
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_NRCGI;
   //Fixme: takes always the first cell
-  addnRCGI(ie2->value.choice.NRCGI, getCxt(DUtype, instanceP)->setupReq.cell);
+  addnRCGI(ie2->value.choice.NRCGI, &getCxt(instanceP)->setupReq.cell[0].info);
   /* mandatory */
   /* c3. C_RNTI */  // 16
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie3);
@@ -213,7 +211,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_ini
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instanceP, buffer, len, getCxt(DUtype, instanceP)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(instanceP, buffer, len);
   return 0;
 }
 
@@ -279,6 +277,6 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_me
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len, getCxt(DUtype, instance)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }

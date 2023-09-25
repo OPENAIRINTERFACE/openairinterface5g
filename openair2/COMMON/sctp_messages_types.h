@@ -22,6 +22,9 @@
 #ifndef SCTP_MESSAGES_TYPES_H_
 #define SCTP_MESSAGES_TYPES_H_
 
+#include <netinet/in.h>
+#include <netinet/sctp.h>
+
 #define SCTP_NEW_ASSOCIATION_REQ(mSGpTR)       (mSGpTR)->ittiMsg.sctp_new_association_req
 #define SCTP_NEW_ASSOCIATION_REQ_MULTI(mSGpTR) (mSGpTR)->ittiMsg.sctp_new_association_req_multi
 #define SCTP_NEW_ASSOCIATION_RESP(mSGpTR)      (mSGpTR)->ittiMsg.sctp_new_association_resp
@@ -87,7 +90,7 @@ typedef struct sctp_init_msg_multi_cnf_s {
 
 typedef struct sctp_new_association_ind_s {
   /* Assoc id of the new association */
-  int32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* The port used by remote host */
   uint16_t port;
@@ -102,7 +105,7 @@ typedef struct sctp_new_association_resp_s {
   uint16_t ulp_cnx_id;
 
   /* SCTP Association ID */
-  int32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* Input/output streams */
   uint16_t out_streams;
@@ -114,7 +117,7 @@ typedef struct sctp_new_association_resp_s {
 
 typedef struct sctp_data_ind_s {
   /* SCTP Association ID */
-  int32_t   assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* Buffer to send over SCTP */
   uint32_t  buffer_length;
@@ -139,7 +142,7 @@ typedef struct sctp_init_s {
 
 
 typedef struct sctp_close_association_s {
-  uint32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 } sctp_close_association_t;
 
 

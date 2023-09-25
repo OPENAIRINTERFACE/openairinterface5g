@@ -503,8 +503,8 @@ typedef struct {
   uint8_t BSR_reporting_active;
 
   /// LogicalChannelConfig has bearer.
-  bool logicalChannelBearer_exist[NR_MAX_NUM_LCID];
-  NR_UE_SCHEDULING_INFO   scheduling_info;
+  bool active_RLC_bearer[NR_MAX_NUM_LCID];
+  NR_UE_SCHEDULING_INFO scheduling_info;
 
   /// PHR
   uint8_t PHR_reporting_active;

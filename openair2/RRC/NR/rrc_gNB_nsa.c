@@ -105,8 +105,9 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   }
   LOG_A(NR_RRC, "Successfully decoded UE NR capabilities (NR and MRDC)\n");
 
+  AssertFatal(NODE_IS_MONOLITHIC(rrc->node_type), "phy_test and do_ra only work in monolithic\n");
   UE->spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
-  UE->spCellConfig->spCellConfigDedicated = rrc->configuration.scd;
+  UE->spCellConfig->spCellConfigDedicated = RC.nrmac[0]->common_channels[0].pre_ServingCellConfig;
   LOG_I(NR_RRC,"Adding new NSA user (%p)\n",ue_context_p);
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
@@ -119,8 +120,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
 {
   AssertFatal(!get_softmodem_params()->sa, "%s() cannot be called in SA mode, it is intrinsically for NSA\n", __func__);
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
-  rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
-  const gNB_RrcConfigurationReq *configuration = &rrc->configuration;
+  const nr_mac_config_t *configuration = &RC.nrmac[0]->radio_config;
   MessageDef *msg;
   msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
@@ -243,7 +243,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   }
 
   NR_ServingCellConfig_t *scc = UE->spCellConfig ? UE->spCellConfig->spCellConfigDedicated : NULL;
-  UE->secondaryCellGroup = get_default_secondaryCellGroup(carrier->servingcellconfigcommon,
+  // The MAC has the ServingCellConfigCommon; the below code is incorrect: the
+  // CU should send a UE Context Setup Request to request the creating of the
+  // MAC Context
+  NR_ServingCellConfigCommon_t *sccc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
+  UE->secondaryCellGroup = get_default_secondaryCellGroup(sccc,
                                                           scc,
                                                           UE->UE_Capability_nr,
                                                           1,
@@ -253,7 +257,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   AssertFatal(UE->secondaryCellGroup != NULL, "out of memory\n");
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, UE->secondaryCellGroup);
 
-  fill_default_reconfig(carrier->servingcellconfigcommon, scc, reconfig_ies, UE->secondaryCellGroup, UE->UE_Capability_nr, configuration, ue_context_p->ue_context.rrc_ue_id);
+  fill_default_reconfig(sccc, scc, reconfig_ies, UE->secondaryCellGroup, UE->UE_Capability_nr, ue_context_p->ue_context.rrc_ue_id);
   UE->rnti = UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
@@ -385,8 +389,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
                    ue_context_p->ue_context.rb_config->drb_ToAddModList,
                    (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
                    kUPenc,
-                   kUPint,
-                   ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+                   kUPint);
 
   ctxt.rntiMaybeUEid = du_ue_id;
   // assume only a single bearer

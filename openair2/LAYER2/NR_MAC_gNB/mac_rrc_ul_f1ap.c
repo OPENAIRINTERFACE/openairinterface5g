@@ -29,6 +29,76 @@
 
 #include "mac_rrc_ul.h"
 
+static f1ap_net_config_t read_DU_IP_config(const eth_params_t* f1_params)
+{
+  f1ap_net_config_t nc = {0};
+
+  nc.CU_f1_ip_address.ipv6 = 0;
+  nc.CU_f1_ip_address.ipv4 = 1;
+  strcpy(nc.CU_f1_ip_address.ipv4_address, f1_params->remote_addr);
+  nc.CUport = f1_params->remote_portd;
+  LOG_I(GNB_APP,
+        "FIAP: CU_ip4_address in DU %p, strlen %d\n",
+        nc.CU_f1_ip_address.ipv4_address,
+        (int)strlen(f1_params->remote_addr));
+
+  nc.DU_f1_ip_address.ipv6 = 0;
+  nc.DU_f1_ip_address.ipv4 = 1;
+  strcpy(nc.DU_f1_ip_address.ipv4_address, f1_params->my_addr);
+  nc.DUport = f1_params->my_portd;
+  LOG_I(GNB_APP,
+        "FIAP: DU_ip4_address in DU %p, strlen %ld\n",
+        nc.DU_f1_ip_address.ipv4_address,
+        strlen(f1_params->my_addr));
+
+  // sctp_in_streams/sctp_out_streams are given by SCTP layer
+  return nc;
+}
+
+
+static void f1_setup_request_f1ap(const f1ap_setup_req_t *req)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_DU_REGISTER_REQ);
+
+  f1ap_setup_req_t *f1ap_setup = &F1AP_DU_REGISTER_REQ(msg).setup_req;
+  f1ap_setup->gNB_DU_id = req->gNB_DU_id;
+  f1ap_setup->gNB_DU_name = strdup(req->gNB_DU_name);
+  f1ap_setup->num_cells_available = req->num_cells_available;
+  for (int n = 0; n < req->num_cells_available; ++n) {
+    f1ap_setup->cell[n].info = req->cell[n].info; // copy most fields
+    if (req->cell[n].info.tac) {
+      f1ap_setup->cell[n].info.tac = malloc(sizeof(*f1ap_setup->cell[n].info.tac));
+      AssertFatal(f1ap_setup->cell[n].info.tac != NULL, "out of memory\n");
+      *f1ap_setup->cell[n].info.tac = *req->cell[n].info.tac;
+    }
+    if (req->cell[n].info.measurement_timing_information)
+      f1ap_setup->cell[n].info.measurement_timing_information = strdup(req->cell[n].info.measurement_timing_information);
+
+    if (req->cell[n].sys_info) {
+      f1ap_gnb_du_system_info_t *orig_sys_info = req->cell[n].sys_info;
+      f1ap_gnb_du_system_info_t *copy_sys_info = calloc(1, sizeof(*copy_sys_info));
+      AssertFatal(copy_sys_info != NULL, "out of memory\n");
+      f1ap_setup->cell[n].sys_info = copy_sys_info;
+
+      copy_sys_info->mib = calloc(orig_sys_info->mib_length, sizeof(uint8_t));
+      AssertFatal(copy_sys_info->mib != NULL, "out of memory\n");
+      memcpy(copy_sys_info->mib, orig_sys_info->mib, orig_sys_info->mib_length);
+      copy_sys_info->mib_length = orig_sys_info->mib_length;
+
+      if (orig_sys_info->sib1_length > 0) {
+        copy_sys_info->sib1 = calloc(orig_sys_info->sib1_length, sizeof(uint8_t));
+        AssertFatal(copy_sys_info->sib1 != NULL, "out of memory\n");
+        memcpy(copy_sys_info->sib1, orig_sys_info->sib1, orig_sys_info->sib1_length);
+        copy_sys_info->sib1_length = orig_sys_info->sib1_length;
+      }
+    }
+  }
+
+  F1AP_DU_REGISTER_REQ(msg).net_config = read_DU_IP_config(&RC.nrmac[0]->eth_params_n);
+
+  itti_send_msg_to_task(TASK_DU_F1, 0, msg);
+}
+
 static void ue_context_setup_response_f1ap(const f1ap_ue_context_setup_t *req, const f1ap_ue_context_setup_t *resp)
 {
   DevAssert(req->drbs_to_be_setup_length == resp->drbs_to_be_setup_length);
@@ -161,6 +231,7 @@ static void initial_ul_rrc_message_transfer_f1ap(module_id_t module_id, const f1
 
 void mac_rrc_ul_f1ap_init(struct nr_mac_rrc_ul_if_s *mac_rrc)
 {
+  mac_rrc->f1_setup_request = f1_setup_request_f1ap;
   mac_rrc->ue_context_setup_response = ue_context_setup_response_f1ap;
   mac_rrc->ue_context_modification_response = ue_context_modification_response_f1ap;
   mac_rrc->ue_context_modification_required = ue_context_modification_required_f1ap;

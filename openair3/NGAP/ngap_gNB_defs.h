@@ -203,7 +203,7 @@ typedef struct ngap_gNB_amf_data_s {
   uint16_t cnx_id;
 
   /* SCTP association id */
-  int32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* This is served PLMN IDs communicated to the AMF via an index over the
    * MCC/MNC array in ngap_gNB_instance */

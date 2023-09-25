@@ -31,9 +31,7 @@
 #ifndef NGAP_GNB_MANAGEMENT_PROCEDURES_H_
 #define NGAP_GNB_MANAGEMENT_PROCEDURES_H_
 
-struct ngap_gNB_amf_data_s *ngap_gNB_get_AMF(
-  ngap_gNB_instance_t *instance_p,
-  int32_t assoc_id, uint16_t cnx_id);
+struct ngap_gNB_amf_data_s *ngap_gNB_get_AMF(ngap_gNB_instance_t *instance_p, sctp_assoc_t assoc_id, uint16_t cnx_id);
 
 struct ngap_gNB_amf_data_s *ngap_gNB_get_AMF_from_instance(ngap_gNB_instance_t *instance_p);
 

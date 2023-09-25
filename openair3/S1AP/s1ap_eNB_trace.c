@@ -101,9 +101,7 @@ void s1ap_eNB_generate_trace_failure(struct s1ap_eNB_ue_context_s *ue_desc_p,
                                      length, ue_desc_p->tx_stream);
 }
 
-int s1ap_eNB_handle_trace_start(uint32_t         assoc_id,
-                                uint32_t         stream,
-                                S1AP_S1AP_PDU_t *pdu)
+int s1ap_eNB_handle_trace_start(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
 {
     S1AP_TraceStart_t            *container;
     S1AP_TraceStartIEs_t         *ie;
@@ -142,9 +140,7 @@ int s1ap_eNB_handle_trace_start(uint32_t         assoc_id,
     return 0;
 }
 
-int s1ap_eNB_handle_deactivate_trace(uint32_t         assoc_id,
-                                     uint32_t         stream,
-                                     S1AP_S1AP_PDU_t *message_p)
+int s1ap_eNB_handle_deactivate_trace(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *message_p)
 {
     //     S1AP_DeactivateTraceIEs_t *deactivate_trace_p;
     //

@@ -54,6 +54,35 @@ static uint64_t nr_rlc_current_time;
 static int      nr_rlc_current_time_last_frame;
 static int      nr_rlc_current_time_last_subframe;
 
+static void release_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t channel_id)
+{
+  AssertFatal(channel_id != 0, "LCID = 0 shouldn't be handled here\n");
+  nr_rlc_rb_t *rb = &ue->lcid2rb[channel_id - 1];
+  if (rb->type == NR_RLC_NONE)
+    return;
+  if (rb->type == NR_RLC_SRB) {
+    int id = rb->choice.srb_id - 1;
+    AssertFatal(id > 0, "logic bug: impossible to have srb0 here\n");
+    if (ue->srb[id]) {
+      ue->srb[id]->delete_entity(ue->srb[id]);
+      ue->srb[id] = NULL;
+    }
+    else
+      LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n", channel_id);
+  }
+  else {
+    AssertFatal(rb->type == NR_RLC_DRB,
+                "Invalid RB type\n");
+    int id = rb->choice.drb_id - 1;
+    if (ue->drb[id]) {
+      ue->drb[id]->delete_entity(ue->drb[id]);
+      ue->drb[id] = NULL;
+    }
+    else
+      LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n", channel_id);
+  }
+}
+
 static nr_rlc_entity_t *get_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t channel_id)
 {
   if (channel_id == 0)
@@ -69,6 +98,23 @@ static nr_rlc_entity_t *get_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_i
                 "Invalid RB type\n");
     return ue->drb[rb->choice.drb_id - 1];
   }
+}
+
+void nr_release_rlc_entity(int rnti, logical_chan_id_t channel_id)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+  if (channel_id == 0) {
+    if (ue->srb0 != NULL) {
+      free(ue->srb0->deliver_sdu_data);
+      ue->srb0->delete_entity(ue->srb0);
+      ue->srb0 = NULL;
+    } else
+      LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n", channel_id);
+  } else {
+    release_rlc_entity_from_lcid(ue, channel_id);
+  }
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
 
 void mac_rlc_data_ind(const module_id_t  module_idP,
@@ -582,6 +628,93 @@ rb_found:
 #endif
 }
 
+void nr_rlc_reestablish_entity(int rnti, int lc_id)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+
+  if (ue == NULL)
+    LOG_E(RLC, "RLC instance for the given UE was not found \n");
+
+  nr_rlc_entity_t *rb = get_rlc_entity_from_lcid(ue, lc_id);
+
+  if (rb != NULL) {
+    LOG_D(RLC, "RB found! (channel ID %d) \n", lc_id);
+    rb->reestablishment(rb);
+  } else {
+    LOG_E(RLC, "no RLC entity found (channel ID %d) for reestablishment\n", lc_id);
+  }
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+}
+
+void nr_rlc_reconfigure_entity(int rnti, int lc_id, struct NR_RLC_Config *rlc_Config, struct NR_LogicalChannelConfig *lc_Config)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+
+  if (ue == NULL)
+    LOG_E(RLC, "RLC instance for the given UE was not found \n");
+
+  nr_rlc_entity_t *rb = get_rlc_entity_from_lcid(ue, lc_id);
+  if (lc_Config) {
+    if (lc_Config->ul_SpecificParameters && lc_Config->ul_SpecificParameters->logicalChannelGroup)
+      AssertFatal(*lc_Config->ul_SpecificParameters->logicalChannelGroup < 2,
+                  "LCG %ld not supported as per limitation when creating RBs\n",
+                  *lc_Config->ul_SpecificParameters->logicalChannelGroup);
+  }
+  if (rlc_Config) {
+    AssertFatal(rb->stats.mode != NR_RLC_TM, "Cannot reconfigure TM mode\n");
+    if (rb->stats.mode == NR_RLC_AM) {
+      AssertFatal(rlc_Config->present == NR_RLC_Config_PR_am, "Invalid RLC Config type\n");
+      struct NR_RLC_Config__am *am = rlc_Config->choice.am;
+      int t_reassembly = decode_t_reassembly(am->dl_AM_RLC.t_Reassembly);
+      int t_status_prohibit = decode_t_status_prohibit(am->dl_AM_RLC.t_StatusProhibit);
+      int t_poll_retransmit = decode_t_poll_retransmit(am->ul_AM_RLC.t_PollRetransmit);
+      int poll_pdu = decode_poll_pdu(am->ul_AM_RLC.pollPDU);
+      int poll_byte = decode_poll_byte(am->ul_AM_RLC.pollByte);
+      int max_retx_threshold = decode_max_retx_threshold(am->ul_AM_RLC.maxRetxThreshold);
+      int _sn_field_length;
+      int *sn_field_length = NULL;
+      if (am->dl_AM_RLC.sn_FieldLength) {
+        AssertFatal(am->ul_AM_RLC.sn_FieldLength != NULL, "Cannot handle different sn_FieldLength for DL and UL\n");
+        if (am->ul_AM_RLC.sn_FieldLength) {
+          AssertFatal(*am->dl_AM_RLC.sn_FieldLength == *am->ul_AM_RLC.sn_FieldLength,
+                      "Cannot handle different sn_FieldLength for DL and UL\n");
+          _sn_field_length = decode_sn_field_length_am(*am->dl_AM_RLC.sn_FieldLength);
+          sn_field_length = &_sn_field_length;
+        }
+      } else
+        AssertFatal(am->ul_AM_RLC.sn_FieldLength == NULL, "Cannot handle different sn_FieldLength for DL and UL\n");
+      nr_rlc_entity_am_reconfigure(rb,
+                                   t_poll_retransmit,
+                                   t_reassembly,
+                                   t_status_prohibit,
+                                   poll_pdu,
+                                   poll_byte,
+                                   max_retx_threshold,
+                                   sn_field_length);
+    } else { // UM
+      AssertFatal(rlc_Config->present == NR_RLC_Config_PR_um_Bi_Directional, "Invalid RLC Config type\n");
+      struct NR_RLC_Config__um_Bi_Directional *um = rlc_Config->choice.um_Bi_Directional;
+      int t_reassembly = decode_t_reassembly(um->dl_UM_RLC.t_Reassembly);
+      int _sn_field_length;
+      int *sn_field_length = NULL;
+      if (um->dl_UM_RLC.sn_FieldLength) {
+        AssertFatal(um->ul_UM_RLC.sn_FieldLength != NULL, "Cannot handle different sn_FieldLength for DL and UL\n");
+        if (um->ul_UM_RLC.sn_FieldLength) {
+          AssertFatal(*um->dl_UM_RLC.sn_FieldLength == *um->ul_UM_RLC.sn_FieldLength,
+                      "Cannot handle different sn_FieldLength for DL and UL\n");
+          _sn_field_length = decode_sn_field_length_um(*um->dl_UM_RLC.sn_FieldLength);
+          sn_field_length = &_sn_field_length;
+        }
+      } else
+        AssertFatal(um->ul_UM_RLC.sn_FieldLength == NULL, "Cannot handle different sn_FieldLength for DL and UL\n");
+      nr_rlc_entity_um_reconfigure(rb, t_reassembly, sn_field_length);
+    }
+  }
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+}
+
 void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_BearerConfig)
 {
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
@@ -600,7 +733,10 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
   AssertFatal(srb_id > 0 && srb_id < 4,
               "Invalid srb id %d\n", srb_id);
 
-  logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
+  if (l && l->ul_SpecificParameters && l->ul_SpecificParameters->logicalChannelGroup)
+    logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
+  else
+    logical_channel_group = 0; // default value as in 9.2.1 of 38.331
 
   /* TODO: accept other values? */
   if (logical_channel_group != 0) {
@@ -608,26 +744,29 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
     exit(1);
   }
 
-  switch (r->present) {
-  case NR_RLC_Config_PR_am: {
+  if (r && r->present == NR_RLC_Config_PR_am) {
     struct NR_RLC_Config__am *am;
     am = r->choice.am;
-    t_reassembly       = decode_t_reassembly(am->dl_AM_RLC.t_Reassembly);
-    t_status_prohibit  = decode_t_status_prohibit(am->dl_AM_RLC.t_StatusProhibit);
-    t_poll_retransmit  = decode_t_poll_retransmit(am->ul_AM_RLC.t_PollRetransmit);
-    poll_pdu           = decode_poll_pdu(am->ul_AM_RLC.pollPDU);
-    poll_byte          = decode_poll_byte(am->ul_AM_RLC.pollByte);
+    t_reassembly = decode_t_reassembly(am->dl_AM_RLC.t_Reassembly);
+    t_status_prohibit = decode_t_status_prohibit(am->dl_AM_RLC.t_StatusProhibit);
+    t_poll_retransmit = decode_t_poll_retransmit(am->ul_AM_RLC.t_PollRetransmit);
+    poll_pdu = decode_poll_pdu(am->ul_AM_RLC.pollPDU);
+    poll_byte = decode_poll_byte(am->ul_AM_RLC.pollByte);
     max_retx_threshold = decode_max_retx_threshold(am->ul_AM_RLC.maxRetxThreshold);
     if (*am->dl_AM_RLC.sn_FieldLength != *am->ul_AM_RLC.sn_FieldLength) {
       LOG_E(RLC, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
       exit(1);
     }
-    sn_field_length    = decode_sn_field_length_am(*am->dl_AM_RLC.sn_FieldLength);
-    break;
-  }
-  default:
-    LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    sn_field_length = decode_sn_field_length_am(*am->dl_AM_RLC.sn_FieldLength);
+  } else {
+    // default values as in 9.2.1 of 38.331
+    t_reassembly = 35;
+    t_status_prohibit = 0;
+    t_poll_retransmit = 45;
+    poll_pdu = -1;
+    poll_byte = -1;
+    max_retx_threshold = 8;
+    sn_field_length = 12;
   }
 
   nr_rlc_manager_lock(nr_rlc_ue_manager);
@@ -642,14 +781,6 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
   if (ue->srb[srb_id-1] != NULL) {
     LOG_E(RLC, "%s:%d:%s: SRB %d already exists for UE with RNTI %04x, do nothing\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
   } else {
-    /* hack: hardcode values for NR */
-    t_poll_retransmit = 45;
-    t_reassembly = 35;
-    t_status_prohibit = 0;
-    poll_pdu = -1;
-    poll_byte = -1;
-    max_retx_threshold = 8;
-    sn_field_length = 12;
     nr_rlc_entity_t *nr_rlc_am = new_nr_rlc_entity_am(RLC_RX_MAXSIZE,
                                                       RLC_TX_MAXSIZE,
                                                       deliver_sdu, ue,

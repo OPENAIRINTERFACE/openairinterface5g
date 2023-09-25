@@ -39,17 +39,13 @@ int CU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int CU_handle_RESET_ACKKNOWLEDGE(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_RESET_ACKKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int CU_handle_RESET(instance_t instance,
-                    uint32_t assoc_id,
-                    uint32_t stream,
-                    F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -61,10 +57,8 @@ int CU_send_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *Rese
 /*
     Error Indication
 */
-int CU_handle_ERROR_INDICATION(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -76,12 +70,9 @@ int CU_send_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorI
 /*
     F1 Setup
 */
-int CU_handle_F1_SETUP_REQUEST(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   LOG_D(F1AP, "CU_handle_F1_SETUP_REQUEST\n");
-  MessageDef                         *message_p;
   F1AP_F1SetupRequest_t              *container;
   F1AP_F1SetupRequestIEs_t           *ie;
   int i = 0;
@@ -94,9 +85,9 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
           assoc_id, stream);
   }
 
-  /* assoc_id */
-  f1ap_setup_req_t *req=&getCxt(true, instance)->setupReq;
-  req->assoc_id = assoc_id;
+  MessageDef *message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
+  message_p->ittiMsgHeader.originInstance = assoc_id;
+  f1ap_setup_req_t *req = &F1AP_SETUP_REQ(message_p);
   /* gNB_DU_id */
   // this function exits if the ie is mandatory
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
@@ -124,95 +115,84 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     F1AP_Served_Cell_Information_t *servedCellInformation= &served_cells_item->served_Cell_Information;
     /* tac */
     if (servedCellInformation->fiveGS_TAC) {
-      OCTET_STRING_TO_INT16(servedCellInformation->fiveGS_TAC, req->cell[i].tac);
-      LOG_D(F1AP, "req->tac[%d] %d \n", i, req->cell[i].tac);
+      req->cell[i].info.tac = malloc(sizeof(*req->cell[i].info.tac));
+      AssertFatal(req->cell[i].info.tac != NULL, "out of memory\n");
+      OCTET_STRING_TO_INT16(servedCellInformation->fiveGS_TAC, *req->cell[i].info.tac);
+      LOG_D(F1AP, "req->tac[%d] %d \n", i, *req->cell[i].info.tac);
     }
     
     /* - nRCGI */
-    TBCD_TO_MCC_MNC(&(servedCellInformation->nRCGI.pLMN_Identity), req->cell[i].mcc,
-                    req->cell[i].mnc,req->cell[i].mnc_digit_length);
+    TBCD_TO_MCC_MNC(&(servedCellInformation->nRCGI.pLMN_Identity),
+                    req->cell[i].info.plmn.mcc,
+                    req->cell[i].info.plmn.mnc,
+                    req->cell[i].info.plmn.mnc_digit_length);
     // NR cellID
     BIT_STRING_TO_NR_CELL_IDENTITY(&servedCellInformation->nRCGI.nRCellIdentity,
-                                   req->cell[i].nr_cellid);
+                                   req->cell[i].info.nr_cellid);
     LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
-          req->cell[i].mcc,
-          req->cell[i].mnc,
-          (long long unsigned int)req->cell[i].nr_cellid);
+          req->cell[i].info.plmn.mcc,
+          req->cell[i].info.plmn.mnc,
+          (long long unsigned int)req->cell[i].info.nr_cellid);
     /* - nRPCI */
-    req->cell[i].nr_pci = servedCellInformation->nRPCI;
-    LOG_D(F1AP, "req->nr_pci[%d] %d \n", i, req->cell[i].nr_pci);
-    
-    // LTS: FIXME cell_type is not a attribute of a cell in the data structure !!!!!!!!!!
-    f1ap_req(true, instance)->cell_type = CELL_MACRO_GNB;
+    req->cell[i].info.nr_pci = servedCellInformation->nRPCI;
+    LOG_D(F1AP, "req->nr_pci[%d] %d \n", i, req->cell[i].info.nr_pci);
 
     // FDD Cells
     if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_fDD) {
-      struct fdd_s *FDDs=&req->nr_mode_info[i].fdd;
+      req->cell[i].info.mode = F1AP_MODE_FDD;
+      f1ap_fdd_info_t *FDDs = &req->cell[i].info.fdd;
       F1AP_FDD_Info_t * fDD_Info=servedCellInformation->nR_Mode_Info.choice.fDD;
-      FDDs->ul_nr_arfcn=fDD_Info->uL_NRFreqInfo.nRARFCN;
-      FDDs->ul_num_frequency_bands=fDD_Info->uL_NRFreqInfo.freqBandListNr.list.count;
+      FDDs->ul_freqinfo.arfcn = fDD_Info->uL_NRFreqInfo.nRARFCN;
+      AssertFatal(fDD_Info->uL_NRFreqInfo.freqBandListNr.list.count == 1, "cannot handle more than one frequency band\n");
       for (int f=0; f < fDD_Info->uL_NRFreqInfo.freqBandListNr.list.count; f++) {
-	F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->uL_NRFreqInfo.freqBandListNr.list.array[f];
-	FDDs->ul_nr_band[f]=FreqItem->freqBandIndicatorNr;
-	int num_available_supported_SULBands=FreqItem->supportedSULBandList.list.count;
-	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
-          F1AP_SupportedSULFreqBandItem_t * SulItem= FreqItem->supportedSULBandList.list.array[sul];
-	  FDDs->ul_nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
-	}
+        F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->uL_NRFreqInfo.freqBandListNr.list.array[f];
+        FDDs->ul_freqinfo.band = FreqItem->freqBandIndicatorNr;
+        AssertFatal(FreqItem->supportedSULBandList.list.count == 0, "cannot handle SUL bands!\n");
       }
-      FDDs->dl_nr_arfcn=fDD_Info->dL_NRFreqInfo.nRARFCN;
+      FDDs->dl_freqinfo.arfcn = fDD_Info->dL_NRFreqInfo.nRARFCN;
       int dlBands=fDD_Info->dL_NRFreqInfo.freqBandListNr.list.count;
+      AssertFatal(dlBands == 0, "cannot handled more than one frequency band\n");
       for (int dlB=0; dlB < dlBands; dlB++) {
 	F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->dL_NRFreqInfo.freqBandListNr.list.array[dlB];
-	FDDs->dl_nr_band[dlB]=FreqItem->freqBandIndicatorNr;
-	int num_available_supported_SULBands = FreqItem->supportedSULBandList.list.count;
-	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
-	  F1AP_SupportedSULFreqBandItem_t * SulItem= FreqItem->supportedSULBandList.list.array[sul];
-	  FDDs->ul_nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
-	}
+        FDDs->dl_freqinfo.band = FreqItem->freqBandIndicatorNr;
+        int num_available_supported_SULBands = FreqItem->supportedSULBandList.list.count;
+        AssertFatal(num_available_supported_SULBands == 0, "cannot handle SUL bands!\n");
       }
-      FDDs->ul_scs=fDD_Info->uL_Transmission_Bandwidth.nRSCS;
-      FDDs->ul_nrb=nrb_lut[fDD_Info->uL_Transmission_Bandwidth.nRNRB];
-      FDDs->dl_scs=fDD_Info->dL_Transmission_Bandwidth.nRSCS;
-      FDDs->dl_nrb=nrb_lut[fDD_Info->dL_Transmission_Bandwidth.nRNRB]; 
-    }
-    
-    // TDD
-    if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_tDD) {
-      struct tdd_s *TDDs=&req->nr_mode_info[i].tdd;
-      F1AP_TDD_Info_t * tDD_Info=servedCellInformation->nR_Mode_Info.choice.tDD;
-      TDDs->nr_arfcn=tDD_Info->nRFreqInfo.nRARFCN;
-      TDDs->num_frequency_bands=tDD_Info->nRFreqInfo.freqBandListNr.list.count;
+      FDDs->ul_tbw.scs = fDD_Info->uL_Transmission_Bandwidth.nRSCS;
+      FDDs->ul_tbw.nrb = nrb_lut[fDD_Info->uL_Transmission_Bandwidth.nRNRB];
+      FDDs->dl_tbw.scs = fDD_Info->dL_Transmission_Bandwidth.nRSCS;
+      FDDs->dl_tbw.nrb = nrb_lut[fDD_Info->dL_Transmission_Bandwidth.nRNRB];
+    } else if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_tDD) {
+      req->cell[i].info.mode = F1AP_MODE_TDD;
+      f1ap_tdd_info_t *TDDs = &req->cell[i].info.tdd;
+      F1AP_TDD_Info_t *tDD_Info = servedCellInformation->nR_Mode_Info.choice.tDD;
+      TDDs->freqinfo.arfcn = tDD_Info->nRFreqInfo.nRARFCN;
+      AssertFatal(tDD_Info->nRFreqInfo.freqBandListNr.list.count == 1, "cannot handle more than one frequency band\n");
       for (int f=0; f < tDD_Info->nRFreqInfo.freqBandListNr.list.count; f++) {
-	struct F1AP_FreqBandNrItem * FreqItem=tDD_Info->nRFreqInfo.freqBandListNr.list.array[f];
-	TDDs->nr_band[f]=FreqItem->freqBandIndicatorNr;
-	int num_available_supported_SULBands=FreqItem->supportedSULBandList.list.count;
-	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
-          struct F1AP_SupportedSULFreqBandItem * SulItem= FreqItem->supportedSULBandList.list.array[sul];
-	  TDDs->nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
-	}
+        struct F1AP_FreqBandNrItem * FreqItem=tDD_Info->nRFreqInfo.freqBandListNr.list.array[f];
+        TDDs->freqinfo.band = FreqItem->freqBandIndicatorNr;
+        int num_available_supported_SULBands = FreqItem->supportedSULBandList.list.count;
+        AssertFatal(num_available_supported_SULBands == 0, "cannot hanlde SUL bands!\n");
       }
-      TDDs->scs=tDD_Info->transmission_Bandwidth.nRSCS;
-      TDDs->nrb=nrb_lut[tDD_Info->transmission_Bandwidth.nRNRB];
+      TDDs->tbw.scs = tDD_Info->transmission_Bandwidth.nRSCS;
+      TDDs->tbw.nrb = nrb_lut[tDD_Info->transmission_Bandwidth.nRNRB];
+    } else {
+      AssertFatal(false, "unknown NR Mode info %d\n", servedCellInformation->nR_Mode_Info.present);
     }
 	
     struct F1AP_GNB_DU_System_Information * DUsi=served_cells_item->gNB_DU_System_Information;
-    LOG_I(F1AP, "Received Cell in %d context\n", f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB);
     // System Information
+    req->cell[i].sys_info = calloc(1, sizeof(*req->cell[i].sys_info));
+    AssertFatal(req->cell[i].sys_info != NULL, "out of memory\n");
+    f1ap_gnb_du_system_info_t *sys_info = req->cell[i].sys_info;
     /* mib */
-    req->mib[i] = calloc(DUsi->mIB_message.size + 1, sizeof(char));
-    memcpy(req->mib[i], DUsi->mIB_message.buf, DUsi->mIB_message.size);
-    /* Convert the mme name to a printable string */
-    req->mib[i][DUsi->mIB_message.size] = '\0';
-    req->mib_length[i] = DUsi->mIB_message.size;
-    LOG_D(F1AP, "req->mib[%d] len = %d \n", i, req->mib_length[i]);
+    sys_info->mib = calloc(DUsi->mIB_message.size, sizeof(char));
+    memcpy(sys_info->mib, DUsi->mIB_message.buf, DUsi->mIB_message.size);
+    sys_info->mib_length = DUsi->mIB_message.size;
     /* sib1 */
-    req->sib1[i] = calloc(DUsi->sIB1_message.size + 1, sizeof(char));
-    memcpy(req->sib1[i], DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
-    /* Convert the mme name to a printable string */
-    req->sib1[i][DUsi->sIB1_message.size] = '\0';
-    req->sib1_length[i] = DUsi->sIB1_message.size;
-    LOG_D(F1AP, "req->sib1[%d] len = %d \n", i, req->sib1_length[i]);
+    sys_info->sib1 = calloc(DUsi->sIB1_message.size, sizeof(char));
+    memcpy(sys_info->sib1, DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
+    sys_info->sib1_length = DUsi->sIB1_message.size;
   }
   
   // char *measurement_timing_information[F1AP_MAX_NB_CELLS];
@@ -249,12 +229,6 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   //     uint16_t nr_sul_band[32];
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
-
-
-  
-  // We copy and store in F1 task data, RRC will free "req" as it frees all itti received messages
-  message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
-  memcpy(&F1AP_SETUP_REQ(message_p), req, sizeof(f1ap_setup_req_t) );
   
   if (req->num_cells_available > 0) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -267,13 +241,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   return 0;
 }
 
-int CU_send_F1_SETUP_RESPONSE(instance_t instance,
-                              f1ap_setup_resp_t *f1ap_setup_resp) {
-  instance_t enb_mod_idP;
-  instance_t cu_mod_idP;
-  // This should be fixed
-  enb_mod_idP = (instance_t)0;
-  cu_mod_idP  = (instance_t)0;
+int CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup_resp)
+{
   F1AP_F1AP_PDU_t           pdu= {0};
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
@@ -291,7 +260,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   ie1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie1->criticality               = F1AP_Criticality_reject;
   ie1->value.present             = F1AP_F1SetupResponseIEs__value_PR_TransactionID;
-  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, cu_mod_idP);
+  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
 
   /* optional */
   /* c2. GNB_CU_Name */
@@ -336,7 +305,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
       /* optional */
       /* - gNB-CU System Information */
-      if (1) {
+      if (f1ap_setup_resp->cells_to_activate[i].num_SI > 0) {
         /* 3.1.2 gNB-CUSystem Information */
         F1AP_ProtocolExtensionContainer_10696P112_t *p = calloc(1, sizeof(* p));
         cells_to_be_activated_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *) p;
@@ -370,15 +339,12 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
 int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   LOG_D(F1AP, "CU_send_F1_SETUP_FAILURE\n");
-  instance_t enb_mod_idP=0;
-  instance_t cu_mod_idP=0;
-  // This should be fixed
   F1AP_F1AP_PDU_t           pdu= {0};
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
@@ -396,7 +362,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   ie1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie1->criticality               = F1AP_Criticality_reject;
   ie1->value.present             = F1AP_F1SetupFailureIEs__value_PR_TransactionID;
-  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, cu_mod_idP);
+  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
   /* mandatory */
   /* c2. Cause */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_F1SetupFailureIEs_t, ie2);
@@ -440,7 +406,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(true,instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
@@ -448,10 +414,8 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
     gNB-DU Configuration Update
 */
 
-int CU_handle_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
-    uint32_t assoc_id,
-    uint32_t stream,
-    F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_gNB_DU_CONFIGURATION_UPDATE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -488,7 +452,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
   ieC1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ieC1->criticality               = F1AP_Criticality_reject;
   ieC1->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_TransactionID;
-  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(instance, 0);
+  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
 
   // mandatory
   // c2. Cells_to_be_Activated_List
@@ -556,30 +520,29 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
   LOG_DUMPMSG(F1AP, LOG_DUMP_CHAR, buffer, len, "F1AP gNB-CU CONFIGURATION UPDATE : ");
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(true,instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
-int CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-    uint32_t assoc_id,
-    uint32_t stream,
-    F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 int CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-    uint32_t assoc_id,
-    uint32_t stream,
-    F1AP_F1AP_PDU_t *pdu) {
+                                                      sctp_assoc_t assoc_id,
+                                                      uint32_t stream,
+                                                      F1AP_F1AP_PDU_t *pdu)
+{
   LOG_I(F1AP,"Cell Configuration ok (assoc_id %d)\n",assoc_id);
   return(0);
 }
 
-
 int CU_handle_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
-    uint32_t assoc_id,
-    uint32_t stream,
-    F1AP_F1AP_PDU_t *pdu) {
+                                                   sctp_assoc_t assoc_id,
+                                                   uint32_t stream,
+                                                   F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(0, "Not implemented yet\n");
 }
 

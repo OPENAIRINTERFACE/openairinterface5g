@@ -122,9 +122,7 @@ printf("---------------------------------------------\n");
 }
 }
 
-struct x2ap_eNB_data_s *x2ap_get_eNB(x2ap_eNB_instance_t *instance_p,
-				     int32_t assoc_id,
-				     uint16_t cnx_id)
+struct x2ap_eNB_data_s *x2ap_get_eNB(x2ap_eNB_instance_t *instance_p, sctp_assoc_t assoc_id, uint16_t cnx_id)
 {
   struct x2ap_eNB_data_s  temp;
   struct x2ap_eNB_data_s *found;

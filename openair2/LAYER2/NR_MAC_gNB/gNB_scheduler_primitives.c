@@ -1946,6 +1946,9 @@ int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_Proces
 
 void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_allocator_t *uia)
 {
+  ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->CellGroup);
+  ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->reconfigCellGroup);
+  ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   destroy_nr_list(&sched_ctrl->available_dl_harq);
   destroy_nr_list(&sched_ctrl->feedback_dl_harq);
@@ -1953,6 +1956,7 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_alloca
   destroy_nr_list(&sched_ctrl->available_ul_harq);
   destroy_nr_list(&sched_ctrl->feedback_ul_harq);
   destroy_nr_list(&sched_ctrl->retrans_ul_harq);
+  free_sched_pucch_list(sched_ctrl);
   uid_linear_allocator_free(uia, UE->uid);
   LOG_I(NR_MAC, "Remove NR rnti 0x%04x\n", UE->rnti);
   free(UE);
@@ -2361,6 +2365,11 @@ void set_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl,
   }
 }
 
+void free_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl)
+{
+  free(sched_ctrl->sched_pucch);
+}
+
 void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
                          const NR_PDSCH_ServingCellConfig_t *pdsch) {
   const int nrofHARQ = pdsch && pdsch->nrofHARQ_ProcessesForPDSCH ?
@@ -2727,20 +2736,80 @@ void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slo
   }
 }
 
+static void nr_mac_apply_cellgroup(gNB_MAC_INST *mac, NR_UE_info_t *UE, frame_t frame, sub_frame_t slot)
+{
+  LOG_I(NR_MAC, "%4d.%2d RNTI %04x: RRC processing timer expired\n", frame, slot, UE->rnti);
+
+  /* check if there is a new CellGroupConfig to be applied */
+  if (UE->apply_cellgroup && UE->reconfigCellGroup != NULL) {
+    LOG_I(NR_MAC, "%4d.%2d RNTI %04x: Apply CellGroupConfig after RRC processing timer expiry\n", frame, slot, UE->rnti);
+    ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->CellGroup);
+    UE->CellGroup = UE->reconfigCellGroup;
+    UE->reconfigCellGroup = NULL;
+    UE->apply_cellgroup = false;
+
+    if (LOG_DEBUGFLAG(DEBUG_ASN1))
+      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *)UE->CellGroup);
+  }
+
+  NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
+
+  /* Note! we already did process_CellGroup(), so no need to do this again */
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  configure_UE_BWP(mac, scc, sched_ctrl, NULL, UE, -1, -1);
+
+  reset_srs_stats(UE);
+
+  if (get_softmodem_params()->sa) {
+    // add all available DL HARQ processes for this UE in SA
+    create_dl_harq_list(sched_ctrl, UE->current_DL_BWP.pdsch_servingcellconfig);
+  }
+}
+
+int nr_mac_enable_ue_rrc_processing_timer(gNB_MAC_INST *mac, NR_UE_info_t *UE, bool apply_cellgroup)
+{
+  DevAssert(mac != NULL);
+  DevAssert(UE != NULL);
+  NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
+
+  const uint16_t sl_ahead = mac->if_inst->sl_ahead;
+  // TODO: account for BWP switch with NR_RRC_BWP_SWITCHING_DELAY_MS
+  int delay = NR_RRC_RECONFIGURATION_DELAY_MS;
+  NR_SubcarrierSpacing_t scs = UE->current_UL_BWP.scs;
+
+  UE->UE_sched_ctrl.rrc_processing_timer = (delay << scs) + sl_ahead;
+  UE->apply_cellgroup = apply_cellgroup;
+  AssertFatal(!UE->apply_cellgroup || (UE->apply_cellgroup && UE->reconfigCellGroup),
+              "logic bug: apply_cellgroup %d and UE->reconfigCellGroup %p: did you try to apply a cellGroup, while none is deposited?\n",
+              UE->apply_cellgroup,
+              UE->reconfigCellGroup);
+
+  // it might happen that timing advance command should be sent during the RRC
+  // processing timer. To prevent this, set a variable as if we would have just
+  // sent it. This way, another TA command will for sure be sent in some
+  // frames, after RRC processing timer.
+  UE->UE_sched_ctrl.ta_frame = (mac->frame - 1 + 1024) % 1024;
+
+  LOG_I(NR_MAC, "%4d.%2d UE %04x: Activate RRC processing timer (%d ms)\n", mac->frame, mac->slot, UE->rnti, delay);
+  return 0;
+}
+
 void nr_mac_update_timers(module_id_t module_id,
                           frame_t frame,
                           sub_frame_t slot)
 {
-  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
-  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[module_id]->sched_lock);
+  gNB_MAC_INST *mac = RC.nrmac[module_id];
 
-  NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
+
+  NR_UEs_t *UE_info = &mac->UE_info;
   UE_iterator(UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
     if (nr_mac_check_release(sched_ctrl, UE->rnti)) {
       nr_rlc_remove_ue(UE->rnti);
-      mac_remove_nr_ue(RC.nrmac[module_id], UE->rnti);
+      mac_remove_nr_ue(mac, UE->rnti);
       // go back to examine the next UE, which is at the position the
       // current UE was
       UE--;
@@ -2748,41 +2817,12 @@ void nr_mac_update_timers(module_id_t module_id,
     }
 
     /* check if UL failure and trigger release request if necessary */
-    nr_mac_check_ul_failure(RC.nrmac[module_id], UE->rnti, sched_ctrl);
+    nr_mac_check_ul_failure(mac, UE->rnti, sched_ctrl);
 
     if (sched_ctrl->rrc_processing_timer > 0) {
       sched_ctrl->rrc_processing_timer--;
-      if (sched_ctrl->rrc_processing_timer == 0) {
-        LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %04x\n", frame, slot, UE->rnti);
-
-        reset_srs_stats(UE);
-
-        NR_CellGroupConfig_t *cg = NULL;
-        uper_decode(NULL,
-                    &asn_DEF_NR_CellGroupConfig, // might be added prefix later
-                    (void **)&cg,
-                    (uint8_t *)UE->cg_buf,
-                    (UE->enc_rval.encoded + 7) / 8,
-                    0,
-                    0);
-        UE->CellGroup = cg;
-
-        if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
-          xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) UE->CellGroup);
-        }
-
-        NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
-
-        LOG_I(NR_MAC,"Modified rnti %04x with CellGroup\n", UE->rnti);
-        process_CellGroup(cg, UE);
-        NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-        configure_UE_BWP(RC.nrmac[module_id], scc, sched_ctrl, NULL, UE, -1, -1);
-
-        if (get_softmodem_params()->sa) {
-          // add all available DL HARQ processes for this UE in SA
-          create_dl_harq_list(sched_ctrl, UE->current_DL_BWP.pdsch_servingcellconfig);
-        }
-      }
+      if (sched_ctrl->rrc_processing_timer == 0)
+        nr_mac_apply_cellgroup(mac, UE, frame, slot);
     }
 
     // RA timer
@@ -2790,7 +2830,7 @@ void nr_mac_update_timers(module_id_t module_id,
       UE->ra_timer--;
       if (UE->ra_timer == 0) {
         LOG_W(NR_MAC, "Removing UE %04x because RA timer expired\n", UE->rnti);
-        mac_remove_nr_ue(RC.nrmac[module_id], UE->rnti);
+        mac_remove_nr_ue(mac, UE->rnti);
       }
     }
   }
@@ -2884,16 +2924,13 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
 {
   NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
   /* create this UE's initial CellGroup */
-  /* Note: relying on the RRC is a hack, as we are in the DU; there should be
-   * no RRC, remove in the future */
-  module_id_t mod_id = 0;
-  gNB_RRC_INST *rrc = RC.nrrrc[mod_id];
-  const NR_ServingCellConfigCommon_t *scc = rrc->carrier.servingcellconfigcommon;
-  const NR_ServingCellConfig_t *sccd = rrc->configuration.scd;
-  NR_CellGroupConfig_t *cellGroupConfig = get_initial_cellGroupConfig(UE->uid, scc, sccd, &rrc->configuration);
+  int CC_id = 0;
+  const NR_ServingCellConfigCommon_t *scc = mac->common_channels[CC_id].ServingCellConfigCommon;
+  const NR_ServingCellConfig_t *sccd = mac->common_channels[CC_id].pre_ServingCellConfig;
+  NR_CellGroupConfig_t *cellGroupConfig = get_initial_cellGroupConfig(UE->uid, scc, sccd, &mac->radio_config);
 
   UE->CellGroup = cellGroupConfig;
-  nr_mac_update_cellgroup(mac, UE->rnti, cellGroupConfig);
+  process_CellGroup(cellGroupConfig, UE);
 
   /* activate SRB0 */
   nr_rlc_activate_srb0(UE->rnti, mac, UE, send_initial_ul_rrc_message);

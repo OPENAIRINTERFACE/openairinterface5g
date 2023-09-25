@@ -51,13 +51,33 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
                       NR_DRB_ToAddModList_t *const drb2add_list,
                       const uint8_t security_modeP,
                       uint8_t *const kUPenc,
-                      uint8_t *const kUPint,
-                      struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+                      uint8_t *const kUPint);
+
+void add_drb(int is_gnb,
+             ue_id_t rntiMaybeUEid,
+             struct NR_DRB_ToAddMod *s,
+             int ciphering_algorithm,
+             int integrity_algorithm,
+             unsigned char *ciphering_key,
+             unsigned char *integrity_key);
 
 void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
 
 bool nr_pdcp_remove_UE(ue_id_t ue_id);
 void nr_pdcp_reestablishment(ue_id_t ue_id);
+
+void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering);
+void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, long t_Reordering);
+void nr_release_srb(ue_id_t ue_id, int srb_id);
+void nr_release_drb(ue_id_t ue_id, int drb_id);
+
+void add_srb(int is_gnb,
+             ue_id_t rntiMaybeUEid,
+             struct NR_SRB_ToAddMod *s,
+             int ciphering_algorithm,
+             int integrity_algorithm,
+             unsigned char *ciphering_key,
+             unsigned char *integrity_key);
 
 void nr_pdcp_config_set_security(ue_id_t ue_id,
                                  const rb_id_t rb_id,

@@ -57,11 +57,8 @@
 
 extern m3ap_setup_req_t * m3ap_mce_data_g;
 
-
-int MCE_handle_MBMS_SESSION_START_REQUEST(instance_t instance,
-                                        uint32_t assoc_id,
-                                        uint32_t stream,
-                                        M3AP_M3AP_PDU_t *pdu){
+int MCE_handle_MBMS_SESSION_START_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
 //  LOG_W(M3AP, "MCE_handle_MBMS_SESSION_START_REQUEST assoc_id %d\n",assoc_id);
 //
     MessageDef                         *message_p;
@@ -212,11 +209,8 @@ int MCE_send_MBMS_SESSION_START_FAILURE(instance_t instance, m3ap_session_start_
   return 0;
 }
 
-int MCE_handle_MBMS_SESSION_STOP_REQUEST(instance_t instance,
-                                        uint32_t assoc_id,
-                                        uint32_t stream,
-                                        M3AP_M3AP_PDU_t *pdu){
-
+int MCE_handle_MBMS_SESSION_STOP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   //AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M3AP, "MCE_handle_MBMS_SESSION_STOP_REQUEST assoc_id %d\n",assoc_id);
 
@@ -317,10 +311,7 @@ int MCE_send_MBMS_SESSION_STOP_RESPONSE(instance_t instance, m3ap_session_start_
 /*
  * Session Update
  */
-int MCE_handle_MBMS_SESSION_UPDATE_REQUEST(instance_t instance,
-                                        uint32_t assoc_id,
-                                        uint32_t stream,
-                                        M3AP_M3AP_PDU_t *pdu)
+int MCE_handle_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
 {
   //AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M3AP, "MCE_handle_MBMS_SESSION_UPDATE_REQUEST assoc_id %d\n",assoc_id);
@@ -653,10 +644,7 @@ int MCE_send_M3_SETUP_REQUEST(m3ap_MCE_instance_t *instance_p, m3ap_MCE_data_t *
 
 
 
-int MCE_handle_M3_SETUP_RESPONSE(instance_t instance,
-				uint32_t               assoc_id,
-				uint32_t               stream,
-				M3AP_M3AP_PDU_t       *pdu)
+int MCE_handle_M3_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
 {
 
    LOG_D(M3AP, "MCE_handle_M3_SETUP_RESPONSE\n");
@@ -700,15 +688,8 @@ int MCE_handle_M3_SETUP_RESPONSE(instance_t instance,
 }
 
 // SETUP FAILURE
-int MCE_handle_M3_SETUP_FAILURE(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               M3AP_M3AP_PDU_t *pdu) {
-  LOG_E(M3AP, "MCE_handle_M3_SETUP_FAILURE\n");
-  return 0;
+int MCE_handle_M3_SETUP_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
+   LOG_E(M3AP, "MCE_handle_M3_SETUP_FAILURE\n");
+   return 0;
 }
-
-
-
-
-

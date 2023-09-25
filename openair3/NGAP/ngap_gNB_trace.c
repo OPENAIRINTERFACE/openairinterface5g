@@ -45,18 +45,13 @@
 #include "ngap_gNB_itti_messaging.h"
 #include "ngap_gNB_management_procedures.h"
 
-
-int ngap_gNB_handle_trace_start(uint32_t         assoc_id,
-                                uint32_t         stream,
-                                NGAP_NGAP_PDU_t *pdu)
+int ngap_gNB_handle_trace_start(sctp_assoc_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu)
 {
     //TODO
     return 0;
 }
 
-int ngap_gNB_handle_deactivate_trace(uint32_t         assoc_id,
-                                     uint32_t         stream,
-                                     NGAP_NGAP_PDU_t *message_p)
+int ngap_gNB_handle_deactivate_trace(sctp_assoc_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *message_p)
 {
     //     NGAP_DeactivateTraceIEs_t *deactivate_trace_p;
     //

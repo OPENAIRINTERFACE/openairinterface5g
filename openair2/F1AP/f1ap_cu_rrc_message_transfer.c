@@ -43,10 +43,8 @@
     Initial UL RRC Message Transfer
 */
 
-int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
-    uint32_t               assoc_id,
-    uint32_t               stream,
-    F1AP_F1AP_PDU_t       *pdu) {
+int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   LOG_D(F1AP, "CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER\n");
   // decode the F1 message
   // get the rrc message from the contauiner
@@ -89,7 +87,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                              F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, false);
 
   // create an ITTI message and copy SDU
-  AssertFatal(f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB, "illegal cell type %d\n", f1ap_req(true, instance)->cell_type);
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
   f1ap_initial_ul_rrc_message_t *ul_rrc = &F1AP_INITIAL_UL_RRC_MESSAGE(message_p);
   ul_rrc->gNB_DU_ue_id = du_ue_id;
@@ -210,17 +207,15 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0 /* BK: fix me*/);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
 /*
     UL RRC Message Transfer
 */
-int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
-                                      uint32_t         assoc_id,
-                                      uint32_t         stream,
-                                      F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   LOG_D(F1AP, "CU_handle_UL_RRC_MESSAGE_TRANSFER \n");
   F1AP_ULRRCMessageTransfer_t    *container;
   F1AP_ULRRCMessageTransferIEs_t *ie;

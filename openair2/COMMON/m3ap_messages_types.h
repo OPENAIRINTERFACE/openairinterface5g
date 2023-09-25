@@ -22,6 +22,8 @@
 #ifndef M3AP_MESSAGES_TYPES_H_
 #define M3AP_MESSAGES_TYPES_H_
 
+#include <netinet/in.h>
+#include <netinet/sctp.h>
 #include "s1ap_messages_types.h"
 #include "LTE_PhysCellId.h"
 
@@ -336,7 +338,7 @@ typedef struct m3ap_setup_req_s{
   /* Connexion id used between SCTP/M3AP */
   uint16_t cnx_id;
   /* SCTP association id */
-  int32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;

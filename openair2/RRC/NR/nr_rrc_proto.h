@@ -46,14 +46,6 @@
 
 #define NR_MAX_SUPPORTED_DL_LAYERS 2
 
-uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
-                             const int         CC_id,
-                             const frame_t     frameP,
-                             const rb_id_t     Srb_id,
-                             const rnti_t      rnti,
-                             const uint8_t     Nb_tb,
-                             uint8_t *const    buffer_pP);
-
 void rrc_gNB_process_SgNBAdditionRequest( 
      const protocol_ctxt_t  *const ctxt_pP,
      rrc_gNB_ue_context_t   *ue_context_pP 
@@ -77,7 +69,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            NR_UE_NR_Capability_t *uecap,
-                           const gNB_RrcConfigurationReq *configuration,
                            int uid);
 
 int generate_CG_Config(gNB_RRC_INST *rrc, 
@@ -118,8 +109,6 @@ void *rrc_gnb_task(void *args_p);
    \ *epre_Ratio Pointer to ep_ratio
    \ *reOffset Pointer to RE Offset Value */
 void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, long *ptrsNrb, long *ptrsMcs, long *epre_Ratio, long *reOffset);
-
-void nr_rrc_mac_update_cellgroup(rnti_t rntiMaybeUEid, NR_CellGroupConfig_t *cgc);
 
 int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
                                  const frame_t         frameP,
@@ -166,8 +155,7 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
                       NR_DRB_ToAddModList_t *const drb2add_list,
                       const uint8_t security_modeP,
                       uint8_t *const kUPenc,
-                      uint8_t *const kUPint,
-                      struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+                      uint8_t *const kUPint);
 
 int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t instance, uint8_t CC_id);
 

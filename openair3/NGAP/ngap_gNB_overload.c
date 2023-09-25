@@ -45,17 +45,13 @@
 
 #include "assertions.h"
 
-int ngap_gNB_handle_overload_start(uint32_t         assoc_id,
-                                   uint32_t         stream,
-                                   NGAP_NGAP_PDU_t *pdu)
+int ngap_gNB_handle_overload_start(sctp_assoc_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu)
 {
     //TODO
     return 0;
 }
 
-int ngap_gNB_handle_overload_stop(uint32_t         assoc_id,
-                                  uint32_t         stream,
-                                  NGAP_NGAP_PDU_t *pdu)
+int ngap_gNB_handle_overload_stop(sctp_assoc_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu)
 {
     /* We received Overload stop message, meaning that the AMF is no more
      * overloaded. This is an empty message, with only message header and no

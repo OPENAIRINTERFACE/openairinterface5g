@@ -101,8 +101,7 @@ int CU_send_Paging(instance_t instance, f1ap_paging_ind_t *paging) {
     itemies->criticality = F1AP_Criticality_reject;
     itemies->value.present = F1AP_PagingCell_ItemIEs__value_PR_PagingCell_Item;
     F1AP_NRCGI_t *nRCGI = &itemies->value.choice.PagingCell_Item.nRCGI;
-    MCC_MNC_TO_PLMNID(paging->mcc, paging->mnc, paging->mnc_digit_length,
-                      &nRCGI->pLMN_Identity);
+    MCC_MNC_TO_PLMNID(paging->plmn.mcc, paging->plmn.mnc, paging->plmn.mnc_digit_length, &nRCGI->pLMN_Identity);
     NR_CELL_ID_TO_BIT_STRING(paging->nr_cellid, &nRCGI->nRCellIdentity);
   }
 
@@ -115,6 +114,6 @@ int CU_send_Paging(instance_t instance, f1ap_paging_ind_t *paging) {
     return -1;
   }
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
