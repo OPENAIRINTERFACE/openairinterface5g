@@ -2435,7 +2435,10 @@ int nr_get_csi_measurements(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCC
               break;
             }
           }
-          AssertFatal(csi_res_id > -1, "Couldn't find PUCCH resource ID associated with current BWP\n");
+          if (csi_res_id < 0) {
+            // This CSI Report ID is not associated with current active BWP
+            continue;
+          }
           NR_PUCCH_Resource_t *csi_pucch = find_pucch_resource_from_list(pucch_Config->resourceToAddModList, csi_res_id);
           AssertFatal(csi_pucch != NULL, "Couldn't find PUCCH Resource ID for SR in PUCCH resource list\n");
           LOG_D(NR_MAC, "Preparing CSI report in frame %d slot %d CSI report ID %d\n", frame, slot, csi_report_id);
