@@ -132,17 +132,17 @@ extern "C" {
     int message_id = message->ittiMsgHeader.messageId;
     size_t s=t->message_queue.size();
 
-    if (s > t->last_log_size * 1.1) {
       // to reduce the number of logs, we give a message each increase of 10%
-      if (s > t->admin.queue_size)
-        LOG_E(TMR, "Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s);
+    if (s > t->last_log_size * 1.1 && s > t->admin.queue_size) {
+      LOG_E(TMR, "Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s);
+      t->last_log_size = s;
 
-      if (s > t->admin.queue_size / 10)
-        LOG_I(ITTI,
-              "Queue for %s task size: %ld (last message %s)\n",
-              itti_get_task_name(destination_task_id),
-              s + 1,
-              ITTI_MSG_NAME(message));
+    } else if (s > t->last_log_size * 1.1 && s > t->admin.queue_size / 10) {
+      LOG_I(ITTI,
+            "Queue for %s task size: %ld (last message %s)\n",
+            itti_get_task_name(destination_task_id),
+            s + 1,
+            ITTI_MSG_NAME(message));
 
       t->last_log_size = s;
     }
