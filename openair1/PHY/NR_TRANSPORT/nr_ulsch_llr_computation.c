@@ -69,8 +69,7 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
 #ifdef USE_128BIT
   simde__m128i *rxF = (simde__m128i*)rxdataF_comp;
   simde__m128i *ch_mag;
-  simde__m128i llr128[2];
-  simde__m64 *llr64 = (simde__m64*) ulsch_llr;
+  simde__m128i *ulsch_llr_128 = (simde__m128i*) ulsch_llr;
   int i;
   int nb_rb = nb_re / NR_NB_SC_PER_RB;
   int off = ((nb_rb&1) == 1)? 4:0;
@@ -84,15 +83,9 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
     simde__m128i xmm0 = simde_mm_abs_epi16(rxF[i]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
     xmm0 = simde_mm_subs_epi16(ch_mag[i],xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
 
-    llr128[0] = simde_mm_unpacklo_epi32(rxF[i],xmm0); // llr128[0] contains the llrs of the 1st,2nd,5th and 6th REs
-    llr128[1] = simde_mm_unpackhi_epi32(rxF[i],xmm0); // llr128[1] contains the llrs of the 3rd, 4th, 7th and 8th REs
-
-    llr64[0] = (simde__m64)simde_mm_extract_epi64(llr128[0], 0); // llr32[0] low 16 bits-> y_R, high 16 bits-> y_I
-    llr64[1] = (simde__m64)simde_mm_extract_epi64(llr128[0], 1); // llr32[2] low 16 bits-> y_R, high 16 bits-> y_I
-    llr64[2] = (simde__m64)simde_mm_extract_epi64(llr128[1], 0); // llr32[4] low 16 bits-> y_R, high 16 bits-> y_I
-    llr64[3] = (simde__m64)simde_mm_extract_epi64(llr128[1], 1); // llr32[6] low 16 bits-> y_R, high 16 bits-> y_I
-
-    llr64 += 4;
+    ulsch_llr_128[0] = simde_mm_unpacklo_epi32(rxF[i],xmm0); // llr128[0] contains the llrs of the 1st,2nd,5th and 6th REs
+    ulsch_llr_128[1] = simde_mm_unpackhi_epi32(rxF[i],xmm0); // llr128[1] contains the llrs of the 3rd, 4th, 7th and 8th REs
+    ulsch_llr_128 += 2;
   }
 #else
   simde__m256i *rxF_256 = (simde__m256i*)rxdataF_comp;
