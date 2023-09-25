@@ -70,7 +70,6 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
   simde__m128i *rxF = (simde__m128i*)rxdataF_comp;
   simde__m128i *ch_mag;
   simde__m128i llr128[2];
-  register simde__m128i xmm0;
   simde__m64 *llr64 = (simde__m64*) ulsch_llr;
   int i;
   int nb_rb = nb_re / NR_NB_SC_PER_RB;
@@ -82,7 +81,7 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
 
   // Each iteration does 4 RE (gives 16 16bit-llrs)
   for (i=0; i<nb_re; i++) {
-    xmm0 = simde_mm_abs_epi16(rxF[i]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
+    simde__m128i xmm0 = simde_mm_abs_epi16(rxF[i]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
     xmm0 = simde_mm_subs_epi16(ch_mag[i],xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
 
     llr128[0] = simde_mm_unpacklo_epi32(rxF[i],xmm0); // llr128[0] contains the llrs of the 1st,2nd,5th and 6th REs
@@ -142,7 +141,6 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 
   simde__m128i *rxF = (simde__m128i*)rxdataF_comp;
   simde__m128i *ch_mag,*ch_magb;
-  register simde__m128i xmm0,xmm1,xmm2;
   int i;
   ch_mag = (simde__m128i*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
   ch_magb = (simde__m128i*)&ul_ch_magb[(symbol*(off+(nb_rb*12)))];
@@ -153,6 +151,7 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 
   // Each iteration does 4 RE (gives 24 16bit-llrs)
   for (i=0; i<nb_re; i++) {
+    simde__m128i xmm0, xmm1, xmm2;
     xmm0 = rxF[i];
     xmm1 = simde_mm_abs_epi16(xmm0);
     xmm1 = simde_mm_subs_epi16(ch_mag[i],xmm1);
@@ -235,7 +234,6 @@ void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
 
   simde__m128i *rxF = (simde__m128i*)rxdataF_comp;
   simde__m128i *ch_mag,*ch_magb,*ch_magc;
-  register simde__m128i xmm0,xmm1,xmm2,xmm3,xmm4,xmm5,xmm6;
   simde__m128i *llr128=(simde__m128i*)ulsch_llr;
 
   ch_mag  = (simde__m128i*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
@@ -245,6 +243,7 @@ void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
   int nb_re128 = nb_re >> 2;  // length in 128-bit words (4 REs)
 
   for (int i=0; i<nb_re128; i++) {
+    simde__m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6;
     xmm0 = simde_mm_abs_epi16(rxF[i]);           // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
     xmm0 = simde_mm_subs_epi16(ch_mag[i], xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
     xmm1 = simde_mm_abs_epi16(xmm0);
@@ -269,7 +268,7 @@ void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
 
   if (len_mod4) {
     printf("len_mod4=%d\n", len_mod4);
-    int nb_re64 = nb_re >> 1;
+    int last_2_re = (nb_re >> 1) - 1;
     simde__m64 *llr64 = (simde__m64 *)llr128;
     simde__m64 xmm0,xmm1,xmm2;
     simde__m64 *rxF = (simde__m64*)rxdataF_comp;
@@ -277,21 +276,21 @@ void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
     simde__m64 *ch_magb = (simde__m64*)&ul_ch_magb[(symbol*(off+(nb_rb*12)))];
     simde__m64 *ch_magc = (simde__m64*)&ul_ch_magc[(symbol*(off+(nb_rb*12)))];
 
-    xmm0 = simde_mm_abs_pi16(rxF[nb_re64-1]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
-    xmm0 = simde_mm_subs_pi16(ch_mag[nb_re64-1],xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
+    xmm0 = simde_mm_abs_pi16(rxF[last_2_re]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
+    xmm0 = simde_mm_subs_pi16(ch_mag[last_2_re],xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
     //  xmmtmpD2 contains 4 LLRs
     xmm1 = simde_mm_abs_pi16(xmm0);
-    xmm1 = simde_mm_subs_pi16(ch_magb[nb_re64-1],xmm1); // contains 4 LLRs
+    xmm1 = simde_mm_subs_pi16(ch_magb[last_2_re],xmm1); // contains 4 LLRs
     xmm2 = simde_mm_abs_pi16(xmm1);
-    xmm2 = simde_mm_subs_pi16(ch_magc[nb_re64-1],xmm2); // contains 4 LLRs
+    xmm2 = simde_mm_subs_pi16(ch_magc[last_2_re],xmm2); // contains 4 LLRs
     // rxF[i] A0 A1
     // xmm0   B0 B1
     // xmm1   C0 C1
     // xmm2   D0 D1
-    llr64[0] = simde_m_punpckldq(rxF[nb_re64-1],xmm0);  // A0 B0
-    llr64[2] = simde_m_punpckhdq(rxF[nb_re64-1],xmm0);  // A1 B1
-    llr64[1] = simde_m_punpckldq(xmm1,xmm2);            // C0 D0
-    llr64[3] = simde_m_punpckhdq(xmm1,xmm2);            // C1 D1
+    llr64[0] = simde_mm_unpacklo_pi32(rxF[last_2_re],xmm0);  // A0 B0
+    llr64[2] = simde_mm_unpackhi_pi32(rxF[last_2_re],xmm0);  // A1 B1
+    llr64[1] = simde_mm_unpacklo_pi32(xmm1,xmm2);            // C0 D0
+    llr64[3] = simde_mm_unpackhi_pi32(xmm1,xmm2);            // C1 D1
   }
 #else
   simde__m256i *rxF = (simde__m256i*)rxdataF_comp;
