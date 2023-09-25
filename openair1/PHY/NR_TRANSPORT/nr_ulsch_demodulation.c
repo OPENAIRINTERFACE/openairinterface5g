@@ -1277,11 +1277,7 @@ static void inner_rx (PHY_VARS_gNB *gNB,
   int nb_layer = rel15_ul->nrOfLayers;
   int nb_rx_ant = frame_parms->nb_antennas_rx;
   int dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
-
-  int buffer_length = rel15_ul->rb_size * NR_NB_SC_PER_RB;
-  if (buffer_length & 7)
-    buffer_length += (8 - (buffer_length & 7));
-  
+  int buffer_length = (rel15_ul->rb_size * NR_NB_SC_PER_RB + 7) & ~7;
   c16_t rxFext[nb_rx_ant][buffer_length] __attribute__((aligned(32)));
   c16_t chFext[nb_layer][nb_rx_ant][buffer_length] __attribute__((aligned(32)));
 

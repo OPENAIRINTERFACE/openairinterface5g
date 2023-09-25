@@ -26,7 +26,7 @@
 // Reference of openair1/PHY/LTE_ESTIMATION/freq_equalization.c
 
 // This is 4096/(1:4096) in simde__m128i format
-simde__m128i nr_inv_ch[4096];/* = {0, 4096/1, 4096/2, 4096/3, 4096/4...}*/
+static simde__m128i nr_inv_ch[4096]; /* = {0, 4096/1, 4096/2, 4096/3, 4096/4...}*/
 
 void nr_init_fde() 
 {
@@ -51,8 +51,7 @@ void nr_freq_equalization (NR_DL_FRAME_PARMS *frame_parms,
   AssertFatal(Msc_RS <= frame_parms->N_RB_UL*12, "Msc_RS %d >= %d\n",
               Msc_RS, frame_parms->N_RB_UL*12);
 
-  for (uint16_t re = 0; re < (Msc_RS >> 2); re++) 
-  {
+  for (uint16_t re = 0; re < (Msc_RS >> 2); re++) {
     int16_t amp = (*((int16_t*)&ul_ch_mag128[re]));
 
     if (amp > 4095)
@@ -62,12 +61,10 @@ void nr_freq_equalization (NR_DL_FRAME_PARMS *frame_parms,
 
     if (Qm == 4)
       ul_ch_mag128[re]  = simde_mm_set1_epi16(324);  // this is 512*2/sqrt(10)
-    else if (Qm == 6)
-    {
+    else if (Qm == 6) {
       ul_ch_mag128[re]  = simde_mm_set1_epi16(316);  // this is 512*4/sqrt(42)
       ul_ch_magb128[re] = simde_mm_set1_epi16(158);  // this is 512*2/sqrt(42)
-    }
-    else if(Qm != 2)
+    } else if(Qm != 2)
       AssertFatal(1, "nr_freq_equalization(), Qm = %d, should be 2, 4 or 6. symbol=%d, Msc_RS=%d\n", Qm, symbol, Msc_RS);
   }
 }

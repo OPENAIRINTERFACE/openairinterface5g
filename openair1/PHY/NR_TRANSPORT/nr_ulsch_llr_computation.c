@@ -65,25 +65,28 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
 {
   simde__m256i *rxF_256 = (simde__m256i*)rxdataF_comp;
   simde__m256i *ch_mag = (simde__m256i*)ul_ch_mag;
-  simde__m64 *llr_64 = (simde__m64*)ulsch_llr;
+  int64_t *llr_64 = (int64_t*)ulsch_llr;
 
   simde__m256i xmm0, xmm1, xmm2;
 
-  for (int i = 0; i < ((nb_re>>3) + ((nb_re&7) ? 1 : 0)); i++) {
-    xmm0 = simde_mm256_abs_epi16(rxF_256[i]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
+  for (int i = 0; i < ((nb_re + 7) >> 3); i++) {
+    xmm0 = simde_mm256_abs_epi16(rxF_256[i]);       // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
     xmm0 = simde_mm256_subs_epi16(ch_mag[i], xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
  
-    xmm1 = simde_mm256_unpacklo_epi32(rxF_256[i], xmm0); // llr128[0] contains the llrs of the 1st,2nd,5th and 6th REs
-    xmm2 = simde_mm256_unpackhi_epi32(rxF_256[i], xmm0); // llr128[1] contains the llrs of the 3rd, 4th, 7th and 8th REs
+    xmm1 = simde_mm256_unpacklo_epi32(rxF_256[i], xmm0);
+    xmm2 = simde_mm256_unpackhi_epi32(rxF_256[i], xmm0);
+
+    // xmm1 |1st 2ed 3rd 4th  9th 10th 13rd 14th|
+    // xmm2 |5th 6th 7th 8th 11st 12ed 15th 16th|
     
-    *llr_64++ = (simde__m64)simde_mm256_extract_epi64(xmm1, 0);
-    *llr_64++ = (simde__m64)simde_mm256_extract_epi64(xmm1, 1);
-    *llr_64++ = (simde__m64)simde_mm256_extract_epi64(xmm2, 0);
-    *llr_64++ = (simde__m64)simde_mm256_extract_epi64(xmm2, 1);
-    *llr_64++ = (simde__m64)simde_mm256_extract_epi64(xmm1, 2);
-    *llr_64++ = (simde__m64)simde_mm256_extract_epi64(xmm1, 3);
-    *llr_64++ = (simde__m64)simde_mm256_extract_epi64(xmm2, 2);
-    *llr_64++ = (simde__m64)simde_mm256_extract_epi64(xmm2, 3);
+    *llr_64++ = simde_mm256_extract_epi64(xmm1, 0);
+    *llr_64++ = simde_mm256_extract_epi64(xmm1, 1);
+    *llr_64++ = simde_mm256_extract_epi64(xmm2, 0);
+    *llr_64++ = simde_mm256_extract_epi64(xmm2, 1);
+    *llr_64++ = simde_mm256_extract_epi64(xmm1, 2);
+    *llr_64++ = simde_mm256_extract_epi64(xmm1, 3);
+    *llr_64++ = simde_mm256_extract_epi64(xmm2, 2);
+    *llr_64++ = simde_mm256_extract_epi64(xmm2, 3);
   }
 }
 
@@ -106,13 +109,16 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 
   int32_t *llr_32 = (int32_t *)ulsch_llr;
 
-  for (int i = 0; i < ((nb_re>>3) + ((nb_re&7) ? 1 : 0)); i++) {
+  for (int i = 0; i < ((nb_re + 7) >> 3); i++) {
     xmm0 = rxF[i];
-    xmm1 = simde_mm256_abs_epi16(xmm0);
-    xmm1 = simde_mm256_subs_epi16(ch_maga[i], xmm1);
+    xmm1 = simde_mm256_abs_epi16(xmm0);              // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
+    xmm1 = simde_mm256_subs_epi16(ch_maga[i], xmm1); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
     xmm2 = simde_mm256_abs_epi16(xmm1);
     xmm2 = simde_mm256_subs_epi16(ch_magb[i], xmm2);
-    
+    // xmm0 |1st 4th 7th 10th 13th 16th 19th 22ed|
+    // xmm1 |2ed 5th 8th 11th 14th 17th 20th 23rd|
+    // xmm2 |3rd 6th 9th 12th 15th 18th 21st 24th|
+
     *llr_32++ = simde_mm256_extract_epi32(xmm0,0);
     *llr_32++ = simde_mm256_extract_epi32(xmm1,0);
     *llr_32++ = simde_mm256_extract_epi32(xmm2,0);
@@ -163,7 +169,7 @@ void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
   simde__m256i* ch_magb = (simde__m256i*)ul_ch_magb;
   simde__m256i* ch_magc = (simde__m256i*)ul_ch_magc;
 
-  for (int i = 0; i < ((nb_re>>3) + ((nb_re&7) ? 1 : 0)); i++) {
+  for (int i = 0; i < ((nb_re + 7) >> 3); i++) {
     xmm0 = simde_mm256_abs_epi16(rxF[i]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
     xmm0 = simde_mm256_subs_epi16(ch_maga[i], xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
     //  xmmtmpD2 contains 16 LLRs
