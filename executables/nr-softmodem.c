@@ -709,7 +709,7 @@ int main( int argc, char **argv ) {
   const int mcc = rrc->configuration.mcc[0];
   const int mnc = rrc->configuration.mnc[0];
   const int mnc_digit_len = rrc->configuration.mnc_digit_length[0];
-  const ngran_node_t node_type = rrc->node_type;
+  // const ngran_node_t node_type = rrc->node_type;
   int nb_id = 0;
   int cu_du_id = 0;
   if (node_type == ngran_gNB) {
