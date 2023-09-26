@@ -109,13 +109,6 @@ void e1_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_dat
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 }
 
-void e1ap_itti_send_sctp_close_association(bool isCu, instance_t instance) {
-  MessageDef *message = itti_alloc_new_message(TASK_S1AP, 0, SCTP_CLOSE_ASSOCIATION);
-  sctp_close_association_t *sctp_close_association = &message->ittiMsg.sctp_close_association;
-  sctp_close_association->assoc_id      = e1ap_assoc_id(isCu,instance);
-  itti_send_msg_to_task(TASK_SCTP, instance, message);
-}
-
 int e1ap_send_RESET(bool isCu, e1ap_setup_req_t *setupReq, E1AP_Reset_t *Reset)
 {
   AssertFatal(false,"Not implemented yet\n");

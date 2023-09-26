@@ -37,11 +37,6 @@ e1ap_upcp_inst_t *getCxtE1(instance_t instance)
   return e1ap_inst[instance];
 }
 
-int e1ap_assoc_id(E1_t type, instance_t instance) {
-  AssertFatal(e1ap_inst[instance] != NULL, "Trying to access uninitiated instance of CUCP\n");
-  return e1ap_inst[instance]->setupReq.assoc_id;
-}
-
 void createE1inst(E1_t type, instance_t instance, e1ap_setup_req_t *req) {
   AssertFatal(e1ap_inst[instance] == NULL, "Double call to E1 instance %d\n", (int)instance);
   e1ap_inst[instance] = calloc(1, sizeof(e1ap_upcp_inst_t));
