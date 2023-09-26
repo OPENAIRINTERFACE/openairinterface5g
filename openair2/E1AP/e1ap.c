@@ -1521,8 +1521,6 @@ static void e1_task_send_sctp_association_req(long task_id, instance_t instance,
   sctp_new_req->ulp_cnx_id = instance;
   sctp_new_req->port = E1AP_PORT_NUMBER;
   sctp_new_req->ppid = E1AP_SCTP_PPID;
-  sctp_new_req->in_streams = e1ap_setup_req->sctp_in_streams;
-  sctp_new_req->out_streams = e1ap_setup_req->sctp_out_streams;
   // remote
   sctp_new_req->remote_address = e1ap_setup_req->CUCP_e1_ip_address;
   // local
@@ -1554,9 +1552,6 @@ static void e1_task_handle_sctp_association_resp(E1_t type, instance_t instance,
   if (type == UPtype) {
     e1ap_setup_req_t *e1ap_cuup_setup_req = &getCxtE1(instance)->setupReq;
     e1ap_cuup_setup_req->assoc_id = sctp_new_association_resp->assoc_id;
-    e1ap_cuup_setup_req->sctp_in_streams = sctp_new_association_resp->in_streams;
-    e1ap_cuup_setup_req->sctp_out_streams = sctp_new_association_resp->out_streams;
-    e1ap_cuup_setup_req->default_sctp_stream_id = 0;
 
     eth_params_t IPaddr;
     IPaddr.my_addr = e1ap_cuup_setup_req->localAddressF1U;
@@ -1620,9 +1615,6 @@ void e1_task_handle_sctp_association_ind(E1_t type, instance_t instance, sctp_ne
   getCxtE1(instance)->sockState = SCTP_STATE_ESTABLISHED;
   e1ap_setup_req_t *setup_req = &getCxtE1(instance)->setupReq;
   setup_req->assoc_id = sctp_new_ind->assoc_id;
-  setup_req->sctp_in_streams = sctp_new_ind->in_streams;
-  setup_req->sctp_out_streams = sctp_new_ind->out_streams;
-  setup_req->default_sctp_stream_id = 0;
 }
 
 void e1apHandleTimer(instance_t myInstance)

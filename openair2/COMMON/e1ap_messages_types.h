@@ -57,13 +57,11 @@ typedef struct PLMN_ID_s {
 typedef struct e1ap_setup_req_s {
   uint64_t              gNB_cu_up_id;
   char *                gNB_cu_up_name;
-  sctp_assoc_t assoc_id;
   uint64_t              transac_id;
   int                   supported_plmns; 
   PLMN_ID_t             plmns[E1AP_MAX_NUM_PLMNS];
-  uint16_t              sctp_in_streams;
-  uint16_t              sctp_out_streams;
-  uint16_t              default_sctp_stream_id;
+
+  sctp_assoc_t assoc_id;
   net_ip_address_t CUUP_e1_ip_address;
   net_ip_address_t CUCP_e1_ip_address;
   uint16_t remotePortF1U;
