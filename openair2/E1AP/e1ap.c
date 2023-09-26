@@ -305,15 +305,14 @@ void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
 int e1apCUCP_handle_SETUP_REQUEST(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu)
 {
   DevAssert(pdu != NULL);
-  extract_SETUP_REQUEST(pdu, &inst->setupReq);
   /* Create ITTI message and send to queue */
   MessageDef *msg_p = itti_alloc_new_message(TASK_CUCP_E1, 0 /*unused by callee*/, E1AP_SETUP_REQ);
-  memcpy(&E1AP_SETUP_REQ(msg_p), &inst->setupReq, sizeof(e1ap_setup_req_t));
+  extract_SETUP_REQUEST(pdu, &E1AP_SETUP_REQ(msg_p));
 
-  if (inst->setupReq.supported_plmns > 0) {
+  if (E1AP_SETUP_REQ(msg_p).supported_plmns > 0) {
     itti_send_msg_to_task(TASK_RRC_GNB, 0 /*unused by callee*/, msg_p);
   } else {
-    e1apCUCP_send_SETUP_FAILURE(inst->assoc_id, inst->setupReq.transac_id);
+    e1apCUCP_send_SETUP_FAILURE(inst->assoc_id, E1AP_SETUP_REQ(msg_p).transac_id);
     itti_free(TASK_CUCP_E1, msg_p);
     return -1;
   }

@@ -371,6 +371,10 @@ typedef struct nr_rrc_du_container_t {
   NR_SIB1_t *sib1;
 } nr_rrc_du_container_t;
 
+typedef struct nr_rrc_cuup_container_t {
+  e1ap_setup_req_t *setup_req;
+} nr_rrc_cuup_container_t;
+
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
@@ -400,6 +404,7 @@ typedef struct gNB_RRC_INST_s {
   cucp_cuup_if_t cucp_cuup;
 
   nr_rrc_du_container_t *du;
+  nr_rrc_cuup_container_t *cuup;
 
 } gNB_RRC_INST;
 

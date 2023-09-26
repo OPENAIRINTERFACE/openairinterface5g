@@ -26,6 +26,7 @@ int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req)
 {
   AssertFatal(req->supported_plmns <= PLMN_LIST_MAX_SIZE, "Supported PLMNs is more than PLMN_LIST_MAX_SIZE\n");
   gNB_RRC_INST *rrc = RC.nrrrc[0];
+  AssertFatal(rrc->cuup == NULL, "cannot handle multiple CU-UPs\n");
 
 
   for (int i = 0; i < req->supported_plmns; i++) {
@@ -41,6 +42,11 @@ int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req)
     }
   }
 
+  LOG_I(RRC, "Accepting new CU-UP ID %ld name %s\n", req->gNB_cu_up_id, req->gNB_cu_up_name);
+  rrc->cuup = malloc(sizeof(*rrc->cuup));
+  AssertFatal(rrc->cuup, "out of memory\n");
+  rrc->cuup->setup_req = malloc(sizeof(*rrc->cuup->setup_req));
+  *rrc->cuup->setup_req = *req;
 
   MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_GNB, 0, E1AP_SETUP_RESP);
   e1ap_setup_resp_t *resp = &E1AP_SETUP_RESP(msg_p);

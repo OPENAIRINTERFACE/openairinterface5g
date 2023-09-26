@@ -405,8 +405,13 @@ static int create_gNB_tasks(ngran_node_t node_type)
       instance_t inst = 0;
       createE1inst(UPtype, inst, &E1AP_REGISTER_REQ(msg).net_config, NULL);
       cuup_init_n3(inst);
-      itti_free(TASK_UNKNOWN, msg);
       RC.nrrrc[gnb_id_start]->e1_inst = inst; // stupid instance !!!*/
+
+      /* send E1 Setup Request to RRC */
+      MessageDef *new_msg = itti_alloc_new_message(TASK_GNB_APP, 0, E1AP_SETUP_REQ);
+      E1AP_SETUP_REQ(new_msg) = E1AP_REGISTER_REQ(msg).setup_req;
+      itti_send_msg_to_task(TASK_RRC_GNB, 0 /*unused by callee*/, new_msg);
+      itti_free(TASK_UNKNOWN, msg);
     }
 
     //Use check on x2ap to consider the NSA scenario 
