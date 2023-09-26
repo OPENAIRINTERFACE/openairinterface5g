@@ -122,7 +122,6 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
       e1Setup->CUCP_e1_ip_address.ipv4 = 1;
       strcpy(e1Setup->CUUP_e1_ip_address.ipv4_address, *(e1Parms[GNB_CONFIG_E1_IPV4_ADDRESS_CUUP].strptr));
       e1Setup->CUUP_e1_ip_address.ipv4 = 1;
-      e1Setup->cn_support = *e1Parms[GNB_CONFIG_E1_CN_SUPPORT].uptr;
     }
   }
   return msgConfig;

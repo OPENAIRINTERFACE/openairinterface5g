@@ -191,7 +191,7 @@ static void fill_SETUP_REQUEST(e1ap_setup_req_t *setup, E1AP_E1AP_PDU_t *pdu)
   ieC4->id = E1AP_ProtocolIE_ID_id_CNSupport;
   ieC4->criticality = E1AP_Criticality_reject;
   ieC4->value.present = E1AP_GNB_CU_UP_E1SetupRequestIEs__value_PR_CNSupport;
-  ieC4->value.choice.CNSupport = setup->cn_support;
+  ieC4->value.choice.CNSupport = E1AP_CNSupport_c_5gc; /* only 5GC supported */
 
   /* mandatory */
   /* c5. Supported PLMNs */
@@ -293,8 +293,7 @@ void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
   /* CN Support */
   F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
                              E1AP_ProtocolIE_ID_id_CNSupport, true);
-  req->cn_support = ie->value.choice.CNSupport;
-  LOG_D(E1AP, "E1ap CN support: %ld\n", req->cn_support);
+  AssertFatal(ie->value.choice.CNSupport == E1AP_CNSupport_c_5gc, "only 5GC CN Support supported\n");
 
   /* Supported PLMNs */
   F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
@@ -676,7 +675,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_bearer_setup_resp_t *const r
   ieC3->id            = E1AP_ProtocolIE_ID_id_System_BearerContextSetupResponse;
   ieC3->criticality   = E1AP_Criticality_reject;
   ieC3->value.present = E1AP_BearerContextSetupResponseIEs__value_PR_System_BearerContextSetupResponse;
-  if (0) { // EUTRAN
+  /*if (0) { // EUTRAN
     ieC3->value.choice.System_BearerContextSetupResponse.present = E1AP_System_BearerContextSetupResponse_PR_e_UTRAN_BearerContextSetupResponse;
     E1AP_ProtocolIE_Container_4932P21_t *msgEUTRAN_list = calloc(1, sizeof(E1AP_ProtocolIE_Container_4932P21_t));
     ieC3->value.choice.System_BearerContextSetupResponse.choice.e_UTRAN_BearerContextSetupResponse = (struct E1AP_ProtocolIE_Container *) msgEUTRAN_list;
@@ -703,7 +702,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_bearer_setup_resp_t *const r
         INT32_TO_OCTET_STRING(j->teId, &gTPTunnel->gTP_TEID);
       }
     }
-  } else {
+  } else */{
     ieC3->value.choice.System_BearerContextSetupResponse.present = E1AP_System_BearerContextSetupResponse_PR_nG_RAN_BearerContextSetupResponse;
     E1AP_ProtocolIE_Container_4932P22_t *msgNGRAN_list = calloc(1, sizeof(E1AP_ProtocolIE_Container_4932P22_t));
     ieC3->value.choice.System_BearerContextSetupResponse.choice.nG_RAN_BearerContextSetupResponse = (struct E1AP_ProtocolIE_Container *) msgNGRAN_list;

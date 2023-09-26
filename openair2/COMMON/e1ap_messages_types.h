@@ -66,7 +66,6 @@ typedef struct e1ap_setup_req_s {
   uint16_t              default_sctp_stream_id;
   net_ip_address_t CUUP_e1_ip_address;
   net_ip_address_t CUCP_e1_ip_address;
-  long                  cn_support;
   uint16_t remotePortF1U;
   char* localAddressF1U;
   uint16_t localPortF1U;
@@ -165,8 +164,6 @@ typedef struct e1ap_bearer_setup_req_s {
   long     ueDlAggMaxBitRate;
   PLMN_ID_t servingPLMNid;
   long activityNotificationLevel;
-  int numDRBs;
-  drb_to_setup_t DRBList[E1AP_MAX_NUM_DRBS];
   int numPDUSessions;
   pdu_session_to_setup_t pduSession[E1AP_MAX_NUM_PDU_SESSIONS];
   int numPDUSessionsMod;
@@ -179,14 +176,6 @@ typedef struct e1ap_bearer_release_cmd_s {
   long cause_type;
   long cause;
 } e1ap_bearer_release_cmd_t;
-
-typedef struct drb_setup_s {
-  int drbId;
-  in_addr_t tlAddress;
-  int teId;
-  int numUpParam;
-  up_params_t UpParamList[E1AP_MAX_NUM_UP_PARAM];
-} drb_setup_t;
 
 typedef struct qos_flow_setup_s {
   long id;
@@ -219,8 +208,6 @@ typedef struct pdu_session_setup_s {
 typedef struct e1ap_bearer_setup_resp_s {
   uint32_t gNB_cu_cp_ue_id;
   uint32_t gNB_cu_up_ue_id;
-  int numDRBs;
-  drb_setup_t DRBList[E1AP_MAX_NUM_DRBS];
   int numPDUSessions;
   pdu_session_setup_t pduSession[E1AP_MAX_NUM_PDU_SESSIONS];
 } e1ap_bearer_setup_resp_t;
