@@ -42,6 +42,7 @@ void createE1inst(E1_t type, instance_t instance, e1ap_setup_req_t *req) {
   e1ap_inst[instance] = calloc(1, sizeof(e1ap_upcp_inst_t));
   e1ap_inst[instance]->type = type;
   e1ap_inst[instance]->instance = instance;
+  e1ap_inst[instance]->assoc_id = -1;
   if (req)
     memcpy(&e1ap_inst[instance]->setupReq, req, sizeof(*req));
   e1ap_inst[instance]->gtpInstN3 = -1;
@@ -190,7 +191,7 @@ int e1ap_decode_pdu(E1AP_E1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
   return -1;
 }
 
-int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu, uint16_t stream, const char *func)
+int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, E1AP_E1AP_PDU_t *pdu, uint16_t stream, const char *func)
 {
   DevAssert(pdu != NULL);
 
@@ -218,7 +219,7 @@ int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu
   }
   MessageDef *message = itti_alloc_new_message((type == CPtype) ? TASK_CUCP_E1 : TASK_CUUP_E1, 0, SCTP_DATA_REQ);
   sctp_data_req_t *s = &message->ittiMsg.sctp_data_req;
-  s->assoc_id = setupReq->assoc_id;
+  s->assoc_id = assoc_id;
   s->buffer = buffer;
   s->buffer_length = encoded;
   s->stream = stream;

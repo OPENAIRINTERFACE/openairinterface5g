@@ -42,13 +42,13 @@ int e1apCUCP_handle_BEARER_CONTEXT_SETUP_FAILURE(e1ap_upcp_inst_t *inst, const E
 
 int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
 
-void e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_upcp_inst_t *inst, e1ap_bearer_setup_resp_t *const resp);
+void e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, e1ap_bearer_setup_resp_t *const resp);
 
 int e1apCUUP_handle_BEARER_CONTEXT_RELEASE_COMMAND(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
 
 int e1apCUCP_handle_BEARER_CONTEXT_RELEASE_COMPLETE(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
 
-int e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(e1ap_upcp_inst_t *inst, e1ap_bearer_release_cmd_t *const cmd);
+int e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(sctp_assoc_t assoc_id, e1ap_bearer_release_cmd_t *const cmd);
 
 void *E1AP_CUUP_task(void *arg);
 

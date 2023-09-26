@@ -172,7 +172,7 @@ void process_e1_bearer_context_setup_req(instance_t instance, e1ap_bearer_setup_
     pduSetup->numDRBFailed = 0;
   }
 
-  e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(inst, resp);
+  e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(inst->assoc_id, resp);
 }
 
 void CUUP_process_bearer_context_mod_req(instance_t instance, e1ap_bearer_setup_req_t *const req)
@@ -190,5 +190,5 @@ void CUUP_process_bearer_release_command(instance_t instance, e1ap_bearer_releas
   AssertFatal(inst, "");
   newGtpuDeleteAllTunnels(inst->gtpInstN3, cmd->gNB_cu_up_ue_id);
   newGtpuDeleteAllTunnels(inst->gtpInstF1U, cmd->gNB_cu_up_ue_id);
-  e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(inst, cmd);
+  e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(inst->assoc_id, cmd);
 }

@@ -32,6 +32,7 @@ typedef struct e1ap_upcp_inst_s {
   instance_t instance;
   E1_t type;
   enum sctp_state_e sockState;
+  sctp_assoc_t assoc_id;
   instance_t gtpInstN3;
   instance_t gtpInstF1U;
   e1ap_setup_req_t setupReq;
@@ -47,7 +48,7 @@ E1AP_TransactionID_t E1AP_get_next_transaction_identifier();
 
 void createE1inst(E1_t type, instance_t instance, e1ap_setup_req_t *req);
 
-int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu, uint16_t stream, const char *func);
+int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, E1AP_E1AP_PDU_t *pdu, uint16_t stream, const char *func);
 
 void e1ap_common_init();
 

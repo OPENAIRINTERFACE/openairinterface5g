@@ -61,7 +61,6 @@ typedef struct e1ap_setup_req_s {
   int                   supported_plmns; 
   PLMN_ID_t             plmns[E1AP_MAX_NUM_PLMNS];
 
-  sctp_assoc_t assoc_id;
   net_ip_address_t CUUP_e1_ip_address;
   net_ip_address_t CUCP_e1_ip_address;
   uint16_t remotePortF1U;
