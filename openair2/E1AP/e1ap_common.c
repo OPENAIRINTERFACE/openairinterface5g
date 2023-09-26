@@ -59,8 +59,8 @@ void e1ap_common_init() {
   srand(time(NULL));
 }
 
-bool check_transac_id(E1AP_TransactionID_t id, int *freeIdx) {
-
+static bool check_transac_id(E1AP_TransactionID_t id, int *freeIdx)
+{
   bool isFreeIdxSet = false;
   for (int i=0; i < E1AP_MAX_NUM_TRANSAC_IDS; i++) {
     if (id == transacID[i])
@@ -77,7 +77,7 @@ bool check_transac_id(E1AP_TransactionID_t id, int *freeIdx) {
 E1AP_TransactionID_t E1AP_get_next_transaction_identifier() {
   E1AP_TransactionID_t genTransacId;
   bool isTransacIdValid = false;
-  int freeIdx;
+  int freeIdx = 0;
 
   while (!isTransacIdValid) {
     genTransacId = rand() & 255;
