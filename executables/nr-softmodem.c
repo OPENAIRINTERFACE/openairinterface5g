@@ -406,8 +406,6 @@ static int create_gNB_tasks(ngran_node_t node_type)
       createE1inst(UPtype, inst, &E1AP_SETUP_REQ(msg));
       cuup_init_n3(inst);
       itti_free(TASK_UNKNOWN, msg);
-      getCxtE1(inst)->same_process = true;
-      ;
       RC.nrrrc[gnb_id_start]->e1_inst = inst; // stupid instance !!!*/
     }
 

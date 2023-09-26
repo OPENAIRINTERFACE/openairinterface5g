@@ -1627,7 +1627,6 @@ void e1_task_handle_sctp_association_ind(E1_t type, instance_t instance, sctp_ne
   else
     createE1inst(type, instance, NULL);
   getCxtE1(instance)->sockState = SCTP_STATE_ESTABLISHED;
-  getCxtE1(instance)->incoming_sock = true;
   e1ap_setup_req_t *setup_req = &getCxtE1(instance)->setupReq;
   setup_req->assoc_id = sctp_new_ind->assoc_id;
   setup_req->sctp_in_streams = sctp_new_ind->in_streams;

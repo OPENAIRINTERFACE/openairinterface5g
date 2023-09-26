@@ -29,17 +29,12 @@
 #include "common/ngran_types.h"
 
 typedef struct e1ap_upcp_inst_s {
-  bool incoming_sock;
   instance_t instance;
-  bool same_process;
   E1_t type;
   enum sctp_state_e sockState;
-  sctp_assoc_t assoc_id;
   instance_t gtpInstN3;
   instance_t gtpInstF1U;
   e1ap_setup_req_t setupReq;
-  e1ap_bearer_setup_req_t bearerSetupReq;
-  e1ap_bearer_setup_resp_t bearerSetupResp;
 } e1ap_upcp_inst_t;
 
 extern int asn1_xer_print;
