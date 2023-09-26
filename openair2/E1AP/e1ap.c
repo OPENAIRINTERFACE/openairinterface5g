@@ -499,7 +499,7 @@ int e1ap_handle_RELEASE_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, 
   BEARER CONTEXT SETUP REQUEST
 */
 
-static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_setup_req_t *setup, e1ap_bearer_setup_req_t *const bearerCxt, E1AP_E1AP_PDU_t *pdu)
+static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_bearer_setup_req_t *const bearerCxt, E1AP_E1AP_PDU_t *pdu)
 {
   pdu->present = E1AP_E1AP_PDU_PR_initiatingMessage;
   asn1cCalloc(pdu->choice.initiatingMessage, msg);
@@ -540,7 +540,7 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_setup_req_t *setup, e1ap_beare
   ieC4->id                         = E1AP_ProtocolIE_ID_id_Serving_PLMN;
   ieC4->criticality                = E1AP_Criticality_ignore;
   ieC4->value.present              = E1AP_BearerContextSetupRequestIEs__value_PR_PLMN_Identity;
-  PLMN_ID_t *servingPLMN = setup->plmns; // First PLMN is serving PLMN. TODO: Remove hard coding here
+  PLMN_ID_t *servingPLMN = &bearerCxt->servingPLMNid;
   MCC_MNC_TO_PLMNID(servingPLMN->mcc, servingPLMN->mnc, servingPLMN->mnc_digit_length, &ieC4->value.choice.PLMN_Identity);
   /* mandatory */
   /* Activity Notification Level */
@@ -635,7 +635,7 @@ void e1apCUCP_send_BEARER_CONTEXT_SETUP_REQUEST(instance_t instance, e1ap_bearer
 
   E1AP_E1AP_PDU_t pdu = {0};
   e1ap_setup_req_t *setupReq = &getCxtE1(instance)->setupReq;
-  fill_BEARER_CONTEXT_SETUP_REQUEST(setupReq, bearerCxt, &pdu);
+  fill_BEARER_CONTEXT_SETUP_REQUEST(bearerCxt, &pdu);
   e1ap_encode_send(CPtype, setupReq, &pdu, 0, __func__);
 }
 
