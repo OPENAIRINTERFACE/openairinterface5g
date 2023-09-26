@@ -391,8 +391,6 @@ typedef struct gNB_RRC_INST_s {
   // gNB N3 GTPU instance
   instance_t e1_inst;
 
-  int um_on_default_drb;
-
   char *uecap_file;
 
   // security configuration (preferred algorithms)

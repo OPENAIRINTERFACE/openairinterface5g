@@ -1541,7 +1541,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
 
     rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
 
-    rrc->um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
@@ -1605,6 +1604,7 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
         nrrrc_config.enable_sdap = *GNBParamList.paramarray[i][GNB_ENABLE_SDAP_IDX].iptr;
         LOG_I(GNB_APP, "SDAP layer is %s\n", nrrrc_config.enable_sdap ? "enabled" : "disabled");
         nrrrc_config.drbs = *GNBParamList.paramarray[i][GNB_DRBS].iptr;
+        nrrrc_config.um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
         LOG_I(GNB_APP, "Data Radio Bearer count %d\n", nrrrc_config.drbs);
 
       }//

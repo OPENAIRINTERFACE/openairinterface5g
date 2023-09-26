@@ -2352,7 +2352,7 @@ void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_contex
   f1ap_drb_to_be_setup_t drbs[nb_drb];
   for (int i = 0; i < nb_drb; i++) {
     drbs[i].drb_id = e1ap_resp->pduSession[0].DRBnGRanList[i].id;
-    drbs[i].rlc_mode = rrc->um_on_default_drb ? RLC_MODE_UM : RLC_MODE_AM;
+    drbs[i].rlc_mode = rrc->configuration.um_on_default_drb ? RLC_MODE_UM : RLC_MODE_AM;
     drbs[i].up_ul_tnl[0].tl_address = e1ap_resp->pduSession[0].DRBnGRanList[i].UpParamList[0].tlAddress;
     drbs[i].up_ul_tnl[0].port = rrc->eth_params_s.my_portd;
     drbs[i].up_ul_tnl[0].teid = e1ap_resp->pduSession[0].DRBnGRanList[i].UpParamList[0].teId;
