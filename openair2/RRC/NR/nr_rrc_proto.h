@@ -132,6 +132,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 
 void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP);
 
+int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req);
+
 void bearer_context_setup_direct(e1ap_bearer_setup_req_t *req,
                                  instance_t instance);
 

@@ -2315,29 +2315,6 @@ static int get_dl_mimo_layers(const f1ap_served_cell_info_t *cell_info, const NR
   return(1);
 }
 
-int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req, instance_t instance) {
-
-  AssertFatal(req->supported_plmns <= PLMN_LIST_MAX_SIZE, "Supported PLMNs is more than PLMN_LIST_MAX_SIZE\n");
-  gNB_RRC_INST *rrc = RC.nrrrc[0]; //TODO: remove hardcoding of RC index here
-  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_GNB, instance, E1AP_SETUP_RESP);
-
-  e1ap_setup_resp_t *resp = &E1AP_SETUP_RESP(msg_p);
-  resp->transac_id = req->transac_id;
-
-  for (int i=0; i < req->supported_plmns; i++) {
-    if (rrc->configuration.mcc[i] != req->plmns[i].mcc ||
-        rrc->configuration.mnc[i] != req->plmns[i].mnc) {
-      LOG_E(NR_RRC, "PLMNs received from CUUP (mcc:%d, mnc:%d) did not match with PLMNs in RRC (mcc:%d, mnc:%d)\n",
-            req->plmns[i].mcc, req->plmns[i].mnc, rrc->configuration.mcc[i], rrc->configuration.mnc[i]);
-      return -1;
-    }
-  }
-
-  itti_send_msg_to_task(TASK_CUCP_E1, instance, msg_p);
-
-  return 0;
-}
-
 void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_context_p, e1ap_bearer_setup_resp_t *e1ap_resp)
 {
   /* Generate a UE context modification request message towards the DU to
@@ -2699,7 +2676,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case E1AP_SETUP_REQ:
-        rrc_gNB_process_e1_setup_req(&E1AP_SETUP_REQ(msg_p), instance);
+        rrc_gNB_process_e1_setup_req(&E1AP_SETUP_REQ(msg_p));
         break;
 
       case E1AP_BEARER_CONTEXT_SETUP_RESP:
