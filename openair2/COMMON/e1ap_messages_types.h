@@ -40,6 +40,7 @@
 #define E1AP_MAX_NUM_DRBS 4
 #define E1AP_MAX_NUM_UP_PARAM 4
 
+#define E1AP_REGISTER_REQ(mSGpTR)                         (mSGpTR)->ittiMsg.e1ap_register_req
 #define E1AP_SETUP_REQ(mSGpTR)                            (mSGpTR)->ittiMsg.e1ap_setup_req
 #define E1AP_SETUP_RESP(mSGpTR)                           (mSGpTR)->ittiMsg.e1ap_setup_resp
 #define E1AP_BEARER_CONTEXT_SETUP_REQ(mSGpTR)             (mSGpTR)->ittiMsg.e1ap_bearer_setup_req
@@ -54,13 +55,7 @@ typedef struct PLMN_ID_s {
   int mnc_digit_length;
 } PLMN_ID_t;
 
-typedef struct e1ap_setup_req_s {
-  uint64_t              gNB_cu_up_id;
-  char *                gNB_cu_up_name;
-  uint64_t              transac_id;
-  int                   supported_plmns; 
-  PLMN_ID_t             plmns[E1AP_MAX_NUM_PLMNS];
-
+typedef struct e1ap_net_config_t {
   net_ip_address_t CUUP_e1_ip_address;
   net_ip_address_t CUCP_e1_ip_address;
   uint16_t remotePortF1U;
@@ -69,7 +64,20 @@ typedef struct e1ap_setup_req_s {
   char* localAddressN3;
   uint16_t localPortN3;
   uint16_t remotePortN3;
+} e1ap_net_config_t;
+
+typedef struct e1ap_setup_req_s {
+  uint64_t              gNB_cu_up_id;
+  char *                gNB_cu_up_name;
+  uint64_t              transac_id;
+  int                   supported_plmns;
+  PLMN_ID_t             plmns[E1AP_MAX_NUM_PLMNS];
 } e1ap_setup_req_t;
+
+typedef struct e1ap_register_req_t {
+  e1ap_setup_req_t setup_req;
+  e1ap_net_config_t net_config;
+} e1ap_register_req_t;
 
 typedef struct e1ap_setup_resp_s {
   long transac_id;

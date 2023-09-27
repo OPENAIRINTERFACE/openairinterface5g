@@ -1499,9 +1499,9 @@ static instance_t cuup_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
   return gtpv1Init(tmp);
 }
 
-static void e1_task_send_sctp_association_req(long task_id, instance_t instance, e1ap_setup_req_t *e1ap_setup_req)
+static void e1_task_send_sctp_association_req(long task_id, instance_t instance, e1ap_net_config_t *e1ap_nc)
 {
-  DevAssert(e1ap_setup_req != NULL);
+  DevAssert(e1ap_nc != NULL);
   getCxtE1(instance)->sockState = SCTP_STATE_CLOSED;
   MessageDef *message_p = itti_alloc_new_message(task_id, 0, SCTP_NEW_ASSOCIATION_REQ);
   sctp_new_association_req_t *sctp_new_req = &message_p->ittiMsg.sctp_new_association_req;
@@ -1509,9 +1509,9 @@ static void e1_task_send_sctp_association_req(long task_id, instance_t instance,
   sctp_new_req->port = E1AP_PORT_NUMBER;
   sctp_new_req->ppid = E1AP_SCTP_PPID;
   // remote
-  sctp_new_req->remote_address = e1ap_setup_req->CUCP_e1_ip_address;
+  sctp_new_req->remote_address = e1ap_nc->CUCP_e1_ip_address;
   // local
-  sctp_new_req->local_address = e1ap_setup_req->CUUP_e1_ip_address;
+  sctp_new_req->local_address = e1ap_nc->CUUP_e1_ip_address;
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 
@@ -1540,10 +1540,10 @@ static void e1_task_handle_sctp_association_resp(E1_t type, instance_t instance,
     e1ap_upcp_inst_t *inst = getCxtE1(instance);
     inst->assoc_id = sctp_new_association_resp->assoc_id;
 
-    e1ap_setup_req_t *e1ap_cuup_setup_req = &inst->setupReq;
+    e1ap_net_config_t *nc = &inst->net_config;
     eth_params_t IPaddr;
-    IPaddr.my_addr = e1ap_cuup_setup_req->localAddressF1U;
-    IPaddr.my_portd = e1ap_cuup_setup_req->localPortF1U;
+    IPaddr.my_addr = nc->localAddressF1U;
+    IPaddr.my_portd = nc->localPortF1U;
     if (getCxtE1(instance)->gtpInstF1U < 0)
       getCxtE1(instance)->gtpInstF1U = cuup_task_create_gtpu_instance_to_du(&IPaddr);
     if (getCxtE1(instance)->gtpInstF1U < 0)
@@ -1551,18 +1551,18 @@ static void e1_task_handle_sctp_association_resp(E1_t type, instance_t instance,
     extern instance_t CUuniqInstance;
     CUuniqInstance = getCxtE1(instance)->gtpInstF1U;
     cuup_init_n3(instance);
-    e1apCUUP_send_SETUP_REQUEST(inst->assoc_id, e1ap_cuup_setup_req);
+    e1apCUUP_send_SETUP_REQUEST(inst->assoc_id, &inst->setupReq);
   }
 }
 
 void cuup_init_n3(instance_t instance)
 {
   if (getCxtE1(instance)->gtpInstN3 < 0) {
-    e1ap_setup_req_t *setup = &getCxtE1(instance)->setupReq;
+    e1ap_net_config_t *nc = &getCxtE1(instance)->net_config;
     openAddr_t tmp = {0};
-    strcpy(tmp.originHost, setup->localAddressN3);
-    sprintf(tmp.originService, "%d", setup->localPortN3);
-    sprintf(tmp.destinationService, "%d", setup->remotePortN3);
+    strcpy(tmp.originHost, nc->localAddressN3);
+    sprintf(tmp.originService, "%d", nc->localPortN3);
+    sprintf(tmp.destinationService, "%d", nc->remotePortN3);
     LOG_I(GTPU, "Configuring GTPu address : %s, port : %s\n", tmp.originHost, tmp.originService);
     // Fixme: fully inconsistent instances management
     // dirty global var is a bad fix
@@ -1599,7 +1599,7 @@ void e1_task_handle_sctp_association_ind(E1_t type, instance_t instance, sctp_ne
   if (getCxtE1(instance))
     LOG_W(E1AP, "CUCP incoming call, re-use older socket context, finish implementation required\n");
   else
-    createE1inst(type, instance, NULL);
+    createE1inst(type, instance, NULL, NULL);
   e1ap_upcp_inst_t *inst = getCxtE1(instance);
   inst->sockState = SCTP_STATE_ESTABLISHED;
   inst->assoc_id = sctp_new_ind->assoc_id;
@@ -1609,7 +1609,7 @@ void e1apHandleTimer(instance_t myInstance)
 {
   LOG_W(E1AP, "Try to reconnect to CP\n");
   if (getCxtE1(myInstance)->sockState != SCTP_STATE_ESTABLISHED)
-    e1_task_send_sctp_association_req(TASK_CUUP_E1, myInstance, &getCxtE1(myInstance)->setupReq);
+    e1_task_send_sctp_association_req(TASK_CUUP_E1, myInstance, &getCxtE1(myInstance)->net_config);
 }
 
 void *E1AP_CUCP_task(void *arg) {
@@ -1635,14 +1635,18 @@ void *E1AP_CUCP_task(void *arg) {
         e1_task_handle_sctp_association_resp(CPtype, ITTI_MSG_ORIGIN_INSTANCE(msg), &msg->ittiMsg.sctp_new_association_resp);
         break;
 
-      case E1AP_SETUP_REQ: {
-        e1ap_setup_req_t *req = &E1AP_SETUP_REQ(msg);
-        if (req->CUCP_e1_ip_address.ipv4 == 0) {
-          LOG_E(E1AP, "No IPv4 address configured\n");
-          return NULL;
-        }
-        cucp_task_send_sctp_init_req(0, req->CUCP_e1_ip_address.ipv4_address);
+      case E1AP_REGISTER_REQ: {
+        // note: we use E1AP_REGISTER_REQ only to set up sockets, the
+        // E1AP_SETUP_REQ is not used and comes through the socket from the
+        // CU-UP later!
+        e1ap_net_config_t *nc = &E1AP_REGISTER_REQ(msg).net_config;
+        AssertFatal(nc->CUCP_e1_ip_address.ipv4 != 0, "No IPv4 address configured\n");
+        cucp_task_send_sctp_init_req(0, nc->CUCP_e1_ip_address.ipv4_address);
       } break;
+
+      case E1AP_SETUP_REQ:
+        AssertFatal(false, "should not receive E1AP_SETUP_REQ in CU-CP!\n");
+        break;
 
       case SCTP_DATA_IND:
         e1_task_handle_sctp_data_ind(myInstance, &msg->ittiMsg.sctp_data_ind);
@@ -1685,11 +1689,10 @@ void *E1AP_CUUP_task(void *arg) {
     const int msgType = ITTI_MSG_ID(msg);
     LOG_D(E1AP, "CUUP received %s for instance %ld\n", messages_info[msgType].name, myInstance);
     switch (msgType) {
-      case E1AP_SETUP_REQ: {
-        e1ap_setup_req_t *msgSetup = &E1AP_SETUP_REQ(msg);
-        createE1inst(UPtype, myInstance, msgSetup);
-
-        e1_task_send_sctp_association_req(TASK_CUUP_E1, myInstance, msgSetup);
+      case E1AP_REGISTER_REQ: {
+        e1ap_register_req_t *reg_req = &E1AP_REGISTER_REQ(msg);
+        createE1inst(UPtype, myInstance, &reg_req->net_config, &reg_req->setup_req);
+        e1_task_send_sctp_association_req(TASK_CUUP_E1, myInstance, &reg_req->net_config);
       } break;
 
       case SCTP_NEW_ASSOCIATION_RESP:

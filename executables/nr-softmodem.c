@@ -403,7 +403,7 @@ static int create_gNB_tasks(ngran_node_t node_type)
     if (node_type == ngran_gNB_CU || node_type == ngran_gNB) {
       MessageDef *msg = RCconfig_NR_CU_E1(false);
       instance_t inst = 0;
-      createE1inst(UPtype, inst, &E1AP_SETUP_REQ(msg));
+      createE1inst(UPtype, inst, &E1AP_REGISTER_REQ(msg).net_config, NULL);
       cuup_init_n3(inst);
       itti_free(TASK_UNKNOWN, msg);
       RC.nrrrc[gnb_id_start]->e1_inst = inst; // stupid instance !!!*/

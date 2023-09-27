@@ -149,9 +149,9 @@ void process_e1_bearer_context_setup_req(instance_t instance, e1ap_bearer_setup_
   e1ap_bearer_setup_resp_t *resp = &E1AP_BEARER_CONTEXT_SETUP_RESP(msg);
 
   in_addr_t my_addr;
-  if (inet_pton(AF_INET, inst->setupReq.localAddressF1U, &my_addr) != 1)
-    LOG_E(E1AP, "can't use the F1-U local interface: %s\n", inst->setupReq.localAddressF1U);
-  fill_e1ap_bearer_setup_resp(resp, req, inst->gtpInstF1U, req->gNB_cu_cp_ue_id, inst->setupReq.remotePortF1U, my_addr);
+  if (inet_pton(AF_INET, inst->net_config.localAddressF1U, &my_addr) != 1)
+    LOG_E(E1AP, "can't use the F1-U local interface: %s\n", inst->net_config.localAddressF1U);
+  fill_e1ap_bearer_setup_resp(resp, req, inst->gtpInstF1U, req->gNB_cu_cp_ue_id, inst->net_config.remotePortF1U, my_addr);
 
   resp->gNB_cu_cp_ue_id = req->gNB_cu_cp_ue_id;
   resp->gNB_cu_up_ue_id = gNB_cu_up_ue_id;
@@ -161,8 +161,8 @@ void process_e1_bearer_context_setup_req(instance_t instance, e1ap_bearer_setup_
     pdu_session_to_setup_t *pdu2Setup = req->pduSession + i;
 
     pduSetup->id = pdu2Setup->sessionId;
-    if (inet_pton(AF_INET, inst->setupReq.localAddressN3, &pduSetup->tlAddress) != 1)
-      LOG_E(E1AP, "can't use the N3 local interface: %s\n", inst->setupReq.localAddressN3);
+    if (inet_pton(AF_INET, inst->net_config.localAddressN3, &pduSetup->tlAddress) != 1)
+      LOG_E(E1AP, "can't use the N3 local interface: %s\n", inst->net_config.localAddressN3);
     pduSetup->teId = create_tunnel_resp_N3.gnb_NGu_teid[i];
     pduSetup->numDRBSetup = pdu2Setup->numDRB2Setup;
 
