@@ -27,10 +27,13 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/sctp.h>
 
 typedef struct f1_ue_data_t {
   uint32_t secondary_ue;
-  /* can be extended with F1-specific data also relevant for monolithic */
+  sctp_assoc_t e1_assoc_id;
 } f1_ue_data_t;
 
 void cu_init_f1_ue_data(void);

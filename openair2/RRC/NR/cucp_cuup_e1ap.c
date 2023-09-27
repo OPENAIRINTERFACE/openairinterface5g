@@ -36,21 +36,25 @@
 
 extern RAN_CONTEXT_t RC;
 
-static void cucp_cuup_bearer_context_setup_e1ap(e1ap_bearer_setup_req_t *const req, instance_t instance)
+static void cucp_cuup_bearer_context_setup_e1ap(sctp_assoc_t assoc_id, e1ap_bearer_setup_req_t *const req)
 {
-  MessageDef *msg_p = itti_alloc_new_message(TASK_CUCP_E1, instance, E1AP_BEARER_CONTEXT_SETUP_REQ);
+  AssertFatal(assoc_id > 0, "illegal assoc_id %d\n", assoc_id);
+  MessageDef *msg_p = itti_alloc_new_message(TASK_CUCP_E1, 0, E1AP_BEARER_CONTEXT_SETUP_REQ);
+  msg_p->ittiMsgHeader.originInstance = assoc_id;
   e1ap_bearer_setup_req_t *bearer_req = &E1AP_BEARER_CONTEXT_SETUP_REQ(msg_p);
   memcpy(bearer_req, req, sizeof(e1ap_bearer_setup_req_t));
 
-  itti_send_msg_to_task (TASK_CUCP_E1, instance, msg_p);
+  itti_send_msg_to_task (TASK_CUCP_E1, 0, msg_p);
 }
 
-static void cucp_cuup_bearer_context_mod_e1ap(e1ap_bearer_setup_req_t *const req, instance_t instance)
+static void cucp_cuup_bearer_context_mod_e1ap(sctp_assoc_t assoc_id, e1ap_bearer_setup_req_t *const req)
 {
-  MessageDef *msg = itti_alloc_new_message(TASK_CUCP_E1, instance, E1AP_BEARER_CONTEXT_MODIFICATION_REQ);
+  AssertFatal(assoc_id > 0, "illegal assoc_id %d\n", assoc_id);
+  MessageDef *msg = itti_alloc_new_message(TASK_CUCP_E1, 0, E1AP_BEARER_CONTEXT_MODIFICATION_REQ);
+  msg->ittiMsgHeader.originInstance = assoc_id;
   e1ap_bearer_setup_req_t *req_msg = &E1AP_BEARER_CONTEXT_SETUP_REQ(msg);
   memcpy(req_msg, req, sizeof(*req));
-  itti_send_msg_to_task(TASK_CUCP_E1, instance, msg);
+  itti_send_msg_to_task(TASK_CUCP_E1, 0, msg);
 }
 
 void cucp_cuup_message_transfer_e1ap_init(gNB_RRC_INST *rrc) {

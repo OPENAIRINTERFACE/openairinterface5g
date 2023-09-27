@@ -43,7 +43,7 @@ void createE1inst(E1_t type, instance_t instance, e1ap_net_config_t *nc, e1ap_se
   e1ap_inst[instance] = calloc(1, sizeof(e1ap_upcp_inst_t));
   e1ap_inst[instance]->type = type;
   e1ap_inst[instance]->instance = instance;
-  e1ap_inst[instance]->assoc_id = -1;
+  e1ap_inst[instance]->cuup.assoc_id = -1;
   if (nc)
     memcpy(&e1ap_inst[instance]->net_config, nc, sizeof(*nc));
   if (req) {

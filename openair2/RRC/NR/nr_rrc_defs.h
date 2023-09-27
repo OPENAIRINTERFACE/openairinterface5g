@@ -373,6 +373,7 @@ typedef struct nr_rrc_du_container_t {
 
 typedef struct nr_rrc_cuup_container_t {
   e1ap_setup_req_t *setup_req;
+  sctp_assoc_t assoc_id;
 } nr_rrc_cuup_container_t;
 
 //---NR---(completely change)---------------------

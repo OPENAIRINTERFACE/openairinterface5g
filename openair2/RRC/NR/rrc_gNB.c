@@ -2074,7 +2074,8 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
 
     // send the F1 response message up to update F1-U tunnel info
     // it seems the rrc transaction id (xid) is not needed here
-    rrc->cucp_cuup.bearer_context_mod(&req, instance);
+    sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, UE);
+    rrc->cucp_cuup.bearer_context_mod(assoc_id, &req);
   }
 
   if (resp->du_to_cu_rrc_information != NULL && resp->du_to_cu_rrc_information->cellGroupConfig != NULL) {
@@ -2676,7 +2677,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case E1AP_SETUP_REQ:
-        rrc_gNB_process_e1_setup_req(&E1AP_SETUP_REQ(msg_p));
+        rrc_gNB_process_e1_setup_req(msg_p->ittiMsgHeader.originInstance, &E1AP_SETUP_REQ(msg_p));
         break;
 
       case E1AP_BEARER_CONTEXT_SETUP_RESP:
@@ -2914,7 +2915,8 @@ void rrc_gNB_trigger_new_bearer(int rnti)
   ue->xids[xid] = RRC_PDUSESSION_MODIFY;
   ue->pduSession[0].xid = xid; // hack: fake xid for ongoing PDU session
   LOG_W(RRC, "trigger new bearer %ld for UE %04x xid %d\n", drb->id, ue->rnti, xid);
-  rrc->cucp_cuup.bearer_context_setup(&bearer_req, 0);
+  sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, ue);
+  rrc->cucp_cuup.bearer_context_setup(assoc_id, &bearer_req);
 }
 
 void rrc_gNB_trigger_release_bearer(int rnti)
