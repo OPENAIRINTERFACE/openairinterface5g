@@ -104,7 +104,6 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     for (int I = 0; I < numPLMNs; I++) {
       e1Setup->plmns[I].mcc = *PLMNParamList.paramarray[I][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
       e1Setup->plmns[I].mnc = *PLMNParamList.paramarray[I][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-      e1Setup->plmns[I].mnc = *PLMNParamList.paramarray[I][GNB_MNC_DIGIT_LENGTH].u8ptr;
     }
     /* TODO add NSSAIs */
 

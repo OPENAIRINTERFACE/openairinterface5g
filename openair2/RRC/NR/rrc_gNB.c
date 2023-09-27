@@ -2325,8 +2325,8 @@ int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req, instance_t instance) {
   resp->transac_id = req->transac_id;
 
   for (int i=0; i < req->supported_plmns; i++) {
-    if (rrc->configuration.mcc[i] == req->plmns[i].mcc &&
-        rrc->configuration.mnc[i] == req->plmns[i].mnc) {
+    if (rrc->configuration.mcc[i] != req->plmns[i].mcc ||
+        rrc->configuration.mnc[i] != req->plmns[i].mnc) {
       LOG_E(NR_RRC, "PLMNs received from CUUP (mcc:%d, mnc:%d) did not match with PLMNs in RRC (mcc:%d, mnc:%d)\n",
             req->plmns[i].mcc, req->plmns[i].mnc, rrc->configuration.mcc[i], rrc->configuration.mnc[i]);
       return -1;
