@@ -132,22 +132,19 @@ extern "C" {
     int message_id = message->ittiMsgHeader.messageId;
     size_t s=t->message_queue.size();
 
-      // to reduce the number of logs, we give a message each increase of 10%
-    if (s > t->last_log_size * 1.1 && s > t->admin.queue_size) {
-      LOG_E(TMR, "Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s);
+    // to reduce the number of logs, we give a message each increase of 10%
+    if ((s > t->last_log_size * 1.25) && (s > t->admin.queue_size / 10)) {
+      if (s > t->admin.queue_size) {
+        LOG_E(TMR, "Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s);
+      } else {
+        LOG_I(ITTI,
+              "Queue for %s task size: %ld (last message %s)\n",
+              itti_get_task_name(destination_task_id),
+              s + 1,
+              ITTI_MSG_NAME(message));
+      }
       t->last_log_size = s;
-
-    } else if (s > t->last_log_size * 1.1 && s > t->admin.queue_size / 10) {
-      LOG_I(ITTI,
-            "Queue for %s task size: %ld (last message %s)\n",
-            itti_get_task_name(destination_task_id),
-            s + 1,
-            ITTI_MSG_NAME(message));
-
-      t->last_log_size = s;
-    }
-
-    if (t->last_log_size && t->last_log_size < t->admin.queue_size / 10) {
+    } else if (t->last_log_size && s < t->admin.queue_size / 10) {
       // Inform when the queue decreases
       LOG_I(ITTI, "Queue for %s task size is back under 10%% of max size\n", itti_get_task_name(destination_task_id));
       t->last_log_size = 0;
