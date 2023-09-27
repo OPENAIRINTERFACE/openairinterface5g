@@ -337,6 +337,7 @@ void openair_rrc_gNB_configuration(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *c
   rrc_gNB_CU_DU_init(rrc);
   uid_linear_allocator_init(&rrc->uid_allocator);
   RB_INIT(&rrc->rrc_ue_head);
+  RB_INIT(&rrc->cuups);
   rrc->configuration = *configuration;
    /// System Information INIT
   init_NR_SI(rrc);

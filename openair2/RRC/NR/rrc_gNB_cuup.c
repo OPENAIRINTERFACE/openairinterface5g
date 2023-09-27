@@ -23,6 +23,33 @@
 #include "nr_rrc_defs.h"
 #include "openair2/F1AP/f1ap_ids.h"
 
+static int cuup_compare(const nr_rrc_cuup_container_t *a, const nr_rrc_cuup_container_t *b)
+{
+  if (a->assoc_id > b->assoc_id)
+    return 1;
+  if (a->assoc_id == b->assoc_id)
+    return 0;
+  return -1; /* a->assoc_id < b->assoc_id */
+}
+
+/* Tree management functions */
+RB_GENERATE/*_STATIC*/(rrc_cuup_tree, nr_rrc_cuup_container_t, entries, cuup_compare);
+
+static const nr_rrc_cuup_container_t *select_cuup_round_robin(size_t n_t, const struct rrc_cuup_tree *t, const gNB_RRC_UE_t *ue)
+{
+  /* pick the CU-UP following a "round-robin" fashion: select CU-UP M = RRC UE
+   * ID % N with N number of CU-UPs */
+  int m = (ue->rrc_ue_id - 1) % n_t;
+  nr_rrc_cuup_container_t *cuup = NULL;
+  RB_FOREACH(cuup, rrc_cuup_tree, (struct rrc_cuup_tree *)&t) {
+    if (m == 0)
+      return cuup;
+    m--;
+  }
+  /* this should not happen: no CU-UP available? */
+  return NULL;
+}
+
 sctp_assoc_t get_existing_cuup_for_ue(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue)
 {
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue->rrc_ue_id);
@@ -45,14 +72,21 @@ sctp_assoc_t get_new_cuup_for_ue(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue
 
   /* it is zero -> no CUUP for this UE yet, get the (only) CU-UP that is
    * connected */
-  if (!rrc->cuup)
+  if (RB_EMPTY(&rrc->cuups)) {
+    LOG_W(RRC, "no CU-UPs connected: UE %d cannot have a DRB\n", ue->rrc_ue_id);
     return 0; /* no CUUP connected */
+  }
+
+  const nr_rrc_cuup_container_t *selected = select_cuup_round_robin(rrc->num_cuups, &rrc->cuups, ue);
+  if (selected == NULL)
+    selected = RB_ROOT(&rrc->cuups);
+  AssertFatal(selected != NULL, "logic error: could not select CU-UP\n");
 
   /* update the association for the UE so it will be picked up later */
-  ue_data.e1_assoc_id = rrc->cuup->assoc_id;
+  ue_data.e1_assoc_id = selected->assoc_id;
   cu_remove_f1_ue_data(ue->rrc_ue_id);
   cu_add_f1_ue_data(ue->rrc_ue_id, &ue_data);
-  LOG_I(RRC, "UE %d associating to CU-UP assoc_id %d\n", ue->rrc_ue_id, ue_data.e1_assoc_id);
+  LOG_I(RRC, "UE %d associating to CU-UP assoc_id %d out of %ld CU-UPs\n", ue->rrc_ue_id, ue_data.e1_assoc_id, rrc->num_cuups);
 
   return ue_data.e1_assoc_id;
 }
@@ -61,8 +95,21 @@ int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
 {
   AssertFatal(req->supported_plmns <= PLMN_LIST_MAX_SIZE, "Supported PLMNs is more than PLMN_LIST_MAX_SIZE\n");
   gNB_RRC_INST *rrc = RC.nrrrc[0];
-  AssertFatal(rrc->cuup == NULL, "cannot handle multiple CU-UPs\n");
 
+  nr_rrc_cuup_container_t *c = NULL;
+  RB_FOREACH(c, rrc_cuup_tree, &rrc->cuups) {
+    if (req->gNB_cu_up_id == c->setup_req->gNB_cu_up_id) {
+      LOG_E(NR_RRC,
+            "Connecting CU-UP ID %ld name %s (assoc_id %d) has same ID as existing CU-UP ID %ld name %s (assoc_id %d)\n",
+            req->gNB_cu_up_id,
+            req->gNB_cu_up_name,
+            assoc_id,
+            c->setup_req->gNB_cu_up_id,
+            c->setup_req->gNB_cu_up_name,
+            c->assoc_id);
+      return -1;
+    }
+  }
 
   for (int i = 0; i < req->supported_plmns; i++) {
     PLMN_ID_t *id = &req->plmn[i].id;
@@ -78,11 +125,13 @@ int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
   }
 
   LOG_I(RRC, "Accepting new CU-UP ID %ld name %s (assoc_id %d)\n", req->gNB_cu_up_id, req->gNB_cu_up_name, assoc_id);
-  rrc->cuup = malloc(sizeof(*rrc->cuup));
-  AssertFatal(rrc->cuup, "out of memory\n");
-  rrc->cuup->setup_req = malloc(sizeof(*rrc->cuup->setup_req));
-  *rrc->cuup->setup_req = *req;
-  rrc->cuup->assoc_id = assoc_id;
+  nr_rrc_cuup_container_t *cuup = malloc(sizeof(*cuup));
+  AssertFatal(cuup, "out of memory\n");
+  cuup->setup_req = malloc(sizeof(*cuup->setup_req));
+  *cuup->setup_req = *req;
+  cuup->assoc_id = assoc_id;
+  RB_INSERT(rrc_cuup_tree, &rrc->cuups, cuup);
+  rrc->num_cuups++;
 
   MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_GNB, 0, E1AP_SETUP_RESP);
   msg_p->ittiMsgHeader.originInstance = assoc_id;

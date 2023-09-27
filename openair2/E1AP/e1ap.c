@@ -1658,9 +1658,7 @@ void cucp_task_send_sctp_init_req(instance_t instance, char *my_addr) {
 
 void e1_task_handle_sctp_association_ind(E1_t type, instance_t instance, sctp_new_association_ind_t *sctp_new_ind)
 {
-  if (getCxtE1(instance))
-    LOG_W(E1AP, "CUCP incoming call, re-use older socket context, finish implementation required\n");
-  else
+  if (!getCxtE1(instance))
     createE1inst(type, instance, NULL, NULL);
   e1ap_upcp_inst_t *inst = getCxtE1(instance);
   inst->sockState = SCTP_STATE_ESTABLISHED;

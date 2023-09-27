@@ -372,6 +372,9 @@ typedef struct nr_rrc_du_container_t {
 } nr_rrc_du_container_t;
 
 typedef struct nr_rrc_cuup_container_t {
+  /* Tree-related data */
+  RB_ENTRY(nr_rrc_cuup_container_t) entries;
+
   e1ap_setup_req_t *setup_req;
   sctp_assoc_t assoc_id;
 } nr_rrc_cuup_container_t;
@@ -405,7 +408,8 @@ typedef struct gNB_RRC_INST_s {
   cucp_cuup_if_t cucp_cuup;
 
   nr_rrc_du_container_t *du;
-  nr_rrc_cuup_container_t *cuup;
+  RB_HEAD(rrc_cuup_tree, nr_rrc_cuup_container_t) cuups; // CU-UPs, indexed by assoc_id
+  size_t num_cuups;
 
 } gNB_RRC_INST;
 
