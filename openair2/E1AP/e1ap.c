@@ -91,7 +91,7 @@ int e1ap_handle_message(instance_t instance, sctp_assoc_t assoc_id, const uint8_
     ret=-1;
   } else {
     /* Calling the right handler */
-    LOG_I(E1AP, "Calling handler with instance %ld\n",instance);
+    LOG_D(E1AP, "Calling handler with instance %ld\n",instance);
     ret = (*e1ap_message_processing[procedureCode][pdu.present - 1])(getCxtE1(instance), &pdu);
   }
 
@@ -170,7 +170,7 @@ static void fill_SETUP_REQUEST(e1ap_setup_req_t *setup, E1AP_E1AP_PDU_t *pdu)
   ieC1->value.present              = E1AP_GNB_CU_UP_E1SetupRequestIEs__value_PR_TransactionID;
   setup->transac_id = E1AP_get_next_transaction_identifier();
   ieC1->value.choice.TransactionID = setup->transac_id;
-  LOG_I(E1AP, "Transaction ID of setup request %ld\n", setup->transac_id);
+  LOG_D(E1AP, "Transaction ID of setup request %ld\n", setup->transac_id);
   /* mandatory */
   /* c2. GNB_CU_ID (integer value) */
   asn1cSequenceAdd(e1SetupUP->protocolIEs.list, E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ieC2);
@@ -781,7 +781,7 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
   const E1AP_BearerContextSetupRequest_t *in = &pdu->choice.initiatingMessage->value.choice.BearerContextSetupRequest;
   E1AP_BearerContextSetupRequestIEs_t *ie;
 
-  LOG_I(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
+  LOG_D(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
 
   for (int i=0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
@@ -955,7 +955,7 @@ void extract_BEARER_CONTEXT_SETUP_RESPONSE(const E1AP_E1AP_PDU_t *pdu,
   const E1AP_BearerContextSetupResponse_t *in = &pdu->choice.successfulOutcome->value.choice.BearerContextSetupResponse;
   E1AP_BearerContextSetupResponseIEs_t *ie;
 
-  LOG_I(E1AP, "Bearer context setup response number of IEs %d\n", in->protocolIEs.list.count);
+  LOG_D(E1AP, "Bearer context setup response number of IEs %d\n", in->protocolIEs.list.count);
 
   for (int i=0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
@@ -1149,7 +1149,7 @@ void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu,
   const E1AP_BearerContextModificationRequest_t *in = &pdu->choice.initiatingMessage->value.choice.BearerContextModificationRequest;
   E1AP_BearerContextModificationRequestIEs_t *ie;
 
-  LOG_I(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
+  LOG_D(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
 
   for (int i=0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
@@ -1361,7 +1361,7 @@ void extract_BEARER_CONTEXT_RELEASE_COMMAND(const E1AP_E1AP_PDU_t *pdu,
   const E1AP_BearerContextReleaseCommand_t *in = &pdu->choice.initiatingMessage->value.choice.BearerContextReleaseCommand;
   E1AP_BearerContextReleaseCommandIEs_t *ie;
 
-  LOG_I(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
+  LOG_D(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
 
   for (int i=0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
@@ -1414,7 +1414,7 @@ void extract_BEARER_CONTEXT_RELEASE_COMPLETE(const E1AP_E1AP_PDU_t *pdu,
   const E1AP_BearerContextReleaseComplete_t *in = &pdu->choice.successfulOutcome->value.choice.BearerContextReleaseComplete;
   E1AP_BearerContextReleaseCompleteIEs_t *ie;
 
-  LOG_I(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
+  LOG_D(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
 
   for (int i=0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
@@ -1642,7 +1642,7 @@ void *E1AP_CUCP_task(void *arg) {
     itti_receive_msg(TASK_CUCP_E1, &msg);
     instance_t myInstance=ITTI_MSG_DESTINATION_INSTANCE(msg);
     const int msgType = ITTI_MSG_ID(msg);
-    LOG_I(E1AP, "CUCP received %s for instance %ld\n", messages_info[msgType].name, myInstance);
+    LOG_D(E1AP, "CUCP received %s for instance %ld\n", messages_info[msgType].name, myInstance);
 
     switch (ITTI_MSG_ID(msg)) {
       case SCTP_NEW_ASSOCIATION_IND:
@@ -1701,7 +1701,7 @@ void *E1AP_CUUP_task(void *arg) {
     itti_receive_msg(TASK_CUUP_E1, &msg);
     const instance_t myInstance = ITTI_MSG_DESTINATION_INSTANCE(msg);
     const int msgType = ITTI_MSG_ID(msg);
-    LOG_I(E1AP, "CUUP received %s for instance %ld\n", messages_info[msgType].name, myInstance);
+    LOG_D(E1AP, "CUUP received %s for instance %ld\n", messages_info[msgType].name, myInstance);
     switch (msgType) {
       case E1AP_SETUP_REQ: {
         e1ap_setup_req_t *msgSetup = &E1AP_SETUP_REQ(msg);

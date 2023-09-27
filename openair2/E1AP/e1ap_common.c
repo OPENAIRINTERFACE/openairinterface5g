@@ -222,7 +222,7 @@ int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu
   s->buffer = buffer;
   s->buffer_length = encoded;
   s->stream = stream;
-  LOG_I(E1AP, "%s: Sending ITTI message to SCTP Task\n", func);
+  LOG_D(E1AP, "%s: Sending ITTI message to SCTP Task\n", func);
   itti_send_msg_to_task(TASK_SCTP, 0 /*unused by callee*/, message);
 
   return encoded;
