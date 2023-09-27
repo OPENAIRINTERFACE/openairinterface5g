@@ -46,8 +46,10 @@ void createE1inst(E1_t type, instance_t instance, e1ap_net_config_t *nc, e1ap_se
   e1ap_inst[instance]->assoc_id = -1;
   if (nc)
     memcpy(&e1ap_inst[instance]->net_config, nc, sizeof(*nc));
-  if (req)
-    memcpy(&e1ap_inst[instance]->setupReq, req, sizeof(*req));
+  if (req) {
+    AssertFatal(type == UPtype, "E1 setup request only to be stored for CU-UP\n");
+    memcpy(&e1ap_inst[instance]->cuup.setupReq, req, sizeof(*req));
+  }
   e1ap_inst[instance]->gtpInstN3 = -1;
   e1ap_inst[instance]->gtpInstF1U = -1;
 }

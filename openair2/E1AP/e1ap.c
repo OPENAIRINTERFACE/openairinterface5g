@@ -332,7 +332,7 @@ int e1apCUUP_handle_SETUP_RESPONSE(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t
 
   /* transac_id */
   long transaction_id;
-  long old_transaction_id = inst->setupReq.transac_id;
+  long old_transaction_id = inst->cuup.setupReq.transac_id;
   F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupResponseIEs_t, ie, in,
                              E1AP_ProtocolIE_ID_id_TransactionID, true);
   transaction_id = ie->value.choice.TransactionID;
@@ -1558,7 +1558,7 @@ static void e1_task_handle_sctp_association_resp(E1_t type, instance_t instance,
     extern instance_t CUuniqInstance;
     CUuniqInstance = getCxtE1(instance)->gtpInstF1U;
     cuup_init_n3(instance);
-    e1apCUUP_send_SETUP_REQUEST(inst->assoc_id, &inst->setupReq);
+    e1apCUUP_send_SETUP_REQUEST(inst->assoc_id, &inst->cuup.setupReq);
   }
 }
 

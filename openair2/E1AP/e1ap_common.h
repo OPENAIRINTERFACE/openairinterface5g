@@ -33,9 +33,11 @@ typedef struct e1ap_upcp_inst_s {
   E1_t type;
   enum sctp_state_e sockState;
   sctp_assoc_t assoc_id;
+  struct {
+    e1ap_setup_req_t setupReq;
+  } cuup;
   instance_t gtpInstN3;
   instance_t gtpInstF1U;
-  e1ap_setup_req_t setupReq;
   e1ap_net_config_t net_config;
 } e1ap_upcp_inst_t;
 
