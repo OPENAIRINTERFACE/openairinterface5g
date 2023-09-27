@@ -194,18 +194,8 @@ static void nr_processULSegment(void *arg)
   ulsch_harq->d_to_be_cleared[r] = false;
 
   memset(ulsch_harq->c[r], 0, Kr_bytes);
-
-  if (ulsch_harq->C == 1) {
-    if (A > 3824)
-      p_decoderParms->crc_type = CRC24_A;
-    else
-      p_decoderParms->crc_type = CRC16;
-    p_decoderParms->block_length = ulsch_harq->B;
-  } else {
-    p_decoderParms->crc_type = CRC24_B;
-    p_decoderParms->block_length = (ulsch_harq->B + 24 * ulsch_harq->C) / ulsch_harq->C;
-  }
-
+  p_decoderParms->crc_type = crcType(ulsch_harq->C, A);
+  p_decoderParms->block_length = lenWithCrc(ulsch_harq->C, A);
   // start_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 
   // set first 2*Z_c bits to zeros
@@ -253,26 +243,12 @@ int decode_offload(PHY_VARS_gNB *phy_vars_gNB,
   int8_t llrProcBuf[22 * 384] __attribute__((aligned(32)));
   int16_t z_ol[68 * 384] __attribute__((aligned(32)));
   int8_t l_ol[68 * 384] __attribute__((aligned(32)));
-  int crc_type;
-  int length_dec;
   uint8_t Qm = pusch_pdu->qam_mod_order;
   uint8_t n_layers = pusch_pdu->nrOfLayers;
   const int Kr = harq_process->K;
   const int Kr_bytes = Kr >> 3;
   const int kc = decParams->BG == 2 ? 52 : 68;
   const uint32_t A = (harq_process->TBS) << 3;
-
-  if (harq_process->C == 1) {
-    if (A > 3824)
-      crc_type = CRC24_A;
-    else
-      crc_type = CRC16;
-
-    length_dec = harq_process->B;
-  } else {
-    crc_type = CRC24_B;
-    length_dec = (harq_process->B + 24 * harq_process->C) / harq_process->C;
-  }
   int decodeIterations = 2;
   int dtx_det = 0;
   int r_offset = 0, offset = 0;
@@ -316,23 +292,15 @@ int decode_offload(PHY_VARS_gNB *phy_vars_gNB,
         harq_process->c[r][m] = (uint8_t)llrProcBuf[m];
       }
 
-      if (check_crc((uint8_t *)llrProcBuf, length_dec, crc_type)) {
+      if (check_crc((uint8_t *)llrProcBuf, lenWithCrc(harq_process->C, A), crcType(harq_process->C, A))) {
         PRINT_CRC_CHECK(LOG_I(PHY, "Segment %d CRC OK\n", r));
         decodeIterations = 2;
       } else {
         PRINT_CRC_CHECK(LOG_I(PHY, "segment %d CRC NOK\n", r));
         decodeIterations = ulsch->max_ldpc_iterations + 1;
       }
-      //}
 
       r_offset += E;
-
-      /*for (int k=0;k<8;k++)
-  {
-  printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
-  printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
-  }
-      */
     } else {
       dtx_det = 0;
       decodeIterations = ulsch->max_ldpc_iterations + 1;
@@ -417,11 +385,6 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   t_nrLDPC_dec_params decParams = {0};
   decParams.BG = pusch_pdu->maintenance_parms_v3.ldpcBaseGraph;
   const uint32_t A = (harq_process->TBS) << 3;
-  if (A > 3824)
-    harq_process->B = A + 24;
-  else
-    harq_process->B = A + 16;
-
   NR_gNB_PHY_STATS_t *stats = get_phy_stats(phy_vars_gNB, ulsch->rnti);
   if (stats) {
     stats->frame = frame;
@@ -452,10 +415,10 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
         harq_process->round,
         harq_process->harq_to_be_cleared);
 
-  // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (B, C, K, Z, F)
+  // [hna] Perform nr_segmenation with input and output set to NULL to calculate only (C, K, Z, F)
   nr_segmentation(NULL,
                   NULL,
-                  harq_process->B,
+                  lenWithCrc(1, A), // size in case of 1 segment
                   &harq_process->C,
                   &harq_process->K,
                   &harq_process->Z, // [hna] Z is Zc
@@ -464,7 +427,7 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER * n_layers; // number of segments to be allocated
   if (harq_process->C > a_segments) {
-    LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d\n",harq_process->C,harq_process->B);
+    LOG_E(PHY, "nr_segmentation.c: too many segments %d, A %d\n", harq_process->C, A);
     return(-1);
   }
   if (nb_rb != 273) {

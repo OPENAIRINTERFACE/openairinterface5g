@@ -32,6 +32,7 @@
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/nr/nr_common.h"
+#include "openair1/PHY/defs_nr_common.h"
 #include <limits.h>
 #include <executables/softmodem-common.h>
 
@@ -4080,7 +4081,7 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
 uint8_t get_BG(uint32_t A, uint16_t R) {
 
   float code_rate = (float) R / 10240.0f;
-  if ((A <=292) || ((A<=3824) && (code_rate <= 0.6667)) || code_rate <= 0.25)
+  if ((A <= 292) || ((A <= NR_MAX_PDSCH_TBS) && (code_rate <= 0.6667)) || code_rate <= 0.25)
     return 2;
   else
     return 1;

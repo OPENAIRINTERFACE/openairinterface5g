@@ -75,8 +75,6 @@ typedef struct {
   nfapi_nr_dl_tti_pdsch_pdu pdsch_pdu;
   /// pointer to pdu from MAC interface (this is "a" in 36.212)
   uint8_t *pdu;
-  /// The payload + CRC size in bits, "B" from 36-212
-  uint32_t B;
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
@@ -199,8 +197,6 @@ typedef struct {
   uint32_t TBS;
   /// Pointer to the payload (38.212 V15.4.0 section 5.1)
   uint8_t *b;
-  /// The payload + CRC (24 bits) in bits (38.212 V15.4.0 section 5.1)
-  uint32_t B;
   /// Pointers to code blocks after code block segmentation and CRC attachment (38.212 V15.4.0 section 5.2.2)
   uint8_t **c;
   /// Number of bits in each code block (38.212 V15.4.0 section 5.2.2)
@@ -227,6 +223,18 @@ typedef struct {
   int llrLen;
   //////////////////////////////////////////////////////////////
 } NR_UL_gNB_HARQ_t;
+static inline int lenWithCrc(int nbSeg, int len)
+{
+  if (nbSeg > 1)
+    return (len + 24 + 24 * nbSeg) / nbSeg;
+  return len + (len > NR_MAX_PDSCH_TBS ? 24 : 16);
+}
+static inline int crcType(int nbSeg, int len)
+{
+  if (nbSeg > 1)
+    return CRC24_B;
+  return len > NR_MAX_PDSCH_TBS ? CRC24_A : CRC16;
+}
 
 typedef struct {
   //! estimated received spatial signal power (linear)

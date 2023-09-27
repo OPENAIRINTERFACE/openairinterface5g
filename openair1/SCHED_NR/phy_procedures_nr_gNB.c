@@ -266,12 +266,7 @@ static void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
     // CRC check made by the LDPC for early termination, so, no need to perform CRC check twice for a single code block
     bool crc_valid = true;
     if (ulsch_harq->C > 1) {
-      // Check ULSCH transport block CRC
-      int crc_type = CRC16;
-      if (rdata->A > 3824) {
-        crc_type = CRC24_A;
-      }
-      crc_valid = check_crc(ulsch_harq->b, ulsch_harq->B, crc_type);
+      crc_valid = check_crc(ulsch_harq->b, lenWithCrc(1, rdata->A), crcType(1, rdata->A));
     }
 
     if (crc_valid && !check_abort(&ulsch_harq->abort_decode) && !gNB->pusch_vars[rdata->ulsch_id].DTX) {
