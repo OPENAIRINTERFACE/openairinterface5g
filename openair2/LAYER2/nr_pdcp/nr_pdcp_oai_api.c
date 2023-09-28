@@ -1081,7 +1081,7 @@ void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, long t_Reordering)
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-void nr_release_srb(ue_id_t ue_id, int srb_id)
+void nr_pdcp_release_srb(ue_id_t ue_id, int srb_id)
 {
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
@@ -1094,7 +1094,7 @@ void nr_release_srb(ue_id_t ue_id, int srb_id)
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-void nr_release_drb(ue_id_t ue_id, int drb_id)
+void nr_pdcp_release_drb(ue_id_t ue_id, int drb_id)
 {
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
