@@ -15,7 +15,7 @@ Ref :
   DLSCH encoding : 137.0
   L1 Rx processing : 345.0
   PUSCH inner-receiver : 210.0
-  PUSCH decoding : 210.0
+  PUSCH decoding : 2200.0
   Schedule Response : 48.0
   DL & UL scheduling timing : 13.0
   UL Indication : 60.0
