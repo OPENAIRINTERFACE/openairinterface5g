@@ -32,6 +32,7 @@
 
 #define E1AP_MAX_NUM_TRANSAC_IDS 4
 #define E1AP_MAX_NUM_PLMNS 4
+#define E1AP_MAX_NUM_SLICES 1024
 #define E1AP_MAX_NUM_CELL_GROUPS 4
 #define E1AP_MAX_NUM_QOS_FLOWS 4
 #define E1AP_MAX_NUM_NGRAN_DRB 4
@@ -76,7 +77,11 @@ typedef struct e1ap_setup_req_s {
   char *                gNB_cu_up_name;
   uint64_t              transac_id;
   int                   supported_plmns;
-  PLMN_ID_t             plmns[E1AP_MAX_NUM_PLMNS];
+  struct {
+    PLMN_ID_t id;
+    int supported_slices;
+    e1ap_nssai_t *slice;
+  } plmn[E1AP_MAX_NUM_PLMNS];
 } e1ap_setup_req_t;
 
 typedef struct e1ap_register_req_t {

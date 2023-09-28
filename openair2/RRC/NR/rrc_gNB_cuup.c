@@ -30,7 +30,7 @@ int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req)
 
 
   for (int i = 0; i < req->supported_plmns; i++) {
-    PLMN_ID_t *id = &req->plmns[i];
+    PLMN_ID_t *id = &req->plmn[i].id;
     if (rrc->configuration.mcc[i] != id->mcc || rrc->configuration.mnc[i] != id->mnc) {
       LOG_E(NR_RRC,
             "PLMNs received from CUUP (mcc:%d, mnc:%d) did not match with PLMNs in RRC (mcc:%d, mnc:%d)\n",

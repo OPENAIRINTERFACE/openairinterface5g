@@ -61,5 +61,7 @@
 #include <E1AP_T-ReorderingTimer.h>
 #include <E1AP_SDAP-Configuration.h>
 #include <E1AP_PDCP-Configuration.h>
+#include <E1AP_Slice-Support-List.h>
+#include <E1AP_Slice-Support-Item.h>
 
 #endif

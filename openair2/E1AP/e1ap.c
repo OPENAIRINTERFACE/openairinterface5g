@@ -198,7 +198,24 @@ static void fill_SETUP_REQUEST(e1ap_setup_req_t *setup, E1AP_E1AP_PDU_t *pdu)
   for (int i=0; i < numSupportedPLMNs; i++) {
     asn1cSequenceAdd(ieC5->value.choice.SupportedPLMNs_List.list, E1AP_SupportedPLMNs_Item_t, supportedPLMN);
     /* 5.1 PLMN Identity */
-    MCC_MNC_TO_PLMNID(setup->plmns[i].mcc, setup->plmns[i].mnc, setup->plmns[i].mnc_digit_length, &supportedPLMN->pLMN_Identity);
+    PLMN_ID_t *id = &setup->plmn[i].id;
+    MCC_MNC_TO_PLMNID(id->mcc, id->mnc, id->mnc_digit_length, &supportedPLMN->pLMN_Identity);
+
+    int n = setup->plmn[i].supported_slices;
+    if (setup->plmn[i].slice != NULL && n > 0) {
+      supportedPLMN->slice_Support_List = calloc(1, sizeof(*supportedPLMN->slice_Support_List));
+      AssertFatal(supportedPLMN->slice_Support_List != NULL, "out of memory\n");
+      for (int s = 0; s < n; ++s) {
+        asn1cSequenceAdd(supportedPLMN->slice_Support_List->list, E1AP_Slice_Support_Item_t, slice);
+        e1ap_nssai_t *nssai = &setup->plmn[i].slice[s];
+        INT8_TO_OCTET_STRING(nssai->sst, &slice->sNSSAI.sST);
+        if (nssai->sd != 0xffffff) {
+          slice->sNSSAI.sD = malloc(sizeof(*slice->sNSSAI.sD));
+          AssertFatal(slice->sNSSAI.sD != NULL, "out of memory\n");
+          INT24_TO_OCTET_STRING(nssai->sd, slice->sNSSAI.sD);
+        }
+      }
+    }
   }
 }
 
@@ -294,11 +311,26 @@ void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
     E1AP_SupportedPLMNs_Item_t *supported_plmn_item = (E1AP_SupportedPLMNs_Item_t *)(ie->value.choice.SupportedPLMNs_List.list.array[i]);
 
     /* PLMN Identity */
-    PLMNID_TO_MCC_MNC(&supported_plmn_item->pLMN_Identity,
-                    req->plmns[i].mcc,
-                    req->plmns[i].mnc,
-                    req->plmns[i].mnc_digit_length);
-    LOG_D(E1AP, "MCC: %d\nMNC: %d\n", req->plmns[i].mcc, req->plmns[i].mnc);
+    PLMN_ID_t *id = &req->plmn[i].id;
+    PLMNID_TO_MCC_MNC(&supported_plmn_item->pLMN_Identity, id->mcc, id->mnc, id->mnc_digit_length);
+    LOG_D(E1AP, "MCC %d MNC %d\n", id->mcc, id->mnc);
+
+    /* NSSAI */
+    if (supported_plmn_item->slice_Support_List) {
+      int n = supported_plmn_item->slice_Support_List->list.count;
+      req->plmn[i].supported_slices = n;
+      req->plmn[i].slice = calloc(n, sizeof(*req->plmn[i].slice));
+      AssertFatal(req->plmn[i].slice != NULL, "out of memory\n");
+      for (int s = 0; s < n; ++s) {
+        e1ap_nssai_t *slice = &req->plmn[i].slice[s];
+        const E1AP_SNSSAI_t *es = &supported_plmn_item->slice_Support_List->list.array[s]->sNSSAI;
+        OCTET_STRING_TO_INT8(&es->sST, slice->sst);
+        slice->sd = 0xffffff;
+        if (es->sD != NULL)
+          OCTET_STRING_TO_INT24(es->sD, slice->sd);
+        LOG_D(E1AP, "SST %d SD %06x\n", slice->sst, slice->sd);
+      }
+    }
   }
 }
 

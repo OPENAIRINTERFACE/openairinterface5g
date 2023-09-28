@@ -102,10 +102,24 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     e1Setup->supported_plmns = numPLMNs;
 
     for (int I = 0; I < numPLMNs; I++) {
-      e1Setup->plmns[I].mcc = *PLMNParamList.paramarray[I][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-      e1Setup->plmns[I].mnc = *PLMNParamList.paramarray[I][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+      e1Setup->plmn[I].id.mcc = *PLMNParamList.paramarray[I][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+      e1Setup->plmn[I].id.mnc = *PLMNParamList.paramarray[I][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+      e1Setup->plmn[I].id.mnc_digit_length = *PLMNParamList.paramarray[I][GNB_MNC_DIGIT_LENGTH].uptr;
+
+      char snssaistr[MAX_OPTNAME_SIZE*2 + 8];
+      sprintf(snssaistr, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0, GNB_CONFIG_STRING_PLMN_LIST, I);
+      paramlist_def_t SNSSAIParamList = {GNB_CONFIG_STRING_SNSSAI_LIST, NULL, 0};
+      paramdef_t SNSSAIParams[] = GNBSNSSAIPARAMS_DESC;
+      config_getlist(&SNSSAIParamList, SNSSAIParams, sizeof(SNSSAIParams)/sizeof(paramdef_t), snssaistr);
+      e1Setup->plmn[I].supported_slices = SNSSAIParamList.numelt;
+      e1Setup->plmn[I].slice = calloc(SNSSAIParamList.numelt, sizeof(*e1Setup->plmn[I].slice));
+      AssertFatal(e1Setup->plmn[I].slice != NULL, "out of memory\n");
+      for (int s = 0; s < SNSSAIParamList.numelt; ++s) {
+        e1ap_nssai_t *slice = &e1Setup->plmn[I].slice[s];
+        slice->sst = *SNSSAIParamList.paramarray[s][GNB_SLICE_SERVICE_TYPE_IDX].uptr;
+        slice->sd = *SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr;
+      }
     }
-    /* TODO add NSSAIs */
 
     e1ap_net_config_t *e1ap_nc = &E1AP_REGISTER_REQ(msgConfig).net_config;
     e1ap_nc->remotePortF1U = *(GNBParamList.paramarray[0][GNB_REMOTE_S_PORTD_IDX].uptr);
