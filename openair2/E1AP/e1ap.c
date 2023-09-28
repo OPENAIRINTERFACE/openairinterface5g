@@ -268,8 +268,6 @@ void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
                            e1ap_setup_req_t *req) {
   E1AP_GNB_CU_UP_E1SetupRequestIEs_t *ie;
   E1AP_GNB_CU_UP_E1SetupRequest_t *in = &pdu->choice.initiatingMessage->value.choice.GNB_CU_UP_E1SetupRequest;
-  /* assoc_id */
-  /* req->assoc_id = assoc_id; */
 
   /* transac_id */
   F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
