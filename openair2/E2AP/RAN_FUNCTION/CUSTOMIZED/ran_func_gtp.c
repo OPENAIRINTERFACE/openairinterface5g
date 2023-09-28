@@ -1,6 +1,13 @@
 #include "ran_func_gtp.h"
-#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_gtp.h"
+
 #include <assert.h>
+
+#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_gtp.h"
+#include "common/ran_context.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair2/E2AP/flexric/src/util/time_now_us.h"
+#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
+
 
 static
 const int mod_id = 0;

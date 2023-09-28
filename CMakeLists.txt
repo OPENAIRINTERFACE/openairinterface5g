@@ -289,6 +289,15 @@ add_definitions(-DHAVE_NETINET_IN_H)
 set(E2_AGENT "OFF" CACHE STRING "O-RAN-compliant E2 Agent")
 set_property(CACHE E2_AGENT PROPERTY STRINGS "ON" "OFF")
 
+set(E2AP_VERSION "E2AP_V2" CACHE STRING "E2AP version")
+set_property(CACHE E2AP_VERSION PROPERTY STRINGS "E2AP_V1" "E2AP_V2" "E2AP_V3")
+message(STATUS "Selected E2AP_VERSION: ${E2AP_VERSION}")
+
+set(KPM_VERSION "KPM_V2" CACHE STRING "The KPM SM version to use")
+set_property(CACHE KPM_VERSION PROPERTY STRINGS "KPM_V2" "KPM_V3")
+message(STATUS "Selected KPM Version: ${KPM_VERSION}")
+
+
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
 ##################################################
@@ -1409,9 +1418,11 @@ add_library(L2
   )
 target_link_libraries(L2 PRIVATE x2ap s1ap lte_rrc m2ap)
 target_link_libraries(L2 PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
+
 if(E2_AGENT)
   target_link_libraries(L2 PUBLIC e2_agent e2_ran_func)
   target_compile_definitions(L2 PRIVATE E2_AGENT)
+  target_compile_definitions(L2 PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
 endif()
 
 
@@ -1443,6 +1454,7 @@ target_link_libraries(e1_pdcp_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 target_link_libraries(L2_NR PRIVATE f1ap x2ap s1ap ngap nr_rrc e1ap nr_rlc)
 if(E2_AGENT)
   target_link_libraries(L2_NR PUBLIC e2_agent e2_ran_func)
+  target_compile_definitions(L2_NR PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
   target_compile_definitions(L2_NR PRIVATE E2_AGENT)
 endif()
 
@@ -1965,6 +1977,7 @@ target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 if(E2_AGENT)
   target_compile_definitions(lte-softmodem PRIVATE E2_AGENT)
+  target_compile_definitions(lte-softmodem PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
 endif()
 
 add_executable(oairu
@@ -2061,6 +2074,11 @@ target_link_libraries(nr-softmodem PRIVATE
 target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt sctp)
 target_link_libraries(nr-softmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
+target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
+if(E2_AGENT)
+  target_compile_definitions(nr-softmodem PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
+endif()
+
 
 add_dependencies(nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
 

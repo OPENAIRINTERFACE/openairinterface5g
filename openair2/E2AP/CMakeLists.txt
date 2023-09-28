@@ -29,6 +29,9 @@ else()
   message(FATAL_ERROR "Unknown building type. Either choose a static or a dynamic library")
 endif()
 
+#######
+## E2AP encoding and versioning 
+#######
 
 set(E2AP_ENCODING "ASN" CACHE STRING "The E2AP encoding to use")
 set_property(CACHE E2AP_ENCODING PROPERTY STRINGS "ASN" "FLATBUFFERS")
@@ -75,6 +78,35 @@ message(STATUS "Selected SLICE SM_ENCODING: ${SM_ENCODING_SLICE}")
 set(SM_ENCODING_GTP "PLAIN" CACHE STRING "The GTP SM encoding to use")
 set_property(CACHE SM_ENCODING_GTP PROPERTY STRINGS "PLAIN")
 message(STATUS "Selected GTP SM_ENCODING: ${SM_ENCODING_GTP}")
+
+
+if(E2AP_VERSION STREQUAL "E2AP_V1")
+  add_library(e2ap_ran_func_obj OBJECT 
+              flexric/src/lib/e2ap/v1_01/e2ap_types/common/e2ap_ran_function.c )
+  add_library(e2ap_plmn_obj OBJECT 
+              flexric/src/lib/e2ap/v1_01/e2ap_types/common/e2ap_plmn.c )
+  add_library(e2ap_global_node_id_obj OBJECT 
+              flexric/src/lib/e2ap/v1_01/e2ap_types/common/e2ap_global_node_id.c )
+elseif(E2AP_VERSION STREQUAL "E2AP_V2")
+  add_library(e2ap_ran_func_obj OBJECT 
+              flexric/src/lib/e2ap/v2_03/e2ap_types/common/e2ap_ran_function.c )
+  add_library(e2ap_plmn_obj OBJECT 
+              flexric/src/lib/e2ap/v2_03/e2ap_types/common/e2ap_plmn.c )
+  add_library(e2ap_global_node_id_obj OBJECT 
+              flexric/src/lib/e2ap/v2_03/e2ap_types/common/e2ap_global_node_id.c )
+elseif(E2AP_VERSION STREQUAL "E2AP_V3")
+  add_library(e2ap_ran_func_obj OBJECT 
+              flexric/src/lib/e2ap/v3_01/e2ap_types/common/e2ap_ran_function.c )
+  add_library(e2ap_plmn_obj OBJECT 
+              flexric/src/lib/e2ap/v3_01/e2ap_types/common/e2ap_plmn.c )
+  add_library(e2ap_global_node_id_obj OBJECT 
+              flexric/src/lib/e2ap/v3_01/e2ap_types/common/e2ap_global_node_id.c )
+else()
+  message(FATAL_ERROR "E2AP Unknown version selected")
+endif()
+
+
+
 
 ########
 ### Flatbuffer 
