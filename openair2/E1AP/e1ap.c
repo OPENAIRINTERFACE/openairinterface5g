@@ -562,7 +562,12 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_bearer_setup_req_t *const bear
     ieC6_1->pDU_Session_ID = i->sessionId;
     ieC6_1->pDU_Session_Type = i->sessionType;
 
-    INT8_TO_OCTET_STRING(i->sst, &ieC6_1->sNSSAI.sST);
+    INT8_TO_OCTET_STRING(i->nssai.sst, &ieC6_1->sNSSAI.sST);
+    if (i->nssai.sd != 0xffffff) {
+      ieC6_1->sNSSAI.sD = malloc(sizeof(*ieC6_1->sNSSAI.sD));
+      AssertFatal(ieC6_1->sNSSAI.sD != NULL, "out of memory\n");
+      INT24_TO_OCTET_STRING(i->nssai.sd, ieC6_1->sNSSAI.sD);
+    }
 
     ieC6_1->securityIndication.integrityProtectionIndication = i->integrityProtectionIndication;
     ieC6_1->securityIndication.confidentialityProtectionIndication = i->confidentialityProtectionIndication;
@@ -841,7 +846,10 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
           pdu_session->sessionId = pdu2Setup->pDU_Session_ID;
           pdu_session->sessionType = pdu2Setup->pDU_Session_Type;
 
-          OCTET_STRING_TO_INT8(&pdu2Setup->sNSSAI.sST, pdu_session->sst);
+          OCTET_STRING_TO_INT8(&pdu2Setup->sNSSAI.sST, pdu_session->nssai.sst);
+          pdu_session->nssai.sd = 0xffffff;
+          if (pdu2Setup->sNSSAI.sD != NULL)
+            OCTET_STRING_TO_INT24(pdu2Setup->sNSSAI.sD, pdu_session->nssai.sd);
 
           pdu_session->integrityProtectionIndication = pdu2Setup->securityIndication.integrityProtectionIndication;
           pdu_session->confidentialityProtectionIndication = pdu2Setup->securityIndication.confidentialityProtectionIndication;

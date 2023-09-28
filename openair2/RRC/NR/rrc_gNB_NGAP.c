@@ -775,7 +775,11 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     pdu_session_to_setup_t *pdu = bearer_req.pduSession + bearer_req.numPDUSessions;
     bearer_req.numPDUSessions++;
     pdu->sessionId = session->pdusession_id;
-    pdu->sst = msg->allowed_nssai[i].sST;
+    ngap_allowed_NSSAI_t *nssai = &msg->allowed_nssai[i];
+    pdu->nssai.sst = nssai->sST;
+    pdu->nssai.sd = 0xffffff;
+    if (nssai->sD_flag)
+      pdu->nssai.sd = nssai->sD[0] << 16 | nssai->sD[1] << 8 | nssai->sD[0];
     pdu->integrityProtectionIndication = rrc->security.do_drb_integrity ? E1AP_IntegrityProtectionIndication_required : E1AP_IntegrityProtectionIndication_not_needed;
 
     pdu->confidentialityProtectionIndication = rrc->security.do_drb_ciphering ? E1AP_ConfidentialityProtectionIndication_required : E1AP_ConfidentialityProtectionIndication_not_needed;
