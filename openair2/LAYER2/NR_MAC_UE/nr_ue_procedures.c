@@ -1560,7 +1560,7 @@ int get_deltatf(uint16_t nb_of_prbs,
 {
   int DELTA_TF;
   int O_CRC = compute_pucch_crc_size(O_UCI);
-  int N_symb = nb_symbols_excluding_dmrs[N_symb_PUCCH-4][add_dmrs_flag][freq_hop_flag];
+  int N_symb = N_symb_PUCCH < 4 ? N_symb_PUCCH : nb_symbols_excluding_dmrs[N_symb_PUCCH - 4][add_dmrs_flag][freq_hop_flag];
   float N_RE = nb_of_prbs * N_sc_ctrl_RB * N_symb;
   float K1 = 6;
   if (O_UCI + O_CRC < 12)
