@@ -757,6 +757,8 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
   UE->amf_ue_ngap_id = msg->amf_ue_ngap_id;
   e1ap_bearer_setup_req_t bearer_req = {0};
 
+
+  e1ap_nssai_t cuup_nssai = {0};
   for (int i = 0; i < msg->nb_pdusessions_tosetup; i++) {
     rrc_pdu_session_param_t *pduSession = find_pduSession(UE, msg->pdusession_setup_params[i].pdusession_id, true);
     pdusession_t *session = &pduSession->param;
@@ -780,6 +782,8 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     pdu->nssai.sd = 0xffffff;
     if (nssai->sD_flag)
       pdu->nssai.sd = nssai->sD[0] << 16 | nssai->sD[1] << 8 | nssai->sD[0];
+    if (cuup_nssai.sst == 0)
+      cuup_nssai = pdu->nssai; /* for CU-UP selection below */
     pdu->integrityProtectionIndication = rrc->security.do_drb_integrity ? E1AP_IntegrityProtectionIndication_required : E1AP_IntegrityProtectionIndication_not_needed;
 
     pdu->confidentialityProtectionIndication = rrc->security.do_drb_ciphering ? E1AP_ConfidentialityProtectionIndication_required : E1AP_ConfidentialityProtectionIndication_not_needed;
@@ -827,7 +831,12 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
   }
   int xid = rrc_gNB_get_next_transaction_identifier(instance);
   UE->xids[xid] = RRC_PDUSESSION_ESTABLISH;
-  sctp_assoc_t assoc_id = get_new_cuup_for_ue(rrc, UE);
+  /* Limitation: we assume one fixed CU-UP per UE. We base the selection on
+   * NSSAI, but the UE might have multiple PDU sessions with differing slices,
+   * in which we might need to select different CU-UPs. In this case, we would
+   * actually need to group the E1 bearer context setup for the different
+   * CU-UPs, and send them to the different CU-UPs. */
+  sctp_assoc_t assoc_id = get_new_cuup_for_ue(rrc, UE, cuup_nssai.sst, cuup_nssai.sd);
   rrc->cucp_cuup.bearer_context_setup(assoc_id, &bearer_req);
   return;
 }
