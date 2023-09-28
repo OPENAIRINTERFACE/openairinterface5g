@@ -236,7 +236,6 @@ int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
   uint16_t M;
   uint8_t nushift;
   uint32_t unscrambling_mask;
-  uint64_t a_reversed=0;
   LOG_D(PHY, "PBCH generation started\n");
   ///Payload generation
   NR_gNB_PBCH m_pbch;
@@ -298,8 +297,7 @@ int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
 #endif
 
   // Encoder reversal
-  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-    a_reversed |= (((uint64_t)pbch->pbch_a_prime>>i)&1)<<(31-i);
+  uint64_t a_reversed = reverse_bits((uint64_t)pbch->pbch_a_prime, NR_POLAR_PBCH_PAYLOAD_BITS);
 
   /// CRC, coding and rate matching
   polar_encoder_fast (&a_reversed, (void*)pbch->pbch_e, 0, 0,
