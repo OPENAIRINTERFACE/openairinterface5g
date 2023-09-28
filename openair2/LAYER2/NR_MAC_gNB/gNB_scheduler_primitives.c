@@ -2750,6 +2750,14 @@ static void nr_mac_apply_cellgroup(gNB_MAC_INST *mac, NR_UE_info_t *UE, frame_t 
 
     if (LOG_DEBUGFLAG(DEBUG_ASN1))
       xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *)UE->CellGroup);
+
+    /* remove the rlc_BearerToReleaseList, we don't need it anymore */
+    if (UE->CellGroup->rlc_BearerToReleaseList != NULL) {
+      struct NR_CellGroupConfig__rlc_BearerToReleaseList *l = UE->CellGroup->rlc_BearerToReleaseList;
+      asn_sequence_del(&l->list, l->list.count, /* free */1);
+      free(UE->CellGroup->rlc_BearerToReleaseList);
+      UE->CellGroup->rlc_BearerToReleaseList = NULL;
+    }
   }
 
   NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
