@@ -100,7 +100,7 @@ static nr_rlc_entity_t *get_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_i
   }
 }
 
-void nr_release_rlc_entity(int rnti, logical_chan_id_t channel_id)
+void nr_rlc_release_entity(int rnti, logical_chan_id_t channel_id)
 {
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
