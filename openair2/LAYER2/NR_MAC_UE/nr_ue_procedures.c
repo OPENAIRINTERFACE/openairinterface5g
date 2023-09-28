@@ -188,17 +188,11 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
 
   for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
     LOG_D(NR_MAC, "Applying default logical channel config for LCGID %d\n", i);
-    mac->scheduling_info.Bj[i] = -1;
-    mac->scheduling_info.bucket_size[i] = -1;
-
-    if (i < UL_SCH_LCID_DTCH) { // initialize all control channels lcgid to 0
-      mac->scheduling_info.LCGID[i] = 0;
-    } else { // initialize all the data channels lcgid to 1
-      mac->scheduling_info.LCGID[i] = 1;
-    }
-
-    mac->scheduling_info.LCID_status[i] = LCID_EMPTY;
-    mac->scheduling_info.LCID_buffer_remain[i] = 0;
+    mac->scheduling_info.lc_sched_info[i].Bj = -1;
+    mac->scheduling_info.lc_sched_info[i].bucket_size = -1;
+    mac->scheduling_info.lc_sched_info[i].LCGID = 0; // defaults to 0 irrespective of SRB or DRB
+    mac->scheduling_info.lc_sched_info[i].LCID_status = LCID_EMPTY;
+    mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
     for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
       mac->first_ul_tx[k] = 1;
   }
