@@ -287,6 +287,11 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
 
   NR_SCHED_LOCK(&mac->sched_lock);
   NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->gNB_DU_ue_id);
+  if (!UE) {
+    LOG_E(NR_MAC, "could not find UE with RNTI %04x\n", req->gNB_DU_ue_id);
+    NR_SCHED_UNLOCK(&mac->sched_lock);
+    return;
+  }
 
   NR_CellGroupConfig_t *new_CellGroup = clone_CellGroupConfig(UE->CellGroup);
 
