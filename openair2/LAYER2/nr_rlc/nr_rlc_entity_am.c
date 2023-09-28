@@ -1638,7 +1638,10 @@ static int generate_tx_pdu(nr_rlc_entity_am_t *entity, char *buffer, int size)
   entity->common.bstatus.tx_size -= pdu_size;
 
   /* assign SN to SDU */
-  sdu->sdu->sn = entity->tx_next;
+  if (sdu->sdu->sn == -1) {
+    sdu->sdu->sn = entity->tx_next;
+    entity->tx_next = (entity->tx_next + 1) % entity->sn_modulus;
+  }
 
   /* segment if necessary */
   if (pdu_size > size) {
@@ -1655,10 +1658,6 @@ static int generate_tx_pdu(nr_rlc_entity_am_t *entity, char *buffer, int size)
     entity->common.bstatus.tx_size += compute_pdu_header_size(entity, next_sdu)
                                       + next_sdu->size;
   }
-
-  /* update tx_next if the SDU segment is the last */
-  if (sdu->is_last)
-    entity->tx_next = (entity->tx_next + 1) % entity->sn_modulus;
 
   /* put SDU/SDU segment in the wait list */
   /* speedup: check end of wait list, probably the new sdu comes after */
