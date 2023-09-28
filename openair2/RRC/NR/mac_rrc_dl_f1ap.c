@@ -94,6 +94,13 @@ static void ue_context_modification_request_f1ap(const f1ap_ue_context_modif_req
     AssertFatal(f1ap_msg->srbs_to_be_setup != NULL, "out of memory\n");
     memcpy(f1ap_msg->srbs_to_be_setup, req->srbs_to_be_setup, n * sizeof(*f1ap_msg->srbs_to_be_setup));
   }
+  if (req->drbs_to_be_released_length > 0) {
+    int n = req->drbs_to_be_released_length;
+    f1ap_msg->drbs_to_be_released_length = n;
+    f1ap_msg->drbs_to_be_released = calloc(n, sizeof(*f1ap_msg->drbs_to_be_released));
+    AssertFatal(f1ap_msg->drbs_to_be_released != NULL, "out of memory\n");
+    memcpy(f1ap_msg->drbs_to_be_released, req->drbs_to_be_released, n * sizeof(*f1ap_msg->drbs_to_be_released));
+  }
   if (req->rrc_container_length > 0) {
     f1ap_msg->rrc_container = calloc(req->rrc_container_length, sizeof(*f1ap_msg->rrc_container));
     AssertFatal(f1ap_msg->rrc_container != NULL, "out of memory\n");

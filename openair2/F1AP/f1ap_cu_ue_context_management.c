@@ -1531,14 +1531,14 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
   }
 
   /* optional */
-  if(0){
+  if (f1ap_ue_context_modification_req->drbs_to_be_released_length > 0) {
     /* c15. DRBs_ToBeReleased_List */
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie15);
     ie15->id                             = F1AP_ProtocolIE_ID_id_DRBs_ToBeReleased_List;
     ie15->criticality                    = F1AP_Criticality_reject;
     ie15->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_DRBs_ToBeReleased_List;
 
-    for (int i=0; i<1;  i++) {
+    for (int i = 0; i < f1ap_ue_context_modification_req->drbs_to_be_released_length; i++) {
       //
       asn1cSequenceAdd(ie15->value.choice.DRBs_ToBeReleased_List.list,
                      F1AP_DRBs_ToBeReleased_ItemIEs_t, drbs_toBeReleased_item_ies);
@@ -1549,7 +1549,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
       F1AP_DRBs_ToBeReleased_Item_t *drbs_toBeReleased_item=
           &drbs_toBeReleased_item_ies->value.choice.DRBs_ToBeReleased_Item;
       /* dRBID */
-      drbs_toBeReleased_item->dRBID = 30L;
+      drbs_toBeReleased_item->dRBID = f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id;
     }
   }
 
