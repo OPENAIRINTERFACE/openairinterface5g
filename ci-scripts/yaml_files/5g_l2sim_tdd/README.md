@@ -24,8 +24,19 @@ In the `SMF` section, provide your own DNS IP address:
 ```yaml
             DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
 ```
+gNB section:
 
-In the `gNB` section, provide your docker-host primary IP address and interface name: in our case `172.21.16.128` and `eno1`.
+All the parameter values will be taken from the mounted config file:
+
+```yaml
+oai-gnb:
+        [...]
+        volumes:
+            - ../../conf_files/gnb.sa.band78.106prb.l2sim.conf:/opt/oai-gnb/etc/gnb.conf
+```
+
+You need to provide your docker-host primary IP address and interface name: in our case `172.21.16.128` and `eno1`.
+The following refers to the contents of the previously mentioned .conf file
 
 ```yaml
             GNB_NGA_IF_NAME: eno1
@@ -34,10 +45,29 @@ In the `gNB` section, provide your docker-host primary IP address and interface 
             GNB_NGU_IP_ADDRESS: 172.21.16.128
 ```
 
-Same thing in the `nr-ue` section:
+For the UE, all the parameter values will be taken from the mounted config
+file, in the section `oai-nr-ue0`:
 
 ```yaml
-            NR_UE_NFAPI_IF_NAME: eno1
+  oai-nr-ue0:
+        [...]
+        volumes:
+            - ../../conf_files/nrue.band78.106prb.l2sim.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+            - ../../../openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results:/opt/oai-nr-ue/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results
+```
+
+In this section, you need to set the proper values for `local_n_if_name` and `remote_n_address`
+where the UE configuration (mounted to `/opt/oai-nr-ue/etc/nr-ue.conf`) reads:
+
+```libconfig
+MACRLCs = (
+        {
+        num_cc = 1;
+        tr_n_preference = "nfapi";
+        local_n_if_name  = "eno1";
+        remote_n_address = "127.0.0.1"; //Proxy IP
+        local_n_address  = "127.0.0.1";
+        ...
 ```
 
 This tutorial is a first draft. This nFAPI feature and the proxy are still under development.
