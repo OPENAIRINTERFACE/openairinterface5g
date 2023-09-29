@@ -510,7 +510,7 @@ static  int udpServerSocket(openAddr_s addr) {
 
   freeaddrinfo(servinfo); // all done with this structure
 
-  if (strlen(addr.destinationHost)>1) {
+  if (false) {
     struct addrinfo hints;
     memset(&hints,0,sizeof(hints));
     hints.ai_family=AF_UNSPEC;
