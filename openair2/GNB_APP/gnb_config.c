@@ -997,11 +997,13 @@ static NR_ServingCellConfigCommon_t *get_scc_config(int minRXTXTIME)
 
 static NR_ServingCellConfig_t *get_scd_config(void)
 {
-  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
   NR_ServingCellConfig_t *scd = calloc(1, sizeof(*scd));
   prepare_scd(scd);
   paramdef_t SCDsParams[] = SCDPARAMS_DESC(scd);
   paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
+
+  char aprefix[MAX_OPTNAME_SIZE * 2 + 8];
+  snprintf(aprefix, sizeof(aprefix), "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
   config_getlist(&SCDsParamList, NULL, 0, aprefix);
   if (SCDsParamList.numelt > 0) {
     sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0, GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, 0);
