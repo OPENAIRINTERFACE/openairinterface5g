@@ -393,8 +393,8 @@ void set_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl,
                           const NR_ServingCellConfigCommon_t *scc);
 void free_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl);
 
-const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
-const int get_ul_tda(gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int frame, int slot);
+int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
+int get_ul_tda(gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int frame, int slot);
 
 int get_cce_index(const gNB_MAC_INST *nrmac,
                   const int CC_id,

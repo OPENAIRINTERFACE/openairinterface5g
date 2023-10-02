@@ -75,4 +75,4 @@ void nr_rlc_activate_srb0(int rnti, struct gNB_MAC_INST_s *mac, void *rawUE,
                                      sdu_size_t             sdu_len,
                                      void                  *rawUE));
 
-const bool nr_rlc_get_statistics(int rnti, int srb_flag, int rb_id, nr_rlc_statistics_t *out);
+bool nr_rlc_get_statistics(int rnti, int srb_flag, int rb_id, nr_rlc_statistics_t *out);

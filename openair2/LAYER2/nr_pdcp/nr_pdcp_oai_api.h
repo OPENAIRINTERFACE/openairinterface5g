@@ -123,6 +123,6 @@ void nr_pdcp_tick(int frame, int subframe);
 
 nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager();
 
-const bool nr_pdcp_get_statistics(ue_id_t ue_id, int srb_flag, int rb_id, nr_pdcp_statistics_t *out);
+bool nr_pdcp_get_statistics(ue_id_t ue_id, int srb_flag, int rb_id, nr_pdcp_statistics_t *out);
 
 #endif /* NR_PDCP_OAI_API_H */

@@ -1274,7 +1274,7 @@ nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager() {
 }
 
 /* returns false in case of error, true if everything ok */
-const bool nr_pdcp_get_statistics(ue_id_t ue_id, int srb_flag, int rb_id, nr_pdcp_statistics_t *out)
+bool nr_pdcp_get_statistics(ue_id_t ue_id, int srb_flag, int rb_id, nr_pdcp_statistics_t *out)
 {
   nr_pdcp_ue_t     *ue;
   nr_pdcp_entity_t *rb;
