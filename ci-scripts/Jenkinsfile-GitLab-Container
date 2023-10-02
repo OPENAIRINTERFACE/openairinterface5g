@@ -31,6 +31,9 @@ def do5Gtest = false
 //
 def gitCommitAuthorEmailAddr
 
+// list of failing stages
+def failingStages = ''
+
 pipeline {
   agent {
     label nodeExecutor
@@ -136,6 +139,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-Ubuntu18-Image-Builder'
               }
             }
           }
@@ -155,6 +159,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-RHEL8-Cluster-Image-Builder'
               }
             }
           }
@@ -174,6 +179,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-cppcheck'
               }
             }
           }
@@ -199,6 +205,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-PhySim-Cluster'
               }
             }
           }
@@ -219,6 +226,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-RF-Sim-Test-4G'
               }
             }
           }
@@ -239,6 +247,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-RF-Sim-Test-5G'
               }
             }
           }
@@ -259,6 +268,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-L2-Sim-Test-4G'
               }
             }
           }
@@ -279,6 +289,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-L2-Sim-Test-5G'
               }
             }
           }
@@ -299,6 +310,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-LTE-FDD-LTEBOX-Container'
               }
             }
           }
@@ -320,6 +332,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-LTE-FDD-OAIUE-OAICN4G-Container'
               }
             }
           }
@@ -340,6 +353,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-LTE-TDD-LTEBOX-Container'
               }
             }
           }
@@ -360,6 +374,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-NSA-B200-Module-LTEBOX-Container'
               }
             }
           }
@@ -380,6 +395,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-SA-B200-Module-SABOX-Container'
               }
             }
           }
@@ -400,6 +416,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-gNB-N300-Timing-Phytest-LDPC'
               }
             }
           }
@@ -420,6 +437,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-LTE-TDD-2x2-Container'
               }
             }
           }
@@ -440,6 +458,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-SA-AW2S-CN5G'
               }
             }
           }
@@ -460,6 +479,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-Interop-F1'
               }
             }
           }
@@ -480,6 +500,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * OAI-CN5G-COTS-UE-Test'
               }
             }
           }
@@ -500,6 +521,7 @@ pipeline {
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += '\n * RAN-SA-OAIUE-CN5G'
               }
             }
           }
@@ -518,6 +540,7 @@ pipeline {
           script {
             echo "Push to Docker-Hub KO"
             currentBuild.result = 'FAILURE'
+            failingStages += '\n * RAN-DockerHub-Push'
           }
         }
       }
@@ -541,7 +564,8 @@ pipeline {
       script {
         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
         if ("MERGE".equals(env.gitlabActionType)) {
-          addGitLabMRComment comment: message
+          def fullMessage = message + '\n\nList of failing test stages:' + failingStages
+          addGitLabMRComment comment: fullMessage
           def message2 = message + " -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
           sendSocialMediaMessage('ci-enb', 'danger', message2)
         } else {
