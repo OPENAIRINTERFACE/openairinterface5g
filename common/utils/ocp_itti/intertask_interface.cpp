@@ -49,6 +49,7 @@ extern "C" {
     int nb_fd_epoll=0;
     int epoll_fd=-1;
     int sem_fd=-1;
+    size_t last_log_size = 0;
   } task_list_t;
 
   int timer_expired(int fd);
@@ -131,11 +132,23 @@ extern "C" {
     int message_id = message->ittiMsgHeader.messageId;
     size_t s=t->message_queue.size();
 
-    if ( s > t->admin.queue_size )
-      LOG_E(TMR,"Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s );
-
-    if ( s > 50 )
-      LOG_I(ITTI,"Queue for %s task size: %ld (last message %s)\n",itti_get_task_name(destination_task_id), s+1,ITTI_MSG_NAME(message));
+    // to reduce the number of logs, we give a message each increase of 25%
+    if ((s > t->last_log_size * 1.25) && (s > t->admin.queue_size / 10)) {
+      if (s > t->admin.queue_size) {
+        LOG_E(TMR, "Queue for %s task contains %ld messages\n", itti_get_task_name(destination_task_id), s);
+      } else {
+        LOG_I(ITTI,
+              "Queue for %s task size: %ld (last message %s)\n",
+              itti_get_task_name(destination_task_id),
+              s + 1,
+              ITTI_MSG_NAME(message));
+      }
+      t->last_log_size = s;
+    } else if (t->last_log_size && s < t->admin.queue_size / 10) {
+      // Inform when the queue decreases
+      LOG_I(ITTI, "Queue for %s task size is back under 10%% of max size\n", itti_get_task_name(destination_task_id));
+      t->last_log_size = 0;
+    }
 
     t->message_queue.insert(t->message_queue.begin(), message);
     eventfd_t sem_counter = 1;
