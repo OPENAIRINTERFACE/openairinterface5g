@@ -66,32 +66,14 @@ pipeline {
         ansiColor('xterm')
         lock(extra: lockResources)
     }
-    // the following parameter options are commented out so it shows the ones
-    // that you SHALL have to run the job.
-    // You can use them as template
-    /*
-    parameters {
-        //node-test parameters
-        string(name: 'pythonExecutor', defaultValue: 'nodea', description: 'Node where the pipeline - python scripts will be executed')
-        string(name: 'pythonTestXmlFile', defaultValue: 'enb_usrpB210_band7_50PRB.xml', description: 'Location of the Test XML to be run')
-        string(name: 'pipelineTestStageName', defaultValue: 'Test COTS-UE - OAI eNB - LTEBOX EPC', description: 'Naming of the Test Stage')
-        booleanParam(name: 'pipelineZipsConsoleLog', defaultValue: 'True', description: 'If true, the pipeline script retrieves the job console log, zips it and archives it as artifact')
-        string(name: 'lockResources', defaultValue: 'CI-Bench-1-Phones', description: 'Lockeable Resource to prevent multiple jobs to run simultaneously with the same resource')
-
-        //eNB parameters
-        string(name: 'eNB_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of eNB')
-        credentials(name: 'eNB_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for eNB')
-        string(name: 'eNB_SourceCodePath', defaultValue: '/tmp/CI-enb', description: 'Full path of eNB source code')
-
-        //EPC parameters
-        string(name: 'EPC_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of EPC')
-        string(name: 'EPC_Type', defaultValue: 'ltebox', description: 'EPC type: OAI or ltebox')
-        credentials(name: 'EPC_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for EPC')
-        string(name: 'EPC_SourceCodePath', defaultValue: '/tmp/CI-enb', description: 'Full path of EPC source code')
-    }
-    */
-
     stages {
+        stage("Build Init") {
+            steps {
+                // update the build name and description
+                buildName "${params.eNB_MR}"
+                buildDescription "Branch : ${params.eNB_Branch}"
+            }
+        }
         stage ("Verify Parameters") {
             steps {
                 script {
