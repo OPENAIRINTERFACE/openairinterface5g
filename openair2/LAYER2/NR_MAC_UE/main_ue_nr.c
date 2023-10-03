@@ -88,7 +88,6 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
       nr_rrc_mac_config_req_scg(0, 0, rrc_inst->scell_group_config);
       int rc = rlc_module_init(0);
       AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
-      /* convention: RNTI for SRB0 is 0, as it changes all the time */
       nr_rlc_activate_srb0(nr_ue_mac_inst->crnti, NULL, send_srb0_rrc);
       if (IS_SOFTMODEM_NOS1){
         // get default noS1 configuration
