@@ -759,7 +759,7 @@ void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
     for (int i = 0; i < cellGroupConfig->rlc_BearerToReleaseList->list.count; i++) {
       NR_LogicalChannelIdentity_t *lcid = cellGroupConfig->rlc_BearerToReleaseList->list.array[i];
       AssertFatal(lcid, "LogicalChannelIdentity shouldn't be null here\n");
-      nr_release_rlc_entity(rnti, *lcid);
+      nr_rlc_release_entity(rnti, *lcid);
     }
   }
 
@@ -1460,7 +1460,7 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
 
    NR_UE_RRC_INST_t *ue_rrc = &NR_UE_rrc_inst[ctxt_pP->module_id];
    if (radioBearerConfig->srb3_ToRelease)
-     nr_release_srb(ctxt_pP->rntiMaybeUEid, 3);
+     nr_pdcp_release_srb(ctxt_pP->rntiMaybeUEid, 3);
 
    uint8_t kRRCenc[16] = {0};
    uint8_t kRRCint[16] = {0};
@@ -1514,7 +1514,7 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
      for (int cnt = 0; cnt < radioBearerConfig->drb_ToReleaseList->list.count; cnt++) {
        NR_DRB_Identity_t *DRB_id = radioBearerConfig->drb_ToReleaseList->list.array[cnt];
        if (DRB_id)
-         nr_release_drb(ctxt_pP->rntiMaybeUEid, *DRB_id);
+         nr_pdcp_release_drb(ctxt_pP->rntiMaybeUEid, *DRB_id);
      }
    }
 

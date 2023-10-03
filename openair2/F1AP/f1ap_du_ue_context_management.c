@@ -881,6 +881,24 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
       }
     }
   }
+
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextModificationRequestIEs_t, ieDrb, container,
+                   F1AP_ProtocolIE_ID_id_DRBs_ToBeReleased_List, false);
+  if (ieDrb != NULL) {
+    f1ap_ue_context_modification_req->drbs_to_be_released_length = ieDrb->value.choice.DRBs_ToBeReleased_List.list.count;
+    f1ap_ue_context_modification_req->drbs_to_be_released =
+        calloc(f1ap_ue_context_modification_req->drbs_to_be_released_length, sizeof(f1ap_drb_to_be_released_t));
+    AssertFatal(f1ap_ue_context_modification_req->drbs_to_be_released,
+                "could not allocate memory for f1ap_ue_context_released_req->drbs_to_be_released\n");
+    for (i = 0; i < f1ap_ue_context_modification_req->drbs_to_be_released_length; ++i) {
+      F1AP_DRBs_ToBeReleased_ItemIEs_t *tbrel = (F1AP_DRBs_ToBeReleased_ItemIEs_t *)ieDrb->value.choice.DRBs_ToBeReleased_List.list.array[i];
+      DevAssert(tbrel->id == F1AP_ProtocolIE_ID_id_DRBs_ToBeReleased_Item);
+      DevAssert(tbrel->value.present == F1AP_DRBs_ToBeReleased_ItemIEs__value_PR_DRBs_ToBeReleased_Item);
+      f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id = tbrel->value.choice.DRBs_ToBeReleased_Item.dRBID;
+      newGtpuDeleteOneTunnel(0, f1ap_ue_context_modification_req->gNB_DU_ue_id, f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id);
+    }
+  }
+
   /* RRC Reconfiguration Complete indicator */
   F1AP_UEContextModificationRequestIEs_t *ieReconf;
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextModificationRequestIEs_t, ieReconf, container,

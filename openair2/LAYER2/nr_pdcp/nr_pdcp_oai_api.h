@@ -68,8 +68,8 @@ void nr_pdcp_reestablishment(ue_id_t ue_id);
 
 void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering);
 void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, long t_Reordering);
-void nr_release_srb(ue_id_t ue_id, int srb_id);
-void nr_release_drb(ue_id_t ue_id, int drb_id);
+void nr_pdcp_release_srb(ue_id_t ue_id, int srb_id);
+void nr_pdcp_release_drb(ue_id_t ue_id, int drb_id);
 
 void add_srb(int is_gnb,
              ue_id_t rntiMaybeUEid,
