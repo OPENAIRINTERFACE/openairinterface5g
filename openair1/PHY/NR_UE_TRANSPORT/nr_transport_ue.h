@@ -53,8 +53,6 @@ typedef struct {
   SCH_status_t status;
   /// Last TPC command
   uint8_t TPC;
-  /// The payload + CRC size in bits, "B" from 36-212
-  uint32_t B;
   /// Length of ACK information (bits)
   uint8_t O_ACK;
   /// Index of current HARQ round for this ULSCH
@@ -117,8 +115,6 @@ typedef struct {
   uint8_t Ndi;
   /// DLSCH status flag indicating
   SCH_status_t status;
-  /// The payload + CRC size in bits
-  uint32_t B;
   /// Pointers to transport block segments
   uint8_t **c;
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)

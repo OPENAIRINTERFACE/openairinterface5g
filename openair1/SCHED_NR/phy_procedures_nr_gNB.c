@@ -266,12 +266,7 @@ static void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
     // CRC check made by the LDPC for early termination, so, no need to perform CRC check twice for a single code block
     bool crc_valid = true;
     if (ulsch_harq->C > 1) {
-      // Check ULSCH transport block CRC
-      int crc_type = CRC16;
-      if (rdata->A > 3824) {
-        crc_type = CRC24_A;
-      }
-      crc_valid = check_crc(ulsch_harq->b, ulsch_harq->B, crc_type);
+      crc_valid = check_crc(ulsch_harq->b, lenWithCrc(1, rdata->A), crcType(1, rdata->A));
     }
 
     if (crc_valid && !check_abort(&ulsch_harq->abort_decode) && !gNB->pusch_vars[rdata->ulsch_id].DTX) {
@@ -941,7 +936,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX, 0);
     }
   }
-  if (totalDecode > 0 && gNB->ldpc_offload_flag == 0) {
     while (totalDecode > 0) {
       notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
       if (req == NULL)
@@ -950,7 +944,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
       delNotifiedFIFO_elt(req);
       totalDecode--;
     }
-  }
   stop_meas(&gNB->ulsch_decoding_stats);
   for (int i = 0; i < gNB->max_nb_srs; i++) {
     NR_gNB_SRS_t *srs = &gNB->srs[i];

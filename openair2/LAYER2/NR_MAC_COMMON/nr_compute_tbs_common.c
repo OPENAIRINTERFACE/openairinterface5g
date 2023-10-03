@@ -26,6 +26,7 @@
 #define INDEX_MAX_TBS_TABLE (93)
 
 #include "common/utils/nr/nr_common.h"
+#include "openair1/PHY/defs_nr_common.h"
 #include <math.h>
 
 //Table 5.1.2.2-2
@@ -64,7 +65,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
   uint32_t nr_tbs=0;
   uint32_t Np_info, C, n;
 
-  if (Ninfo <=3824) {
+  if (Ninfo <= NR_MAX_PDSCH_TBS) {
     n = max(3, floor(log2(Ninfo)) - 6);
       Np_info = max(24, (Ninfo>>n)<<n);
       for (int i=0; i<INDEX_MAX_TBS_TABLE; i++) {
@@ -123,7 +124,7 @@ uint32_t nr_compute_tbslbrm(uint16_t table,
   // Intermediate number of information bits
   Ninfo = (nb_re * R * Qm * Nl)>>10;
 
-  if (Ninfo <=3824) {
+  if (Ninfo <= NR_MAX_PDSCH_TBS) {
     n = max(3, floor(log2(Ninfo)) - 6);
     Np_info = max(24, (Ninfo>>n)<<n);
     for (int i=0; i<INDEX_MAX_TBS_TABLE; i++) {
@@ -132,8 +133,7 @@ uint32_t nr_compute_tbslbrm(uint16_t table,
         break;
       }
     }
-  }
-  else {
+  } else {
     n = log2(Ninfo-24)-5;
     Np_info = max(3840, (ROUNDIDIV((Ninfo-24),(1<<n)))<<n);
 

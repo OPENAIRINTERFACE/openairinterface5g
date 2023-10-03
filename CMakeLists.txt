@@ -1145,6 +1145,7 @@ add_library(PHY_NR_COMMON ${PHY_NR_SRC_COMMON})
 add_library(PHY_NR ${PHY_NR_SRC})
 
 add_library(PHY_NR_UE ${PHY_NR_UE_SRC})
+target_link_libraries(PHY_NR_UE PRIVATE asn1_nr_rrc_hdrs)
 
 add_library(PHY_RU ${PHY_SRC_RU})
 target_link_libraries(PHY_RU PRIVATE asn1_lte_rrc_hdrs)
