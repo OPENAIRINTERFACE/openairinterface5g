@@ -28,6 +28,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "openair1/PHY/defs_RU.h"
 #include "openair1/PHY/CODING/nrLDPC_extern.h"
@@ -525,6 +526,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   init_scrambling_luts();
   init_pucch2_luts();
 
+  nr_init_fde(); // Init array for frequency equalization of transform precoding of PUSCH
+
   load_nrLDPClib(NULL);
 
   if (gNB->ldpc_offload_flag)
@@ -683,7 +686,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   int n_buf = Prx*max_ul_mimo_layers;
 
   int nb_re_pusch = N_RB_UL * NR_NB_SC_PER_RB;
-  int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
+  int nb_re_pusch2 = (nb_re_pusch + 7) & ~7;
 
   gNB->pusch_vars = (NR_gNB_PUSCH *)malloc16_clear(gNB->max_nb_pusch * sizeof(NR_gNB_PUSCH));
   for (int ULSCH_id = 0; ULSCH_id < gNB->max_nb_pusch; ULSCH_id++) {

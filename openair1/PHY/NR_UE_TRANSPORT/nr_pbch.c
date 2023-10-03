@@ -493,12 +493,8 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
   }
   //  printf("polar decoder output 0x%08x\n",pbch_a_prime);
   // Decoder reversal
-  uint32_t a_reversed=0;
+  pbch_a_prime = (uint32_t)reverse_bits(pbch_a_prime, NR_POLAR_PBCH_PAYLOAD_BITS);
 
-  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-    a_reversed |= (((uint64_t)pbch_a_prime>>i)&1)<<(31-i);
-
-  pbch_a_prime = a_reversed;
   //payload un-scrambling
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = ((pbch_a_prime>>24)&1) ^ (((pbch_a_prime>>6)&1)<<1);

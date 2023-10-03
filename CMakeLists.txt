@@ -1040,6 +1040,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/dmrs_nr.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/ptrs_nr.c
   ${OPENAIR1_DIR}/PHY/NR_ESTIMATION/nr_ul_channel_estimation.c
+  ${OPENAIR1_DIR}/PHY/NR_ESTIMATION/nr_freq_equalization.c
   ${OPENAIR1_DIR}/PHY/NR_ESTIMATION/nr_measurements_gNB.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
@@ -1144,6 +1145,7 @@ add_library(PHY_NR_COMMON ${PHY_NR_SRC_COMMON})
 add_library(PHY_NR ${PHY_NR_SRC})
 
 add_library(PHY_NR_UE ${PHY_NR_UE_SRC})
+target_link_libraries(PHY_NR_UE PRIVATE asn1_nr_rrc_hdrs)
 
 add_library(PHY_RU ${PHY_SRC_RU})
 target_link_libraries(PHY_RU PRIVATE asn1_lte_rrc_hdrs)

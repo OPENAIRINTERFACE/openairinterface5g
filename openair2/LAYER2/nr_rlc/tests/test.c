@@ -426,8 +426,8 @@ int test_main(void)
     }
   }
 
-  gnb->delete(gnb);
-  ue->delete(ue);
+  gnb->delete_entity(gnb);
+  ue->delete_entity(ue);
 
   free(sdu);
   free(pdu);

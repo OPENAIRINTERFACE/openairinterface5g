@@ -297,7 +297,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
 
   int max_bytes = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*rel15->nrOfLayers*1056;
-  if (A > 3824) {
+  int B;
+  if (A > NR_MAX_PDSCH_TBS) {
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,A)>>8;
     a[A>>3] = ((uint8_t *)&crc)[2];
@@ -305,7 +306,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     a[2+(A>>3)] = ((uint8_t *)&crc)[0];
     //printf("CRC %x (A %d)\n",crc,A);
     //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
-    harq->B = A+24;
+    B = A + 24;
     //    harq->b = a;
     AssertFatal((A / 8) + 4 <= max_bytes,
                 "A %d is too big (A/8+4 = %d > %d)\n",
@@ -320,7 +321,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     a[1+(A>>3)] = ((uint8_t *)&crc)[0];
     //printf("CRC %x (A %d)\n",crc,A);
     //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
-    harq->B = A+16;
+    B = A + 16;
     //    harq->b = a;
     AssertFatal((A / 8) + 3 <= max_bytes,
                 "A %d is too big (A/8+3 = %d > %d)\n",
@@ -333,11 +334,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.BG = rel15->maintenance_parms_v3.ldpcBaseGraph;
 
   start_meas(dlsch_segmentation_stats);
-  impp.Kb = nr_segmentation(harq->b, harq->c, harq->B, &impp.n_segments, &impp.K, impp.Zc, &impp.F, impp.BG);
+  impp.Kb = nr_segmentation(harq->b, harq->c, B, &impp.n_segments, &impp.K, impp.Zc, &impp.F, impp.BG);
   stop_meas(dlsch_segmentation_stats);
 
   if (impp.n_segments>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*rel15->nrOfLayers) {
-    LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d\n",impp.n_segments,harq->B);
+    LOG_E(PHY, "nr_segmentation.c: too many segments %d, B %d\n", impp.n_segments, B);
     return(-1);
   }
 

@@ -77,6 +77,9 @@ uint8_t unpackarray(uint8_t **ppReadPackedMsg,
                     uint8_t *end,
                     unpack_array_elem_fn fn);
 
+uint32_t pack_dci_payload(uint8_t payload[], uint16_t payloadSizeBits, uint8_t **out, uint8_t *end);
+uint32_t unpack_dci_payload(uint8_t payload[], uint16_t payloadSizeBits, uint8_t **in, uint8_t *end);
+
 uint8_t pack_tl(nfapi_tl_t *tl, uint8_t **ppWritePackedMsg, uint8_t *end);
 uint8_t unpack_tl(uint8_t **ppReadPackedMsg, nfapi_tl_t *tl, uint8_t *end);
 

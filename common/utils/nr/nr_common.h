@@ -90,6 +90,8 @@ static inline int get_num_dmrs(uint16_t dmrs_mask ) {
   return(num_dmrs);
 }
 
+uint64_t reverse_bits(uint64_t in, int n_bits);
+
 int get_first_ul_slot(int nrofDownlinkSlots, int nrofDownlinkSymbols, int nrofUplinkSymbols);
 int cce_to_reg_interleaving(const int R, int k, int n_shift, const int C, int L, const int N_regs);
 int get_SLIV(uint8_t S, uint8_t L);

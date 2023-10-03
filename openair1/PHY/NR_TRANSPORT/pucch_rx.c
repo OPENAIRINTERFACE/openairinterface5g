@@ -1693,11 +1693,15 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     // run polar decoder on llrs
     decoderState = polar_decoder_int16((int16_t *)llrs, decodedPayload, 0, NR_POLAR_UCI_PUCCH_MESSAGE_TYPE, nb_bit, pucch_pdu->prb_size);
 
-    LOG_D(PHY,"UCI decoderState %d, payload[0] %llu\n",decoderState,(unsigned long long)decodedPayload[0]);
+    // Decoder reversal
+    decodedPayload[0] = reverse_bits(decodedPayload[0], nb_bit);
+
     if (decoderState>0) decoderState=1;
     corr_dB = dB_fixed64(corr);
     LOG_D(PHY,"metric %d dB\n",corr_dB);
   }
+
+  LOG_D(PHY, "UCI decoderState %d, payload[0] %llu\n", decoderState, (unsigned long long)decodedPayload[0]);
 
   // estimate CQI for MAC (from antenna port 0 only)
   // TODO this computation is wrong -> to be ignored at MAC for now
@@ -1761,7 +1765,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     }
     bit_left = pucch_pdu->bit_len_csi_part1-((csi_part1_bytes-1)<<3);
     uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & ((1<<bit_left)-1);
-    decodedPayload[0] = pucch_pdu->bit_len_csi_part1 < 64 ? decodedPayload[0] >> pucch_pdu->bit_len_csi_part1 : 0;
+    decodedPayload[0] = pucch_pdu->bit_len_csi_part1 < 64 ? decodedPayload[0] >> bit_left : 0;
   }
   
   if (pucch_pdu->bit_len_csi_part2>0) {

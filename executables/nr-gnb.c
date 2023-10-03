@@ -475,10 +475,12 @@ void init_gNB_Tpool(int inst) {
   PHY_VARS_gNB *gNB;
   gNB = RC.gNB[inst];
   gNB_L1_proc_t *proc = &gNB->proc;
-
+  // PUSCH symbols per thread need to be calculated by how many threads we have
+  gNB->num_pusch_symbols_per_thread = 1;
   // ULSCH decoding threadpool
   initTpool(get_softmodem_params()->threadPoolConfig, &gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
   // ULSCH decoder result FIFO
+  initNotifiedFIFO(&gNB->respPuschSymb);
   initNotifiedFIFO(&gNB->respDecode);
 
   // L1 RX result FIFO 

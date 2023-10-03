@@ -2471,7 +2471,6 @@ static void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_fr
     if (is_nr_prach_slot) {
       AssertFatal(NULL != prach_occasion_info_p,"PRACH Occasion Info not returned in a valid NR Prach Slot\n");
 
-      init_RA(module_idP, &ra->prach_resources, setup, rach_ConfigGeneric, ra->rach_ConfigDedicated);
       nr_get_RA_window(mac);
 
       uint16_t format = prach_occasion_info_p->format;

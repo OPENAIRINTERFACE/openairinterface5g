@@ -456,7 +456,6 @@ int32_t rate_matching_lte(uint32_t N_coded,
 
 unsigned int crcbit (unsigned char * inputptr, int octetlen, unsigned int poly);
 
-int16_t reverseBits(int32_t ,int32_t);
 void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
 
 int32_t nr_segmentation(unsigned char *input_buffer,

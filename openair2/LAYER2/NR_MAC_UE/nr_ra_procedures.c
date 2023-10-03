@@ -71,6 +71,7 @@ void init_RA(module_id_t mod_id,
   ra->first_Msg3           = 1;
   ra->starting_preamble_nb = 0;
   ra->RA_backoff_cnt       = 0;
+  ra->RA_window_cnt = -1;
 
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
 
@@ -653,7 +654,9 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
   if (ra->ra_state > RA_UE_IDLE && ra->ra_state < RA_SUCCEEDED) {
 
     if (ra->RA_active == 0) {
-      /* RA not active - checking if RRC is ready to initiate the RA procedure */
+      NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP.rach_ConfigCommon;
+      NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
+      init_RA(mod_id, &ra->prach_resources, setup, rach_ConfigGeneric, ra->rach_ConfigDedicated);
 
       LOG_D(NR_MAC, "In %s: RA not active. Checking for data to transmit from upper layers...\n", __FUNCTION__);
 
