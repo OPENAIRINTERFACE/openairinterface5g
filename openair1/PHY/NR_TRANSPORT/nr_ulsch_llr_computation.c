@@ -260,7 +260,6 @@ void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
   }
 
   if (len_mod4) {
-    printf("len_mod4=%d\n", len_mod4);
     int last_2_re = (nb_re >> 1) - 1;
     simde__m64 *llr64 = (simde__m64 *)llr128;
     simde__m64 xmm0,xmm1,xmm2;
@@ -1872,7 +1871,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
 
     // Detection for 4th bit
     xmm0 = max_epi16(bit_met_s[0],bit_met_s[8],bit_met_s[16],bit_met_s[24],bit_met_s[32],bit_met_s[40],bit_met_s[48],bit_met_s[56]);
-    xmm1 = max_epi16(bit_met_s[1],bit_met_s[9],bit_met_s[17],bit_met_s[25],bit_met_s[33],bit_met_s[41],bit_met_s[49],bit_met_s[49]);
+    xmm1 = max_epi16(bit_met_s[1],bit_met_s[9],bit_met_s[17],bit_met_s[25],bit_met_s[33],bit_met_s[41],bit_met_s[49],bit_met_s[57]);
     xmm2 = max_epi16(bit_met_s[6],bit_met_s[14],bit_met_s[22],bit_met_s[30],bit_met_s[38],bit_met_s[46],bit_met_s[54],bit_met_s[62]);
     xmm3 = max_epi16(bit_met_s[7],bit_met_s[15],bit_met_s[23],bit_met_s[31],bit_met_s[39],bit_met_s[47],bit_met_s[55],bit_met_s[63]);
     logmax_den_re0 = simde_mm_max_epi16(simde_mm_max_epi16(xmm0, xmm1), simde_mm_max_epi16(xmm2, xmm3));
@@ -1902,7 +1901,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
 
     // Detection for 6th bit
     xmm0 = max_epi16(bit_met_s[0],bit_met_s[8],bit_met_s[16],bit_met_s[24],bit_met_s[32],bit_met_s[40],bit_met_s[48],bit_met_s[56]);
-    xmm1 = max_epi16(bit_met_s[3],bit_met_s[11],bit_met_s[19],bit_met_s[27],bit_met_s[35],bit_met_s[43],bit_met_s[51],bit_met_s[51]);
+    xmm1 = max_epi16(bit_met_s[3],bit_met_s[11],bit_met_s[19],bit_met_s[27],bit_met_s[35],bit_met_s[43],bit_met_s[51],bit_met_s[59]);
     xmm2 = max_epi16(bit_met_s[4],bit_met_s[12],bit_met_s[20],bit_met_s[28],bit_met_s[36],bit_met_s[44],bit_met_s[52],bit_met_s[60]);
     xmm3 = max_epi16(bit_met_s[7],bit_met_s[15],bit_met_s[23],bit_met_s[31],bit_met_s[39],bit_met_s[47],bit_met_s[55],bit_met_s[63]);
     logmax_den_re0 = simde_mm_max_epi16(simde_mm_max_epi16(xmm0, xmm1), simde_mm_max_epi16(xmm2, xmm3));
@@ -2416,7 +2415,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
 
     // Detection for 4th bit
     xmm0 = max_epi16_256(bit_met_s[0],bit_met_s[8],bit_met_s[16],bit_met_s[24],bit_met_s[32],bit_met_s[40],bit_met_s[48],bit_met_s[56]);
-    xmm1 = max_epi16_256(bit_met_s[1],bit_met_s[9],bit_met_s[17],bit_met_s[25],bit_met_s[33],bit_met_s[41],bit_met_s[49],bit_met_s[49]);
+    xmm1 = max_epi16_256(bit_met_s[1],bit_met_s[9],bit_met_s[17],bit_met_s[25],bit_met_s[33],bit_met_s[41],bit_met_s[49],bit_met_s[57]);
     xmm2 = max_epi16_256(bit_met_s[6],bit_met_s[14],bit_met_s[22],bit_met_s[30],bit_met_s[38],bit_met_s[46],bit_met_s[54],bit_met_s[62]);
     xmm3 = max_epi16_256(bit_met_s[7],bit_met_s[15],bit_met_s[23],bit_met_s[31],bit_met_s[39],bit_met_s[47],bit_met_s[55],bit_met_s[63]);
     logmax_den_re0 = simde_mm256_max_epi16(simde_mm256_max_epi16(xmm0, xmm1), simde_mm256_max_epi16(xmm2, xmm3));
@@ -2446,7 +2445,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
 
     // Detection for 6th bit
     xmm0 = max_epi16_256(bit_met_s[0],bit_met_s[8],bit_met_s[16],bit_met_s[24],bit_met_s[32],bit_met_s[40],bit_met_s[48],bit_met_s[56]);
-    xmm1 = max_epi16_256(bit_met_s[3],bit_met_s[11],bit_met_s[19],bit_met_s[27],bit_met_s[35],bit_met_s[43],bit_met_s[51],bit_met_s[51]);
+    xmm1 = max_epi16_256(bit_met_s[3],bit_met_s[11],bit_met_s[19],bit_met_s[27],bit_met_s[35],bit_met_s[43],bit_met_s[51],bit_met_s[59]);
     xmm2 = max_epi16_256(bit_met_s[4],bit_met_s[12],bit_met_s[20],bit_met_s[28],bit_met_s[36],bit_met_s[44],bit_met_s[52],bit_met_s[60]);
     xmm3 = max_epi16_256(bit_met_s[7],bit_met_s[15],bit_met_s[23],bit_met_s[31],bit_met_s[39],bit_met_s[47],bit_met_s[55],bit_met_s[63]);
     logmax_den_re0 = simde_mm256_max_epi16(simde_mm256_max_epi16(xmm0, xmm1), simde_mm256_max_epi16(xmm2, xmm3));
