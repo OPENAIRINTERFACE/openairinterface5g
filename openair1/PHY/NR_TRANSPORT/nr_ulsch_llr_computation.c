@@ -38,7 +38,7 @@
 #ifdef __aarch64__
 #define USE_128BIT
 #endif
-
+#define USE_128BIT
 
 //----------------------------------------------------------------------------------------------
 // QPSK
@@ -71,10 +71,8 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
   simde__m128i *ch_mag;
   simde__m128i *ulsch_llr_128 = (simde__m128i*) ulsch_llr;
   int i;
-  int nb_rb = nb_re / NR_NB_SC_PER_RB;
-  int off = ((nb_rb&1) == 1)? 4:0;
 
-  ch_mag = (simde__m128i*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
+  ch_mag = (simde__m128i*)ul_ch_mag;
   nb_re >>= 2;  // length in quad words (4 REs)
   nb_re += ((nb_re&3) == 0 ? 0 : 1);
 
@@ -129,14 +127,10 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
                         uint8_t  symbol)
 {
 #ifdef USE_128BIT
-  int nb_rb = nb_re / NR_NB_SC_PER_RB;
-  int off = ((nb_rb&1) == 1)? 4:0;
-
   simde__m128i *rxF = (simde__m128i*)rxdataF_comp;
-  simde__m128i *ch_mag,*ch_magb;
+  simde__m128i *ch_mag  = (simde__m128i*)ul_ch_mag;
+  simde__m128i *ch_magb = (simde__m128i*)ul_ch_magb;
   int i;
-  ch_mag = (simde__m128i*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
-  ch_magb = (simde__m128i*)&ul_ch_magb[(symbol*(off+(nb_rb*12)))];
 
   nb_re    = nb_re>>2;  // length in 128-bit words (4 REs)
   nb_re   += ((nb_re&3) == 0 ? 0 : 1);
@@ -223,15 +217,12 @@ void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
                          uint8_t  symbol)
 {
 #ifdef USE_128BIT
-  int off = ((nb_rb&1) == 1)? 4:0;
-
   simde__m128i *rxF = (simde__m128i*)rxdataF_comp;
-  simde__m128i *ch_mag,*ch_magb,*ch_magc;
   simde__m128i *llr128=(simde__m128i*)ulsch_llr;
 
-  ch_mag  = (simde__m128i*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
-  ch_magb = (simde__m128i*)&ul_ch_magb[(symbol*(off+(nb_rb*12)))];
-  ch_magc = (simde__m128i*)&ul_ch_magc[(symbol*(off+(nb_rb*12)))];
+  simde__m128i* ch_mag  = (simde__m128i*)ul_ch_mag;
+  simde__m128i* ch_magb = (simde__m128i*)ul_ch_magb;
+  simde__m128i* ch_magc = (simde__m128i*)ul_ch_magc;
   int len_mod4 = nb_re & 3;
   int nb_re128 = nb_re >> 2;  // length in 128-bit words (4 REs)
 
@@ -264,9 +255,9 @@ void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
     simde__m64 *llr64 = (simde__m64 *)llr128;
     simde__m64 xmm0,xmm1,xmm2;
     simde__m64 *rxF = (simde__m64*)rxdataF_comp;
-    simde__m64 *ch_mag  = (simde__m64*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
-    simde__m64 *ch_magb = (simde__m64*)&ul_ch_magb[(symbol*(off+(nb_rb*12)))];
-    simde__m64 *ch_magc = (simde__m64*)&ul_ch_magc[(symbol*(off+(nb_rb*12)))];
+    simde__m64 *ch_mag  = (simde__m64*)ul_ch_mag;
+    simde__m64 *ch_magb = (simde__m64*)ul_ch_magb;
+    simde__m64 *ch_magc = (simde__m64*)ul_ch_magc;
 
     xmm0 = simde_mm_abs_pi16(rxF[last_2_re]); // registers of even index in xmm0-> |y_R|, registers of odd index in xmm0-> |y_I|
     xmm0 = simde_mm_subs_pi16(ch_mag[last_2_re],xmm0); // registers of even index in xmm0-> |y_R|-|h|^2, registers of odd index in xmm0-> |y_I|-|h|^2
