@@ -1125,7 +1125,7 @@ int do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t r
   return((enc_rval.encoded+7)/8);
 }
 
-NR_MeasConfig_t *get_defaultMeasConfig(int arfcn, int band, int scs)
+NR_MeasConfig_t *get_defaultMeasConfig(uint32_t ssb_arfcn, int band, int scs)
 {
   NR_MeasConfig_t *mc = calloc(1, sizeof(*mc));
   mc->measObjectToAddModList = calloc(1, sizeof(*mc->measObjectToAddModList));
@@ -1137,7 +1137,7 @@ NR_MeasConfig_t *get_defaultMeasConfig(int arfcn, int band, int scs)
   mo1->measObjectId = 1;
   mo1->measObject.present = NR_MeasObjectToAddMod__measObject_PR_measObjectNR;
   NR_MeasObjectNR_t *monr1 = calloc(1, sizeof(*monr1));
-  asn1cCallocOne(monr1->ssbFrequency, arfcn);
+  asn1cCallocOne(monr1->ssbFrequency, ssb_arfcn);
   asn1cCallocOne(monr1->ssbSubcarrierSpacing, scs);
   monr1->referenceSignalConfig.ssb_ConfigMobility = calloc(1, sizeof(*monr1->referenceSignalConfig.ssb_ConfigMobility));
   monr1->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;

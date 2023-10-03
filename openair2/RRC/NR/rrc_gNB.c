@@ -559,8 +559,8 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
   f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
   int scs = get_ssb_scs(cell_info);
   int band = get_dl_band(cell_info);
-  int arfcn = get_dl_arfcn(cell_info);
-  NR_MeasConfig_t *measconfig = get_defaultMeasConfig(arfcn, band, scs);
+  uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
+  NR_MeasConfig_t *measconfig = get_defaultMeasConfig(ssb_arfcn, band, scs);
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   int size = do_RRCReconfiguration(ue_p,
