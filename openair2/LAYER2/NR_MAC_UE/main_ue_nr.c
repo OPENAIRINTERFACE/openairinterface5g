@@ -54,12 +54,6 @@ static void send_srb0_rrc(int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void
   memcpy(NR_RRC_MAC_CCCH_DATA_IND(message_p).sdu, sdu, sdu_len);
   NR_RRC_MAC_CCCH_DATA_IND(message_p).sdu_size = sdu_len;
   NR_RRC_MAC_CCCH_DATA_IND(message_p).rnti = rnti;
-  NR_RRC_MAC_CCCH_DATA_IND(message_p).gnb_index = 0;
-  NR_RRC_MAC_CCCH_DATA_IND(message_p).frame = 0;
-  NR_RRC_MAC_CCCH_DATA_IND(message_p).slot = 0;
-  NR_RRC_MAC_CCCH_DATA_IND(message_p).du_to_cu_rrc_container = NULL;
-  NR_RRC_MAC_CCCH_DATA_IND(message_p).CC_id = 0;
-  NR_RRC_MAC_CCCH_DATA_IND(message_p).nr_cellid = 0;
   itti_send_msg_to_task(TASK_RRC_NRUE, 0, message_p);
 }
 

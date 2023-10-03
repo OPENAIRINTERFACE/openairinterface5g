@@ -1818,7 +1818,7 @@ void *rrc_nrue_task(void *args_p)
          nr_rrc_ue_decode_ccch(&ctxt,
                                NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu,
                                NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size,
-                               NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
+                               /* gNB_index = */ 0);
          break;
 
       /* PDCP messages */
