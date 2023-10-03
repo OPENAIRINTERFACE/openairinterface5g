@@ -117,7 +117,7 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id,
                             const int dedicatedInfoNASLength,
                             const char *dedicatedInfoNAS);
 
-uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv);
+int do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv);
 
 uint8_t do_NR_RRCReconfigurationComplete_for_nsa(uint8_t *buffer, size_t buffer_size, NR_RRC_TransactionIdentifier_t Transaction_id);
 
