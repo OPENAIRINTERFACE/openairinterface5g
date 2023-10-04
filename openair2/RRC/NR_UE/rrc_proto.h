@@ -87,6 +87,7 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
 
 void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success);
 void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti);
+void set_rlf_sib1_timers_and_constants(NR_UE_Timers_Constants_t *tac, NR_SIB1_t *sib1);
 
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */

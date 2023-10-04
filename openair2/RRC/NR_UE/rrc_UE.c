@@ -1601,6 +1601,45 @@ static void nr_rrc_ue_process_ueCapabilityEnquiry(NR_UE_RRC_INST_t *rrc, NR_UECa
   }
 }
 
+void nr_rrc_initiate_rrcReestablishment(NR_UE_RRC_INST_t *rrc,
+                                        const int gnb_id)
+{
+  NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
+  rrcPerNB_t *rrcNB = rrc->perNB + gnb_id;
+
+  // reset timers to SIB1 as part of release of spCellConfig
+  // it needs to be done before handling timers
+  set_rlf_sib1_timers_and_constants(timers, rrcNB->SInfo.sib1);
+
+  // stop timer T310, if running
+  nr_timer_stop(&timers->T310);
+  // stop timer T304, if running
+  nr_timer_stop(&timers->T304);
+  // start timer T311
+  nr_timer_start(&timers->T311);
+  // suspend all RBs, except SRB0
+  for (int i = 1; i < 4; i++) {
+    if (rrc->Srb[i] == RB_ESTABLISHED) {
+      rrc->Srb[i] = RB_SUSPENDED;
+      nr_pdcp_suspend_srb(rrc->ue_id, i);
+    }
+  }
+  for (int i = 1; i <= MAX_DRBS_PER_UE; i++) {
+    if (get_DRB_status(rrc, i) == RB_ESTABLISHED) {
+      set_DRB_status(rrc, i, RB_SUSPENDED);
+      nr_pdcp_suspend_drb(rrc->ue_id, i);
+    }
+  }
+  // release the MCG SCell(s), if configured
+  // no SCell configured in our implementation
+  rrc->nrRrcState = RRC_STATE_REESTABLISHMENT;
+
+  // reset MAC
+  // release spCellConfig, if configured
+  // perform cell selection in accordance with the cell selection process
+  nr_rrc_mac_config_req_reset(rrc->ue_id, RE_ESTABLISHMENT);
+}
+
 static void nr_rrc_ue_generate_rrcReestablishmentComplete(NR_RRCReestablishment_t *rrcReestablishment)
 {
   uint8_t buffer[RRC_BUFFER_SIZE] = {0};
