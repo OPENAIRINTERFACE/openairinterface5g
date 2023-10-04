@@ -834,6 +834,26 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t r
   return 0;
 }
 
+nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *convert_csirs_pdu(fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu)
+{
+  nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *dl_tti_csi_rs_pdu = calloc(1, sizeof(nfapi_nr_dl_tti_csi_rs_pdu_rel15_t));
+  dl_tti_csi_rs_pdu->subcarrier_spacing = csirs_config_pdu->subcarrier_spacing;
+  dl_tti_csi_rs_pdu->cyclic_prefix = csirs_config_pdu->cyclic_prefix;
+  dl_tti_csi_rs_pdu->start_rb = csirs_config_pdu->start_rb;
+  dl_tti_csi_rs_pdu->nr_of_rbs = csirs_config_pdu->nr_of_rbs;
+  dl_tti_csi_rs_pdu->csi_type = csirs_config_pdu->csi_type;
+  dl_tti_csi_rs_pdu->row = csirs_config_pdu->row;
+  dl_tti_csi_rs_pdu->freq_domain = csirs_config_pdu->freq_domain;
+  dl_tti_csi_rs_pdu->symb_l0 = csirs_config_pdu->symb_l0;
+  dl_tti_csi_rs_pdu->symb_l1 = csirs_config_pdu->symb_l1;
+  dl_tti_csi_rs_pdu->cdm_type = csirs_config_pdu->cdm_type;
+  dl_tti_csi_rs_pdu->freq_density = csirs_config_pdu->freq_density;
+  dl_tti_csi_rs_pdu->scramb_id = csirs_config_pdu->scramb_id;
+  dl_tti_csi_rs_pdu->power_control_offset = csirs_config_pdu->power_control_offset;
+  dl_tti_csi_rs_pdu->power_control_offset_ss = csirs_config_pdu->power_control_offset_ss;
+  return dl_tti_csi_rs_pdu;
+}
+
 void nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
 
@@ -891,7 +911,7 @@ void nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t 
                      ue->nr_csi_info->csi_rs_generated_signal,
                      AMP,
                      ue->nr_csi_info,
-                     (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *) csirs_config_pdu,
+                     convert_csirs_pdu((fapi_nr_dl_config_csirs_pdu_rel15_t*)&ue->csirs_vars[gNB_id]->csirs_config_pdu),
                      proc->nr_slot_rx,
                      &N_cdm_groups,
                      &CDM_group_size,
