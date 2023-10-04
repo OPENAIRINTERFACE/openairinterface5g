@@ -171,6 +171,13 @@ typedef struct {
     fgs_sm_nas_msg_header_t sm_nas_msg_header;
 } dl_nas_transport_t;
 
+typedef struct {
+  int sst;
+  int hplmn_sst;
+  int sd;
+  int hplmn_sd;
+} nr_nas_msg_snssai_t;
+
 nr_ue_nas_t *get_ue_nas_info(module_id_t module_id);
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg, nr_ue_nas_t *nas);
 void *nas_nrue_task(void *args_p);
