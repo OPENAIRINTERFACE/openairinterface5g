@@ -75,7 +75,7 @@ static bool check_transac_id(E1AP_TransactionID_t id, int *freeIdx)
   return true;
 }
 
-E1AP_TransactionID_t E1AP_get_next_transaction_identifier() {
+long E1AP_get_next_transaction_identifier() {
   E1AP_TransactionID_t genTransacId;
   bool isTransacIdValid = false;
   int freeIdx = 0;
@@ -90,7 +90,7 @@ E1AP_TransactionID_t E1AP_get_next_transaction_identifier() {
   return genTransacId;
 }
 
-void E1AP_free_transaction_identifier(E1AP_TransactionID_t id) {
+void E1AP_free_transaction_identifier(long id) {
 
   for (int i=0; i < E1AP_MAX_NUM_TRANSAC_IDS; i++) {
     if (id == transacID[i]) {
