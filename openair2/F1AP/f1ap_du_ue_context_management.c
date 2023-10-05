@@ -927,16 +927,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
       f1ap_ue_context_modification_req->rrc_container = malloc(ieRRC->value.choice.RRCContainer.size);
       memcpy(f1ap_ue_context_modification_req->rrc_container,
           ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
-      protocol_ctxt_t ctxt;
-      // decode RRC Container and act on the message type
-      ctxt.rntiMaybeUEid = f1ap_ue_context_modification_req->gNB_DU_ue_id;
-      ctxt.instance = instance;
-      ctxt.module_id  = instance;
-      ctxt.enb_flag  = 1;
-      ctxt.eNB_index = instance;
-      mem_block_t *pdcp_pdu_p = get_free_mem_block(ieRRC->value.choice.RRCContainer.size, __func__);
-      memcpy(&pdcp_pdu_p->data[0], ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
-      du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ieRRC->value.choice.RRCContainer.size, pdcp_pdu_p);
+      f1ap_ue_context_modification_req->rrc_container_length = ieRRC->value.choice.RRCContainer.size;
     } else {
       LOG_E(F1AP, " RRCContainer in UEContextModificationRequestIEs size id 0\n");
     }
