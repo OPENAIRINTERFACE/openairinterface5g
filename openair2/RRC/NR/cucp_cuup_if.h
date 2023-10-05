@@ -30,7 +30,7 @@
 
 struct e1ap_bearer_setup_req_s;
 struct e1ap_bearer_setup_resp_s;
-typedef void (*cucp_cuup_bearer_context_setup_func_t)(sctp_assoc_t assoc_id, struct e1ap_bearer_setup_req_s *const req);
+typedef void (*cucp_cuup_bearer_context_setup_func_t)(sctp_assoc_t assoc_id, const struct e1ap_bearer_setup_req_s *req);
 
 struct gNB_RRC_INST_s;
 void cucp_cuup_message_transfer_direct_init(struct gNB_RRC_INST_s *rrc);

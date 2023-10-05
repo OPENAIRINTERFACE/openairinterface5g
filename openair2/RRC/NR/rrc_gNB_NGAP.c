@@ -378,6 +378,9 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
   uint8_t nb_pdusessions_tosetup = req->nb_of_pdusessions;
   if (nb_pdusessions_tosetup) {
     AssertFatal(false, "PDU sessions in Initial context setup request not handled by E1 yet\n");
+    /* this code should pass by E1: commenting here for future reference, but
+     * already handled in E1 for the "normal case" of a separate request for
+     * PDU session setup.
     gtpv1u_gnb_create_tunnel_req_t create_tunnel_req = {0};
     for (int i = 0; i < nb_pdusessions_tosetup; i++) {
       UE->nb_of_pdusessions++;
@@ -404,6 +407,7 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
     }
 
     nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(&ctxt, &create_tunnel_resp, 0);
+    */
   }
 
   /* NAS PDU */

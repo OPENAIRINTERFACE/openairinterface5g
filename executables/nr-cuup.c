@@ -95,12 +95,6 @@ void nr_rlc_add_drb(int rnti, int drb_id, const NR_RLC_BearerConfig_t *rlc_Beare
   abort();
 }
 
-int nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ctxt_pP, const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_p, int offset)
-{
-  abort();
-  return 0;
-}
-
 void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_context_p, e1ap_bearer_setup_resp_t *e1ap_resp)
 {
   abort();
@@ -108,14 +102,14 @@ void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_contex
 
 f1ap_cudu_inst_t *getCxt(instance_t instanceP)
 {
-  abort();
-  return NULL;
-}
-
-NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
-{
-  abort();
-  return NULL;
+  // the E1 module uses F1's getCxt() to decide whether there is F1-U and if
+  // so, what is the GTP instance. In the CU-UP, we don't start the F1 module,
+  // and instead, E1 handles the GTP-U endpoint. In the following, we fake the
+  // instance and put the right GTP-U instance number in.
+  const e1ap_upcp_inst_t *e1inst = getCxtE1(instanceP);
+  static f1ap_cudu_inst_t fake = {0};
+  fake.gtpInst = e1inst->gtpInstF1U;
+  return &fake;
 }
 
 int main(int argc, char **argv)

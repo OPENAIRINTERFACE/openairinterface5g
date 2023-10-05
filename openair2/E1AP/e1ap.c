@@ -33,6 +33,7 @@
 #include "openair2/F1AP/f1ap_common.h"
 #include "e1ap_default_values.h"
 #include "gtp_itf.h"
+#include "openair2/LAYER2/nr_pdcp/cucp_cuup_handler.h"
 
 #define E1AP_NUM_MSG_HANDLERS 14
 typedef int (*e1ap_message_processing_t)(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *message_p);
@@ -684,7 +685,7 @@ void e1apCUCP_send_BEARER_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, e1ap_bear
   e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
 }
 
-static void fill_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_bearer_setup_resp_t *const resp, E1AP_E1AP_PDU_t *pdu)
+static void fill_BEARER_CONTEXT_SETUP_RESPONSE(const e1ap_bearer_setup_resp_t *resp, E1AP_E1AP_PDU_t *pdu)
 {
   /* Create */
   /* 0. pdu Type */
@@ -750,7 +751,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_bearer_setup_resp_t *const r
     msgNGRAN->value.present = E1AP_NG_RAN_BearerContextSetupResponse__value_PR_PDU_Session_Resource_Setup_List;
     E1AP_PDU_Session_Resource_Setup_List_t *pduSetup = &msgNGRAN->value.choice.PDU_Session_Resource_Setup_List;
 
-    for (pdu_session_setup_t *i=resp->pduSession; i < resp->pduSession+resp->numPDUSessions; i++) {
+    for (const pdu_session_setup_t *i=resp->pduSession; i < resp->pduSession+resp->numPDUSessions; i++) {
       asn1cSequenceAdd(pduSetup->list, E1AP_PDU_Session_Resource_Setup_Item_t, ieC3_1);
       ieC3_1->pDU_Session_ID = i->id;
 
@@ -759,11 +760,11 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_bearer_setup_resp_t *const r
       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(i->tlAddress, &gTPTunnel->transportLayerAddress);
       INT32_TO_OCTET_STRING(i->teId, &gTPTunnel->gTP_TEID);
 
-      for (DRB_nGRAN_setup_t *j=i->DRBnGRanList; j < i->DRBnGRanList+i->numDRBSetup; j++) {
+      for (const DRB_nGRAN_setup_t *j=i->DRBnGRanList; j < i->DRBnGRanList+i->numDRBSetup; j++) {
         asn1cSequenceAdd(ieC3_1->dRB_Setup_List_NG_RAN.list, E1AP_DRB_Setup_Item_NG_RAN_t, ieC3_1_1);
         ieC3_1_1->dRB_ID = j->id;
 
-        for (up_params_t *k=j->UpParamList; k < j->UpParamList+j->numUpParam; k++) {
+        for (const up_params_t *k=j->UpParamList; k < j->UpParamList+j->numUpParam; k++) {
           asn1cSequenceAdd(ieC3_1_1->uL_UP_Transport_Parameters.list, E1AP_UP_Parameters_Item_t, ieC3_1_1_1);
           ieC3_1_1_1->uP_TNL_Information.present = E1AP_UP_TNL_Information_PR_gTPTunnel;
           asn1cCalloc(ieC3_1_1_1->uP_TNL_Information.choice.gTPTunnel, gTPTunnel);
@@ -771,7 +772,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_bearer_setup_resp_t *const r
           INT32_TO_OCTET_STRING(k->teId, &gTPTunnel->gTP_TEID);
         }
 
-        for (qos_flow_setup_t *k=j->qosFlows; k < j->qosFlows+j->numQosFlowSetup; k++) {
+        for (const qos_flow_setup_t *k=j->qosFlows; k < j->qosFlows+j->numQosFlowSetup; k++) {
           asn1cSequenceAdd(ieC3_1_1->flow_Setup_List.list, E1AP_QoS_Flow_Item_t, ieC3_1_1_1);
           ieC3_1_1_1->qoS_Flow_Identifier = k->id;
         }
@@ -780,7 +781,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_bearer_setup_resp_t *const r
       if (i->numDRBFailed > 0)
         ieC3_1->dRB_Failed_List_NG_RAN = calloc(1, sizeof(E1AP_DRB_Failed_List_NG_RAN_t));
 
-      for (DRB_nGRAN_failed_t *j=i->DRBnGRanFailedList; j < i->DRBnGRanFailedList+i->numDRBFailed; j++) {
+      for (const DRB_nGRAN_failed_t *j=i->DRBnGRanFailedList; j < i->DRBnGRanFailedList+i->numDRBFailed; j++) {
         asn1cSequenceAdd(ieC3_1->dRB_Failed_List_NG_RAN->list, E1AP_DRB_Failed_Item_NG_RAN_t, ieC3_1_1);
         ieC3_1_1->dRB_ID = j->id;
 
@@ -811,7 +812,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_bearer_setup_resp_t *const r
   }
 }
 
-void e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, e1ap_bearer_setup_resp_t *const resp)
+void e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, const e1ap_bearer_setup_resp_t *resp)
 {
   E1AP_E1AP_PDU_t pdu = {0};
   fill_BEARER_CONTEXT_SETUP_RESPONSE(resp, &pdu);
@@ -996,7 +997,8 @@ int e1apCUUP_handle_BEARER_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, e1ap_upc
 
   e1ap_bearer_setup_req_t bearerCxt = {0};
   extract_BEARER_CONTEXT_SETUP_REQUEST(pdu, &bearerCxt);
-  process_e1_bearer_context_setup_req(e1_inst->instance, &bearerCxt);
+
+  e1_bearer_context_setup(&bearerCxt);
   return 0;
 }
 
@@ -1768,6 +1770,13 @@ void *E1AP_CUUP_task(void *arg) {
       case TIMER_HAS_EXPIRED:
         e1apHandleTimer(myInstance);
         break;
+
+      case E1AP_BEARER_CONTEXT_SETUP_RESP: {
+        const e1ap_bearer_setup_resp_t *resp = &E1AP_BEARER_CONTEXT_SETUP_RESP(msg);
+        const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
+        AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
+        e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(inst->cuup.assoc_id, resp);
+        } break;
 
       default:
         LOG_E(E1AP, "Unknown message received in TASK_CUUP_E1\n");

@@ -20,8 +20,18 @@
  */
 
 #include "cuup_cucp_if.h"
+#include "intertask_interface.h"
+#include "e1ap_messages_types.h"
+
+static void bearer_setup_response_e1ap(const e1ap_bearer_setup_resp_t *resp)
+{
+  MessageDef *msg_p = itti_alloc_new_message(TASK_CUUP_E1, 0, E1AP_BEARER_CONTEXT_SETUP_RESP);
+  e1ap_bearer_setup_resp_t *bearer_resp = &E1AP_BEARER_CONTEXT_SETUP_RESP(msg_p);
+  *bearer_resp = *resp;
+  itti_send_msg_to_task (TASK_CUUP_E1, 0, msg_p);
+}
 
 void cuup_cucp_init_e1ap(e1_if_t *iface)
 {
-  (void) iface;
+  iface->bearer_setup_response = bearer_setup_response_e1ap;
 }

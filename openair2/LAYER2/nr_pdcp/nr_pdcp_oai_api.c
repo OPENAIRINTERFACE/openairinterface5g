@@ -39,7 +39,6 @@
 #include "openair2/F1AP/f1ap_ids.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
-#include "nr_pdcp_e1_api.h"
 #include "gnb_config.h"
 #include "executables/softmodem-common.h"
 #include "cuup_cucp_if.h"
