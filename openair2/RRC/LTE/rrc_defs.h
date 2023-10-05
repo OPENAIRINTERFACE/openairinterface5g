@@ -16,7 +16,7 @@
  * limitations under the License.
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      conmnc_digit_lengtht@openairinterface.org
+ *      contact@openairinterface.org
  */
 
 /*! \file RRC/LTE/defs.h
