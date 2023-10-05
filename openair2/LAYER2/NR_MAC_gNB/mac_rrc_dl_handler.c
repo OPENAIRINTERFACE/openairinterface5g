@@ -369,7 +369,8 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
     update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, &mac->radio_config, scc);
   }
 
-  if (req->srbs_to_be_setup_length > 0 || req->drbs_to_be_setup_length > 0 || req->drbs_to_be_released_length > 0) {
+  if (req->srbs_to_be_setup_length > 0 || req->drbs_to_be_setup_length > 0 || req->drbs_to_be_released_length > 0
+      || ue_cap != NULL) {
     resp.du_to_cu_rrc_information = calloc(1, sizeof(du_to_cu_rrc_information_t));
     AssertFatal(resp.du_to_cu_rrc_information != NULL, "out of memory\n");
     resp.du_to_cu_rrc_information->cellGroupConfig = calloc(1, 1024);
