@@ -25,10 +25,13 @@
 #include <stdbool.h>
 
 struct e1ap_bearer_setup_resp_s;
+struct e1ap_bearer_modif_resp_s;
 typedef void (*e1_bearer_setup_response_func_t)(const struct e1ap_bearer_setup_resp_s *resp);
+typedef void (*e1_bearer_modif_response_func_t)(const struct e1ap_bearer_modif_resp_s *resp);
 
 typedef struct e1_if_t {
   e1_bearer_setup_response_func_t bearer_setup_response;
+  e1_bearer_modif_response_func_t bearer_modif_response;
 } e1_if_t;
 
 e1_if_t *get_e1_if(void);

@@ -1283,7 +1283,8 @@ int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, e
 
   e1ap_bearer_setup_req_t bearerCxt = {0};
   extract_BEARER_CONTEXT_MODIFICATION_REQUEST(pdu, &bearerCxt);
-  CUUP_process_bearer_context_mod_req(e1_inst->instance, &bearerCxt);
+
+  e1_bearer_context_modif(&bearerCxt);
   return 0;
 }
 
@@ -1776,6 +1777,14 @@ void *E1AP_CUUP_task(void *arg) {
         const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
         AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
         e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(inst->cuup.assoc_id, resp);
+        } break;
+
+      case E1AP_BEARER_CONTEXT_MODIFICATION_RESP: {
+        //const e1ap_bearer_modif_resp_t *resp = &E1AP_BEARER_CONTEXT_MODIFICATION_RESP(msg);
+        const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
+        AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
+        LOG_W(E1AP, "E1AP_BEARER_CONTEXT_MODIFICATION_RESP lost!\n");
+        //e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_RESPONSE
         } break;
 
       default:

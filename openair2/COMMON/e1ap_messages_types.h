@@ -47,6 +47,7 @@
 #define E1AP_BEARER_CONTEXT_SETUP_REQ(mSGpTR)             (mSGpTR)->ittiMsg.e1ap_bearer_setup_req
 #define E1AP_BEARER_CONTEXT_SETUP_RESP(mSGpTR)            (mSGpTR)->ittiMsg.e1ap_bearer_setup_resp
 #define E1AP_BEARER_CONTEXT_MODIFICATION_REQ(mSGpTR)      (mSGpTR)->ittiMsg.e1ap_bearer_setup_req
+#define E1AP_BEARER_CONTEXT_MODIFICATION_RESP(mSGpTR)     (mSGpTR)->ittiMsg.e1ap_bearer_modif_resp
 
 typedef f1ap_net_ip_address_t e1ap_net_ip_address_t;
 
@@ -204,6 +205,10 @@ typedef struct DRB_nGRAN_setup_s {
   qos_flow_setup_t qosFlows[E1AP_MAX_NUM_QOS_FLOWS];
 } DRB_nGRAN_setup_t;
 
+typedef struct DRB_nGRAN_modified_s {
+  long id;
+} DRB_nGRAN_modified_t;
+
 typedef struct DRB_nGRAN_failed_s {
   long id;
   long cause_type;
@@ -220,11 +225,25 @@ typedef struct pdu_session_setup_s {
   DRB_nGRAN_failed_t DRBnGRanFailedList[E1AP_MAX_NUM_NGRAN_DRB];
 } pdu_session_setup_t;
 
+typedef struct pdu_session_modif_s {
+  long id;
+  // setup as part of PDU session modification not supported yet
+  int numDRBModified;
+  DRB_nGRAN_modified_t DRBnGRanModList[E1AP_MAX_NUM_NGRAN_DRB];
+} pdu_session_modif_t;
+
 typedef struct e1ap_bearer_setup_resp_s {
   uint32_t gNB_cu_cp_ue_id;
   uint32_t gNB_cu_up_ue_id;
   int numPDUSessions;
   pdu_session_setup_t pduSession[E1AP_MAX_NUM_PDU_SESSIONS];
 } e1ap_bearer_setup_resp_t;
+
+typedef struct e1ap_bearer_modif_resp_s {
+  uint32_t gNB_cu_cp_ue_id;
+  uint32_t gNB_cu_up_ue_id;
+  int numPDUSessionsMod;
+  pdu_session_modif_t pduSessionMod[E1AP_MAX_NUM_PDU_SESSIONS];
+} e1ap_bearer_modif_resp_t;
 
 #endif /* E1AP_MESSAGES_TYPES_H */

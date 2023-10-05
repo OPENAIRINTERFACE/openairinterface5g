@@ -34,15 +34,6 @@
 #include "e1ap_common.h"
 #include "e1ap.h"
 
-void CUUP_process_bearer_context_mod_req(instance_t instance, e1ap_bearer_setup_req_t *const req)
-{
-  e1ap_upcp_inst_t *inst = getCxtE1(instance);
-  AssertFatal(inst, "");
-  // assume we receive modification of F1-U but it is wrong, we can also get modification of N3 when HO will occur
-  CU_update_UP_DL_tunnel(req, inst->gtpInstF1U, req->gNB_cu_cp_ue_id);
-  // TODO: send bearer cxt mod response
-}
-
 void CUUP_process_bearer_release_command(instance_t instance, e1ap_bearer_release_cmd_t *const cmd)
 {
   e1ap_upcp_inst_t *inst = getCxtE1(instance);

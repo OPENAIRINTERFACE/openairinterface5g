@@ -31,7 +31,16 @@ static void bearer_setup_response_e1ap(const e1ap_bearer_setup_resp_t *resp)
   itti_send_msg_to_task (TASK_CUUP_E1, 0, msg_p);
 }
 
+static void bearer_modif_response_e1ap(const e1ap_bearer_modif_resp_t *resp)
+{
+  MessageDef *msg_p = itti_alloc_new_message(TASK_CUUP_E1, 0, E1AP_BEARER_CONTEXT_MODIFICATION_RESP);
+  e1ap_bearer_modif_resp_t *modif_resp = &E1AP_BEARER_CONTEXT_MODIFICATION_RESP(msg_p);
+  *modif_resp = *resp;
+  itti_send_msg_to_task (TASK_CUUP_E1, 0, msg_p);
+}
+
 void cuup_cucp_init_e1ap(e1_if_t *iface)
 {
   iface->bearer_setup_response = bearer_setup_response_e1ap;
+  iface->bearer_modif_response = bearer_modif_response_e1ap;
 }

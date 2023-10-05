@@ -219,3 +219,41 @@ void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req)
 
   get_e1_if()->bearer_setup_response(&resp);
 }
+
+void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req)
+{
+  AssertFatal(req->numPDUSessionsMod > 0, "need at least one PDU session to modify\n");
+
+  e1ap_bearer_modif_resp_t modif = {
+      .gNB_cu_cp_ue_id = req->gNB_cu_cp_ue_id,
+      .gNB_cu_up_ue_id = req->gNB_cu_up_ue_id,
+      .numPDUSessionsMod = req->numPDUSessionsMod,
+  };
+
+  instance_t f1inst = get_f1_gtp_instance();
+
+  for (int i=0; i < req->numPDUSessionsMod; i++) {
+    LOG_I(E1AP,
+          "UE %d: updating PDU session ID %ld (%ld bearers)\n",
+          req->gNB_cu_up_ue_id,
+          req->pduSessionMod[i].sessionId,
+          req->pduSessionMod[i].numDRB2Modify);
+    modif.pduSessionMod[i].id = req->pduSessionMod[i].sessionId;
+    modif.pduSessionMod[i].numDRBModified = req->pduSessionMod[i].numDRB2Modify;
+    for (int j=0; j < req->pduSessionMod[i].numDRB2Modify; j++) {
+      const DRB_nGRAN_to_setup_t *to_modif = &req->pduSessionMod[i].DRBnGRanModList[j];
+      DRB_nGRAN_modified_t *modified = &modif.pduSessionMod[i].DRBnGRanModList[j];
+      modified->id = to_modif->id;
+
+      if (f1inst < 0) // no F1-U?
+        continue; // nothing to do
+
+      in_addr_t addr = {0};
+      memcpy(&addr, &to_modif->DlUpParamList[0].tlAddress, sizeof(in_addr_t));
+
+      GtpuUpdateTunnelOutgoingAddressAndTeid(f1inst, req->gNB_cu_cp_ue_id, to_modif->id, addr, to_modif->DlUpParamList[0].teId);
+    }
+  }
+
+  get_e1_if()->bearer_modif_response(&modif);
+}

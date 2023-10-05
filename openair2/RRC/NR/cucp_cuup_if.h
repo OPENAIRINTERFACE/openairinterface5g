@@ -35,11 +35,5 @@ typedef void (*cucp_cuup_bearer_context_setup_func_t)(sctp_assoc_t assoc_id, con
 struct gNB_RRC_INST_s;
 void cucp_cuup_message_transfer_direct_init(struct gNB_RRC_INST_s *rrc);
 void cucp_cuup_message_transfer_e1ap_init(struct gNB_RRC_INST_s *rrc);
-void fill_e1ap_bearer_setup_resp(struct e1ap_bearer_setup_resp_s *resp,
-                                 struct e1ap_bearer_setup_req_s *const req,
-                                 instance_t gtpInst,
-                                 ue_id_t ue_id,
-                                 int remote_port,
-                                 in_addr_t my_addr);
-void CU_update_UP_DL_tunnel(struct e1ap_bearer_setup_req_s *const req, instance_t instance, ue_id_t ue_id);
+
 #endif

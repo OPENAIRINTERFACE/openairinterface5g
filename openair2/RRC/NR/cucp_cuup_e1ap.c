@@ -20,9 +20,6 @@
  */
 
 #include "cucp_cuup_if.h"
-#include <arpa/inet.h>
-
-#include "platform_types.h"
 #include "nr_rrc_defs.h"
 
 #include "nr_rrc_proto.h"
@@ -40,7 +37,7 @@ static void cucp_cuup_bearer_context_setup_e1ap(sctp_assoc_t assoc_id, const e1a
   itti_send_msg_to_task (TASK_CUCP_E1, 0, msg_p);
 }
 
-static void cucp_cuup_bearer_context_mod_e1ap(sctp_assoc_t assoc_id, e1ap_bearer_setup_req_t *const req)
+static void cucp_cuup_bearer_context_mod_e1ap(sctp_assoc_t assoc_id, const e1ap_bearer_setup_req_t *req)
 {
   AssertFatal(assoc_id > 0, "illegal assoc_id %d\n", assoc_id);
   MessageDef *msg = itti_alloc_new_message(TASK_CUCP_E1, 0, E1AP_BEARER_CONTEXT_MODIFICATION_REQ);

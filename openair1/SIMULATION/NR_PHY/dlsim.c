@@ -109,6 +109,7 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
 }
 
 void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req) { abort(); }
+void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req) { abort(); }
 
 int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index) {
   return 0;
