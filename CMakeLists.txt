@@ -1216,6 +1216,10 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia1.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
+  openair2/LAYER2/nr_pdcp/cucp_cuup_handler.c
+  openair2/LAYER2/nr_pdcp/cuup_cucp_if.c
+  openair2/LAYER2/nr_pdcp/cuup_cucp_direct.c
+  openair2/LAYER2/nr_pdcp/cuup_cucp_e1ap.c
   )
 
 set(NR_SDAP_SRC

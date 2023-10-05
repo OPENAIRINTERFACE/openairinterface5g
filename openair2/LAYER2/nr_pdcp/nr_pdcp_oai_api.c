@@ -42,6 +42,7 @@
 #include "nr_pdcp_e1_api.h"
 #include "gnb_config.h"
 #include "executables/softmodem-common.h"
+#include "cuup_cucp_if.h"
 
 #define TODO do { \
     printf("%s:%d:%s: todo\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -538,7 +539,7 @@ void pdcp_layer_init(void)
   abort();
 }
 
-void nr_pdcp_layer_init(void)
+void nr_pdcp_layer_init(bool uses_e1)
 {
   /* hack: be sure to initialize only once */
   static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
@@ -559,6 +560,7 @@ void nr_pdcp_layer_init(void)
     init_nr_rlc_data_req_queue();
   }
 
+  nr_pdcp_e1_if_init(uses_e1);
   init_nr_pdcp_data_ind_queue();
   nr_pdcp_init_timer_thread(nr_pdcp_ue_manager);
 }
