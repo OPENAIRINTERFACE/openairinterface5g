@@ -795,6 +795,9 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
                 LOG_W(NR_MAC, "No UE found with C-RNTI %04x, ignoring Msg.3 to have UE come back with new RA attempt\n", ra->rnti);
                 return;
               } else {
+                // Reset Msg4_ACKed to not schedule ULSCH and DLSCH before RRC Reconfiguration
+                UE_C->Msg4_ACKed = false;
+
                 // The UE identified by C-RNTI still exists at the gNB
                 nr_mac_reset_ul_failure(&UE_C->UE_sched_ctrl);
 

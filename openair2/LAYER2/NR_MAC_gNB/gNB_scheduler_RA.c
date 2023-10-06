@@ -1879,16 +1879,14 @@ static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, s
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
-  NR_mac_stats_t *stats = &UE->mac_stats;
 
   LOG_D(NR_MAC, "ue rnti 0x%04x, harq is waiting %d, round %d, frame %d %d, harq id %d\n", ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
 
   if (harq->is_waiting == 0) {
     if (harq->round == 0) {
 
-      if (stats->dl.errors == 0) {
+      if (UE->Msg4_ACKed) {
         LOG_A(NR_MAC, "(UE RNTI 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", ra->rnti);
-        UE->Msg4_ACKed = true;
         UE->ra_timer = 0;
 
         // Pause scheduling according to:
