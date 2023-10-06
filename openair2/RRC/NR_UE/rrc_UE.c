@@ -308,11 +308,10 @@ NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int nb_inst)
     rrc->ue_id = nr_ue;
     // fill UE-NR-Capability @ UE-CapabilityRAT-Container here.
     rrc->selected_plmn_identity = 1;
-
+    rrc->ra_trigger = RA_NOT_RUNNING;
     rrc->dl_bwp_id = 0;
     rrc->ul_bwp_id = 0;
     rrc->as_security_activated = false;
-    rrc->ra_trigger = RA_NOT_RUNNING;
 
     FILE *f = NULL;
     if (uecap_file)
@@ -443,6 +442,20 @@ static void nr_rrc_ue_decode_NR_BCCH_BCH_Message(NR_UE_RRC_INST_t *rrc,
   if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
     LOG_E(NR_RRC, "NR_BCCH_BCH decode error\n");
     return;
+  }
+
+  // Actions following cell selection while T311 is running
+  NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
+  if (is_nr_timer_active(timers->T311)) {
+    nr_timer_stop(&timers->T311);
+    nr_timer_start(&timers->T301);
+    rrc->ra_trigger = RRC_CONNECTION_REESTABLISHMENT;
+
+    // apply the default MAC Cell Group configuration
+    // (done at MAC by calling nr_ue_mac_default_configs)
+
+    // apply the timeAlignmentTimerCommon included in SIB1
+    // not used
   }
 
   int get_sib = 0;
