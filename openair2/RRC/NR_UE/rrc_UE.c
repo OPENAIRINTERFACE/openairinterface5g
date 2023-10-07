@@ -1470,8 +1470,7 @@ void *rrc_nrue(void *notUsed)
   case NRRRC_FRAME_PROCESS:
     LOG_D(NR_RRC, "Received %s: frame %d\n", ITTI_MSG_NAME(msg_p), NRRRC_FRAME_PROCESS(msg_p).frame);
     // increase the timers every 10ms (every new frame)
-    NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[instance].timers_and_constants;
-    nr_rrc_handle_timers(timers);
+    nr_rrc_handle_timers(rrc, instance);
     NR_UE_RRC_SI_INFO *SInfo = &NR_UE_rrc_inst[instance].perNB[NRRRC_FRAME_PROCESS(msg_p).gnb_id].SInfo;
     nr_rrc_SI_timers(SInfo);
     break;
