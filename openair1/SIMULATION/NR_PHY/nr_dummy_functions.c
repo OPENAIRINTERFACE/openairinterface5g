@@ -32,7 +32,7 @@ void nr_mac_rrc_sync_ind(const module_id_t module_id,
                          const frame_t frame,
                          const bool in_sync) {}
 
-void nr_mac_rrc_msg3_ind(const module_id_t mod_id, int rnti) {}
+void nr_mac_rrc_msg3_ind(const module_id_t mod_id, int rnti, int gnb_id) {}
 
 void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success) {}
 
@@ -48,6 +48,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
                               const frame_t frame,
                               const int slot,
                               const rnti_t rnti,
+                              const uint32_t cellid,
                               const channel_t channel,
                               const uint8_t* pduP,
                               const sdu_size_t pdu_len) { return 0; }

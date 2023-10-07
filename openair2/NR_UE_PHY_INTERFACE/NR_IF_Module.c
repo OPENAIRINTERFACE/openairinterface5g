@@ -1048,7 +1048,8 @@ static int handle_bcch_bch(NR_UE_MAC_INST_t *mac,
     mac->frequency_range = FR2;
   else
     mac->frequency_range = FR1;
-  nr_mac_rrc_data_ind_ue(mac->ue_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3);    //  fixed 3 bytes MIB PDU
+  //  fixed 3 bytes MIB PDU
+  nr_mac_rrc_data_ind_ue(mac->ue_id, cc_id, gNB_index, 0, 0, 0, cell_id, NR_BCCH_BCH, (uint8_t *) pduP, 3);
   return 0;
 }
 

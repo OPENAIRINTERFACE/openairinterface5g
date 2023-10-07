@@ -45,6 +45,7 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
 void nr_rlc_add_drb(int rnti, int drb_id, const NR_RLC_BearerConfig_t *rlc_BearerConfig);
 
 void nr_rlc_reestablish_entity(int rnti, int lc_id);
+logical_chan_id_t nr_rlc_get_lcid_from_rb(int ue_id, bool is_srb, int rb_id);
 void nr_rlc_remove_ue(int rnti);
 bool nr_rlc_update_rnti(int from_rnti, int to_rnti);
 

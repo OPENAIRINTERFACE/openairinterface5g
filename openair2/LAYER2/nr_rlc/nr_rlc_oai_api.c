@@ -83,6 +83,24 @@ static void release_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t chan
   }
 }
 
+logical_chan_id_t nr_rlc_get_lcid_from_rb(int ue_id, bool is_srb, int rb_id)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, ue_id);
+  for (logical_chan_id_t id = 1; id <= 32; id++) {
+    nr_rlc_rb_t *rb = &ue->lcid2rb[id - 1];
+    if (is_srb) {
+      if (rb->type == NR_RLC_SRB && rb->choice.srb_id == rb_id)
+        return id;
+    } else {
+      if (rb->type == NR_RLC_DRB && rb->choice.drb_id == rb_id)
+        return id;
+    }
+  }
+  LOG_E(RLC, "Couldn't find LCID corresponding to %s %d\n", is_srb ? "SRB" : "DRB", rb_id);
+  return 0;
+}
+
 static nr_rlc_entity_t *get_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t channel_id)
 {
   if (channel_id == 0)
@@ -120,7 +138,7 @@ void nr_rlc_release_entity(int rnti, logical_chan_id_t channel_id)
 void mac_rlc_data_ind(const module_id_t  module_idP,
                       const rnti_t rntiP,
                       const eNB_index_t eNB_index,
-                      const frame_t  rameP,
+                      const frame_t frameP,
                       const eNB_flag_t enb_flagP,
                       const MBMS_flag_t MBMS_flagP,
                       const logical_chan_id_t channel_idP,
@@ -631,9 +649,10 @@ void nr_rlc_reestablish_entity(int rnti, int lc_id)
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
 
-  if (ue == NULL)
+  if (ue == NULL) {
     LOG_E(RLC, "RLC instance for the given UE was not found \n");
-
+    return;
+  }
   nr_rlc_entity_t *rb = get_rlc_entity_from_lcid(ue, lc_id);
 
   if (rb != NULL) {
@@ -644,7 +663,6 @@ void nr_rlc_reestablish_entity(int rnti, int lc_id)
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
-
 void nr_rlc_reconfigure_entity(int rnti, int lc_id, NR_RLC_Config_t *rlc_Config)
 {
   nr_rlc_manager_lock(nr_rlc_ue_manager);
@@ -703,6 +721,18 @@ void nr_rlc_reconfigure_entity(int rnti, int lc_id, NR_RLC_Config_t *rlc_Config)
         AssertFatal(um->ul_UM_RLC.sn_FieldLength == NULL, "Cannot handle different sn_FieldLength for DL and UL\n");
       nr_rlc_entity_um_reconfigure(rb, t_reassembly, sn_field_length);
     }
+  } else {
+    AssertFatal(rb->stats.mode == NR_RLC_AM, "Invalid RLC mode\n");
+    // default values as in 9.2.1 of 38.331
+    int sn_field_length = 12;
+    nr_rlc_entity_am_reconfigure(rb,
+                                 45, //t_poll_retransmit
+                                 35, //t_reassembly
+                                 0, //t_status_prohibit
+                                 -1, //poll_pdu
+                                 -1, //poll_byte
+                                 8, //max_retx_threshold
+                                 &sn_field_length);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }

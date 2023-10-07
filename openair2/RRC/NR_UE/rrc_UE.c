@@ -428,10 +428,12 @@ int check_si_status(NR_UE_RRC_SI_INFO *SI_info)
 /*brief decode BCCH-BCH (MIB) message*/
 static void nr_rrc_ue_decode_NR_BCCH_BCH_Message(NR_UE_RRC_INST_t *rrc,
                                                  const uint8_t gNB_index,
+                                                 const uint32_t phycellid,
                                                  uint8_t *const bufferP,
                                                  const uint8_t buffer_len)
 {
   NR_BCCH_BCH_Message_t *bcch_message = NULL;
+  rrc->phyCellID = phycellid;
 
   asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
                                                  &asn_DEF_NR_BCCH_BCH_Message,
@@ -448,8 +450,16 @@ static void nr_rrc_ue_decode_NR_BCCH_BCH_Message(NR_UE_RRC_INST_t *rrc,
   NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
   if (is_nr_timer_active(timers->T311)) {
     nr_timer_stop(&timers->T311);
-    nr_timer_start(&timers->T301);
     rrc->ra_trigger = RRC_CONNECTION_REESTABLISHMENT;
+
+    // preparing MSG3 for re-establishment in advance
+    uint8_t buffer[1024];
+    int buf_size = do_RRCReestablishmentRequest(buffer,
+                                                rrc->reestablishment_cause,
+                                                rrc->phyCellID,
+                                                rrc->rnti); // old rnti
+
+    nr_rlc_srb_recv_sdu(rrc->ue_id, 0, buffer, buf_size);
 
     // apply the default MAC Cell Group configuration
     // (done at MAC by calling nr_ue_mac_default_configs)
@@ -590,16 +600,28 @@ static int nr_decode_SI(NR_UE_RRC_SI_INFO *SI_info, NR_SystemInformation_t *si)
 
 static void nr_rrc_handle_msg3_indication(NR_UE_RRC_INST_t *rrc, rnti_t rnti)
 {
+  NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
   switch (rrc->ra_trigger) {
     case INITIAL_ACCESS_FROM_RRC_IDLE:
       // After SIB1 is received, prepare RRCConnectionRequest
       rrc->rnti = rnti;
       // start timer T300
-      NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
       nr_timer_start(&tac->T300);
       break;
     case RRC_CONNECTION_REESTABLISHMENT:
-      AssertFatal(1==0, "ra_trigger not implemented yet!\n");
+      rrc->rnti = rnti;
+      nr_timer_start(&tac->T301);
+      int srb_id = 1;
+      // re-establish PDCP for SRB1
+      nr_pdcp_reestablishment(rrc->ue_id, srb_id, true);
+      // re-establish RLC for SRB1
+      int lc_id = nr_rlc_get_lcid_from_rb(rrc->ue_id, true, 1);
+      nr_rlc_reestablish_entity(rrc->ue_id, lc_id);
+      // apply the specified configuration defined in 9.2.1 for SRB1
+      nr_rlc_reconfigure_entity(rrc->ue_id, lc_id, NULL);
+      // TODO configure lower layers to suspend integrity protection and ciphering for SRB1
+      // resume SRB1
+      rrc->Srb[srb_id] = RB_ESTABLISHED;
       break;
     case DURING_HANDOVER:
       AssertFatal(1==0, "ra_trigger not implemented yet!\n");
@@ -750,7 +772,8 @@ static void nr_rrc_manage_rlc_bearers(NR_UE_RRC_INST_t *rrc,
       if (rrc->active_RLC_entity[lcid]) {
         if (rlc_bearer->reestablishRLC)
           nr_rlc_reestablish_entity(rrc->ue_id, lcid);
-        nr_rlc_reconfigure_entity(rrc->ue_id, lcid, rlc_bearer->rlc_Config);
+        if (rlc_bearer->rlc_Config)
+          nr_rlc_reconfigure_entity(rrc->ue_id, lcid, rlc_bearer->rlc_Config);
       } else {
         rrc->active_RLC_entity[lcid] = true;
         AssertFatal(rlc_bearer->servedRadioBearer, "servedRadioBearer mandatory in case of setup\n");
@@ -1467,7 +1490,7 @@ void *rrc_nrue(void *notUsed)
     LOG_D(NR_RRC, "[UE %ld] Received %s: gNB %d\n", rrc->ue_id, ITTI_MSG_NAME(msg_p), NR_RRC_MAC_BCCH_DATA_IND(msg_p).gnb_index);
     NRRrcMacBcchDataInd *bcch = &NR_RRC_MAC_BCCH_DATA_IND(msg_p);
     if (bcch->is_bch)
-      nr_rrc_ue_decode_NR_BCCH_BCH_Message(rrc, bcch->gnb_index, bcch->sdu, bcch->sdu_size);
+      nr_rrc_ue_decode_NR_BCCH_BCH_Message(rrc, bcch->gnb_index, bcch->phycellid, bcch->sdu, bcch->sdu_size);
     else
       nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(rrc, bcch->gnb_index, bcch->sdu, bcch->sdu_size, bcch->rsrq, bcch->rsrp);
     break;
@@ -1615,8 +1638,11 @@ static void nr_rrc_ue_process_ueCapabilityEnquiry(NR_UE_RRC_INST_t *rrc, NR_UECa
 }
 
 void nr_rrc_initiate_rrcReestablishment(NR_UE_RRC_INST_t *rrc,
+                                        NR_ReestablishmentCause_t cause,
                                         const int gnb_id)
 {
+  rrc->reestablishment_cause = cause;
+
   NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
   rrcPerNB_t *rrcNB = rrc->perNB + gnb_id;
 
@@ -1645,7 +1671,6 @@ void nr_rrc_initiate_rrcReestablishment(NR_UE_RRC_INST_t *rrc,
   }
   // release the MCG SCell(s), if configured
   // no SCell configured in our implementation
-  rrc->nrRrcState = RRC_STATE_REESTABLISHMENT;
 
   // reset MAC
   // release spCellConfig, if configured

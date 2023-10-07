@@ -56,6 +56,7 @@
 #include "NR_UE-NR-Capability.h"
 #include "NR_SL-PreconfigurationNR-r16.h"
 #include "NR_MasterInformationBlockSidelink.h"
+#include "NR_ReestablishmentCause.h"
 
 #include "RRC/NR/nr_rrc_common.h"
 #include "as_message.h"
@@ -85,7 +86,6 @@ typedef enum Rrc_State_NR_e {
   RRC_STATE_INACTIVE_NR,
   RRC_STATE_CONNECTED_NR,
   RRC_STATE_DETACH_NR,
-  RRC_STATE_REESTABLISHMENT
 } Rrc_State_NR_t;
 
 typedef enum requested_SI_List_e {
@@ -186,10 +186,13 @@ typedef struct NR_UE_RRC_INST_s {
   rrcPerNB_t perNB[NB_CNX_UE];
 
   rnti_t rnti;
+  uint32_t phyCellID;
 
   OAI_NR_UECapability_t UECap;
   NR_UE_Timers_Constants_t timers_and_constants;
+
   RA_trigger_t ra_trigger;
+  NR_ReestablishmentCause_t reestablishment_cause;
   plmn_t plmnID;
 
   NR_BWP_Id_t dl_bwp_id;
