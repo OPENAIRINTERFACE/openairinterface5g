@@ -32,6 +32,10 @@
 #include "common/ran_context.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/nr/nr_common.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <immintrin.h>
 
 //#define SRS_DEBUG
 
@@ -42,12 +46,112 @@ const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 4
                              160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
                              256, 264, 272, 272, 272 };
 
-static uint32_t max4(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+#ifdef SRS_DEBUG
+static void print128_number(const simde__m128i var)
 {
-  int x = max(a, b);
-  x = max(x, c);
-  x = max(x, d);
-  return x;
+  int32_t *var16 = (int32_t *)&var;
+  for (int i = 0; i < 4; i++) {
+    printf("%5d  ", var16[i]);
+  }
+  printf("\n");
+}
+#endif
+
+int most_frequent_ri(const int *arr, int n)
+{
+  int maxcount = 0;
+  int element_having_max_freq = -1;
+  for (int i = 0; i < n; i++) {
+    int count = 0;
+    for (int j = 0; j < n; j++) {
+      if (arr[i] == arr[j])
+        count++;
+    }
+    if (count > maxcount) {
+      maxcount = count;
+      element_having_max_freq = arr[i];
+    }
+  }
+  return element_having_max_freq;
+}
+
+void matrix_rank_128bits(int row, int col, simde__m128i mat[4])
+{
+  if ((row == 2 && col == 2) || (row == 4 && col == 2)) {
+
+    int32_t *mat_k = (int32_t *)&mat[0];
+    int32_t *mat_i = (int32_t *)&mat[1];
+
+    simde__m128 mult_128 = simde_mm_setr_ps((float)mat_i[0] / (float)mat_k[0],
+                                       (float)mat_i[0] / (float)mat_k[0],
+                                       (float)mat_i[2] / (float)mat_k[2],
+                                       (float)mat_i[2] / (float)mat_k[2]);
+
+    simde__m128i mat_kj_128 = simde_mm_setr_epi32(mat_k[0], mat_k[1], mat_k[2], mat_k[3]);
+    simde__m128 multiplication = simde_mm_mul_ps(mult_128, simde_mm_cvtepi32_ps(mat_kj_128));
+    mat[1] = simde_mm_sub_epi32(mat[1], simde_mm_cvtps_epi32(multiplication));
+
+    mat_k = (int32_t *)&mat[2];
+    mat_i = (int32_t *)&mat[3];
+
+    mult_128 = simde_mm_setr_ps((float)mat_i[0] / (float)mat_k[0],
+                                (float)mat_i[0] / (float)mat_k[0],
+                                (float)mat_i[2] / (float)mat_k[2],
+                                (float)mat_i[2] / (float)mat_k[2]);
+
+    mat_kj_128 = simde_mm_setr_epi32(mat_k[0], mat_k[1], mat_k[2], mat_k[3]);
+    multiplication = simde_mm_mul_ps(mult_128, simde_mm_cvtepi32_ps(mat_kj_128));
+    mat[3] = simde_mm_sub_epi32(mat[3], simde_mm_cvtps_epi32(multiplication));
+
+  } else if (row == 2 && col == 4) {
+
+    int32_t *mat_k = (int32_t *)&mat[0];
+    int32_t *mat_i = (int32_t *)&mat[1];
+
+    simde__m128 mult_128 = simde_mm_setr_ps((float)mat_i[0] / (float)mat_k[0],
+                                       (float)mat_i[0] / (float)mat_k[0],
+                                       (float)mat_i[0] / (float)mat_k[0],
+                                       (float)mat_i[0] / (float)mat_k[0]);
+
+    simde__m128i mat_kj_128 = simde_mm_setr_epi32(mat_k[0], mat_k[1], mat_k[2], mat_k[3]);
+    simde__m128 multiplication = simde_mm_mul_ps(mult_128, simde_mm_cvtepi32_ps(mat_kj_128));
+    mat[1] = simde_mm_sub_epi32(mat[1], simde_mm_cvtps_epi32(multiplication));
+
+    mat_k = (int32_t *)&mat[2];
+    mat_i = (int32_t *)&mat[3];
+
+    mult_128 = simde_mm_setr_ps((float)mat_i[0] / (float)mat_k[0],
+                                (float)mat_i[0] / (float)mat_k[0],
+                                (float)mat_i[0] / (float)mat_k[0],
+                                (float)mat_i[0] / (float)mat_k[0]);
+
+    mat_kj_128 = simde_mm_setr_epi32(mat_k[0], mat_k[1], mat_k[2], mat_k[3]);
+    multiplication = simde_mm_mul_ps(mult_128, simde_mm_cvtepi32_ps(mat_kj_128));
+    mat[3] = simde_mm_sub_epi32(mat[3], simde_mm_cvtps_epi32(multiplication));
+
+  } else if (row == 4 && col == 4) {
+
+    for (int k = 0; k < col; k++) {
+      int32_t *mat_k = (int32_t *)&mat[k];
+
+      for (int i = k + 1; i < row; i++) {
+        int32_t *mat_i = (int32_t *)&mat[i];
+
+        float mult = (float)mat_i[k] / (float)mat_k[k];
+        if (isnan(mult))
+          mult = 0;
+        if (isinf(mult))
+          mult = 0;
+
+        simde__m128 mult_128 = simde_mm_set1_ps(mult);
+        simde__m128i mat_kj_128 = simde_mm_setr_epi32(mat_k[0], mat_k[1], mat_k[2], mat_k[3]);
+        simde__m128 multiplication = simde_mm_mul_ps(mult_128, simde_mm_cvtepi32_ps(mat_kj_128));
+        mat[i] = simde_mm_sub_epi32(mat[i], simde_mm_cvtps_epi32(multiplication));
+      }
+    }
+  } else {
+    AssertFatal(1 == 0, "matrix_rank_128bits() function is not implemented for row = %i and col = %i\n", row, col);
+  }
 }
 
 void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr_srs_normalized_channel_iq_matrix,
@@ -57,12 +161,15 @@ void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr
   /* already mutex protected: held in handle_nr_srs_measurements() */
   NR_SCHED_ENSURE_LOCKED(&RC.nrmac[0]->sched_lock);
 
-  // If the gNB or UE has 1 antenna, the rank is always 1, i.e., *ul_ri = 0.
-  // For 2x2 scenario, we compute the rank of channel.
-  // The computation for 2x4, 4x2, 4x4, ... scenarios are not implemented yet. In these cases, the function sets *ul_ri = 0, which is always a valid value.
-  if (!(nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements == 2 &&
-        nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports == 2 &&
-        current_BWP->pusch_Config && *current_BWP->pusch_Config->maxRank == 2)) {
+#ifdef SRS_DEBUG
+  LOG_I(NR_MAC, "num_gnb_antenna_elements = %i\n", nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements);
+  LOG_I(NR_MAC, "num_ue_srs_ports = %i\n", nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports);
+#endif
+
+  if (nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements == 1 ||
+      nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports == 1 ||
+      current_BWP->pusch_Config == NULL ||
+      (current_BWP->pusch_Config && *current_BWP->pusch_Config->maxRank == 1)) {
     *ul_ri = 0;
     return;
   }
@@ -70,75 +177,236 @@ void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr
   const c16_t *ch = (c16_t *)nr_srs_normalized_channel_iq_matrix->channel_matrix;
   const uint16_t num_gnb_antenna_elements = nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements;
   const uint16_t num_prgs = nr_srs_normalized_channel_iq_matrix->num_prgs;
-  const uint16_t base00_idx = 0 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 0, Tx port 0
-  const uint16_t base01_idx = 1 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 0, Tx port 1
-  const uint16_t base10_idx = 0 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 1, Tx port 0
-  const uint16_t base11_idx = 1 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 1, Tx port 1
-  const uint8_t bshift = 2;
-  const int16_t cond_dB_threshold = 5;
-  int count = 0;
 
-  for(int pI = 0; pI < num_prgs; pI++) {
+  int row = num_gnb_antenna_elements;
+  int col = nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports;
+  simde__m128i mat_real128[4];
+  simde__m128i mat_imag128[4];
+  simde__m128i sum_matrix[4];
 
-    /* Hh x H =
-    *           | conjch00 conjch10 | x | ch00 ch01 | = | conjch00*ch00+conjch10*ch10 conjch00*ch01+conjch10*ch11 |
-    *           | conjch01 conjch11 |   | ch10 ch11 |   | conjch01*ch00+conjch11*ch10 conjch01*ch01+conjch11*ch11 |
-    */
+  if ((row == 2 && col == 2) || (row == 4 && col == 2)) {
+    int array_lim = num_prgs >> 2;
+    int antenna_rank[array_lim];
+    int count = 0;
 
-    const c32_t ch00 = {ch[base00_idx + pI].r, ch[base00_idx + pI].i};
-    const c32_t ch01 = {ch[base01_idx + pI].r, ch[base01_idx + pI].i};
-    const c32_t ch10 = {ch[base10_idx + pI].r, ch[base10_idx + pI].i};
-    const c32_t ch11 = {ch[base11_idx + pI].r, ch[base11_idx + pI].i};
+    const uint16_t base00_idx = 0 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 0, Tx port 0
+    const uint16_t base01_idx = 1 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 0, Tx port 1
+    const uint16_t base10_idx = 0 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 1, Tx port 0
+    const uint16_t base11_idx = 1 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 1, Tx port 1
 
-    c16_t HhxH00 = {(int16_t)((ch00.r * ch00.r + ch00.i * ch00.i + ch10.r * ch10.r + ch10.i * ch10.i) >> bshift),
-                    (int16_t)((ch00.r * ch00.i - ch00.i * ch00.r + ch10.r * ch10.i - ch10.i * ch10.r) >> bshift)};
+    for (int pI = 0; pI < num_prgs; pI += 4) {
+      uint16_t pI00 = pI + base00_idx;
+      uint16_t pI10 = pI + base10_idx;
+      uint16_t pI01 = pI + base01_idx;
+      uint16_t pI11 = pI + base11_idx;
+      mat_real128[0] = simde_mm_setr_epi32(ch[pI00].r, ch[pI10].r, ch[pI00 + 1].r, ch[pI10 + 1].r);
+      mat_real128[1] = simde_mm_setr_epi32(ch[pI01].r, ch[pI11].r, ch[pI01 + 1].r, ch[pI11 + 1].r);
+      mat_real128[2] = simde_mm_setr_epi32(ch[pI00 + 2].r, ch[pI10 + 2].r, ch[pI00 + 3].r, ch[pI10 + 3].r);
+      mat_real128[3] = simde_mm_setr_epi32(ch[pI01 + 2].r, ch[pI11 + 2].r, ch[pI01 + 3].r, ch[pI11 + 3].r);
+      mat_imag128[0] = simde_mm_setr_epi32(ch[pI00].i, ch[pI10].i, ch[pI00 + 1].i, ch[pI10 + 1].i);
+      mat_imag128[1] = simde_mm_setr_epi32(ch[pI01].i, ch[pI11].i, ch[pI01 + 1].i, ch[pI11 + 1].i);
+      mat_imag128[2] = simde_mm_setr_epi32(ch[pI00 + 2].i, ch[pI10 + 2].i, ch[pI00 + 3].i, ch[pI10 + 3].i);
+      mat_imag128[3] = simde_mm_setr_epi32(ch[pI01 + 2].i, ch[pI11 + 2].i, ch[pI01 + 3].i, ch[pI11 + 3].i);
 
-    c16_t HhxH01 = {(int16_t)((ch00.r * ch01.r + ch00.i * ch01.i + ch10.r * ch11.r + ch10.i * ch11.i) >> bshift),
-                    (int16_t)((ch00.r * ch01.i - ch00.i * ch01.r + ch10.r * ch11.i - ch10.i * ch11.r) >> bshift)};
+      matrix_rank_128bits(row, col, mat_real128);
+      matrix_rank_128bits(row, col, mat_imag128);
 
-    c16_t HhxH10 = {(int16_t)((ch01.r * ch00.r + ch01.i * ch00.i + ch11.r * ch10.r + ch11.i * ch10.i) >> bshift),
-                    (int16_t)((ch01.r * ch00.i - ch01.i * ch00.r + ch11.r * ch10.i - ch11.i * ch10.r) >> bshift)};
+      sum_matrix[0] = simde_mm_add_epi32(mat_real128[0], mat_imag128[0]);
+      sum_matrix[1] = simde_mm_add_epi32(mat_real128[1], mat_imag128[1]);
+      sum_matrix[2] = simde_mm_add_epi32(mat_real128[2], mat_imag128[2]);
+      sum_matrix[3] = simde_mm_add_epi32(mat_real128[3], mat_imag128[3]);
 
-    c16_t HhxH11 = {(int16_t)((ch01.r * ch01.r + ch01.i * ch01.i + ch11.r * ch11.r + ch11.i * ch11.i) >> bshift),
-                    (int16_t)((ch01.r * ch01.i - ch01.i * ch01.r + ch11.r * ch11.i - ch11.i * ch11.r) >> bshift)};
+#ifdef SRS_DEBUG
+      LOG_I(NR_MAC, "\nSum matrix\n");
+      print128_number(sum_matrix[0]);
+      print128_number(sum_matrix[1]);
+      print128_number(sum_matrix[2]);
+      print128_number(sum_matrix[3]);
+#endif
 
-    int8_t det_HhxH_dB = dB_fixed(HhxH00.r * HhxH11.r - HhxH00.i * HhxH11.i - HhxH01.r * HhxH10.r + HhxH01.i * HhxH10.i);
+      int count_pivots = 0;
 
-    int8_t norm_HhxH_2_dB = dB_fixed(max4(HhxH00.r*HhxH00.r + HhxH00.i*HhxH00.i,
-                                          HhxH01.r*HhxH01.r + HhxH01.i*HhxH01.i,
-                                          HhxH10.r*HhxH10.r + HhxH10.i*HhxH10.i,
-                                          HhxH11.r*HhxH11.r + HhxH11.i*HhxH11.i));
+      int32_t *sum_matrix_i = (int32_t *)&sum_matrix[1];
+      if (sum_matrix_i[1] != 0)
+        count_pivots++;
+      if (sum_matrix_i[3] != 0)
+        count_pivots++;
 
-    int8_t cond_db = norm_HhxH_2_dB - det_HhxH_dB;
+      sum_matrix_i = (int32_t *)&sum_matrix[3];
+      if (sum_matrix_i[1] != 0)
+        count_pivots++;
+      if (sum_matrix_i[3] != 0)
+        count_pivots++;
 
-    if (cond_db < cond_dB_threshold) {
+      antenna_rank[count] = count_pivots / 4;
       count++;
-    } else {
-      count--;
+    }
+    *ul_ri = most_frequent_ri(antenna_rank, array_lim);
+
+  } else if (row == 2 && col == 4) {
+
+    int array_lim = num_prgs >> 1;
+    int antenna_rank[array_lim];
+    int count = 0;
+
+    const uint16_t base00_idx = 0 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 0, Tx port 0
+    const uint16_t base10_idx = 1 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 1, Tx port 0
+    const uint16_t base20_idx = 2 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 2, Tx port 0
+    const uint16_t base30_idx = 3 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 3, Tx port 0
+
+    const uint16_t base01_idx = 0 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 0, Tx port 1
+    const uint16_t base11_idx = 1 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 1, Tx port 1
+    const uint16_t base21_idx = 2 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 2, Tx port 1
+    const uint16_t base31_idx = 3 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 3, Tx port 1
+
+    for (int pI = 0; pI < num_prgs; pI += 2) {
+
+      mat_real128[0] = simde_mm_setr_epi32(ch[base00_idx + pI].r,
+                                           ch[base10_idx + pI].r,
+                                           ch[base20_idx + pI].r,
+                                           ch[base30_idx + pI].r);
+      mat_real128[1] = simde_mm_setr_epi32(ch[base01_idx + pI].r,
+                                           ch[base11_idx + pI].r,
+                                           ch[base21_idx + pI].r,
+                                           ch[base31_idx + pI].r);
+      mat_real128[2] = simde_mm_setr_epi32(ch[base00_idx + (pI + 1)].r,
+                                           ch[base10_idx + (pI + 1)].r,
+                                           ch[base20_idx + (pI + 1)].r,
+                                           ch[base30_idx + (pI + 1)].r);
+      mat_real128[3] = simde_mm_setr_epi32(ch[base01_idx + (pI + 1)].r,
+                                           ch[base11_idx + (pI + 1)].r,
+                                           ch[base21_idx + (pI + 1)].r,
+                                           ch[base31_idx + (pI + 1)].r);
+
+      mat_imag128[0] = simde_mm_setr_epi32(ch[base00_idx + pI].i,
+                                           ch[base10_idx + pI].i,
+                                           ch[base20_idx + pI].i,
+                                           ch[base30_idx + pI].i);
+      mat_imag128[1] = simde_mm_setr_epi32(ch[base01_idx + pI].i,
+                                           ch[base11_idx + pI].i,
+                                           ch[base21_idx + pI].i,
+                                           ch[base31_idx + pI].i);
+      mat_imag128[2] = simde_mm_setr_epi32(ch[base00_idx + (pI + 1)].i,
+                                           ch[base10_idx + (pI + 1)].i,
+                                           ch[base20_idx + (pI + 1)].i,
+                                           ch[base30_idx + (pI + 1)].i);
+      mat_imag128[3] = simde_mm_setr_epi32(ch[base01_idx + (pI + 1)].i,
+                                           ch[base11_idx + (pI + 1)].i,
+                                           ch[base21_idx + (pI + 1)].i,
+                                           ch[base31_idx + (pI + 1)].i);
+
+      matrix_rank_128bits(row, col, mat_real128);
+      matrix_rank_128bits(row, col, mat_imag128);
+
+      sum_matrix[0] = simde_mm_add_epi32(mat_real128[0], mat_imag128[0]);
+      sum_matrix[1] = simde_mm_add_epi32(mat_real128[1], mat_imag128[1]);
+      sum_matrix[2] = simde_mm_add_epi32(mat_real128[2], mat_imag128[2]);
+      sum_matrix[3] = simde_mm_add_epi32(mat_real128[3], mat_imag128[3]);
+
+#ifdef SRS_DEBUG
+      LOG_I(NR_MAC, "\nSum matrix\n");
+      print128_number(sum_matrix[0]);
+      print128_number(sum_matrix[1]);
+      print128_number(sum_matrix[2]);
+      print128_number(sum_matrix[3]);
+#endif
+
+      int count_pivots = 0;
+
+      int32_t *sum_matrix_i = (int32_t *)&sum_matrix[1];
+      if (sum_matrix_i[1] != 0)
+        count_pivots++;
+      if (sum_matrix_i[3] != 0)
+        count_pivots++;
+
+      sum_matrix_i = (int32_t *)&sum_matrix[3];
+      if (sum_matrix_i[1] != 0)
+        count_pivots++;
+      if (sum_matrix_i[3] != 0)
+        count_pivots++;
+
+      antenna_rank[count] = count_pivots / 2;
+      count++;
     }
 
+    int rr = most_frequent_ri(antenna_rank, array_lim);
+    if (rr == 0 || rr == 1)
+      *ul_ri = 0;
+    if (rr > 1)
+      *ul_ri = 1;
+
+  } else if (row == 4 && col == 4) {
+
+    int antenna_rank[num_prgs];
+    int count = 0;
+
+    const uint16_t base00_idx = 0 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 0, Tx port 0
+    const uint16_t base10_idx = 1 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 1, Tx port 0
+    const uint16_t base20_idx = 2 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 2, Tx port 0
+    const uint16_t base30_idx = 3 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 3, Tx port 0
+
+    const uint16_t base01_idx = 0 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 0, Tx port 1
+    const uint16_t base11_idx = 1 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 1, Tx port 1
+    const uint16_t base21_idx = 2 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 2, Tx port 1
+    const uint16_t base31_idx = 3 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 3, Tx port 1
+
+    const uint16_t base02_idx = 0 * num_gnb_antenna_elements * num_prgs + 2 * num_prgs; // Rx antenna 0, Tx port 2
+    const uint16_t base12_idx = 1 * num_gnb_antenna_elements * num_prgs + 2 * num_prgs; // Rx antenna 1, Tx port 2
+    const uint16_t base22_idx = 2 * num_gnb_antenna_elements * num_prgs + 2 * num_prgs; // Rx antenna 2, Tx port 2
+    const uint16_t base32_idx = 3 * num_gnb_antenna_elements * num_prgs + 2 * num_prgs; // Rx antenna 3, Tx port 2
+
+    const uint16_t base03_idx = 0 * num_gnb_antenna_elements * num_prgs + 3 * num_prgs; // Rx antenna 0, Tx port 3
+    const uint16_t base13_idx = 1 * num_gnb_antenna_elements * num_prgs + 3 * num_prgs; // Rx antenna 1, Tx port 3
+    const uint16_t base23_idx = 2 * num_gnb_antenna_elements * num_prgs + 3 * num_prgs; // Rx antenna 2, Tx port 3
+    const uint16_t base33_idx = 3 * num_gnb_antenna_elements * num_prgs + 3 * num_prgs; // Rx antenna 3, Tx port 3
+
+    for (int pI = 0; pI < num_prgs; pI++) {
+      mat_real128[0] = simde_mm_setr_epi32(ch[base00_idx + pI].r, ch[base10_idx + pI].r, ch[base20_idx + pI].r, ch[base30_idx + pI].r);
+      mat_real128[1] = simde_mm_setr_epi32(ch[base01_idx + pI].r, ch[base11_idx + pI].r, ch[base21_idx + pI].r, ch[base31_idx + pI].r);
+      mat_real128[2] = simde_mm_setr_epi32(ch[base02_idx + pI].r, ch[base12_idx + pI].r, ch[base22_idx + pI].r, ch[base32_idx + pI].r);
+      mat_real128[3] = simde_mm_setr_epi32(ch[base03_idx + pI].r, ch[base13_idx + pI].r, ch[base23_idx + pI].r, ch[base33_idx + pI].r);
+
+      mat_imag128[0] = simde_mm_setr_epi32(ch[base00_idx + pI].i, ch[base10_idx + pI].i, ch[base20_idx + pI].i, ch[base30_idx + pI].i);
+      mat_imag128[1] = simde_mm_setr_epi32(ch[base01_idx + pI].i, ch[base11_idx + pI].i, ch[base21_idx + pI].i, ch[base31_idx + pI].i);
+      mat_imag128[2] = simde_mm_setr_epi32(ch[base02_idx + pI].i, ch[base12_idx + pI].i, ch[base22_idx + pI].i, ch[base32_idx + pI].i);
+      mat_imag128[3] = simde_mm_setr_epi32(ch[base03_idx + pI].i, ch[base13_idx + pI].i, ch[base23_idx + pI].i, ch[base33_idx + pI].i);
+
+      matrix_rank_128bits(row, col, mat_real128);
+      matrix_rank_128bits(row, col, mat_imag128);
+
+      sum_matrix[0] = simde_mm_add_epi32(mat_real128[0], mat_imag128[0]);
+      sum_matrix[1] = simde_mm_add_epi32(mat_real128[1], mat_imag128[1]);
+      sum_matrix[2] = simde_mm_add_epi32(mat_real128[2], mat_imag128[2]);
+      sum_matrix[3] = simde_mm_add_epi32(mat_real128[3], mat_imag128[3]);
+
 #ifdef SRS_DEBUG
-    LOG_I(NR_MAC, "H00[%i] = %i + j(%i)\n", pI, ch[base00_idx+pI].r, ch[base00_idx+pI].i);
-    LOG_I(NR_MAC, "H01[%i] = %i + j(%i)\n", pI, ch[base01_idx+pI].r, ch[base01_idx+pI].i);
-    LOG_I(NR_MAC, "H10[%i] = %i + j(%i)\n", pI, ch[base10_idx+pI].r, ch[base10_idx+pI].i);
-    LOG_I(NR_MAC, "H11[%i] = %i + j(%i)\n", pI, ch[base11_idx+pI].r, ch[base11_idx+pI].i);
-    LOG_I(NR_MAC, "HhxH00[%i] = %i + j(%i)\n", pI, HhxH00.r, HhxH00.i);
-    LOG_I(NR_MAC, "HhxH01[%i] = %i + j(%i)\n", pI, HhxH01.r, HhxH01.i);
-    LOG_I(NR_MAC, "HhxH10[%i] = %i + j(%i)\n", pI, HhxH10.r, HhxH10.i);
-    LOG_I(NR_MAC, "HhxH11[%i] = %i + j(%i)\n", pI, HhxH11.r, HhxH11.i);
-    LOG_I(NR_MAC, "det_HhxH[%i] = %i\n", pI, det_HhxH_dB);
-    LOG_I(NR_MAC, "norm_HhxH_2_dB[%i] = %i\n", pI, norm_HhxH_2_dB);
-#endif
-  }
-
-  if (count > 0) {
-    *ul_ri = 1;
-  }
-
-#ifdef SRS_DEBUG
-  LOG_I(NR_MAC, "ul_ri = %i (count = %i)\n", (*ul_ri)+1, count);
+      LOG_I(NR_MAC, "\nSum matrix\n");
+      print128_number(sum_matrix[0]);
+      print128_number(sum_matrix[1]);
+      print128_number(sum_matrix[2]);
+      print128_number(sum_matrix[3]);
 #endif
 
+      int count_pivots = 0;
+      for (int i = 0; i < row; i++) {
+        int32_t *sum_matrix_i = (int32_t *)&sum_matrix[i];
+
+        int found_piv = 0;
+        for (int j = 0; j < col; j++) {
+          if (sum_matrix_i[j] != 0 && found_piv == 0) {
+            count_pivots++;
+            found_piv = 1;
+          }
+        }
+      }
+      antenna_rank[count] = count_pivots;
+      count++;
+    }
+    *ul_ri = most_frequent_ri(antenna_rank, num_prgs) - 1;
+
+  } else {
+    AssertFatal(1 == 0, "nr_srs_ri_computation() function is not implemented for row = %i and col = %i\n", row, col);
+  }
 }
 
 static void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu,
