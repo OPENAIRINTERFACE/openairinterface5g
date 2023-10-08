@@ -2077,6 +2077,7 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
     if (NCS == 0) return nb_preambles;
     else {
       r = L_ra/NCS;
+      AssertFatal(r > 0, "bad r: L_ra %d, NCS %d\n", L_ra, NCS);
       found_sequences = (nb_preambles/r) + (nb_preambles%r!=0); //ceil(nb_preambles/r)
       LOG_D(MAC, "Computing NR root sequences: found %u sequences\n", found_sequences);
       return (found_sequences);
