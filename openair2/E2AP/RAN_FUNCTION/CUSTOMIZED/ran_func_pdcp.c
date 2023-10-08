@@ -1,6 +1,17 @@
 #include "ran_func_pdcp.h"
-#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_pdcp.h"
+
 #include <assert.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_pdcp.h"
+#include "common/ran_context.h"
+#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
+#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair2/E2AP/flexric/src/util/time_now_us.h"
+
 
 static
 const int mod_id = 0;

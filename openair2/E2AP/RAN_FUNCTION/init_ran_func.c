@@ -1,4 +1,6 @@
 #include "init_ran_func.h"
+#include "read_setup_ran.h"
+#include "../flexric/src/agent/e2_agent_api.h"
 #include "CUSTOMIZED/ran_func_mac.h"
 #include "CUSTOMIZED/ran_func_rlc.h"
 #include "CUSTOMIZED/ran_func_pdcp.h"
@@ -66,6 +68,10 @@ sm_io_ag_ran_t init_ran_func_ag(void)
   init_read_setup_tbl(&io.read_setup_tbl);
   init_write_ctrl(&io.write_ctrl_tbl);
   init_write_subs(&io.write_subs_tbl);
+
+#if defined(E2AP_V2) || defined(E2AP_V3)
+  io.read_setup_ran = read_setup_ran;
+#endif
 
   return io;
 }
