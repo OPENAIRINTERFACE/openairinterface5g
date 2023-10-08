@@ -235,7 +235,7 @@ void rx_func(void *param)
     L1_nr_prach_procedures(gNB,frame_rx,slot_rx);
 
     //WA: comment rotation in tx/rx
-    if((gNB->num_RU == 1) && (gNB->RU_list[0]->if_south != REMOTE_IF4p5)) {
+    if (gNB->phase_comp) {
       //apply the rx signal rotation here
       int soffset = (slot_rx & 3) * gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size;
       for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {

@@ -885,6 +885,7 @@ void RCconfig_NR_L1(void)
       RC.gNB[j]->L1_tx_thread_core = *(L1_ParamList.paramarray[j][L1_TX_THREAD_CORE].iptr);
       LOG_I(PHY,"L1_RX_THREAD_CORE %d (%d)\n",*(L1_ParamList.paramarray[j][L1_RX_THREAD_CORE].iptr),L1_RX_THREAD_CORE);
       RC.gNB[j]->TX_AMP = (int16_t)(32767.0 / pow(10.0, .05 * (double)(*L1_ParamList.paramarray[j][L1_TX_AMP_BACKOFF_dB].uptr)));
+      RC.gNB[j]->phase_comp = *L1_ParamList.paramarray[j][L1_PHASE_COMP].uptr;
       LOG_I(PHY, "TX_AMP = %d (-%d dBFS)\n", RC.gNB[j]->TX_AMP, *L1_ParamList.paramarray[j][L1_TX_AMP_BACKOFF_dB].uptr);
       AssertFatal(RC.gNB[j]->TX_AMP > 300, "TX_AMP is too small, must be larger than 300 (is %d)\n", RC.gNB[j]->TX_AMP);
       if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {

@@ -58,6 +58,8 @@
 #define HLP_TP_SIZ "thread_pool_size paramter removed, please use --thread-pool"
 #define CONFIG_STRING_L1_TX_AMP_BACKOFF_dB                 "tx_amp_backoff_dB"
 #define HLP_L1TX_BO "Backoff from full-scale output at the L1 entity(frequency domain), ex. 12 would corresponding to 14-bit input level (6 dB/bit). Default 36 dBFS for OAI RU entity"
+#define CONFIG_STRING_L1_PHASE_COMP                        "phase_compensation"
+#define HLP_L1_PHASE_COMP "Apply NR symbolwise phase rotation"
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            L1 configuration parameters                                                                             */
 /*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
@@ -83,6 +85,7 @@
   {CONFIG_STRING_L1_RX_THREAD_CORE,                    NULL,       0,         .uptr=NULL,           .defintval=-1,              TYPE_UINT,     0},          \
   {CONFIG_STRING_L1_TX_THREAD_CORE,                    NULL,       0,         .uptr=NULL,           .defintval=-1,              TYPE_UINT,     0},          \
   {CONFIG_STRING_L1_TX_AMP_BACKOFF_dB,                 HLP_L1TX_BO,0,         .uptr=NULL,           .defintval=36,              TYPE_UINT,     0},         \
+  {CONFIG_STRING_L1_PHASE_COMP,                        HLP_L1_PHASE_COMP,PARAMFLAG_BOOL, .uptr=NULL,.defintval=1,               TYPE_UINT,     0},         \
 }
 // clang-format on
 #define L1_CC_IDX                                          0
@@ -104,6 +107,7 @@
 #define L1_RX_THREAD_CORE                                  16
 #define L1_TX_THREAD_CORE                                  17
 #define L1_TX_AMP_BACKOFF_dB                               18
+#define L1_PHASE_COMP                                      19
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif

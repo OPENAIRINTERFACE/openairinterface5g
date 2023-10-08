@@ -610,6 +610,7 @@ int main(int argc, char **argv)
   gNB = RC.gNB[0];
   gNB->ofdm_offset_divisor = UINT_MAX;
   gNB->ldpc_offload_flag = ldpc_offload_flag;
+  gNB->phase_comp = true; // we need to perform phase compensation, otherwise everything will fail
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;

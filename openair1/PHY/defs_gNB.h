@@ -604,6 +604,10 @@ typedef struct PHY_VARS_gNB_s {
 
   // reference amplitude for TX
   int16_t TX_AMP;
+
+  // flag to activate 3GPP phase symbolwise rotation
+  bool phase_comp;
+
   // PUCCH0 Look-up table for cyclic-shifts
   NR_gNB_PUCCH0_LUT_t pucch0_lut;
 
