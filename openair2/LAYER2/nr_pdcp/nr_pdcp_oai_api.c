@@ -1057,6 +1057,32 @@ bool nr_pdcp_data_req_srb(ue_id_t ue_id,
   return 1;
 }
 
+void nr_pdcp_suspend_srb(ue_id_t ue_id, int srb_id)
+{
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
+  nr_pdcp_entity_t *srb = ue->srb[srb_id - 1];
+  if (srb == NULL) {
+    LOG_E(PDCP, "Trying to susbend SRB with ID %d but it is not established\n", srb_id);
+    return;
+  }
+  srb->suspend_entity(srb);
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+}
+
+void nr_pdcp_suspend_drb(ue_id_t ue_id, int drb_id)
+{
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
+  nr_pdcp_entity_t *drb = ue->drb[drb_id - 1];
+  if (drb == NULL) {
+    LOG_E(PDCP, "Trying to susbend DRB with ID %d but it is not established\n", drb_id);
+    return;
+  }
+  drb->suspend_entity(drb);
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+}
+
 void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering)
 {
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);

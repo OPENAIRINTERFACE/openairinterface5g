@@ -77,6 +77,7 @@ typedef struct nr_pdcp_entity_t {
                      int sdu_id, char *pdu_buffer, int pdu_max_size);
   void (*delete_entity)(struct nr_pdcp_entity_t *entity);
   void (*release_entity)(struct nr_pdcp_entity_t *entity);
+  void (*suspend_entity)(struct nr_pdcp_entity_t *entity);
   void (*get_stats)(struct nr_pdcp_entity_t *entity, nr_pdcp_statistics_t *out);
 
   /* set_security: pass -1 to integrity_algorithm / ciphering_algorithm
