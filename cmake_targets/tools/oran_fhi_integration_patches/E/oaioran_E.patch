@@ -1,0 +1,443 @@
+diff --git a/fhi_lib/app/src/common.h b/fhi_lib/app/src/common.h
+index 7508117..a93c085 100644
+--- a/fhi_lib/app/src/common.h
++++ b/fhi_lib/app/src/common.h
+@@ -28,7 +28,7 @@
+ #include <rte_common.h>
+ #include <rte_mbuf.h>
+ 
+-#define VERSIONX                "oran_e_maintenance_release_v1.0"
++#define VERSIONX                "oran_e_maintenance_release_v1.1"
+ 
+ #define APP_O_DU  0
+ #define APP_O_RU  1
+diff --git a/fhi_lib/lib/Makefile b/fhi_lib/lib/Makefile
+index de141bf..5bcde3d 100644
+--- a/fhi_lib/lib/Makefile
++++ b/fhi_lib/lib/Makefile
+@@ -23,11 +23,11 @@ MYCUSTOMSPACE1='------------------------------------------------------------'
+ ##############################################################
+ #  Tools configuration
+ ##############################################################
+-CC  := icc
+-CPP := icpc
++CC  := gcc
++CPP := g++
+ AS := as
+ AR := ar
+-LD := icc
++LD := gcc
+ OBJDUMP := objdump
+ 
+ ifeq ($(SHELL),cmd.exe)
+@@ -95,8 +95,7 @@ CPP_SRC = $(SRC_DIR)/xran_compression.cpp \
+ 	$(SRC_DIR)/xran_bfp_cplane32.cpp \
+ 	$(SRC_DIR)/xran_bfp_cplane64.cpp \
+ 	$(SRC_DIR)/xran_bfp_uplane_9b16rb.cpp \
+-	$(SRC_DIR)/xran_bfp_uplane.cpp \
+-	$(SRC_DIR)/xran_mod_compression.cpp
++	$(SRC_DIR)/xran_bfp_uplane.cpp
+ 
+ CPP_SRC_SNC = $(SRC_DIR)/xran_compression_snc.cpp \
+ 	$(SRC_DIR)/xran_bfp_cplane8_snc.cpp \
+@@ -112,12 +111,12 @@ CC_FLAGS += -std=gnu11 -Wall -Wno-deprecated-declarations  \
+         -fPIC \
+ 	-Wall \
+ 	-Wimplicit-function-declaration \
+-	-g -O3 -wd1786 -mcmodel=large
++	-g -O -mavx512bw -march=skylake-avx512 -mtune=skylake-avx512#--wd1786 -mcmodel=large
+ 
+-CPP_FLAGS := -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -D_GNU_SOURCE -D_REENTRANT -pipe -no-prec-div \
+-                -no-prec-div -fp-model fast=2 -fPIC \
+-                -no-prec-sqrt  -falign-functions=16 -fast-transcendentals \
+-        -Werror -Wno-unused-variable -std=c++14 -mcmodel=large
++CPP_FLAGS := -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -D_GNU_SOURCE -D_REENTRANT -pipe \
++                -fPIC \
++                -falign-functions=16  \
++        -Werror -Wno-unused-variable -std=c++14 -mcmodel=large -mavx512bw -march=skylake-avx512 -mtune=skylake-avx512
+ 
+ INC :=  -I$(API_DIR) -I$(ETH_DIR) -I$(SRC_DIR) -I$(RTE_INC)
+ DEF :=
+@@ -150,8 +149,8 @@ CPP_SNC_OBJTARGETS := $(addprefix $(PROJECT_OBJ_DIR)/,$(CPP_OBJS_SNC))
+ 
+ AS_OBJTARGETS := $(addprefix $(PROJECT_OBJ_DIR)/,$(AS_OBJS))
+ #-qopt-report=5 -qopt-matmul -qopt-report-phase=all
+-CPP_COMP       := -O3 -DNDEBUG  -xcore-avx512 -fPIE -restrict -fasm-blocks
+-CPP_COMP_SNC   := -O3 -DNDEBUG -march=icelake-server -fPIE -restrict -fasm-blocks
++CPP_COMP       := -O3 -DNDEBUG  -fPIE
++CPP_COMP_SNC   := -O3 -DNDEBUG -march=icelake-server -fPIE
+ CC_FLAGS_FULL  := $(CC_FLAGS)  $(INC) $(DEF)
+ CPP_FLAGS_FULL := $(CPP_FLAGS) $(CPP_COMP) $(INC) $(DEF)
+ CPP_FLAGS_FULL_SNC := $(CPP_FLAGS) $(CPP_COMP_SNC) $(INC) $(DEF)
+diff --git a/fhi_lib/lib/api/xran_fh_o_du.h b/fhi_lib/lib/api/xran_fh_o_du.h
+index 7419ae1..a85f973 100644
+--- a/fhi_lib/lib/api/xran_fh_o_du.h
++++ b/fhi_lib/lib/api/xran_fh_o_du.h
+@@ -1104,6 +1104,30 @@ int32_t xran_reg_physide_cb(void *pHandle, xran_fh_tti_callback_fn Cb, void *cbP
+  */
+ int32_t xran_get_slot_idx (uint32_t PortId, uint32_t *nFrameIdx, uint32_t *nSubframeIdx,  uint32_t *nSlotIdx, uint64_t *nSecond);
+ 
++/**
++ * @ingroup xran
++ *
++ *   Function returns Frame, Subframe, Slot Number based on rx_tti
++ *
++ * @param tti
++ *    tti for which to compute Frame, Subframe, Slot
++ *
++ * @param nFrameIdx
++ *    Pointer to Frame number [0-99]
++ *
++ * @param nSubframeIdx
++ *    Pointer to Subframe number [0-10]
++ *
++ * @param nSlotIdx
++ *    Pointer to Slot number [0-7]
++ *
++ * @param nSecond
++ *    Pointer to current UTC second
++ *
++ * @return
++ *   current TTI number [0-7999]
++ */
++int32_t xran_get_slot_idx_from_tti (uint32_t tti, uint32_t *nFrameIdx, uint32_t *nSubframeIdx,  uint32_t *              nSlotIdx, uint64_t *nSecond);
+ /**
+  * @ingroup xran
+  *
+diff --git a/fhi_lib/lib/api/xran_up_api.h b/fhi_lib/lib/api/xran_up_api.h
+index 7d3afc5..3e00c5a 100644
+--- a/fhi_lib/lib/api/xran_up_api.h
++++ b/fhi_lib/lib/api/xran_up_api.h
+@@ -80,6 +80,7 @@ int32_t xran_extract_iq_samples(struct rte_mbuf *mbuf,
+     uint8_t *subframe_id,
+     uint8_t *slot_id,
+     uint8_t *symb_id,
++    uint8_t *filter_id,
+     union ecpri_seq_id *seq_id,
+     uint16_t *num_prbu,
+     uint16_t *start_prbu,
+diff --git a/fhi_lib/lib/ethernet/ethdi.c b/fhi_lib/lib/ethernet/ethdi.c
+index b6ba257..74b3c26 100644
+--- a/fhi_lib/lib/ethernet/ethdi.c
++++ b/fhi_lib/lib/ethernet/ethdi.c
+@@ -479,11 +479,13 @@ xran_ethdi_init_dpdk_io(char *name, const struct xran_io_cfg *io_cfg,
+                     ctx->tx_ring[i] = rte_ring_create(ring_name, NUM_MBUFS_RING_TRX,
+                     rte_lcore_to_socket_id(*lcore_id), RING_F_SC_DEQ);
+                     PANIC_ON(ctx->tx_ring[i] == NULL, "failed to allocate rx ring");
++                    printf("Created ring %s on core %d\n",ring_name,*lcore_id);
+                     for(qi = 0; qi < io_cfg->num_rxq; qi++) {
+                         snprintf(ring_name, RTE_DIM(ring_name), "%s_%d_%d", "rx_ring_cp", i, qi);
+                         ctx->rx_ring[i][qi] = rte_ring_create(ring_name, NUM_MBUFS_RING_TRX,
+                             rte_lcore_to_socket_id(*lcore_id), RING_F_SP_ENQ);
+                         PANIC_ON(ctx->rx_ring[i][qi] == NULL, "failed to allocate rx ring");
++                        printf("Created ring %s on core %d\n",ring_name,*lcore_id);
+                     }
+                 }
+             } else {
+@@ -553,7 +555,7 @@ xran_ethdi_init_dpdk_io(char *name, const struct xran_io_cfg *io_cfg,
+         ctx->up_dl_pkt_gen_ring[i] = rte_ring_create(ring_name, NUM_MBUFS_RING,
+         rte_lcore_to_socket_id(*lcore_id), /*RING_F_SC_DEQ*/0);
+         PANIC_ON(ctx->up_dl_pkt_gen_ring[i] == NULL, "failed to allocate dl gen ring");
+-        printf("created %s\n", ring_name);
++        printf("created %s on core %d\n", ring_name, *lcore_id);
+     }
+ 
+     return 1;
+diff --git a/fhi_lib/lib/src/xran_bfp_ref.cpp b/fhi_lib/lib/src/xran_bfp_ref.cpp
+index e6d3067..8e0abee 100644
+--- a/fhi_lib/lib/src/xran_bfp_ref.cpp
++++ b/fhi_lib/lib/src/xran_bfp_ref.cpp
+@@ -29,6 +29,7 @@
+ #include <complex>
+ #include <algorithm>
+ #include <limits.h>
++#include <limits>
+ 
+ static int16_t saturateAbs(int16_t inVal)
+ {
+diff --git a/fhi_lib/lib/src/xran_bfp_uplane.cpp b/fhi_lib/lib/src/xran_bfp_uplane.cpp
+index a345df4..7831fa0 100644
+--- a/fhi_lib/lib/src/xran_bfp_uplane.cpp
++++ b/fhi_lib/lib/src/xran_bfp_uplane.cpp
+@@ -116,7 +116,7 @@ namespace BFP_UPlane
+     /// Get AVX512 pointer aligned to desired RB
+     const __m512i* rawDataIn = reinterpret_cast<const __m512i*>(dataIn.dataExpanded + numREOffset);
+     /// Apply the exponent shift
+-    const auto compData = _mm512_srai_epi16(*rawDataIn, thisExp);
++    const auto compData = _mm512_srai_epi16(_mm512_loadu_epi16(rawDataIn), thisExp);
+     /// Pack compressed data network byte order
+     const auto compDataBytePacked = networkBytePack(compData);
+     /// Store exponent first
+@@ -201,7 +201,7 @@ namespace BFP_UPlane
+     /// Get AVX512 pointer aligned to desired RB
+     const __m512i* rawDataIn = reinterpret_cast<const __m512i*>(dataIn.dataExpanded + numREOffset);
+     /// Apply the exponent shift
+-    const auto compData = _mm512_srai_epi16(*rawDataIn, thisExp);
++    const auto compData = _mm512_srai_epi16(_mm512_loadu_epi16(rawDataIn), thisExp);
+     /// Store exponent first
+     dataOut->dataCompressed[thisRBExpAddr] = thisExp;
+     /// Now have 1 RB worth of bytes separated into 3 chunks (1 per lane)
+diff --git a/fhi_lib/lib/src/xran_common.c b/fhi_lib/lib/src/xran_common.c
+index baa673f..edd4ecb 100644
+--- a/fhi_lib/lib/src/xran_common.c
++++ b/fhi_lib/lib/src/xran_common.c
+@@ -656,6 +656,7 @@ process_mbuf(struct rte_mbuf *pkt, void* handle, struct xran_eaxc_info *p_cid)
+     int32_t valid_res = 0;
+     int expect_comp  = (p_dev_ctx->fh_cfg.ru_conf.compMeth != XRAN_COMPMETHOD_NONE);
+     enum xran_comp_hdr_type staticComp = p_dev_ctx->fh_cfg.ru_conf.xranCompHdrType;
++    uint8_t filter_id;
+ 
+     if (staticComp == XRAN_COMP_HDR_TYPE_STATIC)
+     {
+@@ -674,6 +675,7 @@ process_mbuf(struct rte_mbuf *pkt, void* handle, struct xran_eaxc_info *p_cid)
+                                         &subframe_id,
+                                         &slot_id,
+                                         &symb_id,
++                                        &filter_id,
+                                         &seq,
+                                         &num_prbu,
+                                         &start_prbu,
+@@ -688,23 +690,9 @@ process_mbuf(struct rte_mbuf *pkt, void* handle, struct xran_eaxc_info *p_cid)
+         print_err("num_bytes is wrong [%d]\n", num_bytes);
+         return MBUF_FREE;
+     }
+-
+-    valid_res = xran_pkt_validate(p_dev_ctx,
+-                                pkt,
+-                                iq_samp_buf,
+-                                num_bytes,
+-                                CC_ID,
+-                                Ant_ID,
+-                                frame_id,
+-                                subframe_id,
+-                                slot_id,
+-                                symb_id,
+-                                &seq,
+-                                num_prbu,
+-                                start_prbu,
+-                                sym_inc,
+-                                rb,
+-                                sect_id);
++    pCnt->rx_counter++;
++    pCnt->Rx_on_time++;
++    pCnt->Total_msgs_rcvd++;
+ #ifndef FCN_ADAPT
+     if(valid_res != 0) {
+         print_dbg("valid_res is wrong [%d] ant %u (%u : %u : %u : %u) seq %u num_bytes %d\n", valid_res, Ant_ID, frame_id, subframe_id, slot_id, symb_id, seq.seq_id, num_bytes);
+@@ -1189,7 +1177,7 @@ int generate_cpmsg_prach(void *pHandle, struct xran_cp_gen_params *params, struc
+         timeOffset += startSymId * (2048 + 144);
+     }
+     timeOffset = timeOffset >> nNumerology; //original number is Tc, convert to Ts based on mu
+-    if ((slot_id == 0) || (slot_id == (SLOTNUM_PER_SUBFRAME(pxran_lib_ctx->interval_us_local) >> 1)))
++    if (startSymId > 0 && ((slot_id == 0) || (slot_id == (SLOTNUM_PER_SUBFRAME(pxran_lib_ctx->interval_us_local) >> 1))))
+         timeOffset += 16;
+ 
+     params->dir                  = XRAN_DIR_UL;
+@@ -1295,8 +1283,7 @@ int32_t ring_processing_func(void* args)
+ 
+     for (i = 0; i < ctx->io_cfg.num_vfs && i < XRAN_VF_MAX; i++){
+         for(qi = 0; qi < ctx->rxq_per_port[i]; qi++) {
+-            if (process_ring(ctx->rx_ring[i][qi], i, qi))
+-            return 0;
++            process_ring(ctx->rx_ring[i][qi],i,qi);
+         }
+     }
+ 
+diff --git a/fhi_lib/lib/src/xran_common.h b/fhi_lib/lib/src/xran_common.h
+index 3ed75cd..d61fe7f 100644
+--- a/fhi_lib/lib/src/xran_common.h
++++ b/fhi_lib/lib/src/xran_common.h
+@@ -221,7 +221,7 @@ int generate_cpmsg_prach(void *pHandle, struct xran_cp_gen_params *params, struc
+ struct xran_eaxcid_config *xran_get_conf_eAxC(void *pHandle);
+ int xran_register_cb_mbuf2ring(xran_ethdi_mbuf_send_fn mbuf_send_cp, xran_ethdi_mbuf_send_fn mbuf_send_up);
+ 
+-uint16_t xran_alloc_sectionid(void *pHandle, uint8_t dir, uint8_t cc_id, uint8_t ant_id, uint8_t slot_id);
++//uint16_t xran_alloc_sectionid(void *pHandle, uint8_t dir, uint8_t cc_id, uint8_t ant_id, uint8_t slot_id);
+ uint8_t xran_get_seqid(void *pHandle, uint8_t dir, uint8_t cc_id, uint8_t ant_id, uint8_t slot_id);
+ int32_t ring_processing_func(void* arg);
+ int xran_init_prach(struct xran_fh_config* pConf, struct xran_device_ctx * p_xran_dev_ctx);
+diff --git a/fhi_lib/lib/src/xran_compression.cpp b/fhi_lib/lib/src/xran_compression.cpp
+index 112caae..7c74342 100644
+--- a/fhi_lib/lib/src/xran_compression.cpp
++++ b/fhi_lib/lib/src/xran_compression.cpp
+@@ -62,7 +62,7 @@ xranlib_compress(const struct xranlib_compress_request *request,
+         return xranlib_5gnr_mod_compression(&mod_request, &mod_response);
+   }
+     else{
+-        if(_may_i_use_cpu_feature(_FEATURE_AVX512IFMA52)) {
++        if(false) {
+             return xranlib_compress_avxsnc(request,response);
+         } else {
+             return xranlib_compress_avx512(request,response);
+@@ -89,7 +89,7 @@ xranlib_decompress(const struct xranlib_decompress_request *request,
+         return xranlib_5gnr_mod_decompression(&mod_request, &mod_response);
+       }
+     else{
+-        if(_may_i_use_cpu_feature(_FEATURE_AVX512IFMA52)) {
++        if(false) {
+             return xranlib_decompress_avxsnc(request,response);
+         } else {
+             return xranlib_decompress_avx512(request,response);
+@@ -101,7 +101,7 @@ int32_t
+ xranlib_compress_bfw(const struct xranlib_compress_request *request,
+                         struct xranlib_compress_response *response)
+     {
+-    if(_may_i_use_cpu_feature(_FEATURE_AVX512IFMA52)) {
++    if(false) {
+         return xranlib_compress_avxsnc_bfw(request,response);
+     } else {
+         return xranlib_compress_avx512_bfw(request,response);
+@@ -112,7 +112,7 @@ int32_t
+ xranlib_decompress_bfw(const struct xranlib_decompress_request *request,
+     struct xranlib_decompress_response *response)
+   {
+-    if(_may_i_use_cpu_feature(_FEATURE_AVX512IFMA52)) {
++    if(false) {
+         return xranlib_decompress_avxsnc_bfw(request,response);
+     } else {
+         return xranlib_decompress_avx512_bfw(request,response);
+diff --git a/fhi_lib/lib/src/xran_main.c b/fhi_lib/lib/src/xran_main.c
+index 89dcc1f..640f6b6 100644
+--- a/fhi_lib/lib/src/xran_main.c
++++ b/fhi_lib/lib/src/xran_main.c
+@@ -272,7 +272,7 @@ xran_init_prach(struct xran_fh_config* pConf, struct xran_device_ctx * p_xran_de
+         printf("PRACH start symbol %u lastsymbol %u\n", p_xran_dev_ctx->prach_start_symbol[0], p_xran_dev_ctx->prach_last_symbol[0]);
+     }
+ 
+-    pPrachCPConfig->eAxC_offset = xran_get_num_eAxc(p_xran_dev_ctx);
++    pPrachCPConfig->eAxC_offset = pPRACHConfig->eAxC_offset;
+     print_dbg("PRACH eAxC_offset %d\n",  pPrachCPConfig->eAxC_offset);
+ 
+     /* Save some configs for app */
+@@ -844,7 +844,7 @@ tx_cp_ul_cb(struct rte_timer *tim, void *arg)
+                         struct xran_cp_gen_params params;
+                         struct xran_section_gen_info sect_geninfo[8];
+                         struct rte_mbuf *mbuf = xran_ethdi_mbuf_alloc();
+-                        prach_port_id = ant_id + num_eAxc;
++                        prach_port_id = ant_id + pPrachCPConfig->eAxC_offset;
+                         /* start new section information list */
+                         xran_cp_reset_section_info(pHandle, XRAN_DIR_UL, cc_id, prach_port_id, ctx_id);
+ 
+@@ -1059,6 +1059,7 @@ int32_t handle_ecpri_ethertype(struct rte_mbuf* pkt_q[], uint16_t xport_id, stru
+         {
+         case ECPRI_IQ_DATA:
+                 pkt_data[num_data++] = pkt;
++            uint8_t *pkt_bytes=rte_pktmbuf_mtod(pkt,uint8_t*);
+             break;
+         // For RU emulation
+         case ECPRI_RT_CONTROL_DATA:
+@@ -1076,7 +1077,7 @@ int32_t handle_ecpri_ethertype(struct rte_mbuf* pkt_q[], uint16_t xport_id, stru
+                 break;
+             default:
+                 if (p_dev_ctx->fh_init.io_cfg.id == O_DU) {
+-                    print_err("Invalid eCPRI message type - %d", ecpri_hdr->cmnhdr.bits.ecpri_mesg_type);
++                    rte_pktmbuf_free(pkt);
+         }
+                 break;
+     }
+@@ -1771,8 +1772,7 @@ ring_processing_func_per_port(void* args)
+     for (i = 0; i < ctx->io_cfg.num_vfs && i < XRAN_VF_MAX; i = i+1) {
+         if (ctx->vf2xran_port[i] == port_id) {
+             for(qi = 0; qi < ctx->rxq_per_port[port_id]; qi++){
+-                if (process_ring(ctx->rx_ring[i][qi], i, qi))
+-                    return 0;
++                process_ring(ctx->rx_ring[i][qi],i,qi);
+             }
+         }
+     }
+@@ -1837,8 +1837,6 @@ xran_spawn_workers(void)
+         nWorkerCore = nWorkerCore << 1;
+     }
+ 
+-    extern int _may_i_use_cpu_feature(unsigned __int64);
+-    icx_cpu = _may_i_use_cpu_feature(_FEATURE_AVX512IFMA52);
+ 
+     printf("O-XU      %d\n", eth_ctx->io_cfg.id);
+     printf("HW        %d\n", icx_cpu);
+@@ -3074,6 +3072,24 @@ xran_get_slot_idx (uint32_t PortId, uint32_t *nFrameIdx, uint32_t *nSubframeIdx,
+     return tti;
+ }
+ 
++int32_t
++xran_get_slot_idx_from_tti (uint32_t tti, uint32_t *nFrameIdx, uint32_t *nSubframeIdx,  uint32_t *nSlotIdx, uint64_t *nSecond)
++{
++    struct xran_device_ctx * p_xran_dev_ctx = xran_dev_get_ctx_by_id(0);
++    if (!p_xran_dev_ctx)
++    {
++      print_err("Null xRAN context on port id %u!!\n", 0);
++      return 0;
++    }
++
++    *nSlotIdx     = (uint32_t)XranGetSlotNum(tti, SLOTNUM_PER_SUBFRAME(p_xran_dev_ctx->interval_us_local));
++    *nSubframeIdx = (uint32_t)XranGetSubFrameNum(tti,SLOTNUM_PER_SUBFRAME(p_xran_dev_ctx->interval_us_local),  SUBFRAMES_PER_SYSTEMFRAME);
++    *nFrameIdx    = (uint32_t)XranGetFrameNum(tti,0/*xran_getSfnSecStart()*/,SUBFRAMES_PER_SYSTEMFRAME, SLOTNUM_PER_SUBFRAME(p_xran_dev_ctx->interval_us_local));
++    *nSecond      = timing_get_current_second();
++
++    return tti;
++}
++
+ int32_t
+ xran_set_debug_stop(int32_t value, int32_t count)
+ {
+diff --git a/fhi_lib/lib/src/xran_mod_compression.cpp b/fhi_lib/lib/src/xran_mod_compression.cpp
+index 7d4a5d0..87bdbd5 100644
+--- a/fhi_lib/lib/src/xran_mod_compression.cpp
++++ b/fhi_lib/lib/src/xran_mod_compression.cpp
+@@ -747,10 +747,11 @@ int xranlib_5gnr_mod_compression(const struct xranlib_5gnr_mod_compression_reque
+ #ifdef C_Module_Used
+     return (xranlib_5gnr_mod_compression_c(request, response));
+ #else
+-    if(_may_i_use_cpu_feature(_FEATURE_AVX512IFMA52))
++    if (false) {
+         return (xranlib_5gnr_mod_compression_snc(request, response));
+-    else
++    } else {
+         return (xranlib_5gnr_mod_compression_avx512(request, response));
++    }
+ #endif
+ }
+ 
+diff --git a/fhi_lib/lib/src/xran_rx_proc.c b/fhi_lib/lib/src/xran_rx_proc.c
+index 36bd72c..f7f5678 100644
+--- a/fhi_lib/lib/src/xran_rx_proc.c
++++ b/fhi_lib/lib/src/xran_rx_proc.c
+@@ -107,6 +107,10 @@ int xran_process_prach_sym(void *arg,
+             if(mb)
+                 rte_pktmbuf_free(mb);
+ 
++            mb = p_xran_dev_ctx->sFHPrachRxBbuIoBufCtrlDecomp[tti % XRAN_N_FE_BUF_LEN][CC_ID][Ant_ID].sBufferList.pBuffers[symb_id_offset].pCtrl;
++            if(mb)
++                rte_pktmbuf_free(mb);
++
+             if(p_xran_dev_ctx->fh_cfg.ru_conf.byteOrder == XRAN_CPU_LE_BYTE_ORDER) {
+                 int idx = 0;
+                 uint16_t *psrc = (uint16_t *)iq_data_start;
+diff --git a/fhi_lib/lib/src/xran_up_api.c b/fhi_lib/lib/src/xran_up_api.c
+index 397853a..4a714b5 100644
+--- a/fhi_lib/lib/src/xran_up_api.c
++++ b/fhi_lib/lib/src/xran_up_api.c
+@@ -329,6 +329,7 @@ int32_t xran_extract_iq_samples(struct rte_mbuf *mbuf,
+     uint8_t *subframe_id,
+     uint8_t *slot_id,
+     uint8_t *symb_id,
++    uint8_t *filter_id,
+     union ecpri_seq_id *seq_id,
+     uint16_t *num_prbu,
+     uint16_t *start_prbu,
+@@ -387,6 +388,8 @@ int32_t xran_extract_iq_samples(struct rte_mbuf *mbuf,
+     if (symb_id)
+         *symb_id = radio_hdr->sf_slot_sym.symb_id;
+ 
++    if (filter_id)
++	*filter_id = radio_hdr->data_feature.filter_id;
+     /* Process data section hdr */
+     struct data_section_hdr *data_hdr =
+         (void *)rte_pktmbuf_adj(mbuf, sizeof(*radio_hdr));
+@@ -401,6 +404,7 @@ int32_t xran_extract_iq_samples(struct rte_mbuf *mbuf,
+     *sym_inc    = data_hdr->fields.sym_inc;
+     *rb         = data_hdr->fields.rb;
+     *sect_id    = data_hdr->fields.sect_id;
++    if (*num_prbu == 0) *num_prbu=273;
+ 
+     if(expect_comp) {
+             const struct data_section_compression_hdr *data_compr_hdr;

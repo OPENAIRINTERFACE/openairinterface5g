@@ -13,6 +13,11 @@ if(OAI_BLADERF)
   add_subdirectory(BLADERF)
 endif()
 
+add_boolean_option(OAI_FHI72 OFF "Activate OAI's FHI 7.2 (xran/fhi_lib) driver" OFF)
+if(OAI_FHI72)
+  add_subdirectory(fhi_72)
+endif()
+
 add_boolean_option(OAI_IRIS OFF "Activate OAI's IRIS/SoapySDR driver" OFF)
 if(OAI_IRIS)
   add_subdirectory(IRIS)

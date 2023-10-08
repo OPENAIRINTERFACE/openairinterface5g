@@ -96,7 +96,7 @@ Options:
    USRP, BLADERF, LMSSDR, IRIS, SIMU, AW2SORI, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport
-   Selects the transport protocol type, options: None, Ethernet, benetel4g, benetel5g
+   Selects the transport protocol type, options: None, Ethernet, benetel4g, benetel5g, oran_fhlib_5g
 -P | --phy_simulators
    Makes the unitary tests Layer 1 simulators
 -S | --core_simulators
@@ -248,7 +248,7 @@ function main() {
             RU=1
             TARGET_LIST="$TARGET_LIST oairu"
             echo_info "Will compile RRU"
-	    shift;;
+            shift;;
        --UE)
             UE=1
             TARGET_LIST="$TARGET_LIST lte-uesoftmodem"
@@ -302,9 +302,13 @@ function main() {
                 TARGET_LIST="$TARGET_LIST oai_eth_transpro"
                 CMAKE_CMD="$CMAKE_CMD -DOAI_${2^^}=ON" # ^^ makes uppercase
                 ;;
-              "benetel4g" | "benetel5g")
+              "benetel4g" | "benetel5g" | "oran_fhlib_4g")
                 TARGET_LIST="$TARGET_LIST $2"
                 CMAKE_CMD="$CMAKE_CMD -DOAI_${2^^}=ON" # ^^ makes uppercase
+                ;;
+              "oran_fhlib_5g")
+                TARGET_LIST="$TARGET_LIST $2"
+                CMAKE_CMD="$CMAKE_CMD -DOAI_FHI72=ON"
                 ;;
               "None")
                 ;;
@@ -387,7 +391,7 @@ function main() {
                 echo_info "Enabling build of optional shared library $lib"
               done
             fi
-            shift 2;;		
+            shift 2;;
         --noavx512)
             CMAKE_CMD="$CMAKE_CMD -DAVX512=OFF"
             echo_info "Disabling AVX512 instructions"
@@ -424,8 +428,8 @@ function main() {
         -h | --help)
             print_help
             exit 1;;
-	*)
-	    print_help
+        *)
+            print_help
             echo_fatal "Unknown option $1"
             break;;
    esac
@@ -454,7 +458,7 @@ function main() {
       if [ ! -v BUILD_UHD_FROM_SOURCE ] && [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
         install_usrp_uhd_driver $UHD_IMAGES_DIR
       fi
-    fi 
+    fi
     if [ "$HW" == "OAI_BLADERF" ] ; then
       echo_info "installing packages for BLADERF support"
       check_install_bladerf_driver
@@ -501,6 +505,12 @@ function main() {
     ###################
     if [ "$BUILD_DOXYGEN" = "1" ] ; then
 	echo_info "Built Doxygen based documentation. The documentation file is located here: $OPENAIR_DIR/$BUILD_DIR/build/html/index.html"
+    fi
+
+    # TODO: once we got the CMakeLists.txt file done for the ORAN files, remove the following lines
+    if [[ $TARGET_LIST =~ "oran_fhlib_5g" ]]; then
+      rm -f liboai_transpro.so
+      ln -s liboran_fhlib_5g.so liboai_transpro.so
     fi
 
     if [ "$UE" = 1 ] ; then
