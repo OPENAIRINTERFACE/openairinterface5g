@@ -178,6 +178,16 @@ static void fill_SETUP_REQUEST(e1ap_setup_req_t *setup, E1AP_E1AP_PDU_t *pdu)
   ieC2->criticality              = E1AP_Criticality_reject;
   ieC2->value.present            = E1AP_GNB_CU_UP_E1SetupRequestIEs__value_PR_GNB_CU_UP_ID;
   asn_int642INTEGER(&ieC2->value.choice.GNB_CU_UP_ID, setup->gNB_cu_up_id);
+
+  /* optional */
+  if (setup->gNB_cu_up_name) {
+    asn1cSequenceAdd(e1SetupUP->protocolIEs.list, E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ieC3);
+    ieC3->id = E1AP_ProtocolIE_ID_id_gNB_CU_UP_Name;
+    ieC3->criticality = E1AP_Criticality_ignore;
+    ieC3->value.present = E1AP_GNB_CU_UP_E1SetupRequestIEs__value_PR_GNB_CU_UP_Name;
+    OCTET_STRING_fromBuf(&ieC3->value.choice.GNB_CU_UP_Name, setup->gNB_cu_up_name, strlen(setup->gNB_cu_up_name));
+  }
+
   /* mandatory */
   /* c4. CN Support */
   asn1cSequenceAdd(e1SetupUP->protocolIEs.list, E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ieC4);
@@ -295,6 +305,17 @@ void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
                              E1AP_ProtocolIE_ID_id_gNB_CU_UP_ID, true);
   asn_INTEGER2ulong(&ie->value.choice.GNB_CU_UP_ID, &req->gNB_cu_up_id);
   LOG_D(E1AP, "gNB CU UP ID: %ld\n", req->gNB_cu_up_id);
+
+  /* gNB CU UP name */
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
+                             E1AP_ProtocolIE_ID_id_gNB_CU_UP_Name, false);
+  req->gNB_cu_up_name = NULL;
+  if (ie != NULL) {
+    req->gNB_cu_up_name = calloc(ie->value.choice.GNB_CU_UP_Name.size + 1, sizeof(char));
+    AssertFatal(req->gNB_cu_up_name != NULL, "out of memory\n");
+    memcpy(req->gNB_cu_up_name, ie->value.choice.GNB_CU_UP_Name.buf, ie->value.choice.GNB_CU_UP_Name.size);
+    LOG_D(E1AP, "req->gNB_cu_up_name %s\n", req->gNB_cu_up_name);
+  }
 
   /* CN Support */
   F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,

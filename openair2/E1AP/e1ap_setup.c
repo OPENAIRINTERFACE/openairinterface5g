@@ -88,6 +88,8 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     e1ap_setup_req_t *e1Setup = &E1AP_REGISTER_REQ(msgConfig).setup_req;
     msgConfig->ittiMsgHeader.destinationInstance = 0;
     e1Setup->gNB_cu_up_id = *(gnbParms[GNB_GNB_ID_IDX].uptr);
+    if (*gnbParms[GNB_GNB_NAME_IDX].strptr)
+      e1Setup->gNB_cu_up_name = *(gnbParms[GNB_GNB_NAME_IDX].strptr);
 
     paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
     paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
