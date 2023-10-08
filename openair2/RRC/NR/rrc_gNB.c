@@ -1041,6 +1041,7 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
     }
   }
 
+  // TODO: should send E1 UE Bearer Modification with PDCP Reestablishment flag
   nr_pdcp_reestablishment(ue_p->rrc_ue_id);
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
