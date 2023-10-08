@@ -357,6 +357,7 @@ static size_t dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output, size
   output += print_meas_log(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL, output, end - output);
   output += print_meas_log(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL, output, end - output);
   output += print_meas_log(&gNB->schedule_response_stats, "Schedule Response", NULL, NULL, output, end - output);
+  output += print_meas_log(&gNB->rx_prach, "PRACH RX", NULL, NULL, output, end - output);
   if (ru->feprx)
     output += print_meas_log(&ru->ofdm_demod_stats, "feprx", NULL, NULL, output, end - output);
 
