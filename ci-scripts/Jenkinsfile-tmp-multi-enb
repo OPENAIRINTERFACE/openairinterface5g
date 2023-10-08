@@ -54,6 +54,13 @@ pipeline {
         lock(extra: lockResources)
     }
     stages {
+        stage("Build Init") {
+            steps {
+                // update the build name and description
+                buildName "${params.eNB_MR}"
+                buildDescription "Branch : ${params.eNB_Branch}"
+            }
+        }
         stage ("Verify Parameters") {
             steps {
                 script {

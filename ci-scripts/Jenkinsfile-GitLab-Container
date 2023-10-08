@@ -31,6 +31,9 @@ def do5Gtest = false
 //
 def gitCommitAuthorEmailAddr
 
+// list of failing stages
+def failingStages = ""
+
 pipeline {
   agent {
     label nodeExecutor
@@ -130,12 +133,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-Ubuntu18-Image-Builder')
+                testBullet = finalizeSlaveJob('RAN-Ubuntu18-Image-Builder')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -149,12 +153,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-RHEL8-Cluster-Image-Builder')
+                testBullet = finalizeSlaveJob('RAN-RHEL8-Cluster-Image-Builder')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -168,12 +173,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-cppcheck')
+                testBullet = finalizeSlaveJob('RAN-cppcheck')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -193,12 +199,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-PhySim-Cluster')
+                testBullet = finalizeSlaveJob('RAN-PhySim-Cluster')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -213,12 +220,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-RF-Sim-Test-4G')
+                testBullet = finalizeSlaveJob('RAN-RF-Sim-Test-4G')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -233,12 +241,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-RF-Sim-Test-5G')
+                testBullet = finalizeSlaveJob('RAN-RF-Sim-Test-5G')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -253,12 +262,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-L2-Sim-Test-4G')
+                testBullet = finalizeSlaveJob('RAN-L2-Sim-Test-4G')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -273,12 +283,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-L2-Sim-Test-5G')
+                testBullet = finalizeSlaveJob('RAN-L2-Sim-Test-5G')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -293,12 +304,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-LTE-FDD-LTEBOX-Container')
+                testBullet = finalizeSlaveJob('RAN-LTE-FDD-LTEBOX-Container')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -314,12 +326,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-LTE-FDD-OAIUE-OAICN4G-Container')
+                testBullet = finalizeSlaveJob('RAN-LTE-FDD-OAIUE-OAICN4G-Container')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -334,12 +347,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-LTE-TDD-LTEBOX-Container')
+                testBullet = finalizeSlaveJob('RAN-LTE-TDD-LTEBOX-Container')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -354,12 +368,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-NSA-B200-Module-LTEBOX-Container')
+                testBullet = finalizeSlaveJob('RAN-NSA-B200-Module-LTEBOX-Container')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -374,12 +389,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-SA-B200-Module-SABOX-Container')
+                testBullet = finalizeSlaveJob('RAN-SA-B200-Module-SABOX-Container')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -394,12 +410,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-gNB-N300-Timing-Phytest-LDPC')
+                testBullet = finalizeSlaveJob('RAN-gNB-N300-Timing-Phytest-LDPC')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -414,12 +431,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-LTE-TDD-2x2-Container')
+                testBullet = finalizeSlaveJob('RAN-LTE-TDD-2x2-Container')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -434,12 +452,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-SA-AW2S-CN5G')
+                testBullet = finalizeSlaveJob('RAN-SA-AW2S-CN5G')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -454,12 +473,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-Interop-F1')
+                testBullet = finalizeSlaveJob('RAN-Interop-F1')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -474,12 +494,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('OAI-CN5G-COTS-UE-Test')
+                testBullet = finalizeSlaveJob('OAI-CN5G-COTS-UE-Test')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -494,12 +515,13 @@ pipeline {
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-SA-OAIUE-CN5G')
+                testBullet = finalizeSlaveJob('RAN-SA-OAIUE-CN5G')
               }
             }
             failure {
               script {
                 currentBuild.result = 'FAILURE'
+                failingStages += testBullet
               }
             }
           }
@@ -518,6 +540,7 @@ pipeline {
           script {
             echo "Push to Docker-Hub KO"
             currentBuild.result = 'FAILURE'
+            failingStages += '\n * RAN-DockerHub-Push'
           }
         }
       }
@@ -541,7 +564,8 @@ pipeline {
       script {
         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
         if ("MERGE".equals(env.gitlabActionType)) {
-          addGitLabMRComment comment: message
+          def fullMessage = message + '\n\nList of failing test stages:' + failingStages
+          addGitLabMRComment comment: fullMessage
           def message2 = message + " -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
           sendSocialMediaMessage('ci-enb', 'danger', message2)
         } else {
@@ -651,6 +675,7 @@ def finalizeSlaveJob(jobName) {
   } else {
     fileName = "test_results-${jobName}.html"
   }
+  artifactUrl = BUILD_URL
   if (!fileExists(fileName)) {
     copyArtifacts(projectName: jobName,
       filter: 'test_results*.html',
@@ -658,8 +683,13 @@ def finalizeSlaveJob(jobName) {
     if (fileExists(fileName)) {
       sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' ${fileName}"
       archiveArtifacts artifacts: fileName
+      // BUILD_URL is like  http://server:port/jenkins/job/foo/15/
+      // no need to add a prefixed '/'
+      artifactUrl += 'artifact/' + fileName
     }
   }
+  artifactUrl = "\n * [${jobName}](${artifactUrl})"
+  return artifactUrl
 }
 
 // Abstraction function to send social media messages:
