@@ -1505,7 +1505,7 @@ int e1apCUCP_send_BEARER_CONTEXT_RELEASE_COMMAND(sctp_assoc_t assoc_id, e1ap_bea
   return e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
 }
 
-static int fill_BEARER_CONTEXT_RELEASE_COMPLETE(e1ap_bearer_release_cmd_t *const cmd, E1AP_E1AP_PDU_t *pdu)
+static int fill_BEARER_CONTEXT_RELEASE_COMPLETE(const e1ap_bearer_release_cplt_t *cplt, E1AP_E1AP_PDU_t *pdu)
 {
   pdu->present = E1AP_E1AP_PDU_PR_successfulOutcome;
   asn1cCalloc(pdu->choice.successfulOutcome, msg);
@@ -1519,22 +1519,22 @@ static int fill_BEARER_CONTEXT_RELEASE_COMPLETE(e1ap_bearer_release_cmd_t *const
   ieC1->id                         = E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID;
   ieC1->criticality                = E1AP_Criticality_reject;
   ieC1->value.present              = E1AP_BearerContextReleaseCompleteIEs__value_PR_GNB_CU_CP_UE_E1AP_ID;
-  ieC1->value.choice.GNB_CU_CP_UE_E1AP_ID = cmd->gNB_cu_cp_ue_id;
+  ieC1->value.choice.GNB_CU_CP_UE_E1AP_ID = cplt->gNB_cu_cp_ue_id;
   /* mandatory */
   /* c2. gNB-CU-UP UE E1AP ID */
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextReleaseCompleteIEs_t, ieC2);
   ieC2->id                         = E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID;
   ieC2->criticality                = E1AP_Criticality_reject;
   ieC2->value.present              = E1AP_BearerContextReleaseCompleteIEs__value_PR_GNB_CU_UP_UE_E1AP_ID;
-  ieC2->value.choice.GNB_CU_UP_UE_E1AP_ID = cmd->gNB_cu_cp_ue_id;
+  ieC2->value.choice.GNB_CU_UP_UE_E1AP_ID = cplt->gNB_cu_cp_ue_id;
 
   return 0;
 }
 
-int e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(sctp_assoc_t assoc_id, e1ap_bearer_release_cmd_t *const cmd)
+int e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(sctp_assoc_t assoc_id, const e1ap_bearer_release_cplt_t *cplt)
 {
   E1AP_E1AP_PDU_t pdu = {0};
-  fill_BEARER_CONTEXT_RELEASE_COMPLETE(cmd, &pdu);
+  fill_BEARER_CONTEXT_RELEASE_COMPLETE(cplt, &pdu);
   return e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
 }
 
@@ -1592,12 +1592,12 @@ int e1apCUUP_handle_BEARER_CONTEXT_RELEASE_COMMAND(sctp_assoc_t assoc_id, e1ap_u
 
   e1ap_bearer_release_cmd_t bearerCxt = {0};
   extract_BEARER_CONTEXT_RELEASE_COMMAND(pdu, &bearerCxt);
-  CUUP_process_bearer_release_command(e1_inst->instance, &bearerCxt);
+  e1_bearer_release_cmd(&bearerCxt);
   return 0;
 }
 
 void extract_BEARER_CONTEXT_RELEASE_COMPLETE(const E1AP_E1AP_PDU_t *pdu,
-                                             e1ap_bearer_release_cmd_t *bearerCxt) {
+                                             e1ap_bearer_release_cplt_t *bearerCxt) {
   const E1AP_BearerContextReleaseComplete_t *in = &pdu->choice.successfulOutcome->value.choice.BearerContextReleaseComplete;
   E1AP_BearerContextReleaseCompleteIEs_t *ie;
 
@@ -1634,9 +1634,12 @@ int e1apCUCP_handle_BEARER_CONTEXT_RELEASE_COMPLETE(sctp_assoc_t assoc_id, e1ap_
   DevAssert(pdu->choice.successfulOutcome->criticality == E1AP_Criticality_reject);
   DevAssert(pdu->choice.successfulOutcome->value.present == E1AP_SuccessfulOutcome__value_PR_BearerContextReleaseComplete);
 
-  e1ap_bearer_release_cmd_t bearerCxt = {0};
+  e1ap_bearer_release_cplt_t bearerCxt = {0};
   extract_BEARER_CONTEXT_RELEASE_COMPLETE(pdu, &bearerCxt);
-  //TODO: CUCP_process_bearer_release_complete(&beareCxt, instance);
+  MessageDef *msg = itti_alloc_new_message(TASK_CUUP_E1, 0, E1AP_BEARER_CONTEXT_RELEASE_CPLT);
+  e1ap_bearer_release_cplt_t *cplt = &E1AP_BEARER_CONTEXT_RELEASE_CPLT(msg);
+  *cplt = bearerCxt;
+  itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
   return 0;
 }
 
@@ -1864,6 +1867,10 @@ void *E1AP_CUCP_task(void *arg) {
         e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_REQUEST(assoc_id, &E1AP_BEARER_CONTEXT_SETUP_REQ(msg));
         break;
 
+      case E1AP_BEARER_CONTEXT_RELEASE_CMD:
+        e1apCUCP_send_BEARER_CONTEXT_RELEASE_COMMAND(assoc_id, &E1AP_BEARER_CONTEXT_RELEASE_CMD(msg));
+        break;
+
       default:
         LOG_E(E1AP, "Unknown message received in TASK_CUCP_E1\n");
         break;
@@ -1919,6 +1926,13 @@ void *E1AP_CUUP_task(void *arg) {
         const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
         AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
         e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_RESPONSE(inst->cuup.assoc_id, resp);
+        } break;
+
+      case E1AP_BEARER_CONTEXT_RELEASE_CPLT: {
+        const e1ap_bearer_release_cplt_t *cplt = &E1AP_BEARER_CONTEXT_RELEASE_CPLT(msg);
+        const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
+        AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
+        e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(inst->cuup.assoc_id, cplt);
         } break;
 
       default:

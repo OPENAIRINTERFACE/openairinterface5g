@@ -26,12 +26,15 @@
 
 struct e1ap_bearer_setup_resp_s;
 struct e1ap_bearer_modif_resp_s;
+struct e1ap_bearer_release_cplt_s;
 typedef void (*e1_bearer_setup_response_func_t)(const struct e1ap_bearer_setup_resp_s *resp);
 typedef void (*e1_bearer_modif_response_func_t)(const struct e1ap_bearer_modif_resp_s *resp);
+typedef void (*e1_bearer_release_complete_func_t)(const struct e1ap_bearer_release_cplt_s *cplt);
 
 typedef struct e1_if_t {
   e1_bearer_setup_response_func_t bearer_setup_response;
   e1_bearer_modif_response_func_t bearer_modif_response;
+  e1_bearer_release_complete_func_t bearer_release_complete;
 } e1_if_t;
 
 e1_if_t *get_e1_if(void);

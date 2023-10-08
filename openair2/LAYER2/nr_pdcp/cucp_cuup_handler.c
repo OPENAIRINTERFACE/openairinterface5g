@@ -257,3 +257,24 @@ void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req)
 
   get_e1_if()->bearer_modif_response(&modif);
 }
+
+void e1_bearer_release_cmd(const e1ap_bearer_release_cmd_t *cmd)
+{
+  instance_t n3inst = get_n3_gtp_instance();
+  instance_t f1inst = get_f1_gtp_instance();
+
+  LOG_I(E1AP, "releasing UE %d\n", cmd->gNB_cu_up_ue_id);
+
+  newGtpuDeleteAllTunnels(n3inst, cmd->gNB_cu_up_ue_id);
+  if (f1inst >= 0)  // is there F1-U?
+    newGtpuDeleteAllTunnels(f1inst, cmd->gNB_cu_up_ue_id);
+  nr_pdcp_remove_UE(cmd->gNB_cu_up_ue_id);
+  cu_remove_f1_ue_data(cmd->gNB_cu_up_ue_id);
+
+  e1ap_bearer_release_cplt_t cplt = {
+    .gNB_cu_cp_ue_id = cmd->gNB_cu_cp_ue_id,
+    .gNB_cu_up_ue_id = cmd->gNB_cu_up_ue_id,
+  };
+
+  get_e1_if()->bearer_release_complete(&cplt);
+}

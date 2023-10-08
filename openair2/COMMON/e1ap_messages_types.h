@@ -48,6 +48,8 @@
 #define E1AP_BEARER_CONTEXT_SETUP_RESP(mSGpTR)            (mSGpTR)->ittiMsg.e1ap_bearer_setup_resp
 #define E1AP_BEARER_CONTEXT_MODIFICATION_REQ(mSGpTR)      (mSGpTR)->ittiMsg.e1ap_bearer_setup_req
 #define E1AP_BEARER_CONTEXT_MODIFICATION_RESP(mSGpTR)     (mSGpTR)->ittiMsg.e1ap_bearer_modif_resp
+#define E1AP_BEARER_CONTEXT_RELEASE_CMD(mSGpTR)           (mSGpTR)->ittiMsg.e1ap_bearer_release_cmd
+#define E1AP_BEARER_CONTEXT_RELEASE_CPLT(mSGpTR)          (mSGpTR)->ittiMsg.e1ap_bearer_release_cplt
 
 typedef f1ap_net_ip_address_t e1ap_net_ip_address_t;
 
@@ -192,6 +194,11 @@ typedef struct e1ap_bearer_release_cmd_s {
   long cause_type;
   long cause;
 } e1ap_bearer_release_cmd_t;
+
+typedef struct e1ap_bearer_release_cplt_s {
+  uint32_t gNB_cu_cp_ue_id;
+  uint32_t gNB_cu_up_ue_id;
+} e1ap_bearer_release_cplt_t;
 
 typedef struct qos_flow_setup_s {
   long id;

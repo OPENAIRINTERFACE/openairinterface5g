@@ -2034,8 +2034,6 @@ static void rrc_CU_process_ue_context_release_complete(MessageDef *msg_p)
   }
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
-  nr_pdcp_remove_UE(UE->rrc_ue_id);
-  newGtpuDeleteAllTunnels(instance, UE->rrc_ue_id);
   rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(instance, UE->rrc_ue_id);
   LOG_I(NR_RRC, "removed UE CU UE ID %u/RNTI %04x \n", UE->rrc_ue_id, UE->rnti);
   rrc_delete_ue_data(UE);
@@ -2411,6 +2409,15 @@ void rrc_gNB_process_e1_bearer_context_modif_resp(const e1ap_bearer_modif_resp_t
   }
 }
 
+void rrc_gNB_process_e1_bearer_context_release_cplt(const e1ap_bearer_release_cplt_t *cplt)
+{
+  // there is not really anything to do here as of now
+  // note that we don't check for the UE: it does not exist anymore if the F1
+  // UE context release complete arrived from the DU first, after which we free
+  // the UE context
+  LOG_I(RRC, "UE %d: received bearer release complete\n", cplt->gNB_cu_cp_ue_id);
+}
+
 static void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
 {
   AssertFatal(rrc->du != NULL, "no DU connected, cannot received F1 lost connection\n");
@@ -2694,6 +2701,10 @@ void *rrc_gnb_task(void *args_p) {
         rrc_gNB_process_e1_bearer_context_modif_resp(&E1AP_BEARER_CONTEXT_MODIFICATION_RESP(msg_p));
         break;
 
+      case E1AP_BEARER_CONTEXT_RELEASE_CPLT:
+        rrc_gNB_process_e1_bearer_context_release_cplt(&E1AP_BEARER_CONTEXT_RELEASE_CPLT(msg_p));
+        break;
+
       case NGAP_PAGING_IND:
         rrc_gNB_process_PAGING_IND(msg_p, instance);
         break;
@@ -2844,6 +2855,13 @@ rrc_gNB_generate_RRCRelease(
   };
   deliver_ue_ctxt_release_data_t data = {.rrc = rrc, .release_cmd = &ue_context_release_cmd};
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_release_cmd, &data);
+
+  sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, UE);
+  e1ap_bearer_release_cmd_t cmd = {
+    .gNB_cu_cp_ue_id = UE->rrc_ue_id,
+    .gNB_cu_up_ue_id = UE->rrc_ue_id,
+  };
+  rrc->cucp_cuup.bearer_context_release(assoc_id, &cmd);
 
   /* UE will be freed after UE context release complete */
 }

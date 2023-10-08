@@ -47,7 +47,18 @@ static void cucp_cuup_bearer_context_mod_e1ap(sctp_assoc_t assoc_id, const e1ap_
   itti_send_msg_to_task(TASK_CUCP_E1, 0, msg);
 }
 
+static void cucp_cuup_bearer_context_release_cmd_e1ap(sctp_assoc_t assoc_id, const e1ap_bearer_release_cmd_t *cmd)
+{
+  AssertFatal(assoc_id > 0, "illegal assoc_id %d\n", assoc_id);
+  MessageDef *msg = itti_alloc_new_message(TASK_CUCP_E1, 0, E1AP_BEARER_CONTEXT_RELEASE_CMD);
+  msg->ittiMsgHeader.originInstance = assoc_id;
+  e1ap_bearer_release_cmd_t *cmd_msg = &E1AP_BEARER_CONTEXT_RELEASE_CMD(msg);
+  memcpy(cmd_msg, cmd, sizeof(*cmd));
+  itti_send_msg_to_task(TASK_CUCP_E1, 0, msg);
+}
+
 void cucp_cuup_message_transfer_e1ap_init(gNB_RRC_INST *rrc) {
   rrc->cucp_cuup.bearer_context_setup = cucp_cuup_bearer_context_setup_e1ap;
   rrc->cucp_cuup.bearer_context_mod = cucp_cuup_bearer_context_mod_e1ap;
+  rrc->cucp_cuup.bearer_context_release = cucp_cuup_bearer_context_release_cmd_e1ap;
 }

@@ -117,6 +117,9 @@ int e1ap_decode_initiating_message(E1AP_E1AP_PDU_t *pdu) {
     case E1AP_ProcedureCode_id_bearerContextModification:
       break;
 
+    case E1AP_ProcedureCode_id_bearerContextRelease:
+      break;
+
     default:
       LOG_E(E1AP, "Unsupported procedure code (%d) for initiating message\n",
             (int)pdu->choice.initiatingMessage->procedureCode);
@@ -135,6 +138,9 @@ int e1ap_decode_successful_outcome(E1AP_E1AP_PDU_t *pdu) {
       break;
 
     case E1AP_ProcedureCode_id_bearerContextModification:
+      break;
+
+    case E1AP_ProcedureCode_id_bearerContextRelease:
       break;
 
     default:
