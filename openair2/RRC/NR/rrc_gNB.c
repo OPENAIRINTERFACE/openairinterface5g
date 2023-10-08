@@ -2077,7 +2077,6 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
   }
 
   if (resp->du_to_cu_rrc_information != NULL && resp->du_to_cu_rrc_information->cellGroupConfig != NULL) {
-    LOG_W(RRC, "UE context modification response contains new CellGroupConfig for UE %04x, triggering reconfiguration\n", UE->rnti);
     NR_CellGroupConfig_t *cellGroupConfig = NULL;
     asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
                                                    &asn_DEF_NR_CellGroupConfig,
