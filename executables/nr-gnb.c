@@ -361,8 +361,11 @@ static size_t dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output, size
   if (ru->feprx)
     output += print_meas_log(&ru->ofdm_demod_stats, "feprx", NULL, NULL, output, end - output);
 
-  if (ru->feptx_ofdm) {
+  if (ru->feptx_prec) {
     output += print_meas_log(&ru->precoding_stats,"feptx_prec",NULL,NULL, output, end - output);
+  }
+
+  if (ru->feptx_ofdm) {
     output += print_meas_log(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL, output, end - output);
     output += print_meas_log(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL, output, end - output);
     output += print_meas_log(&ru->ofdm_total_stats,"feptx_total",NULL,NULL, output, end - output);
