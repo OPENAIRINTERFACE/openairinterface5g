@@ -1146,9 +1146,8 @@ static uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
   simde__m128i *after_mf_c_128 = (simde__m128i *)af_mf_10;
   simde__m128i *after_mf_d_128 = (simde__m128i *)af_mf_11;
   
-  int rxComp_aligned = ((nb_rb * 12) % 8) ? (8 - (nb_rb * 12) % 8) : 0;
-  simde__m128i *rxdataF_comp128_0 = (simde__m128i *)&rxdataF_comp[0][symbol * (nb_rb * 12 + rxComp_aligned)];
-  simde__m128i *rxdataF_comp128_1 = (simde__m128i *)&rxdataF_comp[n_rx][symbol * (nb_rb * 12 + rxComp_aligned)];
+  simde__m128i *rxdataF_comp128_0 = (simde__m128i *)&rxdataF_comp[0][symbol * buffer_length];
+  simde__m128i *rxdataF_comp128_1 = (simde__m128i *)&rxdataF_comp[n_rx][symbol * buffer_length];
 
   if (mod_order > 2) {
     if (mod_order == 4) {
@@ -1277,7 +1276,7 @@ static void inner_rx (PHY_VARS_gNB *gNB,
   int nb_layer = rel15_ul->nrOfLayers;
   int nb_rx_ant = frame_parms->nb_antennas_rx;
   int dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
-  int buffer_length = (rel15_ul->rb_size * NR_NB_SC_PER_RB + 7) & ~7;
+  int buffer_length = (rel15_ul->rb_size * NR_NB_SC_PER_RB + 15) & ~15;
   c16_t rxFext[nb_rx_ant][buffer_length] __attribute__((aligned(32)));
   c16_t chFext[nb_layer][nb_rx_ant][buffer_length] __attribute__((aligned(32)));
 
@@ -1578,8 +1577,7 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
   // extract the data in the OFDM frame, to the start of the array
   int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
 
-  if (nb_re_pusch & 7)
-    nb_re_pusch += 8 - (nb_re_pusch & 7);
+  nb_re_pusch = (nb_re_pusch + 15) & ~15;
 
   for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) 
     for (int aatx = 0; aatx < rel15_ul->nrOfLayers; aatx++) 
