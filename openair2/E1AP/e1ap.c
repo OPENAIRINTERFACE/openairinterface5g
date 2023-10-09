@@ -1558,6 +1558,7 @@ static instance_t cuup_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
   openAddr_t tmp= {0};
   strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost)-1);
   sprintf(tmp.originService, "%d",  IPaddrs->my_portd);
+  sprintf(tmp.destinationService, "%d", IPaddrs->remote_portd);
   return gtpv1Init(tmp);
 }
 
@@ -1603,9 +1604,10 @@ static void e1_task_handle_sctp_association_resp(E1_t type, instance_t instance,
     inst->cuup.assoc_id = sctp_new_association_resp->assoc_id;
 
     e1ap_net_config_t *nc = &inst->net_config;
-    eth_params_t IPaddr;
+    eth_params_t IPaddr = {0};
     IPaddr.my_addr = nc->localAddressF1U;
     IPaddr.my_portd = nc->localPortF1U;
+    IPaddr.remote_portd = nc->remotePortF1U;
     if (getCxtE1(instance)->gtpInstF1U < 0)
       getCxtE1(instance)->gtpInstF1U = cuup_task_create_gtpu_instance_to_du(&IPaddr);
     if (getCxtE1(instance)->gtpInstF1U < 0)
