@@ -612,24 +612,38 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
       int lc_identity = rlc_bearer->logicalChannelIdentity;
       mac->lc_ordered_info.lcids_ordered[i] = lc_identity;
       NR_LogicalChannelConfig_t *mac_lc_config;
-      if (rlc_bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity) { /* SRB */
-        NR_SRB_Identity_t srb_id = rlc_bearer->servedRadioBearer->choice.srb_Identity;
+      if (mac->logicalChannelConfig[lc_identity - 1] == NULL) {
+        /* setup of new LCID*/
+        LOG_D(NR_MAC, "Establishing the logical channel %d\n", lc_identity);
+        AssertFatal(rlc_bearer->servedRadioBearer, "servedRadioBearer should be present for LCID establishment\n");
+        if (rlc_bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity) { /* SRB */
+          NR_SRB_Identity_t srb_id = rlc_bearer->servedRadioBearer->choice.srb_Identity;
+          if (rlc_bearer->mac_LogicalChannelConfig != NULL) {
+            mac_lc_config = rlc_bearer->mac_LogicalChannelConfig;
+          } else {
+            LOG_I(NR_RRC, "Applying the default logicalChannelConfig for SRB\n");
+            if (srb_id == 1)
+              mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB1_logicalChannelConfig_defaultValue;
+            else if (srb_id == 2)
+              mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB2_logicalChannelConfig_defaultValue;
+            else if (srb_id == 3)
+              mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB3_logicalChannelConfig_defaultValue;
+            else
+              AssertFatal(1 == 0, "The logical id %d is not a valid SRB id %li\n", lc_identity, srb_id);
+          }
+        } else { /* DRB */
+          mac_lc_config = rlc_bearer->mac_LogicalChannelConfig;
+          AssertFatal(mac_lc_config != NULL, "For DRB, it should be mandatorily present\n");
+        }
+      } else {
+        /* LC is already established, reconfiguring the LC */
+        LOG_D(NR_MAC, "Logical channel %d is already established, Reconfiguring now\n", lc_identity);
         if (rlc_bearer->mac_LogicalChannelConfig != NULL) {
           mac_lc_config = rlc_bearer->mac_LogicalChannelConfig;
         } else {
-          LOG_I(NR_RRC, "Applying the default logicalChannelConfig for SRB\n");
-          if (srb_id == 1)
-            mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB1_logicalChannelConfig_defaultValue;
-          else if (srb_id == 2)
-            mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB2_logicalChannelConfig_defaultValue;
-          else if (srb_id == 3)
-            mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB3_logicalChannelConfig_defaultValue;
-          else
-            AssertFatal(1 == 0, "The logical id %d is not a valid SRB id %li\n", lc_identity, srb_id);
+          /* Need M - Maintains current value */
+          continue;
         }
-      } else { /* DRB */
-        mac_lc_config = rlc_bearer->mac_LogicalChannelConfig;
-        AssertFatal(mac_lc_config != NULL, "For DRB, it should be mandatorily present\n");
       }
       nr_configure_mac_config_logicalChannelBearer(module_id, lc_identity, mac_lc_config);
     }
