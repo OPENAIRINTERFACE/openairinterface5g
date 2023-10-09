@@ -423,6 +423,14 @@ typedef enum ngap_paging_ind_present_s {
   NGAP_PAGING_IND_PAGING_PRIORITY = (1 << 1),
 } ngap_paging_ind_present_t;
 
+typedef struct {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t mnc_digit_length;
+  uint8_t num_nssai;
+  nssai_t s_nssai[8];
+} ngap_plmn_t;
+
 //-------------------------------------------------------------------------------------------//
 // gNB application layer -> NGAP messages
 typedef struct ngap_register_gnb_req_s {
@@ -447,13 +455,8 @@ typedef struct ngap_register_gnb_req_s {
   /* Mobile Country Code
    * Mobile Network Code
    */
-  uint16_t mcc[PLMN_LIST_MAX_SIZE];
-  uint16_t mnc[PLMN_LIST_MAX_SIZE];
-  uint8_t  mnc_digit_length[PLMN_LIST_MAX_SIZE];
   uint8_t  num_plmn;
-
-  uint16_t num_nssai[PLMN_LIST_MAX_SIZE];
-  nssai_t s_nssai[PLMN_LIST_MAX_SIZE][8];
+  ngap_plmn_t plmn[PLMN_LIST_MAX_SIZE];
 
   /* Default Paging DRX of the gNB as defined in TS 38.304 */
   ngap_paging_drx_t default_drx;

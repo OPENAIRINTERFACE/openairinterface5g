@@ -31,6 +31,7 @@
 
 #include "queue.h"
 #include "tree.h"
+#include "openair2/COMMON/ngap_messages_types.h"
 
 #ifndef NGAP_GNB_DEFS_H_
 #define NGAP_GNB_DEFS_H_
@@ -253,13 +254,8 @@ typedef struct ngap_gNB_instance_s {
   /* Mobile Country Code
    * Mobile Network Code
    */
-  uint16_t  mcc[PLMN_LIST_MAX_SIZE];
-  uint16_t  mnc[PLMN_LIST_MAX_SIZE];
-  uint8_t   mnc_digit_length[PLMN_LIST_MAX_SIZE];
-  uint8_t   num_plmn;
-
-  uint16_t   num_nssai[PLMN_LIST_MAX_SIZE];
-  nssai_t s_nssai[PLMN_LIST_MAX_SIZE][8];
+  uint8_t num_plmn;
+  ngap_plmn_t plmn[PLMN_LIST_MAX_SIZE];
 
   /* Default Paging DRX of the gNB as defined in TS 38.304 */
   ngap_paging_drx_t default_drx;

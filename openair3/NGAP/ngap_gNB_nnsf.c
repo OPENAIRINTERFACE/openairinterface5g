@@ -139,8 +139,8 @@ ngap_gNB_nnsf_select_amf_by_plmn_id(ngap_gNB_instance_t       *instance_p,
     /* Looking for served GUAMI PLMN Identity selected matching the one provided by the UE */
     STAILQ_FOREACH(guami_p, &amf_data_p->served_guami, next) {
       STAILQ_FOREACH(served_plmn_p, &guami_p->served_plmns, next) {
-        if ((served_plmn_p->mcc == instance_p->mcc[selected_plmn_identity]) &&
-            (served_plmn_p->mnc == instance_p->mnc[selected_plmn_identity])) {
+        if ((served_plmn_p->mcc == instance_p->plmn[selected_plmn_identity].mcc)
+            && (served_plmn_p->mnc == instance_p->plmn[selected_plmn_identity].mnc)) {
           break;
         }
       }
@@ -211,8 +211,8 @@ ngap_gNB_nnsf_select_amf_by_amf_setid(ngap_gNB_instance_t       *instance_p,
       struct plmn_identity_s   *served_plmn_p = NULL;
 
       STAILQ_FOREACH(served_plmn_p, &guami_p->served_plmns, next) {
-        if ((served_plmn_p->mcc == instance_p->mcc[selected_plmn_identity]) &&
-            (served_plmn_p->mnc == instance_p->mnc[selected_plmn_identity])) {
+        if ((served_plmn_p->mcc == instance_p->plmn[selected_plmn_identity].mcc)
+            && (served_plmn_p->mnc == instance_p->plmn[selected_plmn_identity].mnc)) {
           break;
         }
       }
