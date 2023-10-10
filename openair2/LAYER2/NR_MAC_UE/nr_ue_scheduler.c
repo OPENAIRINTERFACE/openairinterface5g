@@ -3072,9 +3072,9 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
     for (uint8_t id = 0; id < avail_lcids_count; id++) {
       /*
-       loop over all logical channels in the order of priority. As stated in ts spec, in the first run, only prioritized
-       number of bytes are taken out from the correspondinf RLC buffers of all active logical channels and if there is still
-       space availble in the MAC PDU, then from the next run all the remaining data from the higher priority logical channel
+       loop over all logical channels in the order of priority. As stated in TS138.321 Section 5.4.3.1, in the first run, only
+       prioritized number of bytes are taken out from the corresponding RLC buffers of all active logical channels and if there is
+       still space availble in the MAC PDU, then from the next run all the remaining data from the higher priority logical channel
        is placed in the MAC PDU before going on to next high priority logical channel
       */
       int lcid = lcids_bj_pos[id];

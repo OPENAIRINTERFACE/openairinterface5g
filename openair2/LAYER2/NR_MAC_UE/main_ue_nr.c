@@ -106,7 +106,7 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
         nr_rrc_mac_config_req_ue_logicalChannelBearer(0, &rlc_toadd_list, NULL);
 
         // free memory
-        free_nr_noS1_bearer_config(&rbconfig, &rlc_rbconfig);
+        free_nr_noS1_bearer_config(&rbconfig, NULL);
       }
     }
     else {

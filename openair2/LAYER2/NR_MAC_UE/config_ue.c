@@ -649,7 +649,7 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
     }
 
     // reorder the logical channels as per its priority
-    qsort_r((void *)mac->lc_ordered_info.lcids_ordered, rlc_toadd_list->list.count, sizeof(uint32_t), lcid_cmp, (void *)mac);
+    qsort_r(mac->lc_ordered_info.lcids_ordered, rlc_toadd_list->list.count, sizeof(uint32_t), lcid_cmp, mac);
     for (uint8_t i = 0; i < rlc_toadd_list->list.count; i++) {
       mac->lc_ordered_info.logicalChannelConfig_ordered[i] = mac->logicalChannelConfig[mac->lc_ordered_info.lcids_ordered[i] - 1];
     }
