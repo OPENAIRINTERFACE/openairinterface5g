@@ -957,9 +957,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
   F1AP_UEContextModificationRequest_t    *out;
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
-  // for test
-  LOG_W(F1AP, "UE Context Modification Request PLMN is hardcoded!\n");
-  f1ap_served_cell_info_t hardCoded= { .plmn.mcc=208, .plmn.mnc=93, .plmn.mnc_digit_length=2};
+
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
@@ -985,13 +983,18 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
 
   /* optional */
   /* c3. NRCGI */
-  if (0) {
+  if (true) {
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie3);
     ie3->id                             = F1AP_ProtocolIE_ID_id_SpCell_ID;
     ie3->criticality                    = F1AP_Criticality_ignore;
     ie3->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_NRCGI;
     /* - nRCGI */
-    addnRCGI(ie3->value.choice.NRCGI, &hardCoded);
+
+    f1ap_served_cell_info_t nrcgi = {
+        .plmn = f1ap_ue_context_modification_req->plmn,
+        .nr_cellid = f1ap_ue_context_modification_req->nr_cellid,
+    };
+    addnRCGI(ie3->value.choice.NRCGI, &nrcgi);
   }
 
   /* optional */
@@ -1113,6 +1116,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
       F1AP_SCell_ToBeSetupMod_Item_t *scell_toBeSetupMod_item=
           &scell_toBeSetupMod_item_ies->value.choice.SCell_ToBeSetupMod_Item;
       //   /* - sCell_ID */
+      f1ap_served_cell_info_t hardCoded = {0};
       addnRCGI(scell_toBeSetupMod_item->sCell_ID, &hardCoded);
       /* sCellIndex */
       scell_toBeSetupMod_item->sCellIndex = 6;  // issue here
@@ -1140,6 +1144,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
       F1AP_SCell_ToBeRemoved_Item_t *scell_toBeRemoved_item=
         &scell_toBeRemoved_item_ies->value.choice.SCell_ToBeRemoved_Item;
       /* - sCell_ID */
+      f1ap_served_cell_info_t hardCoded = {0};
       addnRCGI(scell_toBeRemoved_item->sCell_ID, &hardCoded);
     }
   }

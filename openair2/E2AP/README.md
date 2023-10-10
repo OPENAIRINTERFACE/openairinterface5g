@@ -11,7 +11,7 @@ Please see [NOTICE](NOTICE.md) file for third party software that is included in
 
 # Overview
 
-This tutorial describes the steps of deployment 5G OAI RAN, with integrated E2 agent, and FlexRIC, O-RAN compliant nearRT-RIC.
+This tutorial describes the steps of deployment 5G OAI RAN, with integrated E2 agent and a nearRT-RIC using O-RAN compliant FlexRIC.
 
 # 1. Installation
 
@@ -29,9 +29,10 @@ This tutorial describes the steps of deployment 5G OAI RAN, with integrated E2 a
   ```bash
   git clone https://github.com/swig/swig.git
   cd swig
+  git checkout release-4.1 
   ./autogen.sh
   ./configure --prefix=/usr/
-  make
+  make -j8
   make install
   ```
 
@@ -57,12 +58,15 @@ git clone https://gitlab.eurecom.fr/oai/openairinterface5g oai
 cd oai/
 ```
 
-### 2.1.2 Build OAI
+### 2.1.2 Build OAI with E2 Agent
+
+- By default, OAI will build the E2 Agent with E2AP v2 and KPM v2. If you want a different version, edit the variable E2AP\_VERSION and KPM\_VERSION at OAI's CMakeLists.txt file.
+
 ```bash
 cd cmake_targets/
 ./build_oai -I -w SIMU --gNB --nrUE --build-e2 --ninja
 ```
-If the flexric folder is empty, try manually the following commands
+If the openair2/E2AP/flexric folder is empty, try manually the following commands
 
 ```bash
 git submodule init
@@ -74,15 +78,18 @@ git submodule update
  * `--gNB` is to build the `nr-softmodem` and `nr-cuup` executables and all required shared libraries
  * `--nrUE` is to build the `nr-uesoftmodem` executable and all required shared libraries
  * `--ninja` is to use the ninja build tool, which speeds up compilation
- * `--build-e2` option is to use the E2 agent, integrated within gNB.
+ * `--build-e2` option is to use the E2 agent, integrated within RAN.
 
 ## 2.2 FlexRIC
+
+- By default, FlexRIC will build the nearRT-RIC with E2AP v2 and KPM v2. If you want a different version, edit the variable E2AP\_VERSION and KPM\_VERSION at FlexRIC's CMakeLists.txt file. Note that OAI's and FlexRIC's E2AP\_VERSION and KPM\_VERSION need to match due to O-RAN incompatibilities among versions.
+
 
 ### 2.2.1 Clone the FlexRIC repository
 ```bash
 git clone https://gitlab.eurecom.fr/mosaic5g/flexric flexric
 cd flexric/
-git checkout 8ee3aca107a9da8ccf425e623bed18cd40a31fa1
+git checkout 035fd2e8f9a9d2c16df8d44c9e8c13ccddf9ff19
 ```
 
 ### 2.2.2 Build FlexRIC
@@ -98,7 +105,8 @@ sudo make install
 By default the service model libraries will be installed in the path `/usr/local/lib/flexric` while the configuration file in `/usr/local/etc/flexric`.
 
 Available SMs in this version are:
-* KPM v03.00 (xapp_kpm_moni)
+* KPM v02.03 and KPM v03.00 (xapp_kpm_moni)
+* RC v01.03 (xapp_kpm_rc)
 * GTP (xapp_gtp_moni)
 * MAC + RLC + PDCP (xapp_mac_rlc_pdcp_moni)
 
@@ -106,7 +114,7 @@ If you are interested in TC and SLICE SMs, please follow the instructions at htt
 
 # 3. Start the process
 
-In order to configure E2 agent, please, add the following block in the configuration file:
+In order to configure E2 agent, please, add the following block in OAI's configuration file:
 ```bash
 e2_agent = {
   near_ric_ip_addr = "127.0.0.1";

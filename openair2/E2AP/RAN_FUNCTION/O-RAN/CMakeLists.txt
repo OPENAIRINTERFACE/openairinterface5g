@@ -7,3 +7,4 @@ add_library(e2_ran_func_oran STATIC
           )
 
 target_link_libraries(e2_ran_func_oran PUBLIC asn1_nr_rrc nr_rrc asn1_nr_rrc_hdrs)
+target_compile_definitions(e2_ran_func_oran PRIVATE ${E2AP_VERSION} ${KPM_VERSION})

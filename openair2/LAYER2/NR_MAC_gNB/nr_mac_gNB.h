@@ -806,6 +806,10 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t rlc_data_req;
   /// processing time of rlc_status_ind
   time_stats_t rlc_status_ind;
+  /// processing time of nr_srs_ri_computation
+  time_stats_t nr_srs_ri_computation_timer;
+  /// processing time of nr_srs_tpmi_estimation
+  time_stats_t nr_srs_tpmi_computation_timer;
   /// processing time of eNB MCH scheduler
   time_stats_t schedule_mch;
   /// processing time of eNB ULSCH reception

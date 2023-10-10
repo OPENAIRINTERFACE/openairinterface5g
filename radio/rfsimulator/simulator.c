@@ -70,7 +70,6 @@
 #define sampleToByte(a,b) ((a)*(b)*sizeof(sample_t))
 #define byteToSample(a,b) ((a)/(sizeof(sample_t)*(b)))
 
-#define MAX_SIMULATION_CONNECTED_NODES 5
 #define GENERATE_CHANNEL 10 // each frame (or slot?) in DL
 
 // This needs to be re-architected in the future
@@ -86,7 +85,7 @@
 // FD_SETSIE) and reduced to 125. This should allow for around 20 simultaeous UEs.
 //
 // #define MAX_FD_RFSIMU FD_SETSIZE
-#define MAX_FD_RFSIMU 125
+#define MAX_FD_RFSIMU 250
 #define SYSCTL_MEM_VALUE 134217728 // Kernel network buffer size
 #define SEND_BUFF_SIZE SYSCTL_MEM_VALUE // Socket buffer size
 
@@ -803,7 +802,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       for ( int i=0; i < t->tx_num_channels; i++)
         samplesVoid[i]=(void *)&v;
 
-      rfsimulator_write_internal(t, t->lastWroteTS > 1 ? t->lastWroteTS - 1 : 0, samplesVoid, 1, t->tx_num_channels, 1, true);
+      rfsimulator_write_internal(t, t->lastWroteTS > 1 ? t->lastWroteTS - 1 : 0, samplesVoid, 1, t->tx_num_channels, 1, false);
     } else {
       if ( events[nbEv].events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP) ) {
         socketError(t,fd);
@@ -963,7 +962,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
               "Waiting on socket, current last ts: %ld, expected at least : %ld\n",
               b->lastReceivedTS,
               t->nextRxTstamp + nsamps);
-        flushInput(t, 1000, nsamps); // was 3
+        flushInput(t, 3, nsamps);
       }
     } while (have_to_wait);
   }

@@ -795,6 +795,9 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
                 LOG_W(NR_MAC, "No UE found with C-RNTI %04x, ignoring Msg.3 to have UE come back with new RA attempt\n", ra->rnti);
                 return;
               } else {
+                // Reset Msg4_ACKed to not schedule ULSCH and DLSCH before RRC Reconfiguration
+                UE_C->Msg4_ACKed = false;
+
                 // The UE identified by C-RNTI still exists at the gNB
                 nr_mac_reset_ul_failure(&UE_C->UE_sched_ctrl);
 
@@ -1316,8 +1319,11 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
       sched_ctrl->srs_feedback.sri = NR_SRS_SRI_0;
 
+      start_meas(&nr_mac->nr_srs_ri_computation_timer);
       nr_srs_ri_computation(&nr_srs_channel_iq_matrix, current_BWP, &sched_ctrl->srs_feedback.ul_ri);
+      stop_meas(&nr_mac->nr_srs_ri_computation_timer);
 
+      start_meas(&nr_mac->nr_srs_tpmi_computation_timer);
       sched_ctrl->srs_feedback.tpmi = nr_srs_tpmi_estimation(current_BWP->pusch_Config,
                                                              current_BWP->transform_precoding,
                                                              nr_srs_channel_iq_matrix.channel_matrix,
@@ -1327,6 +1333,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
                                                              nr_srs_channel_iq_matrix.prg_size,
                                                              nr_srs_channel_iq_matrix.num_prgs,
                                                              sched_ctrl->srs_feedback.ul_ri);
+      stop_meas(&nr_mac->nr_srs_tpmi_computation_timer);
 
       sprintf(stats->srs_stats, "UL-RI %d, TPMI %d", sched_ctrl->srs_feedback.ul_ri + 1, sched_ctrl->srs_feedback.tpmi);
 

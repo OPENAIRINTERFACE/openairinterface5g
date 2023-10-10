@@ -256,6 +256,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int32_t rp[frame_parms->nb_antennas_rx][pucch_pdu->nr_of_symbols][nb_re_pucch];
   memset(rp, 0, sizeof(rp));
   int32_t *tmp_rp = NULL;
+  int signal_energy = 0;
 
   for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
     uint8_t l2 = l + pucch_pdu->start_symbol_index;
@@ -286,8 +287,12 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 #endif
 
       }
+      signal_energy += signal_energy_nodc((int32_t *)r, nb_re_pucch);
     }
   }
+
+  signal_energy /= (pucch_pdu->nr_of_symbols * frame_parms->nb_antennas_rx);
+  int pucch_power_dBtimes10 = 10 * dB_fixed(signal_energy);
 
   //int32_t no_corr = 0;
   int seq_index = 0;
@@ -377,7 +382,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int SNRtimes10,sigenergy=0;
   for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
     sigenergy += signal_energy_nodc(rp[aa][0],12);
-  SNRtimes10 = xrtmag_dBtimes10-(10*max_n0);
+  SNRtimes10 = pucch_power_dBtimes10 - (10 * max_n0);
   int cqi;
   if (SNRtimes10 < -640) cqi=0;
   else if (SNRtimes10 >  635) cqi=255;
@@ -421,7 +426,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq.harq_confidence_level = no_conf;
     uci_pdu->harq.harq_list[0].harq_value = !(index&0x01);
     LOG_D(PHY,
-          "[DLSCH/PDSCH/PUCCH] %d.%d HARQ %s with confidence level %s xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, "
+          "[DLSCH/PDSCH/PUCCH] %d.%d HARQ %s with confidence level %s xrt_mag %d xrt_mag_next %d pucch_power_dBtimes10 %d n0 %d (%d,%d) pucch0_thres %d, "
           "cqi %d, SNRtimes10 %d, energy %f\n",
           frame,
           slot,
@@ -429,6 +434,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
           uci_pdu->harq.harq_confidence_level == 0 ? "good" : "bad",
           xrtmag_dBtimes10,
           xrtmag_next_dBtimes10,
+          pucch_power_dBtimes10,
           max_n0,
           uci_stats->pucch0_n00,
           uci_stats->pucch0_n01,
@@ -454,7 +460,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq.harq_list[1].harq_value = !(index&0x01);
     uci_pdu->harq.harq_list[0].harq_value = !((index>>1)&0x01);
     LOG_D(PHY,
-          "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values (%s, %s) with confidence level %s, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) "
+          "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values (%s, %s) with confidence level %s, xrt_mag %d xrt_mag_next %d pucch_power_dBtimes10 %d n0 %d (%d,%d) "
           "pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
           frame,
           slot,
@@ -463,6 +469,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
           uci_pdu->harq.harq_confidence_level == 0 ? "good" : "bad",
           xrtmag_dBtimes10,
           xrtmag_next_dBtimes10,
+          pucch_power_dBtimes10,
           max_n0,
           uci_stats->pucch0_n00,
           uci_stats->pucch0_n01,

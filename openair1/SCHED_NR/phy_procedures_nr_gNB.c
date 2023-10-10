@@ -465,12 +465,6 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
       int off = ((pusch_pdu->rb_size&1) == 1)? 4:0;
 
       LOG_M("rxsigF0.m","rxsF0",&gNB->common_vars.rxdataF[0][(slot_rx&3)*gNB->frame_parms.ofdm_symbol_size*gNB->frame_parms.symbols_per_slot],gNB->frame_parms.ofdm_symbol_size*gNB->frame_parms.symbols_per_slot,1,1);
-      LOG_M("rxsigF0_ext.m",
-            "rxsF0_ext",
-            &gNB->pusch_vars[0].rxdataF_ext[0][pusch_pdu->start_symbol_index * NR_NB_SC_PER_RB * pusch_pdu->rb_size],
-            pusch_pdu->nr_of_symbols * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-            1,
-            1);
       LOG_M("chestF0.m",
             "chF0",
             &gNB->pusch_vars[0].ul_ch_estimates[0][pusch_pdu->start_symbol_index * gNB->frame_parms.ofdm_symbol_size],
@@ -498,12 +492,6 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
             0);
       if (gNB->frame_parms.nb_antennas_rx > 1) {
         LOG_M("rxsigF1.m","rxsF1",&gNB->common_vars.rxdataF[1][(slot_rx&3)*gNB->frame_parms.ofdm_symbol_size*gNB->frame_parms.symbols_per_slot],gNB->frame_parms.ofdm_symbol_size*gNB->frame_parms.symbols_per_slot,1,1);
-        LOG_M("rxsigF1_ext.m",
-              "rxsF1_ext",
-              &gNB->pusch_vars[0].rxdataF_ext[1][pusch_pdu->start_symbol_index * NR_NB_SC_PER_RB * pusch_pdu->rb_size],
-              pusch_pdu->nr_of_symbols * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-              1,
-              1);
         LOG_M("chestF1.m",
               "chF1",
               &gNB->pusch_vars[0].ul_ch_estimates[1][pusch_pdu->start_symbol_index * gNB->frame_parms.ofdm_symbol_size],

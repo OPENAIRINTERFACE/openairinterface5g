@@ -20,7 +20,7 @@ typedef struct {
 
 
 static
-matched_ues_mac_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const * condition, int64_t const value)
+matched_ues_mac_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const condition, int64_t const value)
 {
   matched_ues_mac_t matched_ues = {.num_ues = 0, .ue_list = calloc(MAX_MOBILES_PER_GNB, sizeof(NR_UE_info_t)) };
   assert(matched_ues.ue_list != NULL && "Memory exhausted");
@@ -37,7 +37,7 @@ matched_ues_mac_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const * 
 
       // Filter connected UEs by S-NSSAI test condition to get list of matched UEs 
       // note: not possible to filter 
-      switch (*condition)
+      switch (condition)
       {
       case EQUAL_TEST_COND:
       {
@@ -73,7 +73,7 @@ typedef struct {
 } matched_ues_rrc_t;
 
 static
-matched_ues_rrc_t filter_ues_by_s_nssai_in_cu(test_cond_e const * condition, int64_t const value)
+matched_ues_rrc_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, int64_t const value)
 {
   matched_ues_rrc_t matched_ues = {.num_ues = 0, .rrc_ue_id_list = calloc(MAX_MOBILES_PER_GNB, sizeof(f1_ue_data_t)) };
   assert(matched_ues.rrc_ue_id_list != NULL && "Memory exhausted");
@@ -85,7 +85,7 @@ matched_ues_rrc_t filter_ues_by_s_nssai_in_cu(test_cond_e const * condition, int
     ngap_gNB_ue_context_t *ngap_ue_context_list = ngap_get_ue_context(ue_context_p1->ue_context.rrc_ue_id);
     
     // Filter connected UEs by S-NSSAI test condition to get list of matched UEs 
-    switch (*condition)
+    switch (condition)
     {
     case EQUAL_TEST_COND:
       assert(ngap_ue_context_list->gNB_instance[0].s_nssai[0][0].sST == value && "Please, check the condition for S-NSSAI. At the moment, OAI supports eMBB");
@@ -104,7 +104,7 @@ matched_ues_rrc_t filter_ues_by_s_nssai_in_cu(test_cond_e const * condition, int
 }
 
 static
-nr_rlc_statistics_t get_rlc_stats_per_drb(NR_UE_info_t * const UE)
+nr_rlc_statistics_t get_rlc_stats_per_drb(NR_UE_info_t const * UE)
 {
   assert(UE != NULL);
 
@@ -195,13 +195,14 @@ gnb_du_e2sm_t fill_gnb_du_data(const f1_ue_data_t * rrc_ue_id)
   return gnb_du;
 }
 
-
-uint32_t last_dl_rlc_pdu_total_bytes[MAX_MOBILES_PER_GNB] = {0};
-uint32_t last_ul_rlc_pdu_total_bytes[MAX_MOBILES_PER_GNB] = {0};
-uint32_t last_dl_total_prbs[MAX_MOBILES_PER_GNB] = {0};
-uint32_t last_ul_total_prbs[MAX_MOBILES_PER_GNB] = {0};
-uint32_t last_dl_pdcp_sdu_total_bytes[MAX_MOBILES_PER_GNB] = {0};
-uint32_t last_ul_pdcp_sdu_total_bytes[MAX_MOBILES_PER_GNB] = {0};
+// Bad bad bad. Create a proper exponential moving average filter or at least, only read statistics
+// Avoid coupling among sublayers
+static uint32_t last_dl_rlc_pdu_total_bytes[MAX_MOBILES_PER_GNB] = {0};
+static uint32_t last_ul_rlc_pdu_total_bytes[MAX_MOBILES_PER_GNB] = {0};
+static uint32_t last_dl_total_prbs[MAX_MOBILES_PER_GNB] = {0};
+static uint32_t last_ul_total_prbs[MAX_MOBILES_PER_GNB] = {0};
+static uint32_t last_dl_pdcp_sdu_total_bytes[MAX_MOBILES_PER_GNB] = {0};
+static uint32_t last_ul_pdcp_sdu_total_bytes[MAX_MOBILES_PER_GNB] = {0};
 
 
 static
@@ -596,18 +597,23 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_ma
     msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_monolithic(&matched_ues.ue_list[i], i, rrc_ue_context_list->ue_context.rrc_ue_id, act_def_fr_1);
   }
 
-
   return msg_frm_3;
 }
 
-
-static 
-kpm_ric_ind_hdr_format_1_t fill_kpm_ind_hdr_frm_1(void)
+static
+kpm_ric_ind_hdr_format_1_t kpm_ind_hdr_frm_1(void)
 {
   kpm_ric_ind_hdr_format_1_t hdr_frm_1 = {0};
 
-  hdr_frm_1.collectStartTime = time_now_us();
-  
+  int64_t const t = time_now_us();
+#if defined KPM_V2
+  hdr_frm_1.collectStartTime = t/1000000; // seconds
+#elif defined KPM_V3 
+  hdr_frm_1.collectStartTime = t; // microseconds
+#else
+  static_assert(0!=0, "Undefined KPM SM Version");
+#endif
+
   hdr_frm_1.fileformat_version = NULL;
 
   // Check E2 Node NG-RAN Type
@@ -617,7 +623,7 @@ kpm_ric_ind_hdr_format_1_t fill_kpm_ind_hdr_frm_1(void)
     hdr_frm_1.sender_name->buf = calloc(strlen("My OAI-DU") + 1, sizeof(char));
     memcpy(hdr_frm_1.sender_name->buf, "My OAI-DU", strlen("My OAI-DU"));
     hdr_frm_1.sender_name->len = strlen("My OAI-DU");
-  
+
     hdr_frm_1.sender_type = calloc(1, sizeof(byte_array_t));
     hdr_frm_1.sender_type->buf = calloc(strlen("DU") + 1, sizeof(char));
     memcpy(hdr_frm_1.sender_type->buf, "DU", strlen("DU"));
@@ -629,7 +635,7 @@ kpm_ric_ind_hdr_format_1_t fill_kpm_ind_hdr_frm_1(void)
     hdr_frm_1.sender_name->buf = calloc(strlen("My OAI-CU") + 1, sizeof(char));
     memcpy(hdr_frm_1.sender_name->buf, "My OAI-CU", strlen("My OAI-CU"));
     hdr_frm_1.sender_name->len = strlen("My OAI-CU");
-  
+
     hdr_frm_1.sender_type = calloc(1, sizeof(byte_array_t));
     hdr_frm_1.sender_type->buf = calloc(strlen("CU") + 1, sizeof(char));
     memcpy(hdr_frm_1.sender_type->buf, "CU", strlen("CU"));
@@ -641,14 +647,15 @@ kpm_ric_ind_hdr_format_1_t fill_kpm_ind_hdr_frm_1(void)
     hdr_frm_1.sender_name->buf = calloc(strlen("My OAI-MONO") + 1, sizeof(char));
     memcpy(hdr_frm_1.sender_name->buf, "My OAI-MONO", strlen("My OAI-MONO"));
     hdr_frm_1.sender_name->len = strlen("My OAI-MONO");
-  
+
     hdr_frm_1.sender_type = calloc(1, sizeof(byte_array_t));
     hdr_frm_1.sender_type->buf = calloc(strlen("MONO") + 1, sizeof(char));
     memcpy(hdr_frm_1.sender_type->buf, "MONO", strlen("MONO"));
     hdr_frm_1.sender_type->len = strlen("MONO");
+  } else {
+    assert(0!=0 && "Unknown node type");
   }
-  
-  
+
   hdr_frm_1.vendor_name = calloc(1, sizeof(byte_array_t));
   hdr_frm_1.vendor_name->buf = calloc(strlen("OAI") + 1, sizeof(char));
   memcpy(hdr_frm_1.vendor_name->buf, "OAI", strlen("OAI"));
@@ -657,87 +664,125 @@ kpm_ric_ind_hdr_format_1_t fill_kpm_ind_hdr_frm_1(void)
   return hdr_frm_1;
 }
 
-static
-kpm_ind_hdr_t fill_kpm_ind_hdr(void)
+kpm_ind_hdr_t kpm_ind_hdr(void)
 {
   kpm_ind_hdr_t hdr = {0};
 
   hdr.type = FORMAT_1_INDICATION_HEADER;
-  hdr.kpm_ric_ind_hdr_format_1 = fill_kpm_ind_hdr_frm_1();
+  hdr.kpm_ric_ind_hdr_format_1 = kpm_ind_hdr_frm_1();
 
   return hdr;
 }
 
-
 void read_kpm_sm(void* data)
 {
   assert(data != NULL);
-  //assert(data->type == KPM_STATS_V3_0);
+  // assert(data->type == KPM_STATS_V3_0);
 
   kpm_rd_ind_data_t* const kpm = (kpm_rd_ind_data_t*)data;
 
-  assert(kpm->act_def!= NULL && "Cannot be NULL");
+  assert(kpm->act_def != NULL && "Cannot be NULL");
 
   // 7.8 Supported RIC Styles and E2SM IE Formats
   // Action Definition Format 4 corresponds to Indication Message Format 3
-  switch (kpm->act_def->type)
-  {
-  case FORMAT_4_ACTION_DEFINITION:
-  {
-    kpm->ind.hdr = fill_kpm_ind_hdr(); 
-    
-    kpm->ind.msg.type = FORMAT_3_INDICATION_MESSAGE;
+  switch (kpm->act_def->type) {
+    case FORMAT_4_ACTION_DEFINITION: {
+      kpm->ind.hdr = kpm_ind_hdr();
 
-    // Filter the UE by the test condition criteria
-    for (size_t i = 0; i<kpm->act_def->frm_4.matching_cond_lst_len; i++)
-    {
-      switch (kpm->act_def->frm_4.matching_cond_lst[i].test_info_lst.test_cond_type)
-      {
-      case S_NSSAI_TEST_COND_TYPE:
-        assert(kpm->act_def->frm_4.matching_cond_lst[i].test_info_lst.S_NSSAI == TRUE_TEST_COND_TYPE && "Must be true");
-        
-        // Check E2 Node NG-RAN Type
-        if (NODE_IS_DU(RC.nrrrc[0]->node_type))
-        {
-          matched_ues_mac_t matched_ues = filter_ues_by_s_nssai_in_du_or_monolithic(kpm->act_def->frm_4.matching_cond_lst[i].test_info_lst.test_cond, *kpm->act_def->frm_4.matching_cond_lst[i].test_info_lst.int_value);
-          kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_du(matched_ues, &kpm->act_def->frm_4.action_def_format_1);
-        }
-        else if (NODE_IS_CU(RC.nrrrc[0]->node_type))
-        {
-          matched_ues_rrc_t matched_ues = filter_ues_by_s_nssai_in_cu(kpm->act_def->frm_4.matching_cond_lst[i].test_info_lst.test_cond, *kpm->act_def->frm_4.matching_cond_lst[i].test_info_lst.int_value);
-          kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_cu(matched_ues, &kpm->act_def->frm_4.action_def_format_1);
-        }
-        else if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type))
-        {
-          matched_ues_mac_t matched_ues = filter_ues_by_s_nssai_in_du_or_monolithic(kpm->act_def->frm_4.matching_cond_lst[i].test_info_lst.test_cond, *kpm->act_def->frm_4.matching_cond_lst[i].test_info_lst.int_value);
-          kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_monolithic(matched_ues, &kpm->act_def->frm_4.action_def_format_1);
-        }
-        else
-        {
-          assert(false && "NG-RAN Type not yet implemented");
-        }
+      kpm->ind.msg.type = FORMAT_3_INDICATION_MESSAGE;
+      // Filter the UE by the test condition criteria
+      kpm_act_def_format_4_t const* frm_4 = &kpm->act_def->frm_4; // 8.2.1.2.4
+      for (size_t i = 0; i < frm_4->matching_cond_lst_len; i++) {
+        switch (frm_4->matching_cond_lst[i].test_info_lst.test_cond_type) {
+          case GBR_TEST_COND_TYPE: {
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
+          case AMBR_TEST_COND_TYPE: {
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
+          case IsStat_TEST_COND_TYPE: {
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
+          case IsCatM_TEST_COND_TYPE: {
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
 
-        break;
-      
-      default:
-        assert(false && "Test condition type not yet implemented");
+          case DL_RSRP_TEST_COND_TYPE: {
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
+
+          case DL_RSRQ_TEST_COND_TYPE: {
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
+
+          case UL_RSRP_TEST_COND_TYPE: {
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
+
+          case CQI_TEST_COND_TYPE: {
+            // This is a bad idea. Done only to check FlexRIC xAPP
+            printf("CQI not implemented!. Randomly filling the data \n");
+            goto rnd_data_label;
+            break;
+          }
+
+          case fiveQI_TEST_COND_TYPE: {
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
+
+          case QCI_TEST_COND_TYPE: {
+            ;
+            assert(0 != 0 && "Not implemented");
+            break;
+          }
+          case S_NSSAI_TEST_COND_TYPE: {
+            assert(frm_4->matching_cond_lst[i].test_info_lst.S_NSSAI == TRUE_TEST_COND_TYPE && "Must be true");
+            assert(frm_4->matching_cond_lst[i].test_info_lst.test_cond != NULL && "Even though is optional..");
+            assert(frm_4->matching_cond_lst[i].test_info_lst.int_value != NULL && "Even though is optional..");
+
+            test_cond_e const test_cond = *frm_4->matching_cond_lst[i].test_info_lst.test_cond;
+            int64_t const value = *frm_4->matching_cond_lst[i].test_info_lst.int_value;
+            // Check E2 Node NG-RAN Type
+            if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+              matched_ues_mac_t matched_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_du(matched_ues, &frm_4->action_def_format_1);
+            } else if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+              matched_ues_rrc_t matched_ues = filter_ues_by_s_nssai_in_cu(test_cond, value);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_cu(matched_ues, &frm_4->action_def_format_1);
+            } else if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type)) {
+              matched_ues_mac_t matched_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_monolithic(matched_ues, &frm_4->action_def_format_1);
+            } else {
+              assert(false && "NG-RAN Type not implemented");
+            }
+
+            break;
+          }
+
+          default:
+            assert(false && "Unknown Test condition");
+        }
       }
 
+      break;
     }
 
-    break;
-  }
-  
-  default:
-  {
-    kpm->ind.hdr = fill_rnd_kpm_ind_hdr(); 
-    kpm->ind.msg = fill_rnd_kpm_ind_msg();
+    default: {
+    rnd_data_label:
+      kpm->ind.hdr = fill_rnd_kpm_ind_hdr();
+      kpm->ind.msg = fill_rnd_kpm_ind_msg();
 
-    break;
+      break;
+    }
   }
-
-  }
-
 }
 
 void read_kpm_setup_sm(void* e2ap)

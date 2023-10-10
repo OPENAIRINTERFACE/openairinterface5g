@@ -1296,18 +1296,6 @@ int main(int argc, char *argv[])
                 nb_symb_sch * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
                 1,
                 1);
-          LOG_M("chmagF0.m",
-                "chmF0",
-                &pusch_vars->ul_ch_mag[0][start_symbol * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-                nb_symb_sch * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-                1,
-                1);
-          LOG_M("chmagbF0.m",
-                "chmbF0",
-                &pusch_vars->ul_ch_magb[0][start_symbol * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-                nb_symb_sch * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-                1,
-                1);
           LOG_M("rxsigF0_llrlayers0.m",
                 "rxsF0_llrlayers0",
                 &pusch_vars->llr_layers[0][0],

@@ -927,21 +927,38 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
       f1ap_ue_context_modification_req->rrc_container = malloc(ieRRC->value.choice.RRCContainer.size);
       memcpy(f1ap_ue_context_modification_req->rrc_container,
           ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
-      protocol_ctxt_t ctxt;
-      // decode RRC Container and act on the message type
-      ctxt.rntiMaybeUEid = f1ap_ue_context_modification_req->gNB_DU_ue_id;
-      ctxt.instance = instance;
-      ctxt.module_id  = instance;
-      ctxt.enb_flag  = 1;
-      ctxt.eNB_index = instance;
-      mem_block_t *pdcp_pdu_p = get_free_mem_block(ieRRC->value.choice.RRCContainer.size, __func__);
-      memcpy(&pdcp_pdu_p->data[0], ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
-      du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, ieRRC->value.choice.RRCContainer.size, pdcp_pdu_p);
+      f1ap_ue_context_modification_req->rrc_container_length = ieRRC->value.choice.RRCContainer.size;
     } else {
       LOG_E(F1AP, " RRCContainer in UEContextModificationRequestIEs size id 0\n");
     }
   } else {
     LOG_D(F1AP, "can't find RRCContainer in UEContextModificationRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
+  }
+
+  /* CU2DU Information */
+  F1AP_UEContextModificationRequestIEs_t *ieCU2DU = NULL;
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextModificationRequestIEs_t,
+                             ieCU2DU,
+                             container,
+                             F1AP_ProtocolIE_ID_id_CUtoDURRCInformation,
+                             false);
+  if (ieCU2DU != NULL) {
+    f1ap_ue_context_modification_req->cu_to_du_rrc_information =
+        calloc(1, sizeof(*f1ap_ue_context_modification_req->cu_to_du_rrc_information));
+    AssertFatal(f1ap_ue_context_modification_req->cu_to_du_rrc_information != NULL, "out of memory\n");
+    cu_to_du_rrc_information_t *cu2du = f1ap_ue_context_modification_req->cu_to_du_rrc_information;
+    const F1AP_CUtoDURRCInformation_t *cu2duie = &ieCU2DU->value.choice.CUtoDURRCInformation;
+    if (cu2duie->cG_ConfigInfo != NULL)
+      LOG_W(F1AP, "UE RNTI %04x: ignoring cg_ConfigInfo, not implemented\n", f1ap_ue_context_modification_req->gNB_DU_ue_id);
+    if (cu2duie->measConfig != NULL)
+      LOG_W(F1AP, "UE RNTI %04x: ignoring measConfig, not implemented\n", f1ap_ue_context_modification_req->gNB_DU_ue_id);
+    if (cu2duie->uE_CapabilityRAT_ContainerList != NULL) {
+      F1AP_UE_CapabilityRAT_ContainerList_t *uecap = cu2duie->uE_CapabilityRAT_ContainerList;
+      cu2du->uE_CapabilityRAT_ContainerList = calloc(uecap->size, sizeof(*cu2du->uE_CapabilityRAT_ContainerList));
+      AssertFatal(cu2du->uE_CapabilityRAT_ContainerList != NULL, "out of memory\n");
+      cu2du->uE_CapabilityRAT_ContainerList_length = uecap->size;
+      memcpy(cu2du->uE_CapabilityRAT_ContainerList, uecap->buf, uecap->size);
+    }
   }
 
   ue_context_modification_request(f1ap_ue_context_modification_req);
