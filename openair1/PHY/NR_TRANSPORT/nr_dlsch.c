@@ -117,11 +117,11 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint8_t is_ptrs_re = 0;
     if(rel15->pduBitmap & 0x1) {
       set_ptrs_symb_idx(&dlPtrsSymPos,
-                          rel15->NrOfSymbols,
-                          rel15->StartSymbolIndex,
-                          1<<rel15->PTRSTimeDensity,
-                          rel15->dlDmrsSymbPos);
-      n_ptrs = (rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity;
+                        rel15->NrOfSymbols,
+                        rel15->StartSymbolIndex,
+                        1 << rel15->PTRSTimeDensity,
+                        rel15->dlDmrsSymbPos);
+      n_ptrs = (rel15->rbSize + rel15->PTRSFreqDensity - 1) / rel15->PTRSFreqDensity;
     }
 
     /// CRC, coding, interleaving and rate matching
@@ -303,13 +303,13 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
         ptrs_idx = 0;
         int16_t *mod_ptrs = NULL;
         if(rel15->pduBitmap & 0x1) {
-          ptrs_symbol = is_ptrs_symbol(l,dlPtrsSymPos);
+          ptrs_symbol = is_ptrs_symbol(l, dlPtrsSymPos);
           if(ptrs_symbol) {
             /* PTRS QPSK Modulation for each OFDM symbol in a slot */
             LOG_D(PHY,"Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
             int16_t mod_ptrsBuf[n_ptrs<<1] __attribute__ ((aligned(16)));
-            mod_ptrs =mod_ptrsBuf;
-            nr_modulation(pdsch_dmrs[l][rel15->SCID], (n_ptrs<<1), DMRS_MOD_ORDER, mod_ptrs);
+            mod_ptrs = mod_ptrsBuf;
+            nr_modulation(pdsch_dmrs[l][rel15->SCID], (n_ptrs << 1), DMRS_MOD_ORDER, mod_ptrs);
           }
         }
         uint16_t k = start_sc;
@@ -323,8 +323,6 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
             if(ptrs_symbol){
               is_ptrs_re = is_ptrs_subcarrier(k,
                                               rel15->rnti,
-                                              nl,
-                                              rel15->dmrsConfigType,
                                               rel15->PTRSFreqDensity,
                                               rel15->rbSize,
                                               rel15->PTRSReOffset,

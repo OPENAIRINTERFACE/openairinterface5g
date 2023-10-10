@@ -425,8 +425,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         } else if (is_ptrs_sym) {
           is_ptrs = is_ptrs_subcarrier(k,
                                        rnti,
-                                       nl,
-                                       dmrs_type,
                                        K_ptrs,
                                        nb_rb,
                                        pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,

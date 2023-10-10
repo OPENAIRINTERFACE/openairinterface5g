@@ -35,62 +35,16 @@
 #include "dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
-/***********************************************************************/
-
-
-//#define max(a,b) (((a) > (b)) ? (a) : (b))
-
-// TS 38.211 Table 6.4.1.2.2.1-1: The parameter kRE_ref.
-// The first 4 colomns are DM-RS Configuration type 1 and the last 4 colomns are DM-RS Configuration type 2.
-
-static const int16_t table_6_4_1_2_2_1_1_pusch_ptrs_kRE_ref[6][8] = {
-    {0, 2, 6, 8, 0, 1, 6, 7},
-    {2, 4, 8, 10, 1, 6, 7, 0},
-    {1, 3, 7, 9, 2, 3, 8, 9},
-    {3, 5, 9, 11, 3, 8, 9, 2},
-    {-1, -1, -1, -1, 4, 5, 10, 11},
-    {-1, -1, -1, -1, 5, 10, 11, 4},
-};
-
-/*******************************************************************
-*
-* NAME :         get_kRE_ref
-*
-* PARAMETERS :   dmrs_antenna_port      DMRS antenna port
-*                pusch_dmrs_type        PUSCH DMRS type
-*                resourceElementOffset  the parameter resourceElementOffset
-*
-* RETURN :       the parameter k_RE_ref
-*
-* DESCRIPTION :  3GPP TS 38.211 Table 6.4.1.2.2.1-1
-*
-*********************************************************************/
-
-int16_t get_kRE_ref(uint8_t dmrs_antenna_port, uint8_t pusch_dmrs_type, uint8_t resourceElementOffset) {
-  uint8_t colomn;
-  int16_t k_RE_ref;
-  colomn = resourceElementOffset;
-
-  if (pusch_dmrs_type == 2)
-    colomn += 4;
-
-  k_RE_ref = table_6_4_1_2_2_1_1_pusch_ptrs_kRE_ref[dmrs_antenna_port][colomn];
-  AssertFatal(k_RE_ref>=0,"invalid k_RE_ref < 0. Check PTRS Configuration\n");
-  return k_RE_ref;
-}
-
-
-
 
 /*******************************************************************
 *
 * NAME :         set_ptrs_symb_idx
 *
 * PARAMETERS :   ptrs_symbols           PTRS OFDM symbol indicies bit mask
-*                duration_in_symbols    number of scheduled PUSCH ofdm symbols
-*                start_symbol           first ofdm symbol of PUSCH within slot
+*                duration_in_symbols    number of scheduled ofdm symbols
+*                start_symbol           first ofdm symbol within slot
 *                L_ptrs                 the parameter L_ptrs
-*                ul_dmrs_symb_pos       bitmap of the time domain positions of the DMRS symbols in the scheduled PUSCH
+*                dmrs_symb_pos          bitmap of the time domain positions of the DMRS symbols
 *
 * RETURN :       sets the bit map of PTRS ofdm symbol indicies
 *
@@ -102,37 +56,31 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t duration_in_symbols,
                        uint8_t start_symbol,
                        uint8_t L_ptrs,
-                       uint16_t ul_dmrs_symb_pos) {
-
+                       uint16_t dmrs_symb_pos)
+{
   int i = 0;
   int l_ref = start_symbol;
-  const int last_symbol   = start_symbol + duration_in_symbols - 1;
-  if (L_ptrs==0) {
+  const int last_symbol = start_symbol + duration_in_symbols - 1;
+  if (L_ptrs == 0) {
     LOG_E(PHY,"bug: impossible L_ptrs\n");
     *ptrs_symbols = 0;
     return;
   }
 
-  while ( (l_ref + i*L_ptrs) <= last_symbol) {
-
+  while ((l_ref + i * L_ptrs) <= last_symbol) {
     int is_dmrs_symbol = 0, l_counter;
-
-    for(l_counter = l_ref + i*L_ptrs; l_counter >= max(l_ref + (i-1)*L_ptrs + 1, l_ref); l_counter--) {
-
-      if((ul_dmrs_symb_pos >> l_counter) & 0x01) {
+    for(l_counter = l_ref + i * L_ptrs; l_counter >= max(l_ref + (i - 1) * L_ptrs + 1, l_ref); l_counter--) {
+      if((dmrs_symb_pos >> l_counter) & 0x01) {
         is_dmrs_symbol = 1;
         break;
       }
-
     }
-
     if (is_dmrs_symbol) {
       l_ref = l_counter;
-      i     = 1;
+      i = 1;
       continue;
     }
-
-    *ptrs_symbols = *ptrs_symbols | (1<<(l_ref + i*L_ptrs));
+    *ptrs_symbols = *ptrs_symbols | (1 << (l_ref + i * L_ptrs));
     i++;
   }
 }
@@ -143,31 +91,26 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
 *
 * PARAMETERS : k                      subcarrier index
 *              n_rnti                 UE CRNTI
-*              dmrs_antenna_port      DMRS antenna port
 *              K_ptrs                 the parameter K_ptrs
-*              pusch_dmrs_type        the DMRS configuration type used for PUSCH
-*              N_RB                   number of RBs scheduled for PUSCH
+*              N_RB                   number of RBs scheduled
 *              k_RE_ref               the parameter k_RE_ref
 *              start_sc               first subcarrier index
 *              ofdm_symbol_size       number of samples in an OFDM symbol
 *
 * RETURN :       1 if subcarrier k is PTRS, or 0 otherwise
 *
-* DESCRIPTION :  3GPP TS 38.211 6.4.1.2 Phase-tracking reference signal for PUSCH
+* DESCRIPTION :  3GPP TS 38.211 6.4.1.2 Phase-tracking reference signal
 *
 *********************************************************************/
 
 uint8_t is_ptrs_subcarrier(uint16_t k,
                            uint16_t n_rnti,
-                           uint8_t dmrs_antenna_port,
-                           uint8_t pusch_dmrs_type,
                            uint8_t K_ptrs,
                            uint16_t N_RB,
                            uint8_t k_RE_ref,
                            uint16_t start_sc,
                            uint16_t ofdm_symbol_size)
 {
-  // int16_t k_RE_ref = get_kRE_ref(dmrs_antenna_port, pusch_dmrs_type, resourceElementOffset);
   uint16_t k_RB_ref;
 
   if (N_RB % K_ptrs == 0)
@@ -178,19 +121,18 @@ uint8_t is_ptrs_subcarrier(uint16_t k,
   if (k < start_sc)
     k += ofdm_symbol_size;
 
-  if ((k - k_RE_ref - k_RB_ref*NR_NB_SC_PER_RB - start_sc) % (K_ptrs*NR_NB_SC_PER_RB) == 0)
+  if ((k - k_RE_ref - k_RB_ref * NR_NB_SC_PER_RB - start_sc) % (K_ptrs * NR_NB_SC_PER_RB) == 0)
     return 1;
 
   return 0;
 }
+
 /* return the total number of ptrs symbol in a slot */
 uint8_t get_ptrs_symbols_in_slot(uint16_t l_prime_mask, uint16_t start_symb, uint16_t nb_symb)
 {
   uint8_t tmp = 0;
   for (int i = start_symb; i <= nb_symb; i++)
-    {
-      tmp += (l_prime_mask >> i) & 0x01;
-    }
+    tmp += (l_prime_mask >> i) & 0x01;
   return tmp;
 }
 
@@ -198,7 +140,7 @@ uint8_t get_ptrs_symbols_in_slot(uint16_t l_prime_mask, uint16_t start_symb, uin
 int8_t get_next_ptrs_symbol_in_slot(uint16_t  ptrs_symb_pos, uint8_t counter, uint8_t nb_symb)
 {
   for(int8_t symbol = counter; symbol < nb_symb; symbol++) {
-    if((ptrs_symb_pos >>symbol)&0x01 ) {
+    if((ptrs_symb_pos >> symbol) & 0x01) {
       return symbol;
     }
   }
@@ -226,7 +168,6 @@ int8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, ui
  *
  * PARAMETERS :   K_ptrs        : K value for PTRS
  *                ptrsReOffset  : RE offset for PTRS
- *                dmrsConfigType: DMRS configuration type
  *                nb_rb         : No. of resource blocks
  *                rnti          : RNTI
  *                Ns            :
@@ -244,7 +185,6 @@ int8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, ui
  *********************************************************************/
 void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
                             uint8_t ptrsReOffset,
-                            uint8_t dmrsConfigType,
                             uint16_t nb_rb,
                             uint16_t rnti,
                             unsigned char Ns,
@@ -256,38 +196,27 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
                             int32_t *ptrs_sc)
 {
 //#define DEBUG_PTRS 1
-  uint8_t               is_ptrs_re       = 0;
-  uint16_t              re_cnt           = 0;
-  uint16_t              cnt              = 0;
-  unsigned short        nb_re_pdsch      = NR_NB_SC_PER_RB * nb_rb;
-  if (K_ptrs==0) {
+  if (K_ptrs == 0) {
     LOG_E(PHY,"K_ptrs == 0\n");
     return;
   }
-  uint16_t              sc_per_symbol    = (nb_rb + K_ptrs - 1)/K_ptrs;
-  c16_t      ptrs_p[(1 + sc_per_symbol/4)*4];
-  c16_t      ptrs_ch_p[(1 + sc_per_symbol/4)*4];
-  c16_t      dmrs_comp_p[(1 + sc_per_symbol/4)*4];
-  double                abs              = 0.0;
-  double                real             = 0.0;
-  double                imag             = 0.0;
-#ifdef DEBUG_PTRS
-  double                alpha            = 0;
-#endif
+
+  uint16_t sc_per_symbol = (nb_rb + K_ptrs - 1) / K_ptrs;
+  c16_t ptrs_p[(1 + sc_per_symbol / 4) * 4];
+  c16_t dmrs_comp_p[(1 + sc_per_symbol / 4) * 4];
+
   /* generate PTRS RE for the symbol */
   nr_gen_ref_conj_symbols(gold_seq,sc_per_symbol*2,(int16_t*)ptrs_p, NR_MOD_TABLE_QPSK_OFFSET,2);// 2 for QPSK
-
+  uint32_t re_cnt = 0, cnt = 0;
   /* loop over all sub carriers to get compensated RE on ptrs symbols*/
-  for (int re = 0; re < nb_re_pdsch; re++) {
-    is_ptrs_re = is_ptrs_subcarrier(re,
-                                    rnti,
-                                    0,
-                                    dmrsConfigType,
-                                    K_ptrs,
-                                    nb_rb,
-                                    ptrsReOffset,
-                                    0,// start_re is 0 here
-                                    ofdm_symbol_size);
+  for (int re = 0; re < NR_NB_SC_PER_RB * nb_rb; re++) {
+    uint8_t is_ptrs_re = is_ptrs_subcarrier(re,
+                                            rnti,
+                                            K_ptrs,
+                                            nb_rb,
+                                            ptrsReOffset,
+                                            0,// start_re is 0 here
+                                            ofdm_symbol_size);
     if(is_ptrs_re) {
       dmrs_comp_p[re_cnt].r = rxF_comp[re *2];
       dmrs_comp_p[re_cnt].i = rxF_comp[(re *2)+1];
@@ -303,24 +232,27 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
   /* update the total ptrs RE in a symbol */
   *ptrs_sc = re_cnt;
 
+  c16_t ptrs_ch_p[(1 + sc_per_symbol / 4) * 4];
   /*Multiple compensated data with conj of PTRS */
   mult_cpx_vector((int16_t*)dmrs_comp_p, (int16_t*)ptrs_p, (int16_t*)ptrs_ch_p, (1 + sc_per_symbol/4)*4, 15); // 2^15 shifted
 
   /* loop over all ptrs sub carriers in a symbol */
   /* sum the error vector */
+  double real = 0.0;
+  double imag = 0.0;
   for(int i = 0;i < sc_per_symbol; i++) {
     real += ptrs_ch_p[i].r;
     imag += ptrs_ch_p[i].i;
   }
 #ifdef DEBUG_PTRS
-  alpha = atan(imag/real);
+  double alpha = atan(imag/real);
   printf("[PHY][PTRS]: Symbol  %d atan(Im,real):= %f \n",symbol, alpha );
 #endif
   /* mean */
   real /= sc_per_symbol;
   imag /= sc_per_symbol;
   /* absolute calculation */
-  abs = sqrt(((real * real) + (imag *  imag)));
+  double abs = sqrt(((real * real) + (imag *  imag)));
   /* normalized error estimation */
   error_est[0]= (real / abs)*(1<<15);
   /* compensation in given by conjugate of estimated phase (e^-j*2*pi*fd*t)*/
