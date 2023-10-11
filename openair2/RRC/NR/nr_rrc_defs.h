@@ -277,7 +277,6 @@ typedef struct gNB_RRC_UE_s {
   /* Information from UE RRC Setup Request */
   NR_UE_S_TMSI                       Initialue_identity_5g_s_TMSI;
   uint64_t                           ng_5G_S_TMSI_Part1;
-  uint16_t                           ng_5G_S_TMSI_Part2;
   NR_EstablishmentCause_t            establishment_cause;
 
   uint32_t                           rrc_ue_id;

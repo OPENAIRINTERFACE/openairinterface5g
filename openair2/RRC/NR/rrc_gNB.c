@@ -1213,27 +1213,13 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id,
     }
 
     uint64_t s_tmsi_part1 = BIT_STRING_to_uint64(&rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1);
+    LOG_I(NR_RRC, "Received UE 5G-S-TMSI-Part1 %ld\n", s_tmsi_part1);
 
-    // memcpy(((uint8_t *) & random_value) + 3,
-    //         rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.buf,
-    //         rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size);
-
-    if ((ue_context_p = rrc_gNB_ue_context_5g_s_tmsi_exist(rrc, s_tmsi_part1))) {
-      gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-      LOG_I(NR_RRC, " 5G-S-TMSI-Part1 exists, old rnti %04x => %04x\n", UE->rnti, msg->crnti);
-      AssertFatal(false, "not implemented\n");
-
-      /* replace rnti in the context */
-      UE->rnti = msg->crnti;
-    } else {
-      LOG_I(NR_RRC, "UE %04x 5G-S-TMSI-Part1 doesn't exist, setting ng_5G_S_TMSI_Part1 => %ld\n", msg->crnti, s_tmsi_part1);
-
-      ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, s_tmsi_part1, msg->gNB_DU_ue_id);
-      AssertFatal(ue_context_p != NULL, "out of memory\n");
-      gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-      UE->Initialue_identity_5g_s_TMSI.presence = true;
-      UE->ng_5G_S_TMSI_Part1 = s_tmsi_part1;
-    }
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, s_tmsi_part1, msg->gNB_DU_ue_id);
+    AssertFatal(ue_context_p != NULL, "out of memory\n");
+    gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+    UE->Initialue_identity_5g_s_TMSI.presence = true;
+    UE->ng_5G_S_TMSI_Part1 = s_tmsi_part1;
   } else {
     uint64_t random_value = 0;
     memcpy(((uint8_t *)&random_value) + 3,
@@ -1509,42 +1495,52 @@ static int handle_rrcSetupComplete(const protocol_ctxt_t *const ctxt_pP,
   NR_RRCSetupComplete_IEs_t *setup_complete_ies = setup_complete->criticalExtensions.choice.rrcSetupComplete;
 
   if (setup_complete_ies->ng_5G_S_TMSI_Value != NULL) {
+    uint64_t fiveg_s_TMSI = 0;
     if (setup_complete_ies->ng_5G_S_TMSI_Value->present == NR_RRCSetupComplete_IEs__ng_5G_S_TMSI_Value_PR_ng_5G_S_TMSI_Part2) {
-      if (setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2.size != 2) {
-        LOG_E(NR_RRC,
-              "wrong ng_5G_S_TMSI_Part2 size, expected 2, provided %lu",
-              (long unsigned int)
-                  setup_complete->criticalExtensions.choice.rrcSetupComplete->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2.size);
+      const BIT_STRING_t *part2 = &setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2;
+      if (part2->size != 2) {
+        LOG_E(NR_RRC, "wrong ng_5G_S_TMSI_Part2 size, expected 2, provided %lu", part2->size);
         return -1;
       }
 
-      if (UE->ng_5G_S_TMSI_Part1 != 0) {
-        UE->ng_5G_S_TMSI_Part2 = BIT_STRING_to_uint16(&setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI_Part2);
-      }
-
-      /* TODO */
-    } else if (setup_complete_ies->ng_5G_S_TMSI_Value->present == NR_RRCSetupComplete_IEs__ng_5G_S_TMSI_Value_PR_ng_5G_S_TMSI) {
-      if (setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.size != 6) {
-        LOG_E(NR_RRC,
-              "wrong ng_5G_S_TMSI size, expected 6, provided %lu",
-              (long unsigned int)setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI.size);
-        return -1;
-      }
-
-      uint64_t fiveg_s_TMSI = BIT_STRING_to_uint64(&setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI);
-      LOG_I(NR_RRC,
-            "Received rrcSetupComplete, 5g_s_TMSI: 0x%lX, amf_set_id: 0x%lX(%ld), amf_pointer: 0x%lX(%ld), 5g TMSI: 0x%X \n",
-            fiveg_s_TMSI,
-            fiveg_s_TMSI >> 38,
-            fiveg_s_TMSI >> 38,
-            (fiveg_s_TMSI >> 32) & 0x3F,
-            (fiveg_s_TMSI >> 32) & 0x3F,
-            (uint32_t)fiveg_s_TMSI);
       if (UE->Initialue_identity_5g_s_TMSI.presence) {
-        UE->Initialue_identity_5g_s_TMSI.amf_set_id = fiveg_s_TMSI >> 38;
-        UE->Initialue_identity_5g_s_TMSI.amf_pointer = (fiveg_s_TMSI >> 32) & 0x3F;
-        UE->Initialue_identity_5g_s_TMSI.fiveg_tmsi = (uint32_t)fiveg_s_TMSI;
+        uint16_t stmsi_part2 = BIT_STRING_to_uint16(part2);
+        LOG_I(RRC, "s_tmsi part2 %d (%02x %02x)\n", stmsi_part2, part2->buf[0], part2->buf[1]);
+        // Part2 is leftmost 9, Part1 is rightmost 39 bits of 5G-S-TMSI
+        fiveg_s_TMSI = ((uint64_t) stmsi_part2) << 39 | UE->ng_5G_S_TMSI_Part1;
+      } else {
+        LOG_W(RRC, "UE %d received 5G-S-TMSI-Part2, but no 5G-S-TMSI-Part1 present, won't send 5G-S-TMSI to core\n", UE->rrc_ue_id);
+        UE->Initialue_identity_5g_s_TMSI.presence = false;
       }
+    } else if (setup_complete_ies->ng_5G_S_TMSI_Value->present == NR_RRCSetupComplete_IEs__ng_5G_S_TMSI_Value_PR_ng_5G_S_TMSI) {
+      const NR_NG_5G_S_TMSI_t *bs_stmsi = &setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI;
+      if (bs_stmsi->size != 6) {
+        LOG_E(NR_RRC, "wrong ng_5G_S_TMSI size, expected 6, provided %lu", bs_stmsi->size);
+        return -1;
+      }
+
+      fiveg_s_TMSI = BIT_STRING_to_uint64(bs_stmsi);
+      UE->Initialue_identity_5g_s_TMSI.presence = true;
+    }
+
+    if (UE->Initialue_identity_5g_s_TMSI.presence) {
+      uint16_t amf_set_id = fiveg_s_TMSI >> 38;
+      uint8_t amf_pointer = (fiveg_s_TMSI >> 32) & 0x3F;
+      uint32_t fiveg_tmsi = (uint32_t) fiveg_s_TMSI;
+      LOG_I(NR_RRC,
+            "5g_s_TMSI: 0x%lX, amf_set_id: 0x%X (%d), amf_pointer: 0x%X (%d), 5g TMSI: 0x%X \n",
+            fiveg_s_TMSI,
+            amf_set_id,
+            amf_set_id,
+            amf_pointer,
+            amf_pointer,
+            fiveg_tmsi);
+      UE->Initialue_identity_5g_s_TMSI.amf_set_id = amf_set_id;
+      UE->Initialue_identity_5g_s_TMSI.amf_pointer = amf_pointer;
+      UE->Initialue_identity_5g_s_TMSI.fiveg_tmsi = fiveg_tmsi;
+
+      // update random identity with 5G-S-TMSI, which only contained Part1 of it
+      UE->random_ue_identity = fiveg_s_TMSI;
     }
   }
 
