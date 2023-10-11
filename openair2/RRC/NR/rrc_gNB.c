@@ -1330,6 +1330,15 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
     return;
   }
 
+  if (!UE->as_security_active) {
+    /* no active security context, need to restart entire connection */
+    LOG_E(NR_RRC, "UE requested Reestablishment without activated AS security\n");
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    ue_context_p->ue_context.Srb[1].Active = 1;
+    rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+    return;
+  }
+
   /* TODO: start timer in ITTI and drop UE if it does not come back */
 
   // update with new RNTI, and update secondary UE association
@@ -1734,6 +1743,7 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
 
         /* configure ciphering */
         nr_rrc_pdcp_config_security(ctxt_pP, ue_context_p, 1);
+        ue_context_p->ue_context.as_security_active = true;
 
         rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
         break;
@@ -2146,6 +2156,13 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
     srbs[0].lcid = 2;
   }
 
+  if (!UE->as_security_active) {
+    /* no AS security active, need to send UE context setup req with security
+     * command (and the bearers) */
+    AssertFatal(false, "not implemented yet\n");
+    return;
+  }
+
   /* Gather UE capability if present */
   cu_to_du_rrc_information_t cu2du = {0};
   cu_to_du_rrc_information_t *cu2du_p = NULL;
@@ -2519,6 +2536,7 @@ rrc_gNB_generate_SecurityModeCommand(
   uint8_t                             buffer[100];
   uint8_t                             size;
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  AssertFatal(!ue_p->as_security_active, "logic error: security already active\n");
 
   T(T_ENB_RRC_SECURITY_MODE_COMMAND, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame), T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rntiMaybeUEid));
   NR_IntegrityProtAlgorithm_t integrity_algorithm = (NR_IntegrityProtAlgorithm_t)ue_p->integrity_algorithm;
