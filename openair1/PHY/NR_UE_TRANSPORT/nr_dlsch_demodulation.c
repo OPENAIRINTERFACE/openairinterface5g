@@ -605,34 +605,18 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   /* at last symbol in a slot calculate LLR's for whole slot */
   if(symbol == (startSymbIdx + nbSymb -1)) {
-    uint8_t nb_re_dmrs;
-    if (dlsch[0].dlsch_config.dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
-      nb_re_dmrs = 6*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
-    }
-    else {
-      nb_re_dmrs = 4*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
-    }
-    uint16_t dmrs_len = get_num_dmrs(dlsch[0].dlsch_config.dlDmrsSymbPos);
 
-    const uint32_t rx_llr_size = nr_get_G(dlsch[0].dlsch_config.number_rbs,
-                                          dlsch[0].dlsch_config.number_symbols,
-                                          nb_re_dmrs,
-                                          dmrs_len,
-                                          dlsch[0].dlsch_config.qamModOrder,
-                                          dlsch[0].Nl);
-    const uint32_t rx_llr_layer_size = (rx_llr_size + dlsch[0].Nl - 1) / dlsch[0].Nl;
+    const uint32_t rx_llr_layer_size = (dlsch0_harq->G + dlsch[0].Nl - 1) / dlsch[0].Nl;
 
     int16_t* layer_llr[NR_MAX_NB_LAYERS];
-    for (int i=0; i<NR_MAX_NB_LAYERS; i++)
-      layer_llr[i] = (int16_t *)malloc16_clear(rx_llr_layer_size*sizeof(int16_t));
-    for(uint8_t i =startSymbIdx; i < (startSymbIdx+nbSymb);i++) {
+    for (int i = 0; i < NR_MAX_NB_LAYERS; i++)
+      layer_llr[i] = (int16_t *)malloc16_clear(rx_llr_layer_size * sizeof(int16_t));
+    for(uint8_t i = startSymbIdx; i < (startSymbIdx+nbSymb); i++) {
       /* re evaluating the first symbol flag as LLR's are done in symbol loop  */
-      if(i == startSymbIdx && i < 3) {
-        first_symbol_flag =1;
-      }
-      else {
-        first_symbol_flag=0;
-      }
+      if(i == startSymbIdx && i < 3)
+        first_symbol_flag = 1;
+      else
+        first_symbol_flag = 0;
       /* Calculate LLR's for each symbol */
       nr_dlsch_llr(rx_size_symbol,
                    nbRx,
@@ -655,13 +639,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                    dlsch,
                    llr_offset);
     }
-    
-    dlsch0_harq->G = nr_get_G(dlsch[0].dlsch_config.number_rbs,
-                              dlsch[0].dlsch_config.number_symbols,
-                              nb_re_dmrs,
-                              dmrs_len,
-                              dlsch[0].dlsch_config.qamModOrder,
-                              dlsch[0].Nl);
 
     nr_dlsch_layer_demapping(llr,
                              dlsch[0].Nl,

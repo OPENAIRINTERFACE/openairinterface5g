@@ -1258,20 +1258,20 @@ static uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
    return(0);
 }
 
-static void inner_rx (PHY_VARS_gNB *gNB,
-                      int ulsch_id,
-                      int slot,
-                      NR_DL_FRAME_PARMS *frame_parms,
-                      NR_gNB_PUSCH *pusch_vars, 
-                      nfapi_nr_pusch_pdu_t *rel15_ul,
-                      c16_t **rxF, 
-                      c16_t **ul_ch, 
-                      int16_t **llr,
-                      int soffset,
-                      int length, 
-                      int symbol,
-                      int output_shift,
-                      uint32_t nvar)
+static void inner_rx(PHY_VARS_gNB *gNB,
+                     int ulsch_id,
+                     int slot,
+                     NR_DL_FRAME_PARMS *frame_parms,
+                     NR_gNB_PUSCH *pusch_vars,
+                     nfapi_nr_pusch_pdu_t *rel15_ul,
+                     c16_t **rxF,
+                     c16_t **ul_ch,
+                     int16_t **llr,
+                     int soffset,
+                     int length,
+                     int symbol,
+                     int output_shift,
+                     uint32_t nvar)
 {
   int nb_layer = rel15_ul->nrOfLayers;
   int nb_rx_ant = frame_parms->nb_antennas_rx;
@@ -1457,7 +1457,7 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
 
   NR_gNB_PUSCH *pusch_vars = &gNB->pusch_vars[ulsch_id];
   pusch_vars->dmrs_symbol = INVALID_VALUE;
-  gNB->nbSymb=0;
+  gNB->nbSymb = 0;
   bwp_start_subcarrier = ((rel15_ul->rb_start + rel15_ul->bwp_start)*NR_NB_SC_PER_RB + frame_parms->first_carrier_offset) % frame_parms->ofdm_symbol_size;
   LOG_D(PHY,"pusch %d.%d : bwp_start_subcarrier %d, rb_start %d, first_carrier_offset %d\n", frame,slot,bwp_start_subcarrier, rel15_ul->rb_start, frame_parms->first_carrier_offset);
   LOG_D(PHY,"pusch %d.%d : ul_dmrs_symb_pos %x\n",frame,slot,rel15_ul->ul_dmrs_symb_pos);
@@ -1550,13 +1550,29 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
   else
     nb_re_dmrs = 4*rel15_ul->num_dmrs_cdm_grps_no_data;
 
+  uint32_t unav_res = 0;
+  if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+    uint16_t ptrsSymbPos = 0;
+    set_ptrs_symb_idx(&ptrsSymbPos,
+                      rel15_ul->nr_of_symbols,
+                      rel15_ul->start_symbol_index,
+                      1 << rel15_ul->pusch_ptrs.ptrs_time_density,
+                      rel15_ul->ul_dmrs_symb_pos);
+    int ptrsSymbPerSlot = get_ptrs_symbols_in_slot(ptrsSymbPos, rel15_ul->start_symbol_index, rel15_ul->nr_of_symbols);
+    int n_ptrs = (rel15_ul->rb_size + rel15_ul->pusch_ptrs.ptrs_freq_density - 1) / rel15_ul->pusch_ptrs.ptrs_freq_density;
+    unav_res = n_ptrs * ptrsSymbPerSlot;
+  }
+
   // get how many bit in a slot //
   int G = nr_get_G(rel15_ul->rb_size,
                    rel15_ul->nr_of_symbols,
                    nb_re_dmrs,
                    number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
+                   unav_res,
                    rel15_ul->qam_mod_order,
                    rel15_ul->nrOfLayers);
+  gNB->ulsch[ulsch_id].unav_res = unav_res;
+
   // initialize scrambling sequence //
   int16_t s[G+96] __attribute__((aligned(32)));
 
