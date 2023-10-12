@@ -1205,15 +1205,19 @@ int8_t nr_ue_process_dci(module_id_t module_id,
       break;
 
     case NR_DL_DCI_FORMAT_2_0:
+      AssertFatal(false, "DCI Format 2-0 handling not implemented\n");
       break;
 
     case NR_DL_DCI_FORMAT_2_1:
+      AssertFatal(false, "DCI Format 2-1 handling not implemented\n");
       break;
 
     case NR_DL_DCI_FORMAT_2_2:
+      AssertFatal(false, "DCI Format 2-2 handling not implemented\n");
       break;
 
     case NR_DL_DCI_FORMAT_2_3:
+      AssertFatal(false, "DCI Format 2-3 handling not implemented\n");
       break;
 
     default:
