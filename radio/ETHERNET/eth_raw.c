@@ -87,7 +87,6 @@ int eth_socket_init_raw(openair0_device *device) {
     }
   
   /* initialize destination address */
-  bzero((void *)&(eth->local_addrc_ll), sizeof(struct sockaddr_ll));
   bzero((void *)&(eth->local_addrd_ll), sizeof(struct sockaddr_ll));
   bzero((void *)&(eth->if_index), sizeof(struct ifreq)); 
   
@@ -98,17 +97,12 @@ int eth_socket_init_raw(openair0_device *device) {
   for (int i=0;i<eth->num_fd;i++)
     if (ioctl(eth->sockfdd[i], SIOCGIFINDEX, &(eth->if_index)) < 0)
       perror("SIOCGIFINDEX");
-   
-  eth->local_addrc_ll.sll_family   = AF_PACKET;
-  eth->local_addrc_ll.sll_ifindex  = eth->if_index.ifr_ifindex;
+
   eth->local_addrd_ll.sll_family   = AF_PACKET;
   eth->local_addrd_ll.sll_ifindex  = eth->if_index.ifr_ifindex;
   /* hear traffic from specific protocol*/
-  eth->local_addrc_ll.sll_protocol = htons((short)device->eth_params->my_portc);
   eth->local_addrd_ll.sll_protocol = htons((short)device->eth_params->my_portd);
-  
-  eth->local_addrc_ll.sll_halen    = ETH_ALEN;
-  eth->local_addrc_ll.sll_pkttype  = PACKET_OTHERHOST;
+
   eth->local_addrd_ll.sll_halen    = ETH_ALEN;
   eth->local_addrd_ll.sll_pkttype  = PACKET_OTHERHOST;
   eth->addr_len = sizeof(struct sockaddr_ll);
