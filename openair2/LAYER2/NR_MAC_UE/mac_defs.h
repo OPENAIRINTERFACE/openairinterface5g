@@ -435,10 +435,10 @@ typedef struct ssb_list_info {
 
 typedef struct nr_lcordered_info_s {
   // logical channels ids ordered as per priority
-  int lcids_ordered[NR_MAX_NUM_LCID];
+  int lcids_ordered;
 
   // logical channel configurations reordered as per priority
-  NR_LogicalChannelConfig_t *logicalChannelConfig_ordered[NR_MAX_NUM_LCID];
+  NR_LogicalChannelConfig_t *logicalChannelConfig_ordered;
 } nr_lcordered_info_t;
 
 /*!\brief Top level UE MAC structure */
@@ -529,7 +529,7 @@ typedef struct {
   NR_LogicalChannelConfig_t *logicalChannelConfig[NR_MAX_NUM_LCID];
 
   // order lc info
-  nr_lcordered_info_t lc_ordered_info;
+  nr_lcordered_info_t lc_ordered_info[NR_MAX_NUM_LCID];
   NR_UE_SCHEDULING_INFO scheduling_info;
 
   /// PHR

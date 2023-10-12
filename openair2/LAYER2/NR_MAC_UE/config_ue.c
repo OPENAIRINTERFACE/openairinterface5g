@@ -539,10 +539,10 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
     mac->BWP_coresets[i] = NULL;
 }
 
-static int lcid_cmp(const void *lcid1, const void *lcid2, void *mac_inst)
+static int lcid_cmp(const void *lc1, const void *lc2, void *mac_inst)
 {
-  uint8_t id1 = *(uint8_t *)lcid1;
-  uint8_t id2 = *(uint8_t *)lcid2;
+  uint8_t id1 = ((nr_lcordered_info_t *)lc1)->lcids_ordered;
+  uint8_t id2 = ((nr_lcordered_info_t *)lc2)->lcids_ordered;
   NR_UE_MAC_INST_t *mac = (NR_UE_MAC_INST_t *)mac_inst;
 
   NR_LogicalChannelConfig_t **lc_config = &mac->logicalChannelConfig[0];
@@ -561,6 +561,32 @@ void nr_release_mac_config_logicalChannelBearer(module_id_t module_id, long chan
     memset(&mac->scheduling_info.lc_sched_info[channel_identity - 1], 0, sizeof(NR_LC_SCHEDULING_INFO));
   } else {
     LOG_E(NR_MAC, "Trying to release a non configured logical channel bearer %li\n", channel_identity);
+  }
+}
+
+static uint16_t nr_get_ms_bucketsizeduration(uint8_t bucketsizeduration)
+{
+  switch (bucketsizeduration) {
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50:
+      return 50;
+
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100:
+      return 100;
+
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms150:
+      return 150;
+
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms300:
+      return 300;
+
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms500:
+      return 500;
+
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000:
+      return 1000;
+
+    default:
+      return 0;
   }
 }
 
@@ -610,7 +636,7 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
     for (int i = 0; i < rlc_toadd_list->list.count; i++) {
       NR_RLC_BearerConfig_t *rlc_bearer = rlc_toadd_list->list.array[i];
       int lc_identity = rlc_bearer->logicalChannelIdentity;
-      mac->lc_ordered_info.lcids_ordered[i] = lc_identity;
+      mac->lc_ordered_info[i].lcids_ordered = lc_identity;
       NR_LogicalChannelConfig_t *mac_lc_config;
       if (mac->logicalChannelConfig[lc_identity - 1] == NULL) {
         /* setup of new LCID*/
@@ -645,14 +671,12 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
           continue;
         }
       }
+      mac->lc_ordered_info[i].logicalChannelConfig_ordered = mac_lc_config;
       nr_configure_mac_config_logicalChannelBearer(module_id, lc_identity, mac_lc_config);
     }
 
     // reorder the logical channels as per its priority
-    qsort_r(mac->lc_ordered_info.lcids_ordered, rlc_toadd_list->list.count, sizeof(uint32_t), lcid_cmp, mac);
-    for (uint8_t i = 0; i < rlc_toadd_list->list.count; i++) {
-      mac->lc_ordered_info.logicalChannelConfig_ordered[i] = mac->logicalChannelConfig[mac->lc_ordered_info.lcids_ordered[i] - 1];
-    }
+    qsort_r(mac->lc_ordered_info, rlc_toadd_list->list.count, sizeof(nr_lcordered_info_t), lcid_cmp, mac);
   }
 }
 
