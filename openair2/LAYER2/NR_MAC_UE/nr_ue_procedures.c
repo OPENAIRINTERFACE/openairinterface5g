@@ -1061,7 +1061,7 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
       if (n_codewords == 2) {
         dlsch_pdu->n_dmrs_cdm_groups = table_7_3_2_3_3_4_twoCodeword[ant][0];
         dlsch_pdu->dmrs_ports = packBits(&table_7_3_2_3_3_4_twoCodeword[ant][1], 12);
-        dlsch_pdu->n_front_load_symb = table_7_3_2_3_3_4_twoCodeword[ant][9];
+        dlsch_pdu->n_front_load_symb = table_7_3_2_3_3_4_twoCodeword[ant][13];
       }
     }
   }
