@@ -1081,101 +1081,102 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
     // otherwise 3 bits as defined in Subclause 5.1.5 of [6, TS38.214]
     dlsch_pdu->tci_state = dci->transmission_configuration_indication.val;
   }
-    /* SRS_REQUEST */
-    AssertFatal(dci->srs_request.nbits == 2, "If SUL is supported in the cell, there is an additional bit in SRS request field\n");
-    if(dci->srs_request.val > 0 )
-      nr_ue_aperiodic_srs_scheduling(mac, dci->srs_request.val, frame, slot);
-    /* CBGTI */
-    dlsch_pdu->cbgti = dci->cbgti.val;
-    /* CBGFI */
-    dlsch_pdu->codeBlockGroupFlushIndicator = dci->cbgfi.val;
-    /* DMRS_SEQ_INI */
-    //FIXME!!!
 
-    /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND */
-    // according to TS 38.213 Table 9.2.3-1
-    uint8_t feedback_ti = pucch_Config->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
+  /* SRS_REQUEST */
+  AssertFatal(dci->srs_request.nbits == 2, "If SUL is supported in the cell, there is an additional bit in SRS request field\n");
+  if (dci->srs_request.val > 0)
+    nr_ue_aperiodic_srs_scheduling(mac, dci->srs_request.val, frame, slot);
+  /* CBGTI */
+  dlsch_pdu->cbgti = dci->cbgti.val;
+  /* CBGFI */
+  dlsch_pdu->codeBlockGroupFlushIndicator = dci->cbgfi.val;
+  /* DMRS_SEQ_INI */
+  // FIXME!!!
 
-    AssertFatal(feedback_ti > DURATION_RX_TO_TX,
-                "PDSCH to HARQ feedback time (%d) needs to be higher than DURATION_RX_TO_TX (%d). Min feedback time set in config "
-                "file (min_rxtxtime).\n",
-                feedback_ti,
-                DURATION_RX_TO_TX);
+  /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND */
+  // according to TS 38.213 Table 9.2.3-1
+  uint8_t feedback_ti = pucch_Config->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
 
-    // set the harq status at MAC for feedback
-    set_harq_status(mac,
-                    dci->pucch_resource_indicator,
-                    dci->harq_pid,
-                    dlsch_pdu->accumulated_delta_PUCCH,
-                    feedback_ti,
-                    dci->dai[0].val,
-                    dci_ind->n_CCE,
-                    dci_ind->N_CCE,
-                    frame,
-                    slot);
+  AssertFatal(feedback_ti > DURATION_RX_TO_TX,
+              "PDSCH to HARQ feedback time (%d) needs to be higher than DURATION_RX_TO_TX (%d). Min feedback time set in config "
+              "file (min_rxtxtime).\n",
+              feedback_ti,
+              DURATION_RX_TO_TX);
 
-    dl_conf_req->pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
-    LOG_D(MAC, "(nr_ue_procedures.c) pdu_type=%d\n\n", dl_conf_req->pdu_type);
+  // set the harq status at MAC for feedback
+  set_harq_status(mac,
+                  dci->pucch_resource_indicator,
+                  dci->harq_pid,
+                  dlsch_pdu->accumulated_delta_PUCCH,
+                  feedback_ti,
+                  dci->dai[0].val,
+                  dci_ind->n_CCE,
+                  dci_ind->N_CCE,
+                  frame,
+                  slot);
 
-    dl_config->number_pdus++; // The DCI configuration is valid, we add it in the list
+  dl_conf_req->pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+  LOG_D(MAC, "(nr_ue_procedures.c) pdu_type=%d\n\n", dl_conf_req->pdu_type);
 
-    // send the ack/nack slot number to phy to indicate tx thread to wait for DLSCH decoding
-    dlsch_pdu->k1_feedback = feedback_ti;
+  dl_config->number_pdus++; // The DCI configuration is valid, we add it in the list
 
-    /* TODO same calculation for MCS table as done in UL */
-    dlsch_pdu->mcs_table = (pdsch_Config->mcs_Table) ? (*pdsch_Config->mcs_Table + 1) : 0;
-    dlsch_pdu->qamModOrder = nr_get_Qm_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
-    int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
-    dlsch_pdu->targetCodeRate = R;
-    if (dlsch_pdu->qamModOrder == 0) {
-      LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
-      return -1;
-    }
-    uint8_t Nl = 0;
-    for (int i = 0; i < 12; i++) { // max 12 ports
-      if ((dlsch_pdu->dmrs_ports >> i) & 0x01)
+  // send the ack/nack slot number to phy to indicate tx thread to wait for DLSCH decoding
+  dlsch_pdu->k1_feedback = feedback_ti;
+
+  /* TODO same calculation for MCS table as done in UL */
+  dlsch_pdu->mcs_table = (pdsch_Config->mcs_Table) ? (*pdsch_Config->mcs_Table + 1) : 0;
+  dlsch_pdu->qamModOrder = nr_get_Qm_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
+  int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
+  dlsch_pdu->targetCodeRate = R;
+  if (dlsch_pdu->qamModOrder == 0) {
+    LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
+    return -1;
+  }
+  uint8_t Nl = 0;
+  for (int i = 0; i < 12; i++) { // max 12 ports
+    if ((dlsch_pdu->dmrs_ports >> i) & 0x01)
       Nl += 1;
-    }
-    int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
-    int nb_re_dmrs = ((dmrs_type == NULL) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
-    if (R > 0)
-      dlsch_pdu->TBS = nr_compute_tbs(dlsch_pdu->qamModOrder,
-                                      R,
-                                      dlsch_pdu->number_rbs,
-                                      dlsch_pdu->number_symbols,
-                                      nb_re_dmrs * get_num_dmrs(dlsch_pdu->dlDmrsSymbPos),
-                                      nb_rb_oh,
-                                      0,
-                                      Nl);
+  }
+  int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
+  int nb_re_dmrs = ((dmrs_type == NULL) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
+  if (R > 0)
+    dlsch_pdu->TBS = nr_compute_tbs(dlsch_pdu->qamModOrder,
+                                    R,
+                                    dlsch_pdu->number_rbs,
+                                    dlsch_pdu->number_symbols,
+                                    nb_re_dmrs * get_num_dmrs(dlsch_pdu->dlDmrsSymbPos),
+                                    nb_rb_oh,
+                                    0,
+                                    Nl);
 
-    // TBS_LBRM according to section 5.4.2.1 of 38.212
-    long *maxMIMO_Layers = current_DL_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
-    AssertFatal(maxMIMO_Layers != NULL, "Option with max MIMO layers not configured is not supported\n");
-    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
-    int bw_tbslbrm = get_dlbw_tbslbrm(current_DL_BWP->initial_BWPSize, mac->cg);
-    dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, nl_tbslbrm);
-    /*PTRS configuration */
-    dlsch_pdu->pduBitmap = 0;
-    if(pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
-      bool valid_ptrs_setup =
-          set_dl_ptrs_values(pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup,
-                             dlsch_pdu->number_rbs,
-                             dlsch_pdu->mcs,
-                             dlsch_pdu->mcs_table,
-                             &dlsch_pdu->PTRSFreqDensity,
-                             &dlsch_pdu->PTRSTimeDensity,
-                             &dlsch_pdu->PTRSPortIndex,
-                             &dlsch_pdu->nEpreRatioOfPDSCHToPTRS,
-                             &dlsch_pdu->PTRSReOffset,
-                             dlsch_pdu->number_symbols);
-      if(valid_ptrs_setup==true) {
+  // TBS_LBRM according to section 5.4.2.1 of 38.212
+  long *maxMIMO_Layers = current_DL_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
+  AssertFatal(maxMIMO_Layers != NULL, "Option with max MIMO layers not configured is not supported\n");
+  int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+  int bw_tbslbrm = get_dlbw_tbslbrm(current_DL_BWP->initial_BWPSize, mac->cg);
+  dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, nl_tbslbrm);
+  /*PTRS configuration */
+  dlsch_pdu->pduBitmap = 0;
+  if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
+    bool valid_ptrs_setup =
+        set_dl_ptrs_values(pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup,
+                           dlsch_pdu->number_rbs,
+                           dlsch_pdu->mcs,
+                           dlsch_pdu->mcs_table,
+                           &dlsch_pdu->PTRSFreqDensity,
+                           &dlsch_pdu->PTRSTimeDensity,
+                           &dlsch_pdu->PTRSPortIndex,
+                           &dlsch_pdu->nEpreRatioOfPDSCHToPTRS,
+                           &dlsch_pdu->PTRSReOffset,
+                           dlsch_pdu->number_symbols);
+    if (valid_ptrs_setup == true) {
       dlsch_pdu->pduBitmap |= 0x1;
       LOG_D(MAC, "DL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", dlsch_pdu->PTRSTimeDensity, dlsch_pdu->PTRSFreqDensity);
-      }
     }
-    // the prepared dci is valid, we add it in the list
-    dl_config->number_pdus++;
-    return 0;
+  }
+  // the prepared dci is valid, we add it in the list
+  dl_config->number_pdus++;
+  return 0;
 }
 
 int8_t nr_ue_process_dci(module_id_t module_id,
