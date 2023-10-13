@@ -116,7 +116,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 {
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
 
-  int8_t Wf[2], Wt[2];
+  int Wf[2], Wt[2];
   int l_prime[2], delta;
   uint8_t nb_dmrs_re_per_rb;
   int i;
