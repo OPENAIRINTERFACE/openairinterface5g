@@ -422,7 +422,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                         dci_pdu_rel15_t *dci,
                         RAR_grant_t *rar_grant,
                         uint16_t rnti,
-                        const nr_dci_format_t *dci_format)
+                        const nr_dci_format_t dci_format)
 {
 
   int f_alloc;
@@ -534,23 +534,23 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->bwp_size = current_UL_BWP->BWPSize;
 
     /* Transform precoding */
-    pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, *dci_format, 0);
+    pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, dci_format, 0);
 
     /*DCI format-related configuration*/
     int target_ss;
-    if (*dci_format == NR_UL_DCI_FORMAT_0_0) {
+    if (dci_format == NR_UL_DCI_FORMAT_0_0) {
       target_ss = NR_SearchSpace__searchSpaceType_PR_common;
       if ((pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) &&
           pusch_config_pdu->nr_of_symbols < 3)
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
       else
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
-    } else if (*dci_format == NR_UL_DCI_FORMAT_0_1) {
+    } else if (dci_format == NR_UL_DCI_FORMAT_0_1) {
       target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-      ul_layers_config(mac, pusch_config_pdu, dci, *dci_format);
-      ul_ports_config(mac, &dmrslength, pusch_config_pdu, dci, *dci_format);
+      ul_layers_config(mac, pusch_config_pdu, dci, dci_format);
+      ul_ports_config(mac, &dmrslength, pusch_config_pdu, dci, dci_format);
     } else {
-      LOG_E(NR_MAC, "In %s: UL grant from DCI format %d is not handled...\n", __FUNCTION__, *dci_format);
+      LOG_E(NR_MAC, "In %s: UL grant from DCI format %d is not handled...\n", __FUNCTION__, dci_format);
       return -1;
     }
 
@@ -564,7 +564,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     pusch_config_pdu->scid = 0;
     pusch_config_pdu->ul_dmrs_scrambling_id = mac->physCellId;
-    if(*dci_format == NR_UL_DCI_FORMAT_0_1)
+    if (dci_format == NR_UL_DCI_FORMAT_0_1)
       pusch_config_pdu->scid = dci->dmrs_sequence_initialization.val;
 
     /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
@@ -620,9 +620,15 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     /* MCS TABLE */
     if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
-      pusch_config_pdu->mcs_table = get_pusch_mcs_table(pusch_Config ? pusch_Config->mcs_Table : NULL, 0, *dci_format, rnti_type, target_ss, false);
+      pusch_config_pdu->mcs_table =
+          get_pusch_mcs_table(pusch_Config ? pusch_Config->mcs_Table : NULL, 0, dci_format, rnti_type, target_ss, false);
     } else {
-      pusch_config_pdu->mcs_table = get_pusch_mcs_table(pusch_Config ? pusch_Config->mcs_TableTransformPrecoder : NULL, 1, *dci_format, rnti_type, target_ss, false);
+      pusch_config_pdu->mcs_table = get_pusch_mcs_table(pusch_Config ? pusch_Config->mcs_TableTransformPrecoder : NULL,
+                                                        1,
+                                                        dci_format,
+                                                        rnti_type,
+                                                        target_ss,
+                                                        false);
     }
 
     /* NDI */

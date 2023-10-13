@@ -25,10 +25,6 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 
-uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
-                         nfapi_nr_rnti_type_e rnti_type,
-                         uint16_t N_RB);
-
 void nr_generate_dci_top(processingData_L1tx_t *msgTx,
                          int slot,
                          int32_t *txdataF,
