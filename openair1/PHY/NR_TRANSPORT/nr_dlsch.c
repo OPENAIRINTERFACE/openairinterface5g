@@ -209,7 +209,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx, int frame, int slot)
     if (start_sc >= frame_parms->ofdm_symbol_size)
       start_sc -= frame_parms->ofdm_symbol_size;
 
-    const uint32_t txdataF_offset = slot*frame_parms->samples_per_slot_wCP;
+    const uint32_t txdataF_offset = slot * frame_parms->samples_per_slot_wCP;
     c16_t txdataF_precoding[rel15->nrOfLayers][NR_NUMBER_OF_SYMBOLS_PER_SLOT][frame_parms->ofdm_symbol_size] __attribute__((aligned(64)));;
 
 #ifdef DEBUG_DLSCH_MAPPING
