@@ -47,7 +47,6 @@ extern char *uecap_file;
 // In nr-gnb.c
 extern void init_gNB(int single_thread_flag,int wait_for_sync);
 extern void stop_gNB(int);
-extern void kill_gNB_proc(int inst);
 
 // In nr-ru.c
 extern void init_NR_RU(configmodule_interface_t *cfg, char *);

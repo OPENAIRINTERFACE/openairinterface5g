@@ -247,13 +247,11 @@ void rx_func(void *param)
 
   // Call the scheduler
   start_meas(&gNB->ul_indication_stats);
-//  pthread_mutex_lock(&gNB->UL_INFO_mutex);
   gNB->UL_INFO.frame     = frame_rx;
   gNB->UL_INFO.slot      = slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
   gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-//  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
   stop_meas(&gNB->ul_indication_stats);
 
   int tx_slot_type = nr_slot_select(cfg,frame_tx,slot_tx);
@@ -499,19 +497,6 @@ void term_gNB_Tpool(int inst) {
     pthread_join(proc->pthread_tx_reorder, NULL);
 }
 
-/*!
- * \brief Terminate gNB TX and RX threads.
- */
-void kill_gNB_proc(int inst) {
-  PHY_VARS_gNB *gNB;
-
-  gNB=RC.gNB[inst];
-  
-  LOG_I(PHY, "Destroying UL_INFO mutex\n");
-  pthread_mutex_destroy(&gNB->UL_INFO_mutex);
-  
-}
-
 void reset_opp_meas(void) {
   int sfn;
   reset_meas(&softmodem_stats_mt);
@@ -640,6 +625,5 @@ void stop_gNB(int nb_inst) {
   for (int inst=0; inst<nb_inst; inst++) {
     LOG_I(PHY,"Killing gNB %d processing threads\n",inst);
     term_gNB_Tpool(inst);
-    kill_gNB_proc(inst);
   }
 }

@@ -562,7 +562,6 @@ typedef struct PHY_VARS_gNB_s {
   PHY_MEASUREMENTS_gNB measurements;
   NR_IF_Module_t       *if_inst;
   NR_UL_IND_t          UL_INFO;
-  pthread_mutex_t      UL_INFO_mutex;
 
   /// NFAPI RX ULSCH information
   nfapi_nr_rx_data_pdu_t  rx_pdu_list[MAX_UL_PDUS_PER_SLOT];
