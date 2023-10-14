@@ -81,6 +81,7 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 
   gNB->prach_vars.list[prach_id].frame=SFN;
   gNB->prach_vars.list[prach_id].slot=Slot;
+  LOG_D(NR_PHY,"Copying prach pdu %d bytes to index %d\n",(int)sizeof(*prach_pdu),prach_id);
   memcpy((void*)&gNB->prach_vars.list[prach_id].pdu,(void*)prach_pdu,sizeof(*prach_pdu));
 
 }

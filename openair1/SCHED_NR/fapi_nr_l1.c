@@ -55,7 +55,7 @@ void handle_nr_nfapi_ssb_pdu(processingData_L1tx_t *msgTx,int frame,int slot,
 
   uint8_t i_ssb = dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.SsbBlockIndex;
 
-  LOG_D(PHY,"%d.%d : ssb index %d pbch_pdu: %x\n",frame,slot,i_ssb,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
+  LOG_D(NR_PHY,"%d.%d : ssb index %d pbch_pdu: %x\n",frame,slot,i_ssb,dl_tti_pdu->ssb_pdu.ssb_pdu_rel15.bchPayload);
   if (msgTx->ssb[i_ssb].active)
     AssertFatal(1==0,"SSB PDU with index %d already active\n",i_ssb);
   else {
@@ -109,7 +109,7 @@ void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx, int frame, int slot
   for (int id = 0; id < NR_SYMBOLS_PER_SLOT; id++) {
     NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[id];
     if (csirs->active == 0) {
-      LOG_D(PHY,"Frame %d Slot %d CSI_RS with ID %d is now active\n",frame,slot,id);
+      LOG_D(NR_PHY,"Frame %d Slot %d CSI_RS with ID %d is now active\n",frame,slot,id);
       csirs->active = 1;
       memcpy((void*)&csirs->csirs_pdu, (void*)csirs_pdu, sizeof(nfapi_nr_dl_tti_csi_rs_pdu));
       found = 1;
@@ -181,7 +181,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
 
       for (int i=0;i<number_dl_pdu;i++) {
         nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
-        LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_tti_pdu->PDUType);
+        LOG_D(NR_PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_tti_pdu->PDUType);
         switch (dl_tti_pdu->PDUType) {
           case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
             handle_nr_nfapi_ssb_pdu(msgTx,frame,slot,
@@ -189,18 +189,18 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
             break;
 
           case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
-            LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
+            LOG_D(NR_PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
             msgTx->pdcch_pdu[msgTx->num_dl_pdcch] = dl_tti_pdu->pdcch_pdu;
             msgTx->num_dl_pdcch++;
             break;
 
           case NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE:
-            LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
+            LOG_D(NR_PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
             handle_nfapi_nr_csirs_pdu(msgTx,frame,slot,&dl_tti_pdu->csi_rs_pdu);
             break;
 
           case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
-            LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
+            LOG_D(NR_PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
             nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdu->pdsch_pdu.pdsch_pdu_rel15;
             uint16_t pduIndex = pdsch_pdu_rel15->pduIndex;
             AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
@@ -229,22 +229,22 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
     for (int i = 0; i < number_ul_tti_pdu; i++) {
       switch (UL_tti_req->pdus_list[i].pdu_type) {
         case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
-          LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUSCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+          LOG_D(NR_PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUSCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
           nr_fill_ulsch(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].pusch_pdu);
           break;
         case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
-          LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUCCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+          LOG_D(NR_PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUCCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
           nr_fill_pucch(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].pucch_pdu);
           break;
         case NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE:
-          LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PRACH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+          LOG_D(NR_PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PRACH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
           nfapi_nr_prach_pdu_t *prach_pdu = &UL_tti_req->pdus_list[i].prach_pdu;
           nr_fill_prach(gNB, UL_tti_req->SFN, UL_tti_req->Slot, prach_pdu);
           if (gNB->RU_list[0]->if_south == LOCAL_RF || 
               gNB->RU_list[0]->if_south == REMOTE_IF5) nr_fill_prach_ru(gNB->RU_list[0], UL_tti_req->SFN, UL_tti_req->Slot, prach_pdu);
           break;
         case NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE:
-          LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+          LOG_D(NR_PHY,"frame %d, slot %d, Got NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
           nr_fill_srs(gNB,UL_tti_req->SFN, UL_tti_req->Slot, &UL_tti_req->pdus_list[i].srs_pdu);
           break;
       }

@@ -337,7 +337,7 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
   TS -= device->txrx_offset; 
   int TSinc = (6*256*device->sampling_rate_ratio_d)/device->sampling_rate_ratio_n;
   int len=256;
-  LOG_D(PHY,"TS %llu (%llu),txrx_offset %d,d %d, n %d, buff[0] %p buff[1] %p\n",
+  LOG_D(NR_PHY,"in eth send: TS %llu (%llu),txrx_offset %d,d %d, n %d, buff[0] %p buff[1] %p\n",
         (unsigned long long)TS,(unsigned long long)timestamp,device->txrx_offset,device->sampling_rate_ratio_d,device->sampling_rate_ratio_n,
 	buff[0],buff[1]);
   for (int offset=0;offset<nsamps;offset+=256,TS+=TSinc) {
@@ -349,7 +349,7 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
     *(uint8_t *)(buff2 + 2) = len>>8;
     *(uint8_t *)(buff2 + 3) = len&0xff;
     for (int aid = 0; aid<nant; aid++) {
-      LOG_D(PHY,"TS %llu (TS0 %llu) aa %d : offset %d, len %d\n",(unsigned long long)TS,(unsigned long long)fhstate->TS0,aid,offset,len);
+      LOG_D(NR_PHY,"TS %llu (TS0 %llu) aa %d : offset %d, len %d\n",(unsigned long long)TS,(unsigned long long)fhstate->TS0,aid,offset,len);
       // ECPRI PC_ID (2 bytes)
       *(uint16_t *)(buff2 + 4) = aid;
       // bring TX data into 12 MSBs
@@ -383,6 +383,7 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
     } // aid
   } // offset
   free(buff);  
+  LOG_D(NR_PHY,"Returning from eth send\n");
   return(NULL);
 }
 
