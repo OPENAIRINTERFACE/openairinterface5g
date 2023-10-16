@@ -791,6 +791,11 @@ double interp(double x, double *xs, double *ys, int count);
 void simde_mm128_separate_real_imag_parts(simde__m128i *out_re, simde__m128i *out_im, simde__m128i in0, simde__m128i in1);
 void simde_mm256_separate_real_imag_parts(simde__m256i *out_re, simde__m256i *out_im, simde__m256i in0, simde__m256i in1);
 
+static __attribute__((always_inline)) inline int count_bits_set(uint64_t v)
+{
+  return __builtin_popcountll(v);
+}
+
 #ifdef __cplusplus
 }
 #endif
