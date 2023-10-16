@@ -80,14 +80,6 @@ typedef struct {
   struct sockaddr_in local_addrd;
   /*!\brief address length for both UDP and RAW socket*/
   int addr_len;
-  /*!\brief destination address (control) for RAW socket*/
-  struct sockaddr_ll dest_addrc_ll;
-  /*!\brief local address (control) for RAW socket*/
-  struct sockaddr_ll local_addrc_ll;
-  /*!\brief destination address (user) for RAW socket*/
-  struct sockaddr_ll dest_addrd_ll;
-  /*!\brief local address (user) for RAW socket*/
-  struct sockaddr_ll local_addrd_ll;
   /*!\brief inteface index for RAW socket*/
   struct ifreq if_index;
   /*!\brief timeout ms */ 
@@ -146,7 +138,9 @@ typedef struct {
   /*!\brief precomputed ethernet header (control) */
   struct ether_header ehc; 
   /*!\brief precomputed ethernet header (data) */
-  struct ether_header ehd; 
+  struct ether_header ehd;
+  /*!\brief local address (user) for RAW socket*/
+  struct sockaddr_ll local_addrd_ll;
 } eth_state_t;
 
 

@@ -237,10 +237,6 @@ static inline int crcType(int nbSeg, int len)
 }
 
 typedef struct {
-  //! estimated received spatial signal power (linear)
-  fourDimArray_t * rx_spatial_power;
-  //! estimated received spatial signal power (dB)
-  fourDimArray_t * rx_spatial_power_dB;
   //! estimated rssi (dBm)
   int rx_rssi_dBm;
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)

@@ -239,19 +239,6 @@ typedef struct {
   nfapi_vendor_extension_tlv_t              vendor_extension;
 } nfapi_nr_config_request_t;
 
-
-
-typedef enum {
-  NFAPI_NR_DL_DCI_FORMAT_1_0 = 0,
-  NFAPI_NR_DL_DCI_FORMAT_1_1,
-  NFAPI_NR_DL_DCI_FORMAT_2_0,
-  NFAPI_NR_DL_DCI_FORMAT_2_1,
-  NFAPI_NR_DL_DCI_FORMAT_2_2,
-  NFAPI_NR_DL_DCI_FORMAT_2_3,
-  NFAPI_NR_UL_DCI_FORMAT_0_0,
-  NFAPI_NR_UL_DCI_FORMAT_0_1
-} nfapi_nr_dci_format_e;
-
 typedef enum {
 	NFAPI_NR_RNTI_new = 0,
 	NFAPI_NR_RNTI_C,

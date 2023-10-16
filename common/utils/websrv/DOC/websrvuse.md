@@ -1,164 +1,65 @@
-## building the webserver
+[[_TOC_]]
+
+# Building the webserver
 
 
 back-end (the http server) and front-end (the html and javascript code for the browsers) are both built when the build of the `websrv` optional library is requested.
 
-You can include the web server interface components in your build using the build_oai script with the `--build-lib "telnetsrv websrv"` option.
+You can include the web server interface components in your build using the `build_oai` script with the `--build-lib "telnetsrv websrv"` option.
 The related cmake cache entry  in `ran_build/build/CMakeCache.txt` for building the web server
 is `ENABLE_WEBSRV:BOOL=ON` 
 
-When cmake configuration has been completed, with websrv enabled and all dependencies met,font-end and back-end 
+When cmake configuration has been completed, with websrv enabled and all dependencies met, font-end and back-end 
 can be built separately, using respectively `make websrvfront` or `make websrv` from the build repository (replace make by ninja if you
 build using ninja). 
 
+## Additional dependencies for the backend
 
+To build the webserver frontend, you need additionally
 
-###### build example when back-end dependency is not installed
+1. the [ulfius library](https://github.com/babelouest/ulfius)
+2. the [jansson library](https://github.com/akheron/jansson-debian)
 
-```
- ./build_oai --gNB --nrUE -w USRP --build-lib "telnetsrv websrv nrscope"
-Will compile gNB
-Will compile NR UE
-Enabling build of optional shared library telnetsrv
-Enabling build of optional shared library websrv
-Enabling build of optional shared library nrscope
-OPENAIR_DIR    = /usr/local/oai/develop_unmodified/openairinterface5g
-Running "cmake -DOAI_USRP=ON -DENABLE_TELNETSRV=ON -DENABLE_WEBSRV=ON -DENABLE_NRSCOPE=ON ../../.."
--- The C compiler identification is GNU 11.4.0
--- The CXX compiler identification is GNU 11.4.0
--- Detecting C compiler ABI info
--- Detecting C compiler ABI info - done
--- Check for working C compiler: /usr/bin/cc - skipped
--- Detecting C compile features
--- Detecting C compile features - done
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Check for working CXX compiler: /usr/bin/c++ - skipped
--- Detecting CXX compile features
--- Detecting CXX compile features - done
--- Ccache not found. Consider installing it for faster compilation. Command: sudo apt/dnf install ccache
--- Found PkgConfig: /usr/bin/pkg-config (found version "0.29.2") 
--- Check if /opt/asn1c/bin/asn1c supports -gen-APER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-UPER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-JER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-BER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-OER
--- CMAKE_BUILD_TYPE is RelWithDebInfo
--- CPUARCH x86_64
--- AVX512 intrinsics are OFF
--- AVX2 intrinsics are ON
--- Found Git: /usr/bin/git (found version "2.34.1") 
--- Checking for module 'libconfig'
---   Found libconfig, version 1.5
--- Checking for module 'openssl'
---   Found openssl, version 3.0.2
--- Checking for module 'blas'
---   Found blas, version 3.10.3
--- Checking for module 'lapacke'
---   Found lapacke, version 3.10.0
--- Checking for module 'cblas'
---   No package 'cblas' found
--- Add enb specific telnet functions in libtelnetsrv_enb.so
--- No specific telnet functions for gnb
--- No specific telnet functions for 4Gue
--- Add 5Gue specific telnet functions in libtelnetsrv_5Gue.so
--- Add CI specific telnet functions in libtelnetsrv_ci.so
-CMake Error at common/utils/websrv/CMakeLists.txt:31 (find_library):
-  Could not find ULFIUS using the following names: libulfius.so
--- Configuring incomplete, errors occurred!
-See also "/usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/CMakeOutput.log".
-build have failed
-```
-You can fix this first dependency problem, the backend dependency,  by installing the libulfius library:
+These libraries are not handled by `build_oai -I`
 
-On ubuntu: `sudo apt-get install libulfius-dev`, for fedora: `dnf install libulfius`. Some distribution don't have 
-libulfius package, instruction to install it can be found [here](https://github.com/babelouest/ulfius/blob/master/INSTALL.md)
+### Ubuntu
 
-###### build example when front-end dependency is not installed
-```
-./build_oai --build-lib "websrv telnetsrv nrscope"
-
-
-
- ./build_oai --gNB --nrUE -w USRP --build-lib "telnetsrv websrv nrscope"
-Will compile gNB
-Will compile NR UE
-Enabling build of optional shared library telnetsrv
-Enabling build of optional shared library websrv
-Enabling build of optional shared library nrscope
-OPENAIR_DIR    = /usr/local/oai/develop_unmodified/openairinterface5g
-Running "cmake -DOAI_USRP=ON -DENABLE_TELNETSRV=ON -DENABLE_WEBSRV=ON -DENABLE_NRSCOPE=ON ../../.."
--- Ccache not found. Consider installing it for faster compilation. Command: sudo apt/dnf install ccache
--- Check if /opt/asn1c/bin/asn1c supports -gen-APER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-UPER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-JER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-BER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-OER
--- CMAKE_BUILD_TYPE is RelWithDebInfo
--- CPUARCH x86_64
--- AVX512 intrinsics are OFF
--- AVX2 intrinsics are ON
--- Checking for module 'cblas'
---   No package 'cblas' found
--- Add enb specific telnet functions in libtelnetsrv_enb.so
--- No specific telnet functions for gnb
--- No specific telnet functions for 4Gue
--- Add 5Gue specific telnet functions in libtelnetsrv_5Gue.so
--- Add CI specific telnet functions in libtelnetsrv_ci.so
--- found libulfius for websrv
--- found libjansson for websrv
-CMake Error at common/utils/websrv/CMakeLists.txt:45 (find_program):
-  Could not find NPM using the following names: npm
-
-
--- Configuring incomplete, errors occurred!
-See also "/usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/CMakeOutput.log".
-build have failed
-```
-Currently the web server frontend can run with nodejs 18, you can check the version (if any) installed on your system entering the `node -v` command.
-
-To prevent difficult situations with nodejs or npm versions it is better to specifically install the required nodejs version (after removing existing versions of npm and nodejs), as explained 
-[here](https://www.stewright.me/2023/04/install-nodejs-18-on-ubuntu-22-04/) for ubuntu. Similar instructions can be found for other distributions.
-It is also possible to make several nodejs versions co-habiting on your system, this is beyond this doc.
-
-
- ###### example: installing nodejs 18 on ubuntu
+```bash
+$ sudo apt-get update
+$ sudo apt-get install -y libulfius-dev libjansson-dev npm curl wget
 ```
 
-curl -s https://deb.nodesource.com/setup_18.x | sudo bash
+### Fedora(-based OS)
 
-## Installing the NodeSource Node.js 18.x repo...
+```bash
+$ sudo dnf update -y
+$ sudo dnf install -y jansson-devel npm curl wget
+```
 
+ulfius has to be installed as explained [here](https://github.com/babelouest/ulfius/blob/master/INSTALL.md#pre-compiled-packages).
+
+## Additional dependencies for the frontend
+
+Currently the web server frontend can run with nodejs 18, you can check the
+version (if any) installed on your system entering the `node -v` command.
+
+To prevent difficult situations with nodejs or npm versions it is better to
+specifically install the required nodejs version (after removing existing
+versions of npm and nodejs), as explained
+[here](https://www.stewright.me/2023/04/install-nodejs-18-on-ubuntu-22-04/) for
+ubuntu. Similar instructions can be found for other distributions.  It is also
+possible to make several nodejs versions co-habiting on your system, this is
+beyond this doc.
+
+
+For example, to install a specific nodeJS version, you can run the below
+command, with the typical output printed below for your convenience:
+```bash
+$ curl -s https://deb.nodesource.com/setup_18.x | sudo bash
 
 ## Populating apt-get cache...
 
-+ apt-get update
-Get:1 http://security.ubuntu.com/ubuntu jammy-security InRelease [110 kB]
-Hit:2 http://us.archive.ubuntu.com/ubuntu jammy InRelease
-Get:3 http://security.ubuntu.com/ubuntu jammy-security/main i386 Packages [305 kB]
-Get:4 http://security.ubuntu.com/ubuntu jammy-security/main amd64 Packages [678 kB]
-Get:5 http://us.archive.ubuntu.com/ubuntu jammy-updates InRelease [119 kB]
-Get:6 http://security.ubuntu.com/ubuntu jammy-security/main amd64 DEP-11 Metadata [42.8 kB]
-Get:7 http://security.ubuntu.com/ubuntu jammy-security/main amd64 c-n-f Metadata [11.2 kB]
-Get:8 http://security.ubuntu.com/ubuntu jammy-security/universe i386 Packages [553 kB]
-Get:9 http://us.archive.ubuntu.com/ubuntu jammy-backports InRelease [109 kB]
-Get:10 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 Packages [770 kB]
-Get:11 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 DEP-11 Metadata [39.8 kB]
-Get:12 http://us.archive.ubuntu.com/ubuntu jammy-updates/main i386 Packages [471 kB]       
-Get:13 http://us.archive.ubuntu.com/ubuntu jammy-updates/main amd64 Packages [892 kB]
-Get:14 http://us.archive.ubuntu.com/ubuntu jammy-updates/main Translation-en [214 kB]
-Get:15 http://us.archive.ubuntu.com/ubuntu jammy-updates/main amd64 DEP-11 Metadata [100 kB]
-Get:16 http://us.archive.ubuntu.com/ubuntu jammy-updates/restricted amd64 Packages [714 kB]
-Get:17 http://us.archive.ubuntu.com/ubuntu jammy-updates/restricted Translation-en [114 kB]
-Get:18 http://us.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 Packages [968 kB]
-Get:19 http://us.archive.ubuntu.com/ubuntu jammy-updates/universe i386 Packages [648 kB]
-Get:20 http://us.archive.ubuntu.com/ubuntu jammy-updates/universe Translation-en [211 kB]
-Get:21 http://us.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 DEP-11 Metadata [288 kB]
-Get:22 http://us.archive.ubuntu.com/ubuntu jammy-updates/multiverse amd64 DEP-11 Metadata [940 B]
-Get:23 http://us.archive.ubuntu.com/ubuntu jammy-backports/main amd64 DEP-11 Metadata [4,924 B]
-Get:24 http://us.archive.ubuntu.com/ubuntu jammy-backports/universe amd64 DEP-11 Metadata [15.6 kB]
-Fetched 7,379 kB in 4s (2,095 kB/s)           
-Reading package lists... Done
+apt-get update
 
 ## Confirming "jammy" is supported...
 
@@ -176,15 +77,6 @@ Reading package lists... Done
 ## Running `apt-get update` for you...
 
 + apt-get update
-Hit:1 http://security.ubuntu.com/ubuntu jammy-security InRelease
-Get:2 https://deb.nodesource.com/node_18.x jammy InRelease [4,563 B]          
-Get:3 https://deb.nodesource.com/node_18.x jammy/main amd64 Packages [776 B]  
-Hit:4 http://us.archive.ubuntu.com/ubuntu jammy InRelease
-Hit:5 http://us.archive.ubuntu.com/ubuntu jammy-updates InRelease
-Hit:6 http://us.archive.ubuntu.com/ubuntu jammy-backports InRelease
-Fetched 5,339 B in 1s (7,666 B/s)
-Reading package lists... Done
-
 ## Run `sudo apt-get install -y nodejs` to install Node.js 18.x and npm
 ## You may also need development tools to build native addons:
      sudo apt-get install gcc g++ make
@@ -214,88 +106,46 @@ Preparing to unpack .../nodejs_18.17.1-deb-1nodesource1_amd64.deb ...
 Unpacking nodejs (18.17.1-deb-1nodesource1) ...
 Setting up nodejs (18.17.1-deb-1nodesource1) ...
 Processing triggers for man-db (2.10.2-1) ...
-
-
 ```
 
-######  build example when dependencies are met
-
-
-``` bash
-
-./build_oai --ninja -c -C --gNB --nrUE -w USRP --build-lib "telnetsrv websrv nrscope"
-Will compile gNB
-Will compile NR UE
-Enabling build of optional shared library telnetsrv
-Enabling build of optional shared library websrv
-Enabling build of optional shared library nrscope
-OPENAIR_DIR    = /usr/local/oai/develop_unmodified/openairinterface5g
-Erased all previously producted files
-Running "cmake -GNinja -DOAI_USRP=ON -DENABLE_TELNETSRV=ON -DENABLE_WEBSRV=ON -DENABLE_NRSCOPE=ON ../../.."
--- The C compiler identification is GNU 11.4.0
--- The CXX compiler identification is GNU 11.4.0
--- Detecting C compiler ABI info
--- Detecting C compiler ABI info - done
--- Check for working C compiler: /usr/bin/cc - skipped
--- Detecting C compile features
--- Detecting C compile features - done
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Check for working CXX compiler: /usr/bin/c++ - skipped
--- Detecting CXX compile features
--- Detecting CXX compile features - done
--- Ccache not found. Consider installing it for faster compilation. Command: sudo apt/dnf install ccache
--- Found PkgConfig: /usr/bin/pkg-config (found version "0.29.2") 
--- Check if /opt/asn1c/bin/asn1c supports -gen-APER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-UPER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-JER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-BER
--- Check if /opt/asn1c/bin/asn1c supports -no-gen-OER
--- CMAKE_BUILD_TYPE is RelWithDebInfo
--- CPUARCH x86_64
--- AVX512 intrinsics are OFF
--- AVX2 intrinsics are ON
--- Found Git: /usr/bin/git (found version "2.34.1") 
--- Checking for module 'libconfig'
---   Found libconfig, version 1.5
--- Checking for module 'openssl'
---   Found openssl, version 3.0.2
--- Checking for module 'blas'
---   Found blas, version 3.10.3
--- Checking for module 'lapacke'
---   Found lapacke, version 3.10.0
--- Checking for module 'cblas'
---   No package 'cblas' found
--- Add enb specific telnet functions in libtelnetsrv_enb.so
--- No specific telnet functions for gnb
--- No specific telnet functions for 4Gue
--- Add 5Gue specific telnet functions in libtelnetsrv_5Gue.so
--- Add CI specific telnet functions in libtelnetsrv_ci.so
--- found libulfius for websrv
--- found libjansson for websrv
--- found npm for websrv
--- Configuring webserver backend
--- Configuring webserver frontend
--- No Doxygen documentation requested
--- libforms library, required for scopes, found at /usr/lib/libforms.so
--- Found UHD: /usr/lib/x86_64-linux-gnu/libuhd.so  
--- Configuring done
--- Generating done
--- Build files have been written to: /usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/ran_build/build
-cd /usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/ran_build/build
-Running "cmake --build .  --target nr-softmodem nr-cuup nr-uesoftmodem oai_usrpdevif telnetsrv websrv nrscope params_libconfig coding rfsimulator dfts -- -j8" 
-Log file for compilation is being written to: /usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/log/all.txt
-nr-softmodem nr-cuup nr-uesoftmodem oai_usrpdevif telnetsrv websrv nrscope params_libconfig coding rfsimulator dfts compiled
-BUILD SHOULD BE SUCCESSFUL
-
+If you want to put a more recent version, refer to the steps below, which is
+common for any OS:
+```bash
+$ sudo npm -g install @angular/cli@latest npm@latest
+$ sudo npm install n -g
+# Install the LTS version
+$ n lts
+# Or install the latest version
+$ n latest
+$ node --version
 ```
 
-######  building and installing the front-end after cmake has been successfully configured
+## Building the webserver
 
+### Backend
 
+The websrv targets won't be available till cmake has been successfully configured with the websrv option enabled
+
+```bash
+$ cd <oai repository>/openairinterface5g/cmake_targets
+$ ./build_oai  --build-lib websrv
 ```
-cd \<oai repository\>/openairinterface5g/cmake_targets/ran_build/build
-make websrvfront
+or, without the help of the  `build_oai` script:
+
+```bash
+$ cd \<oai repository\>/openairinterface5g/cmake_targets/ran_build/build
+$ make websrv
+```
+
+This will create the `libwebsrv.so`  file in the `cmake_targets/ran_build/build` directory.
+
+### Frontend
+
+The frontend targets needs to be triggered explicitly:
+
+```bash
+$ cd \<oai repository\>/openairinterface5g/cmake_targets/ran_build/build
+$ make websrvfront
 up to date, audited 1099 packages in 3s
 
 142 packages are looking for funding
@@ -332,27 +182,59 @@ Built target websrvfront
 ```
 
 
-######  building and installing the back-end after cmake has been successfully configured
+## Examples
 
+**build example when back-end dependency is not installed**
 ```bash
- cd <oai repository>/openairinterface5g
- source oaienv
- cd cmake_targets
- ./build_oai  --build-lib websrv
-```
-or, without the help of the  `build_oai` script:
-
-```bash
- cd \<oai repository\>/openairinterface5g/cmake_targets/ran_build/build
- make websrv
+$ ./build_oai --gNB --nrUE -w USRP --build-lib "telnetsrv websrv nrscope"
+[...]
+CMake Error at common/utils/websrv/CMakeLists.txt:31 (find_library):
+  Could not find ULFIUS using the following names: libulfius.so
+-- Configuring incomplete, errors occurred!
+See also "/usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/CMakeOutput.log".
+build have failed
 ```
 
-This will create the `libwebsrv.so`  file in the `targets/bin` and `cmake_targets/ran_build/build` sub directories of the oai repository.
+**build example when front-end dependency is not installed**
+```bash
+$ ./build_oai --gNB --nrUE -w USRP --build-lib "telnetsrv websrv nrscope"
+[...]
+-- found libulfius for websrv
+-- found libjansson for websrv
+CMake Error at common/utils/websrv/CMakeLists.txt:45 (find_program):
+  Could not find NPM using the following names: npm
 
-When starting the softmodem, you must specify the **_\-\-websrv_** option to load and start the web server. The web server is loaded via the [oai shared library loader](loader).
 
-# Testing the web server interface
+-- Configuring incomplete, errors occurred!
+See also "/usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/CMakeOutput.log".
+build have failed
+```
 
+**build example when dependencies are met**
+
+```bash
+$ ./build_oai --ninja -c -C --gNB --nrUE -w USRP --build-lib "telnetsrv websrv nrscope"
+[...]
+-- found libulfius for websrv
+-- found libjansson for websrv
+-- found npm for websrv
+-- Configuring webserver backend
+-- Configuring webserver frontend
+[...]
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/ran_build/build
+cd /usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/ran_build/build
+Running "cmake --build .  --target nr-softmodem nr-cuup nr-uesoftmodem oai_usrpdevif telnetsrv websrv nrscope params_libconfig coding rfsimulator dfts -- -j8" 
+Log file for compilation is being written to: /usr/local/oai/develop_unmodified/openairinterface5g/cmake_targets/log/all.txt
+nr-softmodem nr-cuup nr-uesoftmodem oai_usrpdevif telnetsrv websrv nrscope params_libconfig coding rfsimulator dfts compiled
+BUILD SHOULD BE SUCCESSFUL
+```
+
+
+# Running the web server interface
+
+When starting the softmodem, you must specify the `--websrv` option to load and start the web server. The web server is loaded via the [oai shared library loader](loader).
 
 ## web server parameters
 The web server back-end is using the [oai configuration module](Config/Rtusage). web server parameters must be specified in the websrv section.
@@ -367,7 +249,7 @@ The web server back-end is using the [oai configuration module](Config/Rtusage).
 |                   |                              |                   |                                                              |
 
 ## running the back-end
-To trigger the back-end use the `--websrv` option, possibly modifying the parameters as explained in the previous chapter.  The two following commands allow starting the oai gNB and the oai 5G UE on the same computer, starting the telnet server and the web interface on both executables.
+To trigger the back-end use the `--websrv` option, possibly modifying the parameters as explained in the [previous section](./websrvuse.md#web-server-parameters).  The two following commands allow starting the oai gNB and the oai 5G UE on the same computer, starting the telnet server and the web interface on both executables.
 
 `./nr-softmodem -O  /usr/local/oai/conf/gnb.band78.sa.fr1.106PRB.usrpb210.conf --rfsim --rfsimulator.serveraddr server --telnetsrv  --telnetsrv.listenstdin --websrv   --rfsimulator.options chanmod`
 
@@ -392,6 +274,7 @@ The interface should be intuitive enough, keeping in mind the following restrict
 Some front-end  objects, which usage are less intuitive  provide a tooltip to help interface usage.
 
 ## some webserver screenshots
+
 - [main page](main.png)
 - [Configuring logs](logscfg.png)
 - [scope interface](scope.png)
