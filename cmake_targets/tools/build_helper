@@ -54,14 +54,10 @@ fi
 ###############################
 ## echo and  family
 ###############################
-black='\E[30m'
 red='\E[31m'
 green='\E[32m'
 yellow='\E[33m'
 blue='\E[1;34m'
-magenta='\E[35m'
-cyan='\E[36m'
-white='\E[37m'
 reset_color='\E[00m'
 COLORIZE=1
 
