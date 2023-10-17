@@ -54,12 +54,17 @@ fi
 ###############################
 ## echo and  family
 ###############################
-red='\E[31m'
-green='\E[32m'
-yellow='\E[33m'
-blue='\E[1;34m'
-reset_color='\E[00m'
-COLORIZE=1
+# only emit color if connected to a terminal, and if it supports colors
+if [ -t 1 ]; then
+  num_colors=$(tput colors)
+  if [ -n "$num_colors" ] && [ "$num_colors" -ge 8 ]; then
+    red='\E[31m'
+    green='\E[32m'
+    yellow='\E[33m'
+    blue='\E[1;34m'
+    reset_color='\E[00m'
+  fi
+fi
 
 cecho()  {
     # Color-echo
@@ -68,8 +73,7 @@ cecho()  {
     local default_msg="No Message."
     message=${1:-$default_msg}
     color=${2:-$green}
-    [ "$COLORIZE" = "1" ] && message="$color$message$reset_color"
-    echo -e "$message"
+    echo -e "$color$message$reset_color"
     return
 }
 
