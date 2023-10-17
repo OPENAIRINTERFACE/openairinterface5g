@@ -514,7 +514,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx, int frame, int slot)
                 memcpy(&txdataF[ant][txdataF_offset_per_symbol + subCarrier],
                        &txdataF_precoding[ant][l_symbol][subCarrier],
                        neg_length * sizeof(**txdataF));
-                memcpy(&txdataF[ant][txdataF_offset_per_symbol], &txdataF_precoding[ant][l_symbol], pos_length * sizeof(**txdataF));
+                memcpy(&txdataF[ant][txdataF_offset_per_symbol],
+                       &txdataF_precoding[ant][l_symbol],
+                       pos_length * sizeof(**txdataF));
               } else {
                  memset(&txdataF[ant][txdataF_offset_per_symbol + subCarrier],
                         0,
