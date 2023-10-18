@@ -224,7 +224,7 @@ static void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigco
       csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
     NR_NZP_CSI_RS_Resource_t *nzpcsi0 = calloc(1,sizeof(*nzpcsi0));
     nzpcsi0->nzp_CSI_RS_ResourceId = id;
-    NR_CSI_RS_ResourceMapping_t resourceMapping;
+    NR_CSI_RS_ResourceMapping_t resourceMapping = {0};
     switch (num_dl_antenna_ports) {
       case 1:
         resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2;
