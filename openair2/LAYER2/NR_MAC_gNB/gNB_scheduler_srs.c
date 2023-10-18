@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <immintrin.h>
+#include "PHY/sse_intrin.h"
 
 //#define SRS_DEBUG
 
