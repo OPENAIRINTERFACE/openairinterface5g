@@ -43,5 +43,10 @@ RUN /bin/sh oaienv && \
     cd ../build-cross/ && \
     cmake ../../.. -GNinja -DCMAKE_TOOLCHAIN_FILE=../../../cmake_targets/cross-arm.cmake -DNATIVE_DIR=../build && \
     echo "====== Start of log for cross-build executables ======" && \
-    ninja dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim nr_prachsim lte-softmodem nr-softmodem nr-cuup oairu lte-uesoftmodem nr-uesoftmodem params_libconfig coding rfsimulator > ../../log/all.txt 2>&1 && \
+    # making always passing so we can analyze the all.txt file
+    ninja dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim nr_prachsim lte-softmodem nr-softmodem nr-cuup oairu lte-uesoftmodem nr-uesoftmodem params_libconfig coding rfsimulator > ../../log/all.txt 2>&1; \
+    # displaying errors and warnings
+    egrep -A3 "warning:|error:" ../../log/all.txt || true && \
+    # will fail only for errors
+    egrep -L "error:" ../../log/all.txt && \
     echo "====== End of log for cross-build executables ======"
