@@ -685,6 +685,15 @@ install_simde_from_source(){
     $SUDO rm -rf /tmp/simde
     git clone https://github.com/simd-everywhere/simde-no-tests.git /tmp/simde
     cd /tmp/simde
+    # we can specify a given version of SIMDE (sha-one or tag)
+    if [[ -v SIMDE_VERSION ]]; then
+      git checkout -f $SIMDE_VERSION
+    else
+      # At time of writing, last working commit for OAI
+      git checkout 389f360a66d4a3bec62b7d71ad8be877487809ba
+    fi
+    # Showing which version is used
+    git log -n1
     # brute force copy into /usr/include
     $SUDO \cp -rv ../simde /usr/include
 }

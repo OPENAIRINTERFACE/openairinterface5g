@@ -29,6 +29,8 @@
 FROM ubuntu:focal AS ran-base
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Paris
+# Specifying a working version of SIMDE for ARM:
+ENV SIMDE_VERSION=389f360a66d4a3bec62b7d71ad8be877487809ba
 
 #install developers pkg/repo
 RUN apt-get update && \
