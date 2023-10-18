@@ -103,15 +103,6 @@ void nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t
 {
 }
 
-void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
-{
-  return;
-}
-
-int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index) {
-  return 0;
-}
-
 void nr_derive_key(int alg_type, uint8_t alg_id, const uint8_t key[32], uint8_t out[16])
 {
   (void)alg_type;

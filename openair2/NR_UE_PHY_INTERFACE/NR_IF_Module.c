@@ -42,7 +42,6 @@
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 #include "executables/softmodem-common.h"
 #include "openair2/RRC/NR_UE/rrc_proto.h"
-#include "openair2/RRC/NR_UE/rrc_vars.h"
 #include "openair2/GNB_APP/L1_nr_paramdef.h"
 #include "openair2/GNB_APP/gnb_paramdef.h"
 #include "radio/ETHERNET/if_defs.h"
