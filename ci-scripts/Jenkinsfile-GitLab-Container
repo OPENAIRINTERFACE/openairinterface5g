@@ -120,14 +120,13 @@ pipeline {
       }
     }
     // Build Stages are Mandatory
-    // Later we will add a Ubuntu20 build
     stage ("Image Building Processes") {
       when { expression {doBuild} }
       parallel {
-        stage ("Ubuntu18-Image-Builder") {
+        stage ("Ubuntu-Image-Builder") {
           steps {
             script {
-              triggerSlaveJob ('RAN-Ubuntu18-Image-Builder', 'Ubuntu18-Image-Builder')
+              triggerSlaveJob ('RAN-Ubuntu18-Image-Builder', 'Ubuntu-Image-Builder')
             }
           }
           post {
@@ -144,10 +143,10 @@ pipeline {
             }
           }
         }
-        stage ("RHEL8-Cluster-Image-Builder") {
+        stage ("RHEL-Cluster-Image-Builder") {
           steps {
             script {
-              triggerSlaveJob ('RAN-RHEL8-Cluster-Image-Builder', 'RHEL8-Cluster-Image-Builder')
+              triggerSlaveJob ('RAN-RHEL8-Cluster-Image-Builder', 'RHEL-Cluster-Image-Builder')
             }
           }
           post {
@@ -174,6 +173,26 @@ pipeline {
             always {
               script {
                 testBullet = finalizeSlaveJob('RAN-cppcheck')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+                failingStages += testBullet
+              }
+            }
+          }
+        }
+        stage ("ARM-Cross-Compile") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-ARM-Cross-Compile-Builder', 'ARM-Cross-Compilation')
+            }
+          }
+          post {
+            always {
+              script {
+                testBullet = finalizeSlaveJob('RAN-ARM-Cross-Compile-Builder')
               }
             }
             failure {
