@@ -429,7 +429,6 @@ typedef struct {
   NR_UE_L2_STATE_t state;
   NR_CellGroupConfig_t            *cg;
   int                             servCellIndex;
-  NR_CSI_ReportConfig_t           *csirc;
   long                            physCellId;
   ////  MAC config
   int                             first_sync_frame;
@@ -437,9 +436,6 @@ typedef struct {
   bool                            get_otherSI;
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
-  NR_BSR_Config_t                 *bsr_Config;
-  NR_TAG_Config_t                 *tag_Config;
-  NR_PHR_Config_t                 *phr_Config;
   NR_RNTI_Value_t                 *cs_RNTI;
   NR_MIB_t                        *mib;
   struct NR_SI_SchedulingInfo *si_SchedulingInfo;
@@ -462,6 +458,7 @@ typedef struct {
   NR_SearchSpace_t *search_space_zero;
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon;
+  NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig;
 
   bool phy_config_request_sent;
   frame_type_t frame_type;

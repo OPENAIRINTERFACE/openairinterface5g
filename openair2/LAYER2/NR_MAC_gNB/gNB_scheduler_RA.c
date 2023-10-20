@@ -1312,9 +1312,8 @@ static void nr_generate_Msg2(module_id_t module_idP,
       pdsch_pdu_rel15->TBSize[0] = TBS;
     }
 
-    int bw_tbslbrm = get_dlbw_tbslbrm(dl_bwp->initial_BWPSize, ra->CellGroup);
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
-                                                                               bw_tbslbrm,
+                                                                               dl_bwp->bw_tbslbrm,
                                                                                1);
     pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
 
@@ -1522,9 +1521,8 @@ static void prepare_dl_pdus(gNB_MAC_INST *nr_mac,
   int x_Overhead = 0;
   nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
 
-  int bw_tbslbrm = get_dlbw_tbslbrm(dl_bwp->initial_BWPSize, ra->CellGroup);
   pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
-                                                                             bw_tbslbrm,
+                                                                             dl_bwp->bw_tbslbrm,
                                                                              1);
   pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(tb_size<<3,R);
 

@@ -735,11 +735,9 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
     dlsch_pdu->TBS = current_harq->TBS;
   }
 
-  int bw_tbslbrm;
-  if (current_DL_BWP->initial_BWPSize > 0)
-    bw_tbslbrm = get_dlbw_tbslbrm(current_DL_BWP->initial_BWPSize, mac->cg);
-  else
-    bw_tbslbrm = dlsch_pdu->BWPSize;
+  int bw_tbslbrm = current_DL_BWP->initial_BWPSize > 0 ?
+                   current_DL_BWP->bw_tbslbrm :
+                   dlsch_pdu->BWPSize;
   dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, 1);
 
   /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -1164,8 +1162,7 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   long *maxMIMO_Layers = current_DL_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
   AssertFatal(maxMIMO_Layers != NULL, "Option with max MIMO layers not configured is not supported\n");
   int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
-  int bw_tbslbrm = get_dlbw_tbslbrm(current_DL_BWP->initial_BWPSize, mac->cg);
-  dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, nl_tbslbrm);
+  dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, current_DL_BWP->bw_tbslbrm, nl_tbslbrm);
   /*PTRS configuration */
   dlsch_pdu->pduBitmap = 0;
   if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {

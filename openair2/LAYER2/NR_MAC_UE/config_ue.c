@@ -570,6 +570,8 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
       configure_ss_coreset(mac, mac->bwp_dlcommon->pdcch_ConfigCommon->choice.setup, NULL);
   }
 
+  NR_ServingCellConfig_t *spCellConfigDedicated = NULL;
+
   if(cell_group_config) {
     if (cell_group_config->physicalCellGroupConfig) {
       DL_BWP->pdsch_HARQ_ACK_Codebook = &cell_group_config->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook;
@@ -577,7 +579,8 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
     }
     if (cell_group_config->spCellConfig &&
         cell_group_config->spCellConfig->spCellConfigDedicated) {
-      struct NR_ServingCellConfig *spCellConfigDedicated = cell_group_config->spCellConfig->spCellConfigDedicated;
+      spCellConfigDedicated = cell_group_config->spCellConfig->spCellConfigDedicated;
+      UL_BWP->supplementaryUplink = spCellConfigDedicated->supplementaryUplink;
       UL_BWP->csi_MeasConfig = spCellConfigDedicated->csi_MeasConfig ? spCellConfigDedicated->csi_MeasConfig->choice.setup : NULL;
       UL_BWP->pusch_servingcellconfig =
           spCellConfigDedicated->uplinkConfig && spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig ? spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL;
@@ -673,6 +676,8 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
   DL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(mac->bwp_dlcommon->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(mac->bwp_ulcommon->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
+  DL_BWP->bw_tbslbrm = get_dlbw_tbslbrm(DL_BWP->initial_BWPSize, spCellConfigDedicated);
+  UL_BWP->bw_tbslbrm = get_ulbw_tbslbrm(UL_BWP->initial_BWPSize, spCellConfigDedicated);
 }
 
 void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs)
@@ -762,7 +767,7 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
     mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
   else
     mac->servCellIndex = 0;
-
+  mac->crossCarrierSchedulingConfig = cell_group_config->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig;
   mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
   mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
   mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
@@ -803,6 +808,7 @@ void nr_rrc_mac_config_req_scg(module_id_t module_id,
 
   mac->cg = scell_group_config;
   mac->servCellIndex = *scell_group_config->spCellConfig->servCellIndex;
+  mac->crossCarrierSchedulingConfig = scell_group_config->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig;
   if (scell_group_config->spCellConfig->reconfigurationWithSync)
     handle_reconfiguration_with_sync(mac, module_id, cc_idP, scell_group_config->spCellConfig->reconfigurationWithSync);
   configure_current_BWP(mac, NULL, scell_group_config);
