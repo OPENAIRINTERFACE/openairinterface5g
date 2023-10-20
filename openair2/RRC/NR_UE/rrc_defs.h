@@ -182,7 +182,6 @@ typedef enum { RB_NOT_PRESENT, RB_ESTABLISHED, RB_SUSPENDED } NR_RB_status_t;
 
 typedef struct NR_UE_RRC_SRB_INFO_s {
   NR_RB_status_t status;
-  NR_SRB_INFO srb_buffers;
 } NR_UE_RRC_SRB_INFO_t;
 
 typedef struct NR_UE_RRC_INST_s {

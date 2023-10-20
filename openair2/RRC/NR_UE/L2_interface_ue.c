@@ -91,29 +91,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
       break;
 
     case CCCH:
-      if (pdu_len>0) {
-        LOG_T(NR_RRC,"[UE %d] Received SDU for CCCH on SRB %u from gNB %d\n",module_id,channel & RAB_OFFSET,gNB_index);
-
-        MessageDef *message_p;
-        int msg_sdu_size = CCCH_SDU_SIZE;
-
-        if (pdu_len > msg_sdu_size) {
-          LOG_E(NR_RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", sdu_size, msg_sdu_size);
-          sdu_size = msg_sdu_size;
-        } else {
-          sdu_size =  pdu_len;
-        }
-
-        message_p = itti_alloc_new_message (TASK_MAC_UE, 0, NR_RRC_MAC_CCCH_DATA_IND);
-        memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-        memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
-        NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = frame; //frameP
-        NR_RRC_MAC_CCCH_DATA_IND (message_p).slot = slot;
-        NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = sdu_size;
-        NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = gNB_index;
-        NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;  //rntiP
-        itti_send_msg_to_task (TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE( module_id ), message_p);
-      }
+      AssertFatal(false, "use RLC instead\n");
       break;
 
     default:
@@ -123,36 +101,11 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
   return(0);
 }
 
-int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
-                              const int CC_id,
-                              const uint8_t gNB_id,
-                              const frame_t frameP,
-                              const rb_id_t Srb_id,
-                              uint8_t *buffer_pP)
+void nr_mac_rrc_msg3_ind(const module_id_t mod_id, int rnti)
 {
-  switch(Srb_id) {
-
-    case CCCH:
-      LOG_D(NR_RRC,
-            "nr_mac_rrc_data_req_ue: Payload size = %i\n",
-            NR_UE_rrc_inst[Mod_idP].Srb[gNB_id][0].srb_buffers.Tx_buffer.payload_size);
-      NR_UE_RRC_SRB_INFO_t *Srb0 = &NR_UE_rrc_inst[Mod_idP].Srb[gNB_id][0];
-      memcpy(buffer_pP, (uint8_t *)Srb0->srb_buffers.Tx_buffer.Payload, Srb0->srb_buffers.Tx_buffer.payload_size);
-      for (int i = 0; i < Srb0->srb_buffers.Tx_buffer.payload_size; i++) {
-        LOG_D(NR_RRC,"(%i): %i\n", i, buffer_pP[i]);
-      }
-
-      return Srb0->srb_buffers.Tx_buffer.payload_size;
-
-    case DCCH:
-      AssertFatal(1==0, "SRB1 not implemented yet!\n");
-    case DCCH1:
-      AssertFatal(1==0, "SRB2 not implemented yet!\n");
-    default:
-      AssertFatal(1==0, "Invalid SRB id!\n");
-  }
-
-  return 0;
+  MessageDef *message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_MSG3_IND);
+  NR_RRC_MAC_MSG3_IND (message_p).rnti = rnti;
+  itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(mod_id), message_p);
 }
 
 void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success)

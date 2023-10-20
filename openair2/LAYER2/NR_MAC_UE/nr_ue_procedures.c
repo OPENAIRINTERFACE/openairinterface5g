@@ -3598,7 +3598,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
           break;
         }
 
-        if ( mac_len > 0 ) {
+        if (mac_len > 0) {
           LOG_D(NR_MAC,"DL_SCH_LCID_CCCH (e.g. RRCSetup) with payload len %d\n", mac_len);
           for (int i = 0; i < mac_subheader_len; i++) {
             LOG_D(NR_MAC, "MAC header %d: 0x%x\n", i, pduP[i]);
@@ -3606,7 +3606,18 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
           for (int i = 0; i < mac_len; i++) {
             LOG_D(NR_MAC, "%d: 0x%x\n", i, pduP[mac_subheader_len + i]);
           }
-          nr_mac_rrc_data_ind_ue(module_idP, CC_id, gNB_index, frameP, 0, mac->crnti, CCCH, pduP+mac_subheader_len, mac_len);
+
+          mac_rlc_data_ind(module_idP,
+                           mac->crnti,
+                           module_idP,
+                           frameP,
+                           ENB_FLAG_NO,
+                           MBMS_FLAG_NO,
+                           0,
+                           (char *)(pduP + mac_subheader_len),
+                           mac_len,
+                           1,
+                           NULL);
         }
         break;
       case DL_SCH_LCID_TCI_STATE_ACT_UE_SPEC_PDSCH:
@@ -4112,7 +4123,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
     LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
     LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 
-    LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d t_crnti %x \n",
+    LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d\n",
       __FUNCTION__,
       frame,
       slot,
@@ -4122,8 +4133,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
       ta_command,
       rar_grant.mcs,
       rar_grant.freq_hopping,
-      tpc_command,
-      ra->t_crnti);
+      tpc_command);
 #endif
 
     // Schedule Msg3
@@ -4135,7 +4145,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
     }
     ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, tda_info.k2);
 
-    if (ret != -1){
+    if (ret != -1) {
 
       fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx, tda_info.k2);
       uint16_t rnti = mac->crnti;
@@ -4151,6 +4161,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
       if (!ra->cfra) {
         ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
         rnti = ra->t_crnti;
+        send_msg3_rrc_request(mod_id, rnti);
       }
 
       pthread_mutex_lock(&ul_config->mutex_ul_config);

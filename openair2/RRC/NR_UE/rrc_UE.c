@@ -616,12 +616,12 @@ int nr_decode_SI(const module_id_t module_id, const uint8_t gNB_index, NR_System
   return 0;
 }
 
-int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
-
-  switch(NR_UE_rrc_inst[module_id].ra_trigger){
+void nr_rrc_ue_generate_ra_msg(module_id_t module_id, int rnti)
+{
+  switch(NR_UE_rrc_inst[module_id].ra_trigger) {
     case INITIAL_ACCESS_FROM_RRC_IDLE:
       // After SIB1 is received, prepare RRCConnectionRequest
-      nr_rrc_ue_generate_RRCSetupRequest(module_id,gNB_index);
+      nr_rrc_ue_generate_RRCSetupRequest(module_id, rnti);
       break;
     case RRC_CONNECTION_REESTABLISHMENT:
       AssertFatal(1==0, "ra_trigger not implemented yet!\n");
@@ -648,8 +648,27 @@ int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
       AssertFatal(1==0, "Invalid ra_trigger value!\n");
       break;
   }
+}
 
-  return 0;
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, int rnti)
+{
+  uint8_t rv[6];
+  // Get RRCConnectionRequest, fill random for now
+  // Generate random byte stream for contention resolution
+  for (int i = 0; i < 6; i++) {
+#ifdef SMBV
+    // if SMBV is configured the contention resolution needs to be fix for the connection procedure to succeed
+    rv[i] = i;
+#else
+    rv[i] = taus() & 0xff;
+#endif
+  }
+
+  uint8_t buf[1024];
+  int len = do_RRCSetupRequest(module_id, buf, sizeof(buf), rv);
+
+  /* convention: RNTI for SRB0 is zero, as it changes all the time */
+  nr_rlc_srb_recv_sdu(rnti, 0, buf, len);
 }
 
 void nr_rrc_configure_default_SI(NR_UE_RRC_SI_INFO *SI_info,
@@ -732,7 +751,6 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
         // take ServingCellConfigCommon and configure L1/L2
         rrc->servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
         nr_rrc_mac_config_req_sib1(module_id, 0, sib1->si_SchedulingInfo, sib1->servingCellConfigCommon);
-        nr_rrc_ue_generate_ra_msg(module_id, gNB_index);
         break;
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
         LOG_I(NR_RRC, "[UE %"PRIu8"] Decoding SI\n", module_id);
@@ -966,7 +984,7 @@ static void rrc_ue_generate_RRCSetupComplete(const protocol_ctxt_t *const ctxt_p
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, srb_id, nr_rrc_mui++, size, buffer, deliver_pdu_srb_rlc, NULL);
 }
 
-int8_t nr_rrc_ue_decode_ccch(const protocol_ctxt_t *const ctxt_pP, const NR_UE_RRC_SRB_INFO_t *Srb_info, const uint8_t gNB_index)
+static int8_t nr_rrc_ue_decode_ccch(const protocol_ctxt_t *const ctxt_pP, const uint8_t *buf, int len, const uint8_t gNB_index)
 {
   NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[ctxt_pP->module_id];
   NR_DL_CCCH_Message_t *dl_ccch_msg=NULL;
@@ -976,21 +994,15 @@ int8_t nr_rrc_ue_decode_ccch(const protocol_ctxt_t *const ctxt_pP, const NR_UE_R
   LOG_D(RRC,
         "[NR UE%d] Decoding DL-CCCH message (%d bytes), State %d\n",
         ctxt_pP->module_id,
-        Srb_info->srb_buffers.Rx_buffer.payload_size,
+        len,
         rrc->nrRrcState);
-  dec_rval = uper_decode(NULL,
-                         &asn_DEF_NR_DL_CCCH_Message,
-                         (void **)&dl_ccch_msg,
-                         (uint8_t *)Srb_info->srb_buffers.Rx_buffer.Payload,
-                         Srb_info->srb_buffers.Rx_buffer.payload_size,
-                         0,
-                         0);
 
-  //	 if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-  xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)dl_ccch_msg);
-  //	 }
+  dec_rval = uper_decode(NULL, &asn_DEF_NR_DL_CCCH_Message, (void **)&dl_ccch_msg, buf, len, 0, 0);
 
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+  if (LOG_DEBUGFLAG(DEBUG_ASN1))
+    xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)dl_ccch_msg);
+
+  if (dec_rval.code != RC_OK && dec_rval.consumed == 0) {
     LOG_E(RRC,
           "[UE %d] Frame %d : Failed to decode DL-CCCH-Message (%zu bytes)\n",
           ctxt_pP->module_id,
@@ -1290,41 +1302,6 @@ void nr_rrc_ue_process_securityModeCommand(const protocol_ctxt_t *const ctxt_pP,
   } else
     LOG_W(NR_RRC,"securityModeCommand->criticalExtensions.present (%d) != NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand\n",
           securityModeCommand->criticalExtensions.present);
-}
-
-void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
-{
-  uint8_t rv[6];
-  NR_UE_RRC_SRB_INFO_t *Srb0 = &NR_UE_rrc_inst[module_id].Srb[gNB_index][0];
-  if (Srb0->srb_buffers.Tx_buffer.payload_size == 0) {
-    // Get RRCConnectionRequest, fill random for now
-    // Generate random byte stream for contention resolution
-    for (int i = 0; i < 6; i++) {
-#ifdef SMBV
-      // if SMBV is configured the contention resolution needs to be fix for the connection procedure to succeed
-      rv[i] = i;
-#else
-      rv[i] = taus() & 0xff;
-#endif
-      LOG_T(NR_RRC, "%x.", rv[i]);
-    }
-
-    LOG_T(NR_RRC, "\n");
-    Srb0->srb_buffers.Tx_buffer.payload_size = do_RRCSetupRequest(module_id,
-                                                                  (uint8_t *)Srb0->srb_buffers.Tx_buffer.Payload,
-                                                                  sizeof(Srb0->srb_buffers.Tx_buffer.Payload),
-                                                                  rv);
-    LOG_I(NR_RRC,
-          "[UE %d] : Logical Channel UL-CCCH (SRB0), Generating RRCSetupRequest (bytes %d, gNB %d)\n",
-          module_id,
-          Srb0->srb_buffers.Tx_buffer.payload_size,
-          gNB_index);
-
-    for (int i = 0; i < Srb0->srb_buffers.Tx_buffer.payload_size; i++)
-      LOG_T(NR_RRC, "%x.", Srb0->srb_buffers.Tx_buffer.Payload[i]);
-
-    LOG_T(NR_RRC, "\n");
-  }
 }
 
  //-----------------------------------------------------------------------------
@@ -1799,8 +1776,17 @@ void *rrc_nrue_task(void *args_p)
          nr_rrc_SI_timers(SInfo);
          break;
 
+       case NR_RRC_MAC_MSG3_IND:
+         PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_NO, NR_RRC_MAC_MSG3_IND (msg_p).rnti, 0, 0);
+         LOG_D(NR_RRC, "[UE %d] Received %s for RNTI %d\n",
+               ue_mod_id,
+               ITTI_MSG_NAME (msg_p),
+               NR_RRC_MAC_MSG3_IND (msg_p).rnti);
+         nr_rrc_ue_generate_ra_msg(ue_mod_id, NR_RRC_MAC_MSG3_IND (msg_p).rnti);
+         break;
+
        case NR_RRC_MAC_RA_IND:
-         LOG_D(NR_RRC, "[UE %d] Received %s: frame %d\n RA %s",
+         LOG_D(NR_RRC, "[UE %d] Received %s: frame %d RA %s\n",
                ue_mod_id,
                ITTI_MSG_NAME (msg_p),
                NR_RRC_MAC_RA_IND (msg_p).frame,
@@ -1828,18 +1814,11 @@ void *rrc_nrue_task(void *args_p)
          break;
 
        case NR_RRC_MAC_CCCH_DATA_IND:
-         LOG_D(NR_RRC, "[UE %d] RNTI %x Received %s: frameP %d, gNB %d\n",
-               ue_mod_id,
-               NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti,
-               ITTI_MSG_NAME (msg_p),
-               NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame,
-               NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
-         NR_UE_RRC_SRB_INFO_t *srb0 = &NR_UE_rrc_inst[ue_mod_id].Srb[NR_RRC_MAC_CCCH_DATA_IND(msg_p).gnb_index][0];
-         memcpy(srb0->srb_buffers.Rx_buffer.Payload, NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu, NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
-         srb0->srb_buffers.Rx_buffer.payload_size = NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size;
-         PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0);
-         // PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0, NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
-         nr_rrc_ue_decode_ccch(&ctxt, srb0, NR_RRC_MAC_CCCH_DATA_IND(msg_p).gnb_index);
+         PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, 0, 0);
+         nr_rrc_ue_decode_ccch(&ctxt,
+                               NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu,
+                               NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size,
+                               /* gNB_index = */ 0);
          break;
 
       /* PDCP messages */
