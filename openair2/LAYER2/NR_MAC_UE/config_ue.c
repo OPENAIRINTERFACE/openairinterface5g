@@ -812,6 +812,8 @@ void nr_rrc_mac_config_req_scg(module_id_t module_id,
   if (scell_group_config->spCellConfig->reconfigurationWithSync)
     handle_reconfiguration_with_sync(mac, module_id, cc_idP, scell_group_config->spCellConfig->reconfigurationWithSync);
   configure_current_BWP(mac, NULL, scell_group_config);
+  if (!mac->dl_config_request || !mac->ul_config_request)
+    ue_init_config_request(mac, mac->current_DL_BWP.scs);
   // Setup the SSB to Rach Occasions mapping according to the config
   build_ssb_to_ro_map(mac);
 }

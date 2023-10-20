@@ -944,14 +944,15 @@ void *UE_thread(void *arg)
 
 void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconfig_file)
 {
-  int inst;
   NR_UE_MAC_INST_t *mac_inst;
   NR_UE_RRC_INST_t* rrc_inst;
   
-  for (inst=0; inst < nb_inst; inst++) {
-    AssertFatal((rrc_inst = nr_l3_init_ue(uecap_file, reconfig_file, rbconfig_file)) != NULL, "can not initialize RRC module\n");
+  for (int inst = 0; inst < nb_inst; inst++) {
+    AssertFatal((rrc_inst = nr_l3_init_ue(uecap_file)) != NULL, "can not initialize RRC module\n");
     AssertFatal((mac_inst = nr_l2_init_ue(rrc_inst)) != NULL, "can not initialize L2 module\n");
     AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initialize IF module\n");
+    if (!get_softmodem_params()->sa)
+      init_nsa_message(rrc_inst, reconfig_file, rbconfig_file);
   }
 }
 

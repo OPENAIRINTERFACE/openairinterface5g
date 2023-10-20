@@ -63,11 +63,9 @@ void send_msg3_rrc_request(module_id_t mod_id, int rnti)
   nr_mac_rrc_msg3_ind(mod_id, rnti);
 }
 
-NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
-
-    //LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
-
-    //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
+NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
+{
+    LOG_I(NR_MAC, "MAIN: init UE MAC functions \n");
     
     //init mac here
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(NB_NR_UE_MAC_INST, sizeof(NR_UE_MAC_INST_t));
@@ -75,17 +73,11 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     for (int j = 0; j < NB_NR_UE_MAC_INST; j++)
       nr_ue_init_mac(j);
 
-    int scs = get_softmodem_params()->sa ?
-              get_softmodem_params()->numerology :
-              rrc_inst ?
-              *rrc_inst->scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon->ssbSubcarrierSpacing :
-              - 1;
-    if (scs > -1)
-      ue_init_config_request(nr_ue_mac_inst, scs);
+    if (get_softmodem_params()->sa)
+      ue_init_config_request(nr_ue_mac_inst, get_softmodem_params()->numerology);
 
     if (rrc_inst && rrc_inst->scell_group_config) {
 
-      nr_rrc_mac_config_req_scg(0, 0, rrc_inst->scell_group_config);
       int rc = rlc_module_init(0);
       AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
       nr_rlc_activate_srb0(nr_ue_mac_inst->crnti, NULL, send_srb0_rrc);

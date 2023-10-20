@@ -257,8 +257,10 @@ static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
           if (get_softmodem_params()->nsa) {
             nr_rrc_mac_config_req_scg(0, 0, secondCellGroupConfig);
           }
-        } else
+        } else {
+          nr_rrc_mac_config_req_scg(0, 0, secondCellGroupConfig);
           nr_rrc_ue_decode_secondary_cellgroup_config(rrc, secondCellGroupConfig);
+        }
       }
       if (ie->measConfig != NULL) {
         LOG_I(NR_RRC, "Measurement Configuration is present\n");
@@ -283,7 +285,7 @@ static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
   return;
 }
 
-static void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, void *message, int msg_len)
+void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, void *message, int msg_len)
 {
   switch (nsa_message_type) {
     case nr_SecondaryCellGroupConfig_r15:
@@ -341,7 +343,7 @@ static void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message
   }
 }
 
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* reconfig_file, char* rbconfig_file)
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file)
 {
   if(NB_NR_UE_INST > 0) {
     NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)calloc(NB_NR_UE_INST , sizeof(NR_UE_RRC_INST_t));
@@ -367,35 +369,6 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* reconfig_fi
     }
 
     NR_UE_rrc_inst->uecap_file = uecap_file;
-
-    if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1) {
-      // read in files for RRCReconfiguration and RBconfig
-
-      LOG_I(NR_RRC, "using %s for rrc init[1/2]\n", reconfig_file);
-      FILE *fd = fopen(reconfig_file,"r");
-      AssertFatal(fd,
-                  "cannot read file %s: errno %d, %s\n",
-                  reconfig_file,
-                  errno,
-                  strerror(errno));
-      char buffer[1024];
-      int msg_len=fread(buffer,1,1024,fd);
-      fclose(fd);
-      process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
-
-      LOG_I(NR_RRC, "using %s for rrc init[2/2]\n", rbconfig_file);
-      fd = fopen(rbconfig_file,"r");
-      AssertFatal(fd,
-                  "cannot read file %s: errno %d, %s\n",
-                  rbconfig_file,
-                  errno,
-                  strerror(errno));
-      msg_len=fread(buffer,1,1024,fd);
-      fclose(fd);
-      process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len);
-    } else if (get_softmodem_params()->nsa) {
-      LOG_D(NR_RRC, "In NSA mode \n");
-    }
 
     if (get_softmodem_params()->sl_mode) {
       configure_NR_SL_Preconfig(get_softmodem_params()->sync_ref);

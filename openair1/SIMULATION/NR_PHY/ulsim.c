@@ -695,6 +695,8 @@ int main(int argc, char *argv[])
   nr_l2_init_ue(&rrcue);
 
   NR_UE_MAC_INST_t* UE_mac = get_mac_inst(0);
+
+  ue_init_config_request(UE_mac, mu);
   
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
