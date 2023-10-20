@@ -1367,10 +1367,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const int ntx_req = TX_req->Number_of_PDUs;
     nfapi_nr_pdu_t *tx_req = &TX_req->pdu_list[ntx_req];
-    tx_req->PDU_length = TBS;
     tx_req->PDU_index  = pduindex;
     tx_req->num_TLV = 1;
-    tx_req->TLVs[0].length = TBS + 2;
+    tx_req->TLVs[0].length = TBS;
+    tx_req->PDU_length = compute_PDU_length(tx_req->num_TLV, tx_req->TLVs[0].length);
     memcpy(tx_req->TLVs[0].value.direct, harq->transportBlock, TBS);
     TX_req->Number_of_PDUs++;
     TX_req->SFN = frame;

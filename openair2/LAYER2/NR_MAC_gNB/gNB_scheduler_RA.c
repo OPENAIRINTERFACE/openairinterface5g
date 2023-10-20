@@ -1399,10 +1399,10 @@ static void nr_generate_Msg2(module_id_t module_idP,
     T(T_GNB_MAC_DL_RAR_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(ra->RA_rnti), T_INT(frameP),
       T_INT(slotP), T_INT(0), T_BUFFER(&tx_req->TLVs[0].value.direct[0], tx_req->TLVs[0].length));
 
-    tx_req->PDU_length = pdsch_pdu_rel15->TBSize[0];
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;
-    tx_req->TLVs[0].length = tx_req->PDU_length + 2;
+    tx_req->TLVs[0].length = pdsch_pdu_rel15->TBSize[0];
+    tx_req->PDU_length = compute_PDU_length(tx_req->num_TLV, pdsch_pdu_rel15->TBSize[0]);
     TX_req->SFN = frameP;
     TX_req->Number_of_PDUs++;
     TX_req->Slot = slotP;
@@ -1845,10 +1845,10 @@ static void nr_generate_Msg4(module_id_t module_idP,
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &TX_req->pdu_list[TX_req->Number_of_PDUs];
     memcpy(tx_req->TLVs[0].value.direct, harq->transportBlock, sizeof(uint8_t) * harq->tb_size);
-    tx_req->PDU_length =  harq->tb_size;
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;
-    tx_req->TLVs[0].length =  harq->tb_size + 2;
+    tx_req->TLVs[0].length =  harq->tb_size;
+    tx_req->PDU_length = compute_PDU_length(tx_req->num_TLV, tx_req->TLVs[0].length);
     TX_req->SFN = frameP;
     TX_req->Number_of_PDUs++;
     TX_req->Slot = slotP;

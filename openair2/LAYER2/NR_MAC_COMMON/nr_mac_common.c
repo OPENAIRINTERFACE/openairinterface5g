@@ -5364,3 +5364,11 @@ uint16_t nr_get_csi_bitlen(nr_csi_report_t *csi_report_template, uint8_t csi_rep
 
   return csi_bitlen;
 }
+
+uint16_t compute_PDU_length(uint32_t num_TLV, uint16_t total_length)
+{
+  uint8_t pdu_length = 8; // 2 bytes PDU_Length + 2 bytes PDU_Index + 4 bytes num_TLV
+  // For each TLV, add 2 bytes tag + 2 bytes length + value size without padding
+  pdu_length += (num_TLV * 4) + total_length;
+  return pdu_length;
+}
