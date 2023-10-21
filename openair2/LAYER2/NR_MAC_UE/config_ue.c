@@ -753,6 +753,19 @@ void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
   mac->crnti = reconfigurationWithSync->newUE_Identity;
   LOG_I(NR_MAC, "Configuring CRNTI %x\n", mac->crnti);
   config_common_ue(mac, scc, module_id, cc_idP);
+
+  mac->state = UE_NOT_SYNC;
+  ra->ra_state = RA_UE_IDLE;
+  nr_ue_mac_default_configs(mac);
+
+  if (!get_softmodem_params()->emulate_l1) {
+    mac->synch_request.Mod_id = module_id;
+    mac->synch_request.CC_id = cc_idP;
+    mac->synch_request.synch_req.target_Nid_cell = mac->physCellId;
+    mac->if_module->synch_request(&mac->synch_request);
+    mac->if_module->phy_config_request(&mac->phy_config);
+    mac->phy_config_request_sent = true;
+  }
 }
 
 void nr_rrc_mac_config_req_mcg(module_id_t module_id,
@@ -778,23 +791,7 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
 
   if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
     LOG_A(NR_MAC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
-
     handle_reconfiguration_with_sync(mac, module_id, cc_idP, cell_group_config->spCellConfig->reconfigurationWithSync);
-
-    mac->state = UE_NOT_SYNC;
-    mac->ra.ra_state = RA_UE_IDLE;
-    nr_ue_mac_default_configs(mac);
-
-    if (!get_softmodem_params()->emulate_l1) {
-      mac->synch_request.Mod_id = module_id;
-      mac->synch_request.CC_id = cc_idP;
-      mac->synch_request.synch_req.target_Nid_cell = mac->physCellId;
-      mac->if_module->synch_request(&mac->synch_request);
-      mac->if_module->phy_config_request(&mac->phy_config);
-      mac->phy_config_request_sent = true;
-    }
-    // Setup the SSB to Rach Occasions mapping according to the config
-    build_ssb_to_ro_map(mac);
   }
   configure_current_BWP(mac, NULL, cell_group_config);
 }

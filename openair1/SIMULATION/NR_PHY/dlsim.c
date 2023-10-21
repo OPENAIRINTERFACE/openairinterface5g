@@ -835,7 +835,6 @@ int main(int argc, char **argv)
   UE->chest_time = chest_type[1];
 
   UE_mac->if_module = nr_ue_if_module_init(0);
-  UE_mac->state = UE_CONNECTED;
 
   unsigned int available_bits=0;
   unsigned char *estimated_output_bit;
@@ -854,6 +853,9 @@ int main(int argc, char **argv)
   NR_BCCH_BCH_Message_t *mib = get_new_MIB_NR(scc);
   nr_rrc_mac_config_req_mib(0, 0, mib->message.choice.mib, false);
   nr_rrc_mac_config_req_scg(0, 0, secondaryCellGroup);
+
+  UE_mac->state = UE_CONNECTED;
+  UE_mac->ra.ra_state = RA_SUCCEEDED;
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
