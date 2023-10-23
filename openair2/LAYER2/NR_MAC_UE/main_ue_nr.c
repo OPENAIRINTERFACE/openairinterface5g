@@ -76,7 +76,7 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst)
     if (get_softmodem_params()->sa)
       ue_init_config_request(nr_ue_mac_inst, get_softmodem_params()->numerology);
 
-    if (rrc_inst && rrc_inst->scell_group_config) {
+    if (get_softmodem_params()->do_ra || get_softmodem_params()->phy_test) {
 
       int rc = rlc_module_init(0);
       AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);

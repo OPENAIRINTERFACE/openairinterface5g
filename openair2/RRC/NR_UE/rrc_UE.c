@@ -162,20 +162,6 @@ static void nr_rrc_ue_process_masterCellGroup(instance_t instance,
 
 void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const measConfig);
 
-// from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
-static int8_t nr_rrc_ue_decode_secondary_cellgroup_config(NR_UE_RRC_INST_t *rrc, NR_CellGroupConfig_t *cell_group_config)
-{
-  if (rrc->scell_group_config == NULL)
-    rrc->scell_group_config = cell_group_config;
-  else
-    SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
-
-  if(cell_group_config->spCellConfig != NULL)
-    configure_spcell(rrc, cell_group_config->spCellConfig);
-
-  return 0;
-}
-
 static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
                                                  int gNB_index,
                                                  rnti_t rnti,
@@ -217,10 +203,10 @@ static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
       }
 
       if (ie->secondaryCellGroup != NULL) {
-        NR_CellGroupConfig_t *secondCellGroupConfig = NULL;
+        NR_CellGroupConfig_t *cellGroupConfig = NULL;
         asn_dec_rval_t dec_rval = uper_decode(NULL,
                                               &asn_DEF_NR_CellGroupConfig, // might be added prefix later
-                                              (void **)&secondCellGroupConfig,
+                                              (void **)&cellGroupConfig,
                                               (uint8_t *)ie->secondaryCellGroup->buf,
                                               ie->secondaryCellGroup->size,
                                               0,
@@ -232,35 +218,18 @@ static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
             LOG_E(NR_RRC, "%02x ", buffer[i]);
           LOG_E(NR_RRC, "\n");
           // free the memory
-          SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)secondCellGroupConfig, 1);
-          return;
+          SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 1);
         }
+
         if (LOG_DEBUGFLAG(DEBUG_ASN1))
-          xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *)secondCellGroupConfig);
+          xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
 
-        if (get_softmodem_params()->sa || get_softmodem_params()->nsa) {
-          // remote NB index lost ????
-          nr_rrc_manage_rlc_bearers(instance, secondCellGroupConfig, rrc->perNB + 0, rrc->rnti);
-          if (rrc->cell_group_config == NULL) {
-            //  first time receive the configuration, just use the memory allocated from uper_decoder. TODO this is not good
-            //  implementation, need to maintain RRC_INST own structure every time.
-            rrc->cell_group_config = secondCellGroupConfig;
-          } else {
-            //  after first time, update it and free the memory after.
-            SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)rrc->cell_group_config, 0);
-            rrc->cell_group_config = secondCellGroupConfig;
-          }
+        nr_rrc_cellgroup_configuration(rrcNB,
+                                       instance,
+                                       cellGroupConfig);
 
-          if (secondCellGroupConfig->spCellConfig != NULL)
-            configure_spcell(rrc, secondCellGroupConfig->spCellConfig);
-
-          if (get_softmodem_params()->nsa) {
-            nr_rrc_mac_config_req_scg(0, 0, secondCellGroupConfig);
-          }
-        } else {
-          nr_rrc_mac_config_req_scg(0, 0, secondCellGroupConfig);
-          nr_rrc_ue_decode_secondary_cellgroup_config(rrc, secondCellGroupConfig);
-        }
+        if (!get_softmodem_params()->sa)
+          nr_rrc_mac_config_req_scg(0, 0, cellGroupConfig);
       }
       if (ie->measConfig != NULL) {
         LOG_I(NR_RRC, "Measurement Configuration is present\n");
@@ -281,7 +250,6 @@ static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
     default:
       break;
   }
-
   return;
 }
 
@@ -352,8 +320,8 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file)
       // fill UE-NR-Capability @ UE-CapabilityRAT-Container here.
       rrc->selected_plmn_identity = 1;
 
-      rrc->bwpd = NULL;
-      rrc->ubwpd = NULL;
+      rrc->dl_bwp_id = 0;
+      rrc->ul_bwp_id = 0;
       rrc->as_security_activated = false;
 
       for (int i = 0; i < NB_CNX_UE; i++) {
@@ -362,7 +330,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file)
         for (int j = 0; j < NR_NUM_SRB; j++)
           ptr->Srb[j] = (NR_UE_RRC_SRB_INFO_t){0};
         for (int j = 0; j < MAX_DRBS_PER_UE; j++)
-          ptr->active_DRBs[j] = false;
+          ptr->status_DRBs[j] = RB_NOT_PRESENT;
         // SRB0 activated by default
         ptr->Srb[0].status = RB_ESTABLISHED;
       }
@@ -800,13 +768,82 @@ static void nr_rrc_manage_rlc_bearers(const instance_t instance,
                                                 cellGroupConfig->rlc_BearerToReleaseList);
 }
 
+void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB,
+                                    instance_t instance,
+                                    NR_CellGroupConfig_t *cellGroupConfig)
+{
+  NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
+  if(rrc->cell_group_config == NULL)
+    rrc->cell_group_config = cellGroupConfig;
+  else {
+    ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, rrc->cell_group_config);
+    rrc->cell_group_config = cellGroupConfig;
+  }
+
+  NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
+
+  NR_SpCellConfig_t *spCellConfig = cellGroupConfig->spCellConfig;
+  if(spCellConfig != NULL) {
+    if (spCellConfig->reconfigurationWithSync != NULL) {
+      NR_ReconfigurationWithSync_t *reconfigurationWithSync = spCellConfig->reconfigurationWithSync;
+      // perform Reconfiguration with sync according to 5.3.5.5.2
+      if (!rrc->as_security_activated && rrc->nrRrcState != RRC_STATE_IDLE_NR) {
+        // perform the actions upon going to RRC_IDLE as specified in 5.3.11
+        // with the release cause 'other' upon which the procedure ends
+        // TODO
+      }
+      if (tac->T310_active) {
+        tac->T310_active = false;
+        tac->T310_cnt = 0;
+      }
+      nr_rrc_set_T304(&rrc->timers_and_constants, reconfigurationWithSync);
+      tac->T304_active = true;
+      tac->T304_cnt = 0;
+      rrc->rnti = reconfigurationWithSync->newUE_Identity;
+      // resume suspended radio bearers
+      for (int i = 0; i < NR_NUM_SRB; i++) {
+        if (rrcNB->Srb[i].status == RB_SUSPENDED)
+          rrcNB->Srb[i].status = RB_ESTABLISHED;
+      }
+      for (int i = 0; i < MAX_DRBS_PER_UE; i++) {
+        if (rrcNB->status_DRBs[i] == RB_SUSPENDED)
+          rrcNB->status_DRBs[i] = RB_ESTABLISHED;
+      }
+      // TODO reset MAC
+    }
+    nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(rrc, spCellConfig->rlf_TimersAndConstants);
+    if (spCellConfig->spCellConfigDedicated) {
+      if (spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id)
+        rrc->dl_bwp_id = *spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
+      if (spCellConfig->spCellConfigDedicated->uplinkConfig &&
+          spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id)
+        rrc->dl_bwp_id = *spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id;
+    }
+  }
+
+  if(cellGroupConfig->mac_CellGroupConfig != NULL) {
+    // TODO handle MAC CellGroupConfig
+  }
+
+  // TODO verify why we need this limitation
+  if (get_softmodem_params()->sa || get_softmodem_params()->nsa)
+    nr_rrc_manage_rlc_bearers(instance, cellGroupConfig, rrcNB, rrc->rnti);
+
+  AssertFatal(cellGroupConfig->sCellToReleaseList == NULL,
+              "Secondary serving cell release not implemented\n");
+
+  AssertFatal(cellGroupConfig->sCellToAddModList == NULL,
+              "Secondary serving cell addition not implemented\n");
+}
+
+
 static void nr_rrc_ue_process_masterCellGroup(instance_t instance,
                                               rnti_t rnti,
                                               rrcPerNB_t *rrcNB,
                                               OCTET_STRING_t *masterCellGroup,
                                               long *fullConfig)
 {
-  NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
+  AssertFatal(!fullConfig, "fullConfig not supported yet\n");
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
   uper_decode(NULL,
               &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
@@ -818,116 +855,12 @@ static void nr_rrc_ue_process_masterCellGroup(instance_t instance,
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
   }
 
-  if(rrc->cell_group_config == NULL){
-    rrc->cell_group_config = calloc(1,sizeof(NR_CellGroupConfig_t));
-  }
-  nr_rrc_manage_rlc_bearers(instance, cellGroupConfig, rrcNB, rnti);
+  nr_rrc_cellgroup_configuration(rrcNB,
+                                 instance,
+                                 cellGroupConfig);
 
-  if(cellGroupConfig->mac_CellGroupConfig != NULL){
-    //TODO (configure the MAC entity of this cell group as specified in 5.3.5.5.5)
-    LOG_I(RRC, "Received mac_CellGroupConfig from gNB\n");
-    if(rrc->cell_group_config->mac_CellGroupConfig != NULL){
-      LOG_E(RRC, "UE RRC instance already contains mac CellGroupConfig which will be overwritten\n");
-      // Laurent: there are cases where the not NULL value is also not coming from a previous malloc
-      // so it is better to let the potential memory leak than corrupting the heap
-      //free(rrc->cell_group_config->mac_CellGroupConfig);
-    }
-    rrc->cell_group_config->mac_CellGroupConfig = malloc(sizeof(struct NR_MAC_CellGroupConfig));
-    memcpy(rrc->cell_group_config->mac_CellGroupConfig,cellGroupConfig->mac_CellGroupConfig,
-                     sizeof(struct NR_MAC_CellGroupConfig));
-  }
-
-  if(cellGroupConfig->sCellToReleaseList != NULL) {
-    //TODO (perform SCell release as specified in 5.3.5.5.8)
-  }
-
-  if(cellGroupConfig->spCellConfig != NULL) {
-    configure_spcell(rrc, cellGroupConfig->spCellConfig);
-    // TS 38.331 - Section 5.3.5.5.2 Reconfiguration with sync
-    if (cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL) {
-      if(fullConfig)
-        set_default_timers_and_constants(&rrc->timers_and_constants);
-      LOG_A(NR_RRC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
-      NR_ReconfigurationWithSync_t *reconfigurationWithSync = cellGroupConfig->spCellConfig->reconfigurationWithSync;
-      rrc->timers_and_constants.T304_active = true;
-      nr_rrc_set_T304(&rrc->timers_and_constants, reconfigurationWithSync);
-      // TODO: Implementation of the remaining procedures regarding the reception of the reconfigurationWithSync, TS 38.331 - Section 5.3.5.5.2
-    }
-
-    if (rrc->cell_group_config &&
-        rrc->cell_group_config->spCellConfig) {
-      memcpy(rrc->cell_group_config->spCellConfig,cellGroupConfig->spCellConfig,
-             sizeof(struct NR_SpCellConfig));
-    } else {
-      if (rrc->cell_group_config)
-        rrc->cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
-      else
-        rrc->cell_group_config = cellGroupConfig;
-    }
-    LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
-    nr_rrc_mac_config_req_mcg(instance, 0, cellGroupConfig);
-  }
-
-  if(fullConfig)
-   // full configuration after re-establishment or during RRC resume
-   nr_rrc_set_sib1_timers_and_constants(&rrc->timers_and_constants, rrcNB->SInfo.sib1);
-
-  if( cellGroupConfig->sCellToAddModList != NULL){
-    //TODO (perform SCell addition/modification as specified in 5.3.5.5.9)
-  }
-
-  if(cellGroupConfig->ext2 != NULL && cellGroupConfig->ext2->bh_RLC_ChannelToReleaseList_r16 != NULL){
-    //TODO (perform the BH RLC channel addition/modification as specified in 5.3.5.5.11)
-  }
-
-  if(cellGroupConfig->ext2 != NULL && cellGroupConfig->ext2->bh_RLC_ChannelToAddModList_r16 != NULL){
-    //TODO (perform the BH RLC channel addition/modification as specified in 5.3.5.5.11)
-  }
-}
-
-static void configure_spcell(NR_UE_RRC_INST_t *rrc, NR_SpCellConfig_t *spcell_config)
-{
-  nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(rrc, spcell_config->rlf_TimersAndConstants);
-
-  if(spcell_config->spCellConfigDedicated) {
-    NR_ServingCellConfig_t *scd = spcell_config->spCellConfigDedicated;
-    if(scd->firstActiveDownlinkBWP_Id) {
-      if(*scd->firstActiveDownlinkBWP_Id == 0)
-        rrc->bwpd = scd->initialDownlinkBWP;
-      else {
-        AssertFatal(scd->downlinkBWP_ToAddModList, "No DL BWP list configured\n");
-        const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = scd->downlinkBWP_ToAddModList;
-        NR_BWP_Downlink_t *dl_bwp = NULL;
-        for (int i = 0; i < bwpList->list.count; i++) {
-          dl_bwp = bwpList->list.array[i];
-          if(dl_bwp->bwp_Id == *scd->firstActiveDownlinkBWP_Id)
-            break;
-        }
-        AssertFatal(dl_bwp != NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n", *scd->firstActiveDownlinkBWP_Id);
-        rrc->bwpd = dl_bwp->bwp_Dedicated;
-      }
-      // if any of the reference signal(s) that are used for radio link monitoring are reconfigured by the received spCellConfigDedicated
-      // reset RLF timers and constants
-      if (rrc->bwpd->radioLinkMonitoringConfig)
-        reset_rlf_timers_and_constants(&rrc->timers_and_constants);
-    }
-    if(scd->uplinkConfig && scd->uplinkConfig->firstActiveUplinkBWP_Id) {
-      if(*scd->uplinkConfig->firstActiveUplinkBWP_Id == 0)
-        rrc->ubwpd = scd->uplinkConfig->initialUplinkBWP;
-      else {
-        AssertFatal(scd->uplinkConfig->uplinkBWP_ToAddModList, "No UL BWP list configured\n");
-        const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = scd->uplinkConfig->uplinkBWP_ToAddModList;
-        NR_BWP_Uplink_t *ul_bwp = NULL;
-        for (int i = 0; i < ubwpList->list.count; i++) {
-          ul_bwp = ubwpList->list.array[i];
-          if(ul_bwp->bwp_Id == *scd->uplinkConfig->firstActiveUplinkBWP_Id)
-            break;
-        }
-        AssertFatal(ul_bwp != NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n", *scd->uplinkConfig->firstActiveUplinkBWP_Id);
-        rrc->ubwpd = ul_bwp->bwp_Dedicated;
-      }
-    }
-  }
+  LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
+  nr_rrc_mac_config_req_mcg(instance, 0, cellGroupConfig);
 }
 
 static void rrc_ue_generate_RRCSetupComplete(instance_t instance, rnti_t rnti, const uint8_t Transaction_id, uint8_t sel_plmn_id)
@@ -998,7 +931,7 @@ static int8_t nr_rrc_ue_decode_ccch(const instance_t instance,
          // Get configuration
          // Release T300 timer
          rrc->timers_and_constants.T300_active = 0;
-
+         rrc->rnti = rnti;
          nr_rrc_ue_process_masterCellGroup(
              instance,
              rnti,
@@ -1011,7 +944,7 @@ static int8_t nr_rrc_ue_decode_ccch(const instance_t instance,
              rrc->perNB + gNB_index,
              &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
          rrc->nrRrcState = RRC_STATE_CONNECTED_NR;
-         rrc->rnti = rnti;
+
          rrc_ue_generate_RRCSetupComplete(instance,
                                           rnti,
                                           dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier,
@@ -1330,7 +1263,7 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
     for (int cnt = 0; cnt < radioBearerConfig->drb_ToAddModList->list.count; cnt++) {
       struct NR_DRB_ToAddMod *drb = radioBearerConfig->drb_ToAddModList->list.array[cnt];
       int DRB_id = drb->drb_Identity;
-      if (rrcNB->active_DRBs[DRB_id]) {
+      if (rrcNB->status_DRBs[DRB_id] == RB_ESTABLISHED) {
         AssertFatal(drb->reestablishPDCP == NULL, "reestablishPDCP not yet implemented\n");
         AssertFatal(drb->recoverPDCP == NULL, "recoverPDCP not yet implemented\n");
         if (drb->pdcp_Config && drb->pdcp_Config->t_Reordering)
@@ -1338,7 +1271,7 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
         if (drb->cnAssociation)
           AssertFatal(drb->cnAssociation->choice.sdap_Config == NULL, "SDAP reconfiguration not yet implemented\n");
       } else {
-        rrcNB->active_DRBs[DRB_id] = true;
+        rrcNB->status_DRBs[DRB_id] = RB_ESTABLISHED;
         add_drb(false,
                 rnti,
                 radioBearerConfig->drb_ToAddModList->list.array[cnt],

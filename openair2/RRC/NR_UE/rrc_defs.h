@@ -191,7 +191,7 @@ typedef struct rrcPerNB {
   NR_MeasIdToAddMod_t *MeasId[MAX_MEAS_ID];
   NR_MeasGapConfig_t *measGapConfig;
   NR_UE_RRC_SRB_INFO_t Srb[NR_NUM_SRB];
-  bool active_DRBs[MAX_DRBS_PER_UE];
+  NR_RB_status_t status_DRBs[MAX_DRBS_PER_UE];
   bool active_RLC_entity[NR_MAX_NUM_LCID];
   NR_UE_RRC_SI_INFO SInfo;
   NR_RSRP_Range_t s_measure;
@@ -201,7 +201,6 @@ typedef struct NR_UE_RRC_INST_s {
   NR_MeasConfig_t        *meas_config;
   NR_CellGroupConfig_t   *cell_group_config;
   NR_ServingCellConfigCommonSIB_t *servingCellConfigCommonSIB;
-  NR_CellGroupConfig_t   *scell_group_config;
   NR_RadioBearerConfig_t *radio_bearer_config;
 
   rrcPerNB_t perNB[NB_CNX_UE];
@@ -215,9 +214,8 @@ typedef struct NR_UE_RRC_INST_s {
 
   // NR_MIB_t *mib;
 
-  // active BWPs
-  NR_BWP_DownlinkDedicated_t *bwpd;
-  NR_BWP_UplinkDedicated_t *ubwpd;
+  NR_BWP_Id_t dl_bwp_id;
+  NR_BWP_Id_t ul_bwp_id;
 
   /* KeNB as computed from parameters within USIM card */
   uint8_t kgnb[32];
