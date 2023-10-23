@@ -41,6 +41,17 @@
 
 const uint8_t slotsperframe[5] = {10, 20, 40, 80, 160};
 
+static NR_BWP_t clone_generic_parameters(const NR_BWP_t *gp)
+{
+  NR_BWP_t clone = {0};
+  clone.locationAndBandwidth = gp->locationAndBandwidth;
+  clone.subcarrierSpacing = gp->subcarrierSpacing;
+  if (gp->cyclicPrefix) {
+    asn1cCallocOne(clone.cyclicPrefix, *gp->cyclicPrefix);
+  }
+  return clone;
+}
+
 static NR_SearchSpace_t *rrc_searchspace_config(bool is_common, int searchspaceid, int coresetid)
 {
 
@@ -1811,7 +1822,7 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc, c
   // servingCellConfigCommon
   asn1cCalloc(sib1->servingCellConfigCommon, ServCellCom);
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP = &ServCellCom->downlinkConfigCommon.initialDownlinkBWP;
-  initialDownlinkBWP->genericParameters = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+  initialDownlinkBWP->genericParameters = clone_generic_parameters(&scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters);
 
   const NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
   for (int i = 0; i < frequencyInfoDL->frequencyBandList.list.count; i++) {
@@ -1897,7 +1908,7 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc, c
     }
   }
 
-  UL->initialUplinkBWP.genericParameters = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  UL->initialUplinkBWP.genericParameters = clone_generic_parameters(&scc->uplinkConfigCommon->initialUplinkBWP->genericParameters);
   UL->initialUplinkBWP.rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
   UL->initialUplinkBWP.pusch_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon;
   UL->initialUplinkBWP.pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding = NULL;
