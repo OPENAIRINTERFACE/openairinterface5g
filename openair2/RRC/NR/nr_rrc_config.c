@@ -52,6 +52,23 @@ static NR_BWP_t clone_generic_parameters(const NR_BWP_t *gp)
   return clone;
 }
 
+static NR_SetupRelease_RACH_ConfigCommon_t *clone_rach_configcommon(const NR_SetupRelease_RACH_ConfigCommon_t *rcc)
+{
+  if (rcc == NULL || rcc->present == NR_SetupRelease_RACH_ConfigCommon_PR_NOTHING)
+    return NULL;
+  NR_SetupRelease_RACH_ConfigCommon_t *clone = calloc_or_fail(1, sizeof(*clone));
+  clone->present = rcc->present;
+  if (clone->present == NR_SetupRelease_RACH_ConfigCommon_PR_release)
+    return clone;
+
+  uint8_t buf[1024];
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_RACH_ConfigCommon, NULL, rcc->choice.setup, buf, sizeof(buf));
+  AssertFatal(enc_rval.encoded > 0 && enc_rval.encoded < sizeof(buf), "could not clone NR_RACH_ConfigCommon: problem while encoding\n");
+  asn_dec_rval_t dec_rval = uper_decode(NULL, &asn_DEF_NR_RACH_ConfigCommon, (void **)&clone->choice.setup, buf, enc_rval.encoded, 0, 0);
+  AssertFatal(dec_rval.code == RC_OK && dec_rval.consumed == enc_rval.encoded, "could not clone NR_RACH_ConfigCommon: problem while decoding\n");
+  return clone;
+}
+
 static NR_SetupRelease_PUSCH_ConfigCommon_t *clone_pusch_configcommon(const NR_SetupRelease_PUSCH_ConfigCommon_t *pcc)
 {
   if (pcc == NULL || pcc->present == NR_SetupRelease_PUSCH_ConfigCommon_PR_NOTHING)
@@ -1316,8 +1333,7 @@ static void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   }
 
   int curr_bwp = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-
-  ubwp->bwp_Common->rach_ConfigCommon  = is_SA ? NULL : scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
+  ubwp->bwp_Common->rach_ConfigCommon  = is_SA ? NULL : clone_rach_configcommon(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon);
   ubwp->bwp_Common->pusch_ConfigCommon = clone_pusch_configcommon(scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon);
   ubwp->bwp_Common->pucch_ConfigCommon = CALLOC(1,sizeof(struct NR_SetupRelease_PUCCH_ConfigCommon));
   ubwp->bwp_Common->pucch_ConfigCommon->present= NR_SetupRelease_PUCCH_ConfigCommon_PR_setup;
@@ -1943,7 +1959,7 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc, c
   }
 
   UL->initialUplinkBWP.genericParameters = clone_generic_parameters(&scc->uplinkConfigCommon->initialUplinkBWP->genericParameters);
-  UL->initialUplinkBWP.rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
+  UL->initialUplinkBWP.rach_ConfigCommon = clone_rach_configcommon(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon);
   UL->initialUplinkBWP.pusch_ConfigCommon = clone_pusch_configcommon(scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon);
   free(UL->initialUplinkBWP.pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding);
   UL->initialUplinkBWP.pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding = NULL;
