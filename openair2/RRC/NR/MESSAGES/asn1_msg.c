@@ -772,7 +772,8 @@ int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
 }
 
 
-uint8_t do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv) {
+int do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv)
+{
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
   NR_UL_CCCH_Message_t ul_ccch_msg;

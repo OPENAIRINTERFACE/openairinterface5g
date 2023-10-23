@@ -151,8 +151,8 @@ void mac_rlc_data_ind(const module_id_t  module_idP,
     rb->set_time(rb, nr_rlc_current_time);
     rb->recv_pdu(rb, buffer_pP, tb_sizeP);
   } else {
-    LOG_E(RLC, "%s:%d:%s: fatal: no RB found (channel ID %d)\n",
-          __FILE__, __LINE__, __FUNCTION__, channel_idP);
+    LOG_E(RLC, "Fatal: no RB found (channel ID %d RNTI %d)\n",
+          channel_idP, rntiP);
     // exit(1);
   }
 
@@ -729,7 +729,7 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
   int t_reassembly;
   int sn_field_length;
 
-  LOG_D(RLC,"Trying to add SRB %d\n",srb_id);
+  LOG_D(RLC, "Trying to add SRB %d\n", srb_id);
   AssertFatal(srb_id > 0 && srb_id < 4,
               "Invalid srb id %d\n", srb_id);
 
@@ -792,7 +792,7 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
                                                       sn_field_length);
     nr_rlc_ue_add_srb_rlc_entity(ue, srb_id, nr_rlc_am);
 
-    LOG_I(RLC, "%s:%d:%s: added srb %d to UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+    LOG_I(RLC, "Added srb %d to UE with RNTI 0x%x\n", srb_id, rnti);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
@@ -963,31 +963,27 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 }
 
 struct srb0_data {
-  struct gNB_MAC_INST_s *mac;
   int rnti;
-  void *rawUE;
-  void (*send_initial_ul_rrc_message)(struct gNB_MAC_INST_s *mac,
-                                      int                    rnti,
+  void *data;
+  void (*send_initial_ul_rrc_message)(int                    rnti,
                                       const uint8_t         *sdu,
                                       sdu_size_t             sdu_len,
-                                      void                  *rawUE);
+                                      void                  *data);
 };
 
 void deliver_sdu_srb0(void *deliver_sdu_data, struct nr_rlc_entity_t *entity,
                       char *buf, int size)
 {
   struct srb0_data *s0 = (struct srb0_data *)deliver_sdu_data;
-  s0->send_initial_ul_rrc_message(s0->mac, s0->rnti, (unsigned char *)buf,
-                                  size, s0->rawUE);
+  s0->send_initial_ul_rrc_message(s0->rnti, (unsigned char *)buf, size, s0->data);
 }
 
-void nr_rlc_activate_srb0(int rnti, struct gNB_MAC_INST_s *mac, void *rawUE,
+void nr_rlc_activate_srb0(int rnti, void *data,
                           void (*send_initial_ul_rrc_message)(
-                                     struct gNB_MAC_INST_s *mac,
                                      int                    rnti,
                                      const uint8_t         *sdu,
                                      sdu_size_t             sdu_len,
-                                     void                  *rawUE))
+                                     void                  *data))
 {
   nr_rlc_entity_t            *nr_rlc_tm;
   nr_rlc_ue_t                *ue;
@@ -996,9 +992,8 @@ void nr_rlc_activate_srb0(int rnti, struct gNB_MAC_INST_s *mac, void *rawUE,
   srb0_data = calloc(1, sizeof(struct srb0_data));
   AssertFatal(srb0_data != NULL, "out of memory\n");
 
-  srb0_data->mac       = mac;
   srb0_data->rnti      = rnti;
-  srb0_data->rawUE     = rawUE;
+  srb0_data->data      = data;
   srb0_data->send_initial_ul_rrc_message = send_initial_ul_rrc_message;
 
   nr_rlc_manager_lock(nr_rlc_ue_manager);

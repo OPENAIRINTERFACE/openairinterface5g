@@ -54,16 +54,17 @@ fi
 ###############################
 ## echo and  family
 ###############################
-black='\E[30m'
-red='\E[31m'
-green='\E[32m'
-yellow='\E[33m'
-blue='\E[1;34m'
-magenta='\E[35m'
-cyan='\E[36m'
-white='\E[37m'
-reset_color='\E[00m'
-COLORIZE=1
+# only emit color if connected to a terminal, and if it supports colors
+if [ -t 1 ]; then
+  num_colors=$(tput colors)
+  if [ -n "$num_colors" ] && [ "$num_colors" -ge 8 ]; then
+    red='\E[31m'
+    green='\E[32m'
+    yellow='\E[33m'
+    blue='\E[1;34m'
+    reset_color='\E[00m'
+  fi
+fi
 
 cecho()  {
     # Color-echo
@@ -72,8 +73,7 @@ cecho()  {
     local default_msg="No Message."
     message=${1:-$default_msg}
     color=${2:-$green}
-    [ "$COLORIZE" = "1" ] && message="$color$message$reset_color"
-    echo -e "$message"
+    echo -e "$color$message$reset_color"
     return
 }
 
@@ -685,6 +685,15 @@ install_simde_from_source(){
     $SUDO rm -rf /tmp/simde
     git clone https://github.com/simd-everywhere/simde-no-tests.git /tmp/simde
     cd /tmp/simde
+    # we can specify a given version of SIMDE (sha-one or tag)
+    if [[ -v SIMDE_VERSION ]]; then
+      git checkout -f $SIMDE_VERSION
+    else
+      # At time of writing, last working commit for OAI
+      git checkout 389f360a66d4a3bec62b7d71ad8be877487809ba
+    fi
+    # Showing which version is used
+    git log -n1
     # brute force copy into /usr/include
     $SUDO \cp -rv ../simde /usr/include
 }

@@ -233,7 +233,7 @@ static int allocCirBuf(rfsimulator_state_t *bridge, int sock)
     }
     char *modelname = (bridge->role == SIMU_ROLE_SERVER) ? "rfsimu_channel_ue0" : "rfsimu_channel_enB0";
     ptr->channel_model = find_channel_desc_fromname(modelname); // path_loss in dB
-    if (ptr->channel_model != NULL) {
+    if (!ptr->channel_model) {
       LOG_E(HW, "Channel model %s not found, check config file\n", modelname);
       return -1;
     }
