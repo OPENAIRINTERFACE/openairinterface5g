@@ -1280,8 +1280,8 @@ static void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   struct NR_PUCCH_ConfigCommon *pucch_ConfigCommon = ubwp->bwp_Common->pucch_ConfigCommon->choice.setup;
   pucch_ConfigCommon->pucch_ResourceCommon = NULL; // for BWP != 0 as per 38.213 section 9.2.1
   pucch_ConfigCommon->pucch_GroupHopping = scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping;
-  pucch_ConfigCommon->hoppingId = scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId;
-  pucch_ConfigCommon->p0_nominal = scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal;
+  asn1cCallocOne(pucch_ConfigCommon->hoppingId, *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId);
+  asn1cCallocOne(pucch_ConfigCommon->p0_nominal, *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal);
 
   if (!ubwp->bwp_Dedicated) {
     ubwp->bwp_Dedicated = calloc(1,sizeof(*ubwp->bwp_Dedicated));
