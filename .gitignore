@@ -9,8 +9,11 @@ cmake_targets/nas_sim_tools/build/
 log/
 lte_build_oai/
 
-# vscode
+# IDE files
 .vscode
+.cproject
+.project
+.settings
 
 # Tags for vim/global
 GPATH
