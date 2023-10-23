@@ -33,7 +33,6 @@ def gitCommitAuthorEmailAddr
 
 // list of failing stages
 def failingStages = ""
-def lockForMessage = 'Parent-Lock'
 
 pipeline {
   agent {
@@ -728,7 +727,7 @@ def triggerSlaveJobNoGitLab (jobName) {
 }
 
 def finalizeSlaveJob(jobName) {
-  lock (lockForMessage) {
+  lock ('Parent-Lock') {
     // In case of any non-success, we are retrieving the HTML report of the last completed
     // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
     if (jobName == 'OAI-CN5G-COTS-UE-Test') {
