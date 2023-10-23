@@ -67,13 +67,9 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
                                                    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
                                                    struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list);
 
-void nr_rrc_mac_config_req_scg(module_id_t module_id,
-                               int cc_idP,
-                               NR_CellGroupConfig_t *scell_group_config);
-
-void nr_rrc_mac_config_req_mcg(module_id_t module_id,
-                               int cc_idP,
-                               NR_CellGroupConfig_t *scell_group_config);
+void nr_rrc_mac_config_req_cg(module_id_t module_id,
+                              int cc_idP,
+                              NR_CellGroupConfig_t *cell_group_config);
 
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
                                int cc_idP,

@@ -564,8 +564,11 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
     }
     if (mac->bwp_ulcommon->pucch_ConfigCommon)
       UL_BWP->pucch_ConfigCommon = mac->bwp_ulcommon->pucch_ConfigCommon->choice.setup;
-    if (mac->bwp_ulcommon->rach_ConfigCommon)
+    if (mac->bwp_ulcommon->rach_ConfigCommon) {
       UL_BWP->rach_ConfigCommon = mac->bwp_ulcommon->rach_ConfigCommon->choice.setup;
+      // Setup the SSB to Rach Occasions mapping according to the config
+      build_ssb_to_ro_map(mac);
+    }
     if (mac->bwp_dlcommon->pdcch_ConfigCommon)
       configure_ss_coreset(mac, mac->bwp_dlcommon->pdcch_ConfigCommon->choice.setup, NULL);
   }
@@ -641,8 +644,11 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         UL_BWP->configuredGrantConfig = bwp_uplink->bwp_Dedicated->configuredGrantConfig ? bwp_uplink->bwp_Dedicated->configuredGrantConfig->choice.setup : NULL;
         if (bwp_uplink->bwp_Common->pucch_ConfigCommon)
           UL_BWP->pucch_ConfigCommon = bwp_uplink->bwp_Common->pucch_ConfigCommon->choice.setup;
-        if (bwp_uplink->bwp_Common->rach_ConfigCommon)
+        if (bwp_uplink->bwp_Common->rach_ConfigCommon) {
           UL_BWP->rach_ConfigCommon = bwp_uplink->bwp_Common->rach_ConfigCommon->choice.setup;
+          // Setup the SSB to Rach Occasions mapping according to the config
+          build_ssb_to_ro_map(mac);
+        }
       }
       else {
         UL_BWP->tdaList_Common = mac->bwp_ulcommon->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -726,8 +732,6 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
   if(mac->state < UE_CONNECTED)
     configure_current_BWP(mac, scc, NULL);
 
-  // Setup the SSB to Rach Occasionsif (cell_group_config->spCellConfig) { mapping according to the config
-  build_ssb_to_ro_map(mac);
   if (!get_softmodem_params()->emulate_l1)
     mac->if_module->phy_config_request(&mac->phy_config);
   mac->phy_config_request_sent = true;
@@ -768,49 +772,26 @@ void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
   }
 }
 
-void nr_rrc_mac_config_req_mcg(module_id_t module_id,
-                               int cc_idP,
-                               NR_CellGroupConfig_t *cell_group_config)
+void nr_rrc_mac_config_req_cg(module_id_t module_id,
+                              int cc_idP,
+                              NR_CellGroupConfig_t *cell_group_config)
 {
   LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
   AssertFatal(cell_group_config, "CellGroupConfig should not be NULL\n");
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   mac->cg = cell_group_config;
+
   if (cell_group_config->spCellConfig)
     mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
   else
     mac->servCellIndex = 0;
   mac->crossCarrierSchedulingConfig = cell_group_config->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig;
-  mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
-  mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
-  mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
-  LOG_D(MAC, "[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
-        module_id,
-        mac->scheduling_info.periodicBSR_SF,
-        mac->scheduling_info.retxBSR_SF);
 
   if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
     LOG_A(NR_MAC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
     handle_reconfiguration_with_sync(mac, module_id, cc_idP, cell_group_config->spCellConfig->reconfigurationWithSync);
   }
   configure_current_BWP(mac, NULL, cell_group_config);
-}
-
-void nr_rrc_mac_config_req_scg(module_id_t module_id,
-                               int cc_idP,
-                               NR_CellGroupConfig_t *scell_group_config)
-{
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  AssertFatal(scell_group_config, "scell_group_config cannot be NULL\n");
-
-  mac->cg = scell_group_config;
-  mac->servCellIndex = *scell_group_config->spCellConfig->servCellIndex;
-  mac->crossCarrierSchedulingConfig = scell_group_config->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig;
-  if (scell_group_config->spCellConfig->reconfigurationWithSync)
-    handle_reconfiguration_with_sync(mac, module_id, cc_idP, scell_group_config->spCellConfig->reconfigurationWithSync);
-  configure_current_BWP(mac, NULL, scell_group_config);
   if (!mac->dl_config_request || !mac->ul_config_request)
     ue_init_config_request(mac, mac->current_DL_BWP.scs);
-  // Setup the SSB to Rach Occasions mapping according to the config
-  build_ssb_to_ro_map(mac);
 }

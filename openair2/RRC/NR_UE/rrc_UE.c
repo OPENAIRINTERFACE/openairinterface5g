@@ -229,7 +229,7 @@ static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
                                        cellGroupConfig);
 
         if (!get_softmodem_params()->sa)
-          nr_rrc_mac_config_req_scg(0, 0, cellGroupConfig);
+          nr_rrc_mac_config_req_cg(0, 0, cellGroupConfig);
       }
       if (ie->measConfig != NULL) {
         LOG_I(NR_RRC, "Measurement Configuration is present\n");
@@ -709,7 +709,6 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(instance_t instance,
         // configure timers and constant
         nr_rrc_set_sib1_timers_and_constants(&rrc->timers_and_constants, sib1);
         // take ServingCellConfigCommon and configure L1/L2
-        rrc->servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
         nr_rrc_mac_config_req_sib1(instance, 0, sib1->si_SchedulingInfo, sib1->servingCellConfigCommon);
         break;
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
@@ -773,13 +772,6 @@ void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB,
                                     NR_CellGroupConfig_t *cellGroupConfig)
 {
   NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
-  if(rrc->cell_group_config == NULL)
-    rrc->cell_group_config = cellGroupConfig;
-  else {
-    ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, rrc->cell_group_config);
-    rrc->cell_group_config = cellGroupConfig;
-  }
-
   NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
 
   NR_SpCellConfig_t *spCellConfig = cellGroupConfig->spCellConfig;
@@ -860,7 +852,7 @@ static void nr_rrc_ue_process_masterCellGroup(instance_t instance,
                                  cellGroupConfig);
 
   LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
-  nr_rrc_mac_config_req_mcg(instance, 0, cellGroupConfig);
+  nr_rrc_mac_config_req_cg(instance, 0, cellGroupConfig);
 }
 
 static void rrc_ue_generate_RRCSetupComplete(instance_t instance, rnti_t rnti, const uint8_t Transaction_id, uint8_t sel_plmn_id)
