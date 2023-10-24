@@ -158,6 +158,8 @@ Options:
   Enable the memory sanitizer on all targets. Requires clang, and is
   incompatible with ASan/UBSan. To build, issue:
   CC=/usr/bin/clang CXX=/usr/bin/clang++ ./build_oai ... --sanitize-memory
+--sanitize-thread | -fsanitize=thread
+  Enable the thread sanitizer on all targets
 -h | --help
    Print this help"
 }
@@ -416,6 +418,9 @@ function main() {
             CMAKE_CMD="$CMAKE_CMD -DTRACE_ASN1C_ENC_DEC=ON"
             echo_info "Enabling asn1c internal traces via OAI logging system"
             shift 1;;
+        --sanitize-thread | -fthread=address)
+            CMAKE_CMD="$CMAKE_CMD -DSANITIZE_THREAD=True"
+            shift;;
         -h | --help)
             print_help
             exit 1;;
