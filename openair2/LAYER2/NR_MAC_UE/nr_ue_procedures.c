@@ -893,7 +893,6 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
   fapi_nr_dl_config_request_pdu_t *dl_conf_req = &dl_config->dl_config_list[dl_config->number_pdus];
 
-  dl_conf_req->pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
   dl_conf_req->dlsch_config_pdu.rnti = dci_ind->rnti;
 
   fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu = &dl_conf_req->dlsch_config_pdu.dlsch_config_rel15;
@@ -1114,12 +1113,6 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
                   dci_ind->N_CCE,
                   frame,
                   slot);
-
-  dl_conf_req->pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
-  LOG_D(MAC, "(nr_ue_procedures.c) pdu_type=%d\n\n", dl_conf_req->pdu_type);
-
-  dl_config->number_pdus++; // The DCI configuration is valid, we add it in the list
-
   // send the ack/nack slot number to phy to indicate tx thread to wait for DLSCH decoding
   dlsch_pdu->k1_feedback = feedback_ti;
 
@@ -1175,7 +1168,8 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
     }
   }
   // the prepared dci is valid, we add it in the list
-  dl_config->number_pdus++;
+  dl_conf_req->pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+  dl_config->number_pdus++; // The DCI configuration is valid, we add it in the list
   return 0;
 }
 
