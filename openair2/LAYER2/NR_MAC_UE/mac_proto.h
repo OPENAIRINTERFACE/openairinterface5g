@@ -78,7 +78,7 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 int cc_idP,
-                                struct NR_SI_SchedulingInfo *si_SchedulingInfo,
+                                NR_SI_SchedulingInfo_t *si_SchedulingInfo,
                                 NR_ServingCellConfigCommonSIB_t *scc);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
@@ -86,8 +86,7 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst);
 
 /**\brief fetch MAC instance by module_id, within 0 - (NB_NR_UE_MAC_INST-1)
    \param module_id index of MAC instance(s)*/
-NR_UE_MAC_INST_t *get_mac_inst(
-    module_id_t module_id);
+NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id);
 
 /**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.

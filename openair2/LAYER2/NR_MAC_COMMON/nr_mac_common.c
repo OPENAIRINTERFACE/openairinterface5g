@@ -3279,6 +3279,7 @@ uint16_t get_rb_bwp_dci(nr_dci_format_t format,
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
                      NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig,
+                     long pdsch_HARQ_ACK_Codebook,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
@@ -3376,7 +3377,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         size += 1;
       }
       // 1st DAI
-      if (DL_BWP->pdsch_HARQ_ACK_Codebook && *DL_BWP->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
+      if (pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
         dci_pdu->dai[0].nbits = 2;
       else
         dci_pdu->dai[0].nbits = 1;
@@ -3548,7 +3549,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       // HARQ PID
       size += 4;
       // DAI
-      if (DL_BWP->pdsch_HARQ_ACK_Codebook && *DL_BWP->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) { // FIXME in case of more than one serving cell
+      if (pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) { // FIXME in case of more than one serving cell
         dci_pdu->dai[0].nbits = 2;
         size += dci_pdu->dai[0].nbits;
       }
@@ -4734,7 +4735,7 @@ uint16_t compute_pucch_prb_size(uint8_t format,
 }
 
 int get_dlbw_tbslbrm(int scc_bwpsize,
-                     NR_ServingCellConfig_t *servingCellConfig)
+                     const NR_ServingCellConfig_t *servingCellConfig)
 {
   int bw = scc_bwpsize;
   if (servingCellConfig) {
@@ -4752,7 +4753,7 @@ int get_dlbw_tbslbrm(int scc_bwpsize,
 }
 
 int get_ulbw_tbslbrm(int scc_bwpsize,
-                     NR_ServingCellConfig_t *servingCellConfig)
+                     const NR_ServingCellConfig_t *servingCellConfig)
 {
   int bw = scc_bwpsize;
   if (servingCellConfig) {

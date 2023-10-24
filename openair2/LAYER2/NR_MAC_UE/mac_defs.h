@@ -447,6 +447,9 @@ typedef struct {
   NR_BWP_DownlinkCommon_t *bwp_dlcommon;
   NR_BWP_UplinkCommon_t *bwp_ulcommon;
 
+  bool harq_ACK_SpatialBundlingPUCCH;
+  bool harq_ACK_SpatialBundlingPUSCH;
+
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
 
   NR_SearchSpace_t *otherSI_SS;
@@ -513,7 +516,10 @@ typedef struct {
   uint8_t PHR_reporting_active;
 
   int dmrs_TypeA_Position;
-  NR_P_Max_t *p_Max;
+  int p_Max;
+  int p_Max_alt;
+
+  long pdsch_HARQ_ACK_Codebook;
 
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
   frequency_range_t frequency_range;

@@ -169,6 +169,9 @@ void nr_ue_init_mac(module_id_t module_idP)
   mac->phy_config_request_sent = false;
   mac->state = UE_NOT_SYNC;
   mac->si_window_start = -1;
+  mac->servCellIndex = 0;
+  memset(&mac->current_DL_BWP, 0, sizeof(mac->current_DL_BWP));
+  memset(&mac->current_UL_BWP, 0, sizeof(mac->current_UL_BWP));
 }
 
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
@@ -1361,7 +1364,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
     NR_PUCCH_Resource_t *pucchres = pucch->pucch_resource;
 
-    if (current_UL_BWP->harq_ACK_SpatialBundlingPUCCH != NULL || *current_DL_BWP->pdsch_HARQ_ACK_Codebook != 1) {
+    if (mac->harq_ACK_SpatialBundlingPUCCH ||
+        mac->pdsch_HARQ_ACK_Codebook != NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) {
       LOG_E(MAC,"PUCCH Unsupported cell group configuration\n");
       return;
     } else if (current_DL_BWP && current_DL_BWP->pdsch_servingcellconfig && current_DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
@@ -2875,6 +2879,11 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                           current_DL_BWP->initial_BWPSize);
   else
     N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
+
+  if (N_RB == 0) {
+    LOG_E(MAC, "DCI configuration error! N_RB = 0\n");
+    return 1;
+  }
 
   switch(dci_format) {
 

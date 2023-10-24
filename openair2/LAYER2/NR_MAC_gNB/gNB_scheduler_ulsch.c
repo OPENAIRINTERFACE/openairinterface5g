@@ -2394,6 +2394,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
                        current_BWP->bwp_id,
                        ss,
                        coreset,
+                       UE->pdsch_HARQ_ACK_Codebook,
                        nr_mac->cset0_bwp_size);
 
     memset(sched_pusch, 0, sizeof(*sched_pusch));
