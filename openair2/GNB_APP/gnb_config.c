@@ -970,6 +970,28 @@ static NR_ServingCellConfigCommon_t *get_scc_config(int minRXTXTIME)
     fix_scc(scc, ssb_bitmap);
   }
   nr_rrc_config_ul_tda(scc, minRXTXTIME);
+
+  // the gNB uses the servingCellConfigCommon everywhere, even when it should use the servingCellConfigCommonSIB.
+  // previously (before this commit), the following fields were indirectly populated through get_SIB1_NR().
+  // since this might lead to memory problems (e.g., double frees), it has been moved here.
+  // note that the "right solution" would be to not populate the servingCellConfigCommon here, and use
+  // an "abstraction struct" that contains the corresponding values, from which SCC/SIB1/... is generated.
+  NR_PDCCH_ConfigCommon_t *pcc = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup;
+  AssertFatal(pcc != NULL && pcc->commonSearchSpaceList == NULL, "memory leak\n");
+  pcc->commonSearchSpaceList = calloc_or_fail(1, sizeof(*pcc->commonSearchSpaceList));
+
+  NR_SearchSpace_t *ss1 = rrc_searchspace_config(true, 1, 0);
+  asn1cSeqAdd(&pcc->commonSearchSpaceList->list, ss1);
+  NR_SearchSpace_t *ss2 = rrc_searchspace_config(true, 2, 0);
+  asn1cSeqAdd(&pcc->commonSearchSpaceList->list, ss2);
+  NR_SearchSpace_t *ss3 = rrc_searchspace_config(true, 3, 0);
+  asn1cSeqAdd(&pcc->commonSearchSpaceList->list, ss3);
+
+  asn1cCallocOne(pcc->searchSpaceSIB1,  0);
+  asn1cCallocOne(pcc->ra_SearchSpace, 1);
+  asn1cCallocOne(pcc->pagingSearchSpace, 2);
+  asn1cCallocOne(pcc->searchSpaceOtherSystemInformation, 3);
+
   return scc;
 }
 
