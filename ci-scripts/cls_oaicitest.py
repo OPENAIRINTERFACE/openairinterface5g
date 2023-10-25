@@ -1358,7 +1358,10 @@ class OaiCiTest():
 			for instance in range(0, len(CONTAINERS.yamlPath)):
 				if CONTAINERS.yamlPath[instance]!='':
 					CONTAINERS.eNB_instance=instance
-					CONTAINERS.UndeployObject(HTML,RAN)
+					if CONTAINERS.deployKind[instance]:
+						CONTAINERS.UndeployObject(HTML,RAN)
+					else:
+						CONTAINERS.UndeployGenObject(HTML,RAN, self)
 		RAN.prematureExit=True
 
 	#this function is called only if eNB/gNB fails to start
@@ -1385,7 +1388,10 @@ class OaiCiTest():
 			for instance in range(0, len(CONTAINERS.yamlPath)):
 				if CONTAINERS.yamlPath[instance]!='':
 					CONTAINERS.eNB_instance=instance
-					CONTAINERS.UndeployObject(HTML,RAN)
+					if CONTAINERS.deployKind[instance]:
+						CONTAINERS.UndeployObject(HTML,RAN)
+					else:
+						CONTAINERS.UndeployGenObject(HTML,RAN,self)
 		RAN.prematureExit=True
 
 	def IdleSleep(self,HTML):
