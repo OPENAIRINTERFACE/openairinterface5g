@@ -57,5 +57,6 @@ void createE1inst(E1_t type, instance_t instance, e1ap_net_config_t *nc, e1ap_se
 int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, struct E1AP_E1AP_PDU *pdu, uint16_t stream, const char *func);
 
 void e1ap_common_init();
+void cuup_init_n3(instance_t instance);
 
 #endif /* E1AP_COMMON_H_ */

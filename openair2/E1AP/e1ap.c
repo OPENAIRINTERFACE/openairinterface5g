@@ -23,7 +23,6 @@
 
 #include "e1ap.h"
 #include "e1ap_common.h"
-#include "e1ap_api.h"
 #include "gnb_config.h"
 #include "openair2/SDAP/nr_sdap/nr_sdap_entity.h"
 #include "openair3/UTILS/conversions.h"
