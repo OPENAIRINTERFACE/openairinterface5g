@@ -666,9 +666,9 @@ void nr_generate_pucch2(const PHY_VARS_NR_UE *ue,
   printf("\t [nr_generate_pucch2] start function at slot(nr_slot_tx)=%d  with payload=%lu and nr_bit=%d\n",nr_slot_tx, pucch_pdu->payload, pucch_pdu->n_bit);
 #endif
   // b is the block of bits transmitted on the physical channel after payload coding
-  uint64_t b[16]; // limit to 1024-bit encoded length
+  uint64_t b[16] = {0}; // limit to 1024-bit encoded length
   // M_bit is the number of bits of block b (payload after encoding)
-  uint16_t M_bit;
+  uint16_t M_bit = 0;
   nr_uci_encoding(pucch_pdu->payload,
                   pucch_pdu->n_bit,
                   2,0,
@@ -687,7 +687,8 @@ void nr_generate_pucch2(const PHY_VARS_NR_UE *ue,
    * n_id = {0,1,...,1023}  equals the higher-layer parameter Data-scrambling-Identity if configured
    * n_id = N_ID_cell       if higher layer parameter not configured
    */
-  uint8_t *btilde = malloc(sizeof(int8_t)*M_bit);
+  uint8_t *btilde = calloc(M_bit, sizeof(uint8_t));
+
   // rnti is given by the C-RNTI
   uint16_t rnti=pucch_pdu->rnti;
 #ifdef DEBUG_NR_PUCCH_TX
@@ -716,8 +717,8 @@ void nr_generate_pucch2(const PHY_VARS_NR_UE *ue,
    */
   //#define ONE_OVER_SQRT2_S 23171 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
   // complex-valued symbol d(0)
-  int16_t *d_re = malloc(sizeof(int16_t)*M_bit);
-  int16_t *d_im = malloc(sizeof(int16_t)*M_bit);
+  int16_t *d_re = calloc(M_bit, sizeof(int16_t));
+  int16_t *d_im = calloc(M_bit, sizeof(int16_t));
   uint16_t m_symbol = (M_bit%2==0) ? M_bit/2 : floor(M_bit/2)+1;
 
   for (int i=0; i < m_symbol; i++) { // QPSK modulation subclause 5.1.3

@@ -1065,8 +1065,8 @@ int allocate_REs_in_RB_pilots_QPSK_tm2(PHY_VARS_eNB* phy_vars_eNB,
     first_re=6;
   re=first_re;
   x0p=&x0[*jj];
-  uint64_t tmp0[4];
-  uint64_t tmp1[4];
+  uint64_t tmp0[4] = {0};
+  uint64_t tmp1[4] = {0};
 
   qam4_table_offset=(((uint32_t)x0p[0]))|
 	             (((uint32_t)x0p[1])<<1)|
@@ -1338,8 +1338,8 @@ int allocate_REs_in_RB_pilots_16QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
     first_re=6;
   re=first_re;
   x0p=&x0[*jj];
-  uint64_t tmp0[4];
-  uint64_t tmp1[4];
+  uint64_t tmp0[4] = {0};
+  uint64_t tmp1[4] = {0};
 
   qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
                      (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
@@ -1503,8 +1503,8 @@ int allocate_REs_in_RB_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
 
 
   x0p=&x0[*jj];
-  uint64_t tmp0[4];
-  uint64_t tmp1[4];
+  uint64_t tmp0[4] = {0};
+  uint64_t tmp1[4] = {0};
 
   // 12-bits corresponds to 2 64QAM symbols input which generates 2 64QAM symbols on 2 TX antenna ports
   qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
@@ -1691,7 +1691,8 @@ int allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
   int16_t re_off=re_offset;
 
   uint8_t first_re,last_re;
-  int32_t tmp_sample1,tmp_sample2;
+  int32_t tmp_sample1 = 0;
+  int32_t tmp_sample2 = 0;
   int16_t tmp_amp=amp;
   int s=1;
   int mprime2 = mprime,ind,ind_dword,ind_qpsk_symb;

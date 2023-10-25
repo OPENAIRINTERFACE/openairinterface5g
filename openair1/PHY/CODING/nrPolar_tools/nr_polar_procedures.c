@@ -396,9 +396,9 @@ void nr_polar_rate_matching_pattern(uint16_t *rmp,
 				    uint16_t E)
 {
   uint8_t i;
-  uint16_t *d, *y, ind;
+  uint16_t *d, ind;
   d = (uint16_t *)malloc(sizeof(uint16_t) * N);
-  y = (uint16_t *)malloc(sizeof(uint16_t) * N);
+  uint16_t* y = calloc(N, sizeof(uint16_t));
 
   for (int m=0; m<=N-1; m++) d[m]=m;
 
@@ -416,11 +416,11 @@ void nr_polar_rate_matching_pattern(uint16_t *rmp,
   } else {
     if ( (K/(double)E) <= (7.0/16) ) { //puncturing
       for (int k=0; k<=E-1; k++) {
-	rmp[k]=y[k+N-E];
+        rmp[k]=y[k+N-E];
       }
     } else { //shortening
       for (int k=0; k<=E-1; k++) {
-	rmp[k]=y[k];
+        rmp[k]=y[k];
       }
     }
   }
