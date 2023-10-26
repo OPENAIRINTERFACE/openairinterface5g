@@ -476,11 +476,11 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
-  PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *) * MAX_NUM_CCs);
+  PHY_vars_UE_g = malloc(sizeof(*PHY_vars_UE_g));
+  PHY_vars_UE_g[0] = malloc(sizeof(*PHY_vars_UE_g[0]) * MAX_NUM_CCs);
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    PHY_vars_UE_g[0][CC_id] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
-    memset(PHY_vars_UE_g[0][CC_id], 0, sizeof(PHY_VARS_NR_UE));
+    PHY_vars_UE_g[0][CC_id] = malloc(sizeof(*PHY_vars_UE_g[0][CC_id]));
+    memset(PHY_vars_UE_g[0][CC_id], 0, sizeof(*PHY_vars_UE_g[0][CC_id]));
   }
 
   init_NR_UE(1, uecap_file, reconfig_file, rbconfig_file);

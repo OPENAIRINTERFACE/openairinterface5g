@@ -3278,7 +3278,7 @@ uint16_t get_rb_bwp_dci(nr_dci_format_t format,
 
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
-                     NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig,
+                     const NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig,
                      long pdsch_HARQ_ACK_Codebook,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,

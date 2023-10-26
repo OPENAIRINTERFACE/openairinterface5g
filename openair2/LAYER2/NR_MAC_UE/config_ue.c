@@ -802,7 +802,6 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
   LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
   AssertFatal(cell_group_config, "CellGroupConfig should not be NULL\n");
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  mac->cg = cell_group_config;
 
   if (cell_group_config->mac_CellGroupConfig) {
     // TODO handle MAC-CellGroupConfig

@@ -427,16 +427,12 @@ typedef struct ssb_list_info {
 /*!\brief Top level UE MAC structure */
 typedef struct {
   NR_UE_L2_STATE_t state;
-  NR_CellGroupConfig_t            *cg;
   int                             servCellIndex;
   long                            physCellId;
   ////  MAC config
   int                             first_sync_frame;
   bool                            get_sib1;
   bool                            get_otherSI;
-  NR_DRX_Config_t                 *drx_Config;
-  NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
-  NR_RNTI_Value_t                 *cs_RNTI;
   NR_MIB_t                        *mib;
   struct NR_SI_SchedulingInfo *si_SchedulingInfo;
   int si_window_start;
