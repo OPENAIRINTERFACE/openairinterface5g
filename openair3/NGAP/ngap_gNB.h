@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-/** @defgroup _ngap_impl_ NGAP Layer Reference Implementation for gNB
+/** @defgroup _ngap_impl_ NGAP Layer Reference Implementation
  * @ingroup _ref_implementation_
  * @{
  */

@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/COMMON/prs_nr_paramdef.f
- * \brief definition of configuration parameters for PRS 
+/*! \file prs_nr_paramdef.h
+ * \brief definition of configuration parameters for PRS
  * \author
  * \date 2022
  * \version 0.1

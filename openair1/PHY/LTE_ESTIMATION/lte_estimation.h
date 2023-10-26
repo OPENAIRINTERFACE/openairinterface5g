@@ -33,13 +33,6 @@
 #define SYNCH_HYST 2
 
 /*!
-\brief This function is used for time-frequency scanning prior to complete cell search.  It scans
-over the entire LTE band for maximum correlation and keeps the 10 best scores and the correspoding frequency offset (5 kHz granularity) for each of the 3 PSS sequences.
-\param ue Pointer to UE variables
-\param band index of lte band
-\param DL_freq Central RF Frequency in Hz
-*/
-/*!
 \brief This function allocates memory needed for the synchronization.
 \param frame_parms LTE DL frame parameter structure
 
@@ -151,6 +144,7 @@ This function computes the time domain channel response, finds the peak and adju
 \param frame_parms LTE DL frame parameter structure
 \param phy_vars_ue Pointer to UE PHY data structure
 \param eNb_id
+\param subframe
 \param clear If clear==1 moving average filter is reset
 \param coef Coefficient of the moving average filter (Q1.15)
  */
@@ -181,6 +175,7 @@ void lte_ue_measurements_emul(PHY_VARS_UE *phy_vars_ue,
 
 /*! \brief Function to return the path-loss based on the UE cell-specific reference signal strength and transmission power of eNB
 @param Mod_id Module ID for UE
+@param CC_id
 @param eNB_index Index of eNB on which to act
 @returns Path loss in dB
  */

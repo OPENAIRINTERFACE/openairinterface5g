@@ -496,7 +496,6 @@ function main() {
     ###################
     if [ "$BUILD_DOXYGEN" = "1" ] ; then
 	echo_info "Built Doxygen based documentation. The documentation file is located here: $OPENAIR_DIR/$BUILD_DIR/build/html/index.html"
-    echo_info "if you can't open this as file:///... in your browser, see apparmor over complex configuration, or move the doc tree in a place that suits this 'security' apparmor"
     fi
 
     if [ "$UE" = 1 ] ; then

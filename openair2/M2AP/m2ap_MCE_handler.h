@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file m2ap_handler.h
+/*! \file m2ap_MCE_handler.h
  * \brief m2ap handler procedures for MCE
  * \author Javier Morgade <javier.morgade@ieee.org>
  * \date 2019

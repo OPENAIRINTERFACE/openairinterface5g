@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/defs.h
+/*! \file defs_common.h
  \brief Top-level defines and structure definitions
  \author R. Knopp, F. Kaltenberger
  \date 2011
@@ -129,22 +129,24 @@ typedef struct {
 
 /// PRACH-ConfigInfo from 36.331 RRC spec
 typedef struct {
-  /// Parameter: prach-ConfigurationIndex, see TS 36.211 (5.7.1). \vr{[0..63]}
+  /// Parameter: prach-ConfigurationIndex, see TS 36.211 (5.7.1). {[0..63]}
   uint8_t prach_ConfigIndex;
-  /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
+  /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). {[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
   uint8_t highSpeedFlag;
-  /// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
+  /// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). {[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to
+  /// table 5.7.2-3 for preamble format 4.
   uint8_t zeroCorrelationZoneConfig;
-  /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). \vr{[0..94]}\n For TDD the value range is dependent on the value of \ref prach_ConfigIndex.
+  /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). {[0..94]}\n For TDD the value range is dependent on the value of \ref
+  /// prach_ConfigIndex.
   uint8_t prach_FreqOffset;
 } PRACH_CONFIG_INFO;
 
 
 /// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
 typedef struct {
-  /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
+  /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). {[0..837]}
   uint16_t rootSequenceIndex;
-  /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
+  /// prach_Config_enabled=1 means enabled. {[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
   PRACH_CONFIG_INFO prach_ConfigInfo;
@@ -152,11 +154,13 @@ typedef struct {
 
 /// PRACH-eMTC-Config from 36.331 RRC spec
 typedef struct {
-  /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
+  /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). {[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
   uint8_t highSpeedFlag;
-  /// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
+  /// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). {[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to
+  /// table 5.7.2-3 for preamble format 4.
   uint8_t zeroCorrelationZoneConfig;
-  /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). \vr{[0..94]}\n For TDD the value range is dependent on the value of \ref prach_ConfigIndex.
+  /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). {[0..94]}\n For TDD the value range is dependent on the value of \ref
+  /// prach_ConfigIndex.
 
   /// PRACH starting subframe periodicity, expressed in number of subframes available for preamble transmission (PRACH opportunities), see TS 36.211. Value 2 corresponds to 2 subframes, 4 corresponds to 4 subframes and so on. EUTRAN configures the PRACH starting subframe periodicity larger than or equal to the Number of PRACH repetitions per attempt for each CE level (numRepetitionPerPreambleAttempt).
   uint8_t prach_starting_subframe_periodicity[4];
@@ -176,9 +180,9 @@ typedef struct {
 
 /// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
 typedef struct {
-  /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
+  /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). {[0..837]}
   uint16_t rootSequenceIndex;
-  /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
+  /// prach_Config_enabled=1 means enabled. {[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
@@ -200,11 +204,11 @@ typedef enum {
 
 /// PUCCH-ConfigDedicated from 36.331 RRC spec
 typedef struct {
-  /// Flag to indicate ACK NAK repetition activation, see TS 36.213 (10.1). \vr{[0..1]}
+  /// Flag to indicate ACK NAK repetition activation, see TS 36.213 (10.1). {[0..1]}
   uint8_t ackNackRepetition;
   /// Parameter: \f$N_\text{ANRep}\f$, see TS 36.213 (10.1).
   ACKNAKREP_t repetitionFactor;
-  /// Parameter: \f$n^{(1)}_\text{PUCCH,ANRep}\f$, see TS 36.213 (10.1). \vr{[0..2047]}
+  /// Parameter: \f$n^{(1)}_\text{PUCCH,ANRep}\f$, see TS 36.213 (10.1). {[0..2047]}
   uint16_t n1PUCCH_AN_Rep;
   /// Feedback mode, see TS 36.213 (7.3). \details Applied to both PUCCH and PUSCH feedback. For TDD, should always be set to bundling.
   ANFBmode_t tdd_AckNackFeedbackMode;
@@ -212,13 +216,14 @@ typedef struct {
 
 /// PUCCH-ConfigCommon from 36.331 RRC spec
 typedef struct {
-  /// Parameter: \f$\Delta^\text{PUCCH}_\text{shift}\f$, see TS 36.211 (5.4.1). \vr{[1..3]} \note the specification sais it is an enumerated value.
+  /// Parameter: \f$\Delta^\text{PUCCH}_\text{shift}\f$, see TS 36.211 (5.4.1). {[1..3]} \note the specification sais it is an
+  /// enumerated value.
   uint8_t deltaPUCCH_Shift;
-  /// Parameter: \f$N^{(2)}_\text{RB}\f$, see TS 36.211 (5.4). \vr{[0..98]}
+  /// Parameter: \f$N^{(2)}_\text{RB}\f$, see TS 36.211 (5.4). {[0..98]}
   uint8_t nRB_CQI;
-  /// Parameter: \f$N^{(1)}_\text{CS}\f$, see TS 36.211 (5.4). \vr{[0..7]}
+  /// Parameter: \f$N^{(1)}_\text{CS}\f$, see TS 36.211 (5.4). {[0..7]}
   uint8_t nCS_AN;
-  /// Parameter: \f$N^{(1)}_\text{PUCCH}\f$ see TS 36.213 (10.1). \vr{[0..2047]}
+  /// Parameter: \f$N^{(1)}_\text{PUCCH}\f$ see TS 36.213 (10.1). {[0..2047]}
   uint16_t n1PUCCH_AN;
 
   /// group hopping sequence for DRS \note not part of offical UL-PUCCH_CONFIG_COMMON ASN1 specification.
@@ -229,13 +234,13 @@ typedef struct {
 
 /// UL-ReferenceSignalsPUSCH from 36.331 RRC spec
 typedef struct {
-  /// Parameter: Group-hopping-enabled, see TS 36.211 (5.5.1.3). \vr{[0..1]}
+  /// Parameter: Group-hopping-enabled, see TS 36.211 (5.5.1.3). {[0..1]}
   uint8_t groupHoppingEnabled;
-  /// Parameter: \f$\Delta SS\f$, see TS 36.211 (5.5.1.3). \vr{[0..29]}
+  /// Parameter: \f$\Delta SS\f$, see TS 36.211 (5.5.1.3). {[0..29]}
   uint8_t groupAssignmentPUSCH;
-  /// Parameter: Sequence-hopping-enabled, see TS 36.211 (5.5.1.4). \vr{[0..1]}
+  /// Parameter: Sequence-hopping-enabled, see TS 36.211 (5.5.1.4). {[0..1]}
   uint8_t sequenceHoppingEnabled;
-  /// Parameter: cyclicShift, see TS 36.211 (Table 5.5.2.1.1-2). \vr{[0..7]}
+  /// Parameter: cyclicShift, see TS 36.211 (Table 5.5.2.1.1-2). {[0..7]}
   uint8_t cyclicShift;
   /// nPRS for cyclic shift of DRS \note not part of offical UL-ReferenceSignalsPUSCH ASN1 specification.
   uint8_t nPRS[20];
@@ -253,13 +258,13 @@ typedef enum {
 
 /// PUSCH-ConfigCommon from 36.331 RRC spec.
 typedef struct {
-  /// Parameter: \f$N_{sb}\f$, see TS 36.211 (5.3.4). \vr{[1..4]}
+  /// Parameter: \f$N_{sb}\f$, see TS 36.211 (5.3.4). {[1..4]}
   uint8_t n_SB;
   /// Parameter: Hopping-mode, see TS 36.211 (5.3.4).
   PUSCH_HOPPING_t hoppingMode;
-  /// Parameter: \f$N^{HO}_{RB}\f$, see TS 36.211 (5.3.4). \vr{[0..98]}
+  /// Parameter: \f$N^{HO}_{RB}\f$, see TS 36.211 (5.3.4). {[0..98]}
   uint8_t pusch_HoppingOffset;
-  /// See TS 36.213 (8.6.1). \vr{[0..1]} 1 indicates 64QAM is allowed, 0 not allowed.
+  /// See TS 36.213 (8.6.1). {[0..1]} 1 indicates 64QAM is allowed, 0 not allowed.
   uint8_t enable64QAM;
   /// Ref signals configuration
   UL_REFERENCE_SIGNALS_PUSCH_t ul_ReferenceSignalsPUSCH;
@@ -267,11 +272,11 @@ typedef struct {
 
 /// UE specific PUSCH configuration.
 typedef struct {
-  /// Parameter: \f$I^\text{HARQ-ACK}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-1). \vr{[0..15]}
+  /// Parameter: \f$I^\text{HARQ-ACK}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-1). {[0..15]}
   uint16_t betaOffset_ACK_Index;
-  /// Parameter: \f$I^{RI}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-2). \vr{[0..15]}
+  /// Parameter: \f$I^{RI}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-2). {[0..15]}
   uint16_t betaOffset_RI_Index;
-  /// Parameter: \f$I^{CQI}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-3). \vr{[0..15]}
+  /// Parameter: \f$I^{CQI}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-3). {[0..15]}
   uint16_t betaOffset_CQI_Index;
 } PUSCH_CONFIG_DEDICATED;
 
@@ -285,9 +290,10 @@ typedef struct {
 
 /// PDSCH-ConfigCommon from 36.331 RRC spec
 typedef struct {
-  /// Parameter: Reference-signal power, see TS 36.213 (5.2). \vr{[-60..50]}\n Provides the downlink reference-signal EPRE. The actual value in dBm.
+  /// Parameter: Reference-signal power, see TS 36.213 (5.2). {[-60..50]}\n Provides the downlink reference-signal EPRE. The actual
+  /// value in dBm.
   int8_t referenceSignalPower;
-  /// Parameter: \f$P_B\f$, see TS 36.213 (Table 5.2-1). \vr{[0..3]}
+  /// Parameter: \f$P_B\f$, see TS 36.213 (Table 5.2-1). {[0..3]}
   uint8_t p_b;
 } PDSCH_CONFIG_COMMON;
 
@@ -311,13 +317,15 @@ typedef struct {
 
 /// SoundingRS-UL-ConfigCommon Information Element from 36.331 RRC spec
 typedef struct {
-  /// enabled flag=1 means SRS is enabled. \vr{[0..1]}
+  /// enabled flag=1 means SRS is enabled. {[0..1]}
   uint8_t enabled_flag;
-  /// Parameter: SRS Bandwidth Configuration, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). \vr{[0..7]}\n Actual configuration depends on UL bandwidth. \note the specification sais it is an enumerated value.
+  /// Parameter: SRS Bandwidth Configuration, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). {[0..7]}\n Actual
+  /// configuration depends on UL bandwidth. \note the specification sais it is an enumerated value.
   uint8_t srs_BandwidthConfig;
-  /// Parameter: SRS SubframeConfiguration, see TS 36.211 (table 5.5.3.3-1 for FDD, table 5.5.3.3-2 for TDD). \vr{[0..15]} \note the specification sais it is an enumerated value.
+  /// Parameter: SRS SubframeConfiguration, see TS 36.211 (table 5.5.3.3-1 for FDD, table 5.5.3.3-2 for TDD). {[0..15]} \note the
+  /// specification sais it is an enumerated value.
   uint8_t srs_SubframeConfig;
-  /// Parameter: Simultaneous-AN-and-SRS, see TS 36.213 (8.2). \vr{[0..1]}
+  /// Parameter: Simultaneous-AN-and-SRS, see TS 36.213 (8.2). {[0..1]}
   uint8_t ackNackSRS_SimultaneousTransmission;
   /// Parameter: srsMaxUpPts, see TS 36.211 (5.5.3.2). \details If this field is present, reconfiguration of \f$m^\text{max}_\text{SRS,0}\f$ applies for UpPts, otherwise reconfiguration does not apply.
   uint8_t srs_MaxUpPts;
@@ -390,19 +398,22 @@ typedef struct {
   uint8_t  subframe;
   /// rnti
   uint16_t rnti;
-  /// Parameter: \f$B_\text{SRS}\f$, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). \vr{[0..3]} \note the specification sais it is an enumerated value.
+  /// Parameter: \f$B_\text{SRS}\f$, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). {[0..3]} \note the
+  /// specification sais it is an enumerated value.
   uint8_t srs_Bandwidth;
-  /// Parameter: SRS hopping bandwidth \f$b_\text{hop}\in\{0,1,2,3\}\f$, see TS 36.211 (5.5.3.2) \vr{[0..3]} \note the specification sais it is an enumerated value.
+  /// Parameter: SRS hopping bandwidth \f$b_\text{hop}\in\{0,1,2,3\}\f$, see TS 36.211 (5.5.3.2) {[0..3]} \note the specification
+  /// sais it is an enumerated value.
   uint8_t srs_HoppingBandwidth;
-  /// Parameter: \f$n_\text{RRC}\f$, see TS 36.211 (5.5.3.2). \vr{[0..23]}
+  /// Parameter: \f$n_\text{RRC}\f$, see TS 36.211 (5.5.3.2). {[0..23]}
   uint8_t freqDomainPosition;
-  /// Parameter: Duration, see TS 36.213 (8.2). \vr{[0..1]} 0 corresponds to "single" and 1 to "indefinite".
+  /// Parameter: Duration, see TS 36.213 (8.2). {[0..1]} 0 corresponds to "single" and 1 to "indefinite".
   uint8_t duration;
-  /// Parameter: \f$k_\text{TC}\in\{0,1\}\f$, see TS 36.211 (5.5.3.2). \vr{[0..1]}
+  /// Parameter: \f$k_\text{TC}\in\{0,1\}\f$, see TS 36.211 (5.5.3.2). {[0..1]}
   uint8_t transmissionComb;
-  /// Parameter: \f$I_\text{SRS}\f$, see TS 36.213 (table 8.2-1). \vr{[0..1023]}
+  /// Parameter: \f$I_\text{SRS}\f$, see TS 36.213 (table 8.2-1). {[0..1023]}
   uint16_t srs_ConfigIndex;
-  /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). \vr{[0..7]} \note the specification sais it is an enumerated value.
+  /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). {[0..7]} \note the specification sais it is an enumerated
+  /// value.
   uint8_t cyclicShift;
   // Parameter: internal implementation: UE SRS configured
   uint8_t srsConfigDedicatedSetup;
@@ -414,15 +425,20 @@ typedef struct {
 
 /// UplinkPowerControlDedicated Information Element from 36.331 RRC spec
 typedef struct {
-  /// Parameter: \f$P_\text{0\_UE\_PUSCH}(1)\f$, see TS 36.213 (5.1.1.1), unit dB. \vr{[-8..7]}\n This field is applicable for non-persistent scheduling, only.
+  /// Parameter: \f$P_\text{0\_UE\_PUSCH}(1)\f$, see TS 36.213 (5.1.1.1), unit dB. {[-8..7]}\n This field is applicable for
+  /// non-persistent scheduling, only.
   int8_t p0_UE_PUSCH;
-  /// Parameter: Ks, see TS 36.213 (5.1.1.1). \vr{[0..1]}\n en0 corresponds to value 0 corresponding to state “disabled”. en1 corresponds to value 1.25 corresponding to “enabled”. \note the specification sais it is an enumerated value. \warning the enumeration values do not correspond to the given values in the specification (en1 should be 1.25).
+  /// Parameter: Ks, see TS 36.213 (5.1.1.1). {[0..1]}\n en0 corresponds to value 0 corresponding to state “disabled”. en1
+  /// corresponds to value 1.25 corresponding to “enabled”. \note the specification sais it is an enumerated value. \warning the
+  /// enumeration values do not correspond to the given values in the specification (en1 should be 1.25).
   uint8_t deltaMCS_Enabled;
-  /// Parameter: Accumulation-enabled, see TS 36.213 (5.1.1.1). \vr{[0..1]} 1 corresponds to "enabled" whereas 0 corresponds to "disabled".
+  /// Parameter: Accumulation-enabled, see TS 36.213 (5.1.1.1). {[0..1]} 1 corresponds to "enabled" whereas 0 corresponds to
+  /// "disabled".
   uint8_t accumulationEnabled;
-  /// Parameter: \f$P_\text{0\_UE\_PUCCH}(1)\f$, see TS 36.213 (5.1.2.1), unit dB. \vr{[-8..7]}
+  /// Parameter: \f$P_\text{0\_UE\_PUCCH}(1)\f$, see TS 36.213 (5.1.2.1), unit dB. {[-8..7]}
   int8_t p0_UE_PUCCH;
-  /// Parameter: \f$P_\text{SRS\_OFFSET}\f$, see TS 36.213 (5.1.3.1). \vr{[0..15]}\n For Ks=1.25 (\ref deltaMCS_Enabled), the actual parameter value is pSRS_Offset value - 3. For Ks=0, the actual parameter value is -10.5 + 1.5*pSRS_Offset value.
+  /// Parameter: \f$P_\text{SRS\_OFFSET}\f$, see TS 36.213 (5.1.3.1). {[0..15]}\n For Ks=1.25 (\ref deltaMCS_Enabled), the actual
+  /// parameter value is pSRS_Offset value - 3. For Ks=0, the actual parameter value is -10.5 + 1.5*pSRS_Offset value.
   int8_t pSRS_Offset;
   /// Specifies the filtering coefficient for RSRP measurements used to calculate path loss, as specified in TS 36.213 (5.1.1.1).\details The same filtering mechanism applies as for quantityConfig described in 5.5.3.2. \note the specification sais it is an enumerated value.
   uint8_t filterCoefficient;
@@ -452,39 +468,46 @@ typedef enum {
 
 /// UplinkPowerControlCommon Information Element from 36.331 RRC spec \note this structure does not currently make use of \ref deltaFList_PUCCH_t.
 typedef struct {
-  /// Parameter: \f$P_\text{0\_NOMINAL\_PUSCH}(1)\f$, see TS 36.213 (5.1.1.1), unit dBm. \vr{[-126..24]}\n This field is applicable for non-persistent scheduling, only.
+  /// Parameter: \f$P_\text{0\_NOMINAL\_PUSCH}(1)\f$, see TS 36.213 (5.1.1.1), unit dBm. {[-126..24]}\n This field is applicable for
+  /// non-persistent scheduling, only.
   int8_t p0_NominalPUSCH;
   /// Parameter: \f$\alpha\f$, see TS 36.213 (5.1.1.1) \warning the enumeration values do not correspond to the given values in the specification (al04 should be 0.4, ...)!
   PUSCH_alpha_t alpha;
-  /// Parameter: \f$P_\text{0\_NOMINAL\_PUCCH}\f$ See TS 36.213 (5.1.2.1), unit dBm. \vr{[-127..-96]}
+  /// Parameter: \f$P_\text{0\_NOMINAL\_PUCCH}\f$ See TS 36.213 (5.1.2.1), unit dBm. {[-127..-96]}
   int8_t p0_NominalPUCCH;
-  /// Parameter: \f$\Delta_\text{PREAMBLE\_Msg3}\f$ see TS 36.213 (5.1.1.1). \vr{[-1..6]}\n Actual value = IE value * 2 [dB].
+  /// Parameter: \f$\Delta_\text{PREAMBLE\_Msg3}\f$ see TS 36.213 (5.1.1.1). {[-1..6]}\n Actual value = IE value * 2 [dB].
   int8_t deltaPreambleMsg3;
-  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 1, see TS 36.213 (5.1.2). \vr{[0..2]} \warning check value range, why is this a long? \note the specification sais it is an enumerated value.
+  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 1, see TS 36.213 (5.1.2). {[0..2]} \warning check value range,
+  /// why is this a long? \note the specification sais it is an enumerated value.
   long deltaF_PUCCH_Format1;
-  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 1a, see TS 36.213 (5.1.2). \vr{[0..2]} \warning check value range, why is this a long? \note the specification sais it is an enumerated value.
+  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 1a, see TS 36.213 (5.1.2). {[0..2]} \warning check value
+  /// range, why is this a long? \note the specification sais it is an enumerated value.
   long deltaF_PUCCH_Format1a;
-  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 1b, see TS 36.213 (5.1.2). \vr{[0..2]} \warning check value range, why is this a long? \note the specification sais it is an enumerated value.
+  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 1b, see TS 36.213 (5.1.2). {[0..2]} \warning check value
+  /// range, why is this a long? \note the specification sais it is an enumerated value.
   long deltaF_PUCCH_Format1b;
-  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 2, see TS 36.213 (5.1.2). \vr{[0..3]} \warning check value range, why is this a long? \note the specification sais it is an enumerated value.
+  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 2, see TS 36.213 (5.1.2). {[0..3]} \warning check value range,
+  /// why is this a long? \note the specification sais it is an enumerated value.
   long deltaF_PUCCH_Format2;
-  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 2a, see TS 36.213 (5.1.2). \vr{[0..2]} \warning check value range, why is this a long? \note the specification sais it is an enumerated value.
+  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 2a, see TS 36.213 (5.1.2). {[0..2]} \warning check value
+  /// range, why is this a long? \note the specification sais it is an enumerated value.
   long deltaF_PUCCH_Format2a;
-  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 2b, see TS 36.213 (5.1.2). \vr{[0..2]} \warning check value range, why is this a long? \note the specification sais it is an enumerated value.
+  /// Parameter: \f$\Delta_\text{F\_PUCCH}(F)\f$ for the PUCCH format 2b, see TS 36.213 (5.1.2). {[0..2]} \warning check value
+  /// range, why is this a long? \note the specification sais it is an enumerated value.
   long deltaF_PUCCH_Format2b;
 } UL_POWER_CONTROL_CONFIG_COMMON;
 
 /// Union for \ref TPC_PDCCH_CONFIG::tpc_Index.
 typedef union {
-  /// Index of N when DCI format 3 is used. See TS 36.212 (5.3.3.1.6). \vr{[1..15]}
+  /// Index of N when DCI format 3 is used. See TS 36.212 (5.3.3.1.6). {[1..15]}
   uint8_t indexOfFormat3;
-  /// Index of M when DCI format 3A is used. See TS 36.212 (5.3.3.1.7). \vr{[1..31]}
+  /// Index of M when DCI format 3A is used. See TS 36.212 (5.3.3.1.7). {[1..31]}
   uint8_t indexOfFormat3A;
 } TPC_INDEX_t;
 
 /// TPC-PDCCH-Config Information Element from 36.331 RRC spec
 typedef struct {
-  /// RNTI for power control using DCI format 3/3A, see TS 36.212. \vr{[0..65535]}
+  /// RNTI for power control using DCI format 3/3A, see TS 36.212. {[0..65535]}
   uint16_t rnti;
   /// Index of N or M, see TS 36.212 (5.3.3.1.6 and 5.3.3.1.7), where N or M is dependent on the used DCI format (i.e. format 3 or 3a).
   TPC_INDEX_t tpc_Index;
@@ -501,9 +524,9 @@ typedef enum {
 
 /// SchedulingRequestConfig Information Element from 36.331 RRC spec
 typedef struct {
-  /// Parameter: \f$n^{(1)}_\text{PUCCH,SRI}\f$, see TS 36.213 (10.1). \vr{[0..2047]}
+  /// Parameter: \f$n^{(1)}_\text{PUCCH,SRI}\f$, see TS 36.213 (10.1). {[0..2047]}
   uint16_t sr_PUCCH_ResourceIndex;
-  /// Parameter: \f$I_\text{SR}\f$, see TS 36.213 (10.1). \vr{[0..155]}
+  /// Parameter: \f$I_\text{SR}\f$, see TS 36.213 (10.1). {[0..155]}
   uint8_t sr_ConfigIndex;
   /// Parameter for SR transmission in TS 36.321 (5.4.4). \details The value n4 corresponds to 4 transmissions, n8 corresponds to 8 transmissions and so on.
   DSR_TRANSMAX_t dsr_TransMax;
@@ -511,15 +534,17 @@ typedef struct {
 
 /// CQI-ReportPeriodic
 typedef struct {
-  /// Parameter: \f$n^{(2)}_\text{PUCCH}\f$, see TS 36.213 (7.2). \vr{[0..1185]}, -1 indicates inactivity
+  /// Parameter: \f$n^{(2)}_\text{PUCCH}\f$, see TS 36.213 (7.2). {[0..1185]}, -1 indicates inactivity
   int16_t cqi_PUCCH_ResourceIndex;
-  /// Parameter: CQI/PMI Periodicity and Offset Configuration Index \f$I_\text{CQI/PMI}\f$, see TS 36.213 (tables 7.2.2-1A and 7.2.2-1C). \vr{[0..1023]}
+  /// Parameter: CQI/PMI Periodicity and Offset Configuration Index \f$I_\text{CQI/PMI}\f$, see TS 36.213 (tables 7.2.2-1A
+  /// and 7.2.2-1C). {[0..1023]}
   int16_t cqi_PMI_ConfigIndex;
-  /// Parameter: K, see 36.213 (4.2.2). \vr{[1..4]}
+  /// Parameter: K, see 36.213 (4.2.2). {[1..4]}
   uint8_t K;
-  /// Parameter: RI Config Index \f$I_\text{RI}\f$, see TS 36.213 (7.2.2-1B). \vr{[0..1023]}, -1 indicates inactivity
+  /// Parameter: RI Config Index \f$I_\text{RI}\f$, see TS 36.213 (7.2.2-1B). {[0..1023]}, -1 indicates inactivity
   int16_t ri_ConfigIndex;
-  /// Parameter: Simultaneous-AN-and-CQI, see TS 36.213 (10.1). \vr{[0..1]} 1 indicates that simultaneous transmission of ACK/NACK and CQI is allowed.
+  /// Parameter: Simultaneous-AN-and-CQI, see TS 36.213 (10.1). {[0..1]} 1 indicates that simultaneous transmission of ACK/NACK and
+  /// CQI is allowed.
   uint8_t simultaneousAckNackAndCQI;
   /// parameter computed from Tables 7.2.2-1A and 7.2.2-1C
   uint16_t Npd;
@@ -540,7 +565,7 @@ typedef enum {
 typedef struct {
   /// Parameter: reporting mode. Value rm12 corresponds to Mode 1-2, rm20 corresponds to Mode 2-0, rm22 corresponds to Mode 2-2 etc. PUSCH reporting modes are described in TS 36.213 [23, 7.2.1].
   CQI_REPORTMODEAPERIODIC cqi_ReportModeAperiodic;
-  /// Parameter: \f$\Delta_\text{offset}\f$, see TS 36.213 (7.2.3). \vr{[-1..6]}\n Actual value = IE value * 2 [dB].
+  /// Parameter: \f$\Delta_\text{offset}\f$, see TS 36.213 (7.2.3). {[-1..6]}\n Actual value = IE value * 2 [dB].
   int8_t nomPDSCH_RS_EPRE_Offset;
   CQI_REPORTPERIODIC CQI_ReportPeriodic;
 } CQI_REPORT_CONFIG;
@@ -549,15 +574,25 @@ typedef struct {
 typedef struct {
   /// MBSFN subframe occurance. \details Radio-frames that contain MBSFN subframes occur when equation SFN mod radioFrameAllocationPeriod = radioFrameAllocationOffset is satisfied. When fourFrames is used for subframeAllocation, the equation defines the first radio frame referred to in the description below. Values n1 and n2 are not applicable when fourFrames is used. \note the specification sais it is an enumerated value {n1, n2, n4, n8, n16, n32}.
   int radioframeAllocationPeriod;
-  /// MBSFN subframe occurance. \vr{[0..7]}\n Radio-frames that contain MBSFN subframes occur when equation SFN mod radioFrameAllocationPeriod = radioFrameAllocationOffset is satisfied. When fourFrames is used for subframeAllocation, the equation defines the first radio frame referred to in the description below. Values n1 and n2 are not applicable when fourFrames is used.
+  /// MBSFN subframe occurance. {[0..7]}\n Radio-frames that contain MBSFN subframes occur when equation SFN mod
+  /// radioFrameAllocationPeriod = radioFrameAllocationOffset is satisfied. When fourFrames is used for subframeAllocation, the
+  /// equation defines the first radio frame referred to in the description below. Values n1 and n2 are not applicable when
+  /// fourFrames is used.
   int radioframeAllocationOffset;
-  /// oneFrame or fourFrames. \vr{[0..1]}
+  /// oneFrame or fourFrames. {[0..1]}
   int fourFrames_flag;
-  /// Subframe configuration. \vr{[0..63]} (\ref fourFrames_flag == 0) or \vr{[0..16777215]} (\ref fourFrames_flag == 1)
+  /// Subframe configuration. {[0..63]} (\ref fourFrames_flag == 0) or {[0..16777215]} (\ref fourFrames_flag == 1)
   /// \par fourFrames_flag == 0
-  /// "1" denotes that the corresponding subframe is allocated for MBSFN. The following mapping applies:\n FDD: The first/leftmost bit defines the MBSFN allocation for subframe #1, the second bit for #2, third bit for #3 , fourth bit for #6, fifth bit for #7, sixth bit for #8.\n TDD: The first/leftmost bit defines the allocation for subframe #3, the second bit for #4, third bit for #7, fourth bit for #8, fifth bit for #9. Uplink subframes are not allocated. The last bit is not used.
-  /// \par fourFrames_flag == 1
-  /// A bit-map indicating MBSFN subframe allocation in four consecutive radio frames, "1" denotes that the corresponding subframe is allocated for MBSFN. The bitmap is interpreted as follows:\n FDD: Starting from the first radioframe and from the first/leftmost bit in the bitmap, the allocation applies to subframes #1, #2, #3 , #6, #7, and #8 in the sequence of the four radio-frames.\n TDD: Starting from the first radioframe and from the first/leftmost bit in the bitmap, the allocation applies to subframes #3, #4, #7, #8, and #9 in the sequence of the four radio-frames. The last four bits are not used. Uplink subframes are not allocated.
+  /// "1" denotes that the corresponding subframe is allocated for MBSFN. The following mapping applies:\n FDD: The first/leftmost
+  /// bit defines the MBSFN allocation for subframe #1, the second bit for #2, third bit for #3 , fourth bit for #6, fifth bit for
+  /// #7, sixth bit for #8.\n TDD: The first/leftmost bit defines the allocation for subframe #3, the second bit for #4, third bit
+  /// for #7, fourth bit for #8, fifth bit for #9. Uplink subframes are not allocated. The last bit is not used. \par
+  /// fourFrames_flag == 1 A bit-map indicating MBSFN subframe allocation in four consecutive radio frames, "1" denotes that the
+  /// corresponding subframe is allocated for MBSFN. The bitmap is interpreted as follows:\n FDD: Starting from the first radioframe
+  /// and from the first/leftmost bit in the bitmap, the allocation applies to subframes #1, #2, #3 , #6, #7, and #8 in the sequence
+  /// of the four radio-frames.\n TDD: Starting from the first radioframe and from the first/leftmost bit in the bitmap, the
+  /// allocation applies to subframes #3, #4, #7, #8, and #9 in the sequence of the four radio-frames. The last four bits are not
+  /// used. Uplink subframes are not allocated.
   int mbsfn_SubframeConfig;
 } MBSFN_config_t;
 

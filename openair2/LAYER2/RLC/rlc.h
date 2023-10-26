@@ -145,13 +145,12 @@ rlc_op_status_t rrc_rlc_config_asn1_req (
   const uint32_t,
   const uint32_t );
 
-/*! \fn rlc_op_status_t rrc_rlc_remove_ue   (const protocol_ctxt_t* const ctxtP)
+/*! \fn rrc_rlc_remove_ue
  * \brief  Remove all RLC protocol instances from all radio bearers allocated to a UE.
  * \param[in]  ctxtP              Running context.
  * \return     A status about the processing, OK or error code.
-*/
-rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t *const);
-
+ */
+rlc_op_status_t rrc_rlc_remove_ue(const protocol_ctxt_t *const ctxtP);
 
 /*! \fn rlc_op_status_t rrc_rlc_config_req (
      const protocol_ctxt_t* const ctxtP,
@@ -166,23 +165,32 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t *const);
 * \param[in]  MBMS_flag        Flag to indicate whether this is an MBMS service (1) or not (0)
 * \param[in]  actionP          Action for this radio bearer (add, modify, remove).
 * \param[in]  rb_idP           Radio bearer identifier.
-* \param[in]  rlc_infoP        RLC configuration parameters issued from Radio Resource Manager.
 * \return     A status about the processing, OK or error code.
 */
-rlc_op_status_t rrc_rlc_config_req(const protocol_ctxt_t *const, const srb_flag_t, const MBMS_flag_t, config_action_t, const rb_id_t);
+rlc_op_status_t rrc_rlc_config_req(const protocol_ctxt_t *const ctxtP,
+                                   const srb_flag_t srb_flagP,
+                                   const MBMS_flag_t MBMS_flag,
+                                   config_action_t actionP,
+                                   const rb_id_t rb_idP);
 
-/*! \fn rlc_op_status_t rrc_rlc_data_req     (const protocol_ctxt_t* const ctxtP, const  MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP)
-* \brief  Function for RRC to send a SDU through a Signalling Radio Bearer.
-* \param[in]  ctxtP            Running context.
-* \param[in]  MBMS_flag        Flag to indicate whether this is an MBMS service (1) or not (0)
-* \param[in]  rb_idP           Radio bearer identifier.
-* \param[in]  muiP             Message Unit identifier.
-* \param[in]  confirmP         Boolean, is confirmation requested.
-* \param[in]  sdu_sizeP        Size of SDU in bytes.
-* \param[in]  sduP             SDU.
-* \return     A status about the processing, OK or error code.
-*/
-rlc_op_status_t rrc_rlc_data_req     (const protocol_ctxt_t *const, const  MBMS_flag_t, const  rb_id_t, mui_t, confirm_t, sdu_size_t, char *);
+/*! \fn rrc_rlc_data_req
+ * \brief  Function for RRC to send a SDU through a Signalling Radio Bearer.
+ * \param[in]  ctxtP            Running context.
+ * \param[in]  MBMS_flag        Flag to indicate whether this is an MBMS service (1) or not (0)
+ * \param[in]  rb_idP           Radio bearer identifier.
+ * \param[in]  muiP             Message Unit identifier.
+ * \param[in]  confirmP         Boolean, is confirmation requested.
+ * \param[in]  sdu_sizeP        Size of SDU in bytes.
+ * \param[in]  sduP             SDU.
+ * \return     A status about the processing, OK or error code.
+ */
+rlc_op_status_t rrc_rlc_data_req(const protocol_ctxt_t *const ctxtP,
+                                 const MBMS_flag_t MBMS_flag,
+                                 const rb_id_t rb_idP,
+                                 mui_t muiP,
+                                 confirm_t confirmP,
+                                 sdu_size_t sdu_sizeP,
+                                 char *sduP);
 
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH MAC
@@ -236,17 +244,20 @@ mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, con
     ,const uint32_t destinationL2Id
                                            );
 
-/*! \fn rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t module_idP, const rnti_t rntiP, const eNB_index_t eNB_index, const frame_t frameP, const sub_frame_t subframeP,const eNB_flag_t enb_flagP, const logical_chan_id_t channel_idP)
-* \brief    Interface with MAC layer, UE only: request and get the number of bytes scheduled for transmission by the RLC instance corresponding to the radio bearer identifier.
-* \param[in]  mod_idP          Virtualized module identifier.
-* \param[in]  rntiP            UE identifier.
-* \param[in]  frameP            Frame index.
-* \param[in]  subframeP         SubFrame index.
-* \param[in]  eNB_flagP         Flag to indicate eNB operation (1 true, 0 false)
-* \param[in]  channel_idP       Logical Channel identifier.
-* \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
-*/
-rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const eNB_flag_t, const logical_chan_id_t );
+/*! \fn mac_rlc_get_buffer_occupancy_ind
+ * \brief    Interface with MAC layer, UE only: request and get the number of bytes scheduled for transmission by the RLC instance
+ * corresponding to the radio bearer identifier. \param[in]  mod_idP          Virtualized module identifier. \param[in]  rntiP UE
+ * identifier. \param[in]  frameP            Frame index. \param[in]  subframeP         SubFrame index. \param[in]  eNB_flagP Flag
+ * to indicate eNB operation (1 true, 0 false) \param[in]  channel_idP       Logical Channel identifier. \return     The maximum
+ * number of bytes that the RLC instance can send in the next transmission sequence.
+ */
+rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t mod_idP,
+                                                        const rnti_t rntiP,
+                                                        const eNB_index_t enb,
+                                                        const frame_t frameP,
+                                                        const sub_frame_t subframeP,
+                                                        const eNB_flag_t eNB_flagP,
+                                                        const logical_chan_id_t channel_idP);
 //-----------------------------------------------------------------------------
 //   RLC methods
 //-----------------------------------------------------------------------------

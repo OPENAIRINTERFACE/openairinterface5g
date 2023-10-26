@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/GNB_APP/gnb_paramdef.f
- * \brief definition of configuration parameters for all gNodeB modules 
+/*! \file gnb_paramdef.h
+ * \brief definition of configuration parameters for all gNodeB modules
  * \author Francois TABURET, WEI-TAI CHEN
  * \date 2018
  * \version 0.1

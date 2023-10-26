@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/ENB_APP/L1_paramdef.f
- * \brief definition of configuration parameters for all eNodeB modules 
+/*! \file L1_paramdef.h
+ * \brief definition of configuration parameters for all eNodeB modules
  * \author Francois TABURET
  * \date 2017
  * \version 0.1

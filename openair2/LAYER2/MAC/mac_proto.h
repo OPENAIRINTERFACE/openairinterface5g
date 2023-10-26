@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file LAYER2/MAC/proto.h
+/*! \file mac_proto.h
  * \brief MAC functions prototypes for eNB and UE
  * \author Navid Nikaein and Raymond Knopp
  * \date 2010 - 2014
@@ -35,9 +35,9 @@
 
 /** \fn void schedule_fembms_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 \brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.
-@param Mod_id Instance ID of eNB
-@param frame Frame index
-@param subframe Subframe number on which to act
+@param module_idP Instance ID of eNB
+@param frameP Frame index
+@param subframeP Subframe number on which to act
 
 */
 
@@ -50,8 +50,8 @@ void schedule_fembms_mib(module_id_t module_idP,
 
 /** \fn void schedule_mib(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
 \brief MIB scheduling for PBCH. This function requests the MIB from RRC and provides it to L1.
-@param Mod_id Instance ID of eNB
-@param frame Frame index
+@param module_idP Instance ID of eNB
+@param frameP Frame index
 @param subframe Subframe number on which to act
 
 */
@@ -59,81 +59,84 @@ void schedule_fembms_mib(module_id_t module_idP,
 void schedule_mib(module_id_t module_idP,
                   frame_t frameP, sub_frame_t subframeP);
 
-/** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe);
-\brief First stage of Random-Access Scheduling. Loops over the ras and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
-for the message.
-@param Mod_id Instance ID of eNB
-@param frame Frame index
+/** \fn void schedule_RA
+\brief First stage of Random-Access Scheduling. Loops over the ras and checks if RAR, Msg3 or its retransmission are to be scheduled
+in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the
+appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A) for the message.
+@param module_idP Instance ID of eNB
+@param frameP Frame index
 @param subframe Subframe number on which to act
 */
-
 
 void schedule_RA(module_id_t module_idP, frame_t frameP,
                  sub_frame_t subframe);
 
-/** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
-@param Mod_id Instance ID of eNB
-@param frame Frame index
-@param subframe Subframe number on which to act
+/** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a
+function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
+@param module_idP Instance ID of eNB
+@param frameP Frame index
+@param subframeP Subframe number on which to act
 */
 void schedule_SI(module_id_t module_idP, frame_t frameP,
                  sub_frame_t subframeP);
 
-/** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
-@param Mod_id Instance ID of eNB
-@param frame Frame index
-@param subframe Subframe number on which to act
+/** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a
+function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
+@param module_idP Instance ID of eNB
+@param frameP Frame index
+@param subframeP Subframe number on which to act
 */
 void schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
                       sub_frame_t subframeP);
 
-
-/** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
-@param Mod_id Instance ID of eNB
-@param frame Frame index
+/** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs
+from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
+@param module_idP Instance ID of eNB
+@param CC_id carrier
+@param frameP Frame index
 @param subframe Subframe number on which to act
 */
 int schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
                   sub_frame_t subframe);
 
-/** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
-@param Mod_id Instance ID of eNB
-@param frame Frame index
+/** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs
+from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
+@param module_idP Instance ID of eNB
+@param CC_id carrier index
+@param frameP Frame index
 @param subframe Subframe number on which to act
 */
 int schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP, sub_frame_t subframe);
 
-
 /** \brief check the mapping between sf allocation and sync area, Currently only supports 1:1 mapping
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
+@param CC_id carrier index
 @param mbsfn_sync_area index of mbsfn sync area
-@param[out] index of sf pattern
 */
 int8_t get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
                               uint8_t mbsfn_sync_area);
 
 /** \brief check the mapping between sf allocation and sync area, Currently only supports 1:1 mapping
-@param Mod_id Instance ID of eNB
+@param module_idP  Instance ID of eNB
 @param mbsfn_sync_area index of mbsfn sync area
 @param eNB_index index of eNB
-@param[out] index of sf pattern
 */
 int8_t ue_get_mbsfn_sf_alloction(module_id_t module_idP,
                                  uint8_t mbsfn_sync_area,
                                  unsigned char eNB_index);
 
 /** \brief top ULSCH Scheduling for TDD (config 1-6).
-@param Mod_id Instance ID of eNB
-@param frame Frame index
+@param module_idP Instance ID of eNB
+@param frameP Frame index
 @param subframe Subframe number on which to act
 */
 void schedule_ulsch(module_id_t module_idP, frame_t frameP,
                     sub_frame_t subframe);
 
 /** \brief ULSCH Scheduling per RNTI
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param CC_id The component carrier to schedule
-@param frame Frame index
+@param frameP Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
 */
@@ -147,9 +150,12 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                               unsigned char sched_subframeP,
                               int          *emtc_active);
 
-/** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
-@param Mod_id Instance ID of eNB
-@param frame Frame index
+/** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate
+harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the
+same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of
+available PRBS), builds the MAC header (timing advance sent by default) and copies
+@param module_idP Instance ID of eNB
+@param frameP Frame index
 @param subframe Subframe on which to act
 
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
@@ -167,21 +173,22 @@ void schedule_ue_spec_br(module_id_t   module_idP,
 void schedule_ue_spec_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
-
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
-    @param Mod_id Module id of UE
+    @param module_idP Module id of UE
+    @param CC_id carrier component id of UE
     @returns Po_NOMINAL_PUSCH (PREAMBLE_RECEIVED_TARGET_POWER+DELTA_PREAMBLE
 */
 int8_t get_Po_NOMINAL_PUSCH(module_id_t module_idP, uint8_t CC_id);
 
 /** \brief Function to compute DELTA_PREAMBLE from 36.321 (for RA power ramping procedure and Msg3 PUSCH power control policy)
-    @param Mod_id Module id of UE
+    @param module_idP Module id of UE
+    @param CC_id carrier component id of UE
     @returns DELTA_PREAMBLE
 */
 int8_t get_DELTA_PREAMBLE(module_id_t module_idP, int CC_id);
 
 /** \brief Function for compute deltaP_rampup from 36.321 (for RA power ramping procedure and Msg3 PUSCH power control policy)
-    @param Mod_id Module id of UE
+    @param module_idP Module id of UE
     @param CC_id carrier component id of UE
     @returns deltaP_rampup
 */
@@ -202,7 +209,7 @@ int mac_top_init(int eMBMS_active, char *uecap_xer,
 
 void mac_top_init_eNB(void);
 
-void mac_init_cell_params(int Mod_idP, int CC_idP);
+void mac_init_cell_params(int module_idPP, int CC_idP);
 
 char layer2_init_UE(module_id_t module_idP);
 
@@ -218,13 +225,12 @@ void clear_nfapi_information(eNB_MAC_INST *eNB, int CC_idP,
 
 // eNB functions
 /* \brief This function assigns pre-available RBS to each UE in specified sub-bands before scheduling is done
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param slice_idxP Slice instance index for the slice in which scheduling happens
 @param frame Index of frame
 @param subframe Index of current subframe
 @param N_RBS Number of resource block groups
  */
-
 
 void dlsch_scheduler_pre_processor(module_id_t module_idP,
                                    int CC_id,
@@ -233,14 +239,14 @@ void dlsch_scheduler_pre_processor(module_id_t module_idP,
 
 /* \brief Function to trigger the eNB scheduling procedure.  It is called by PHY at the beginning of each subframe, \f$n$\f
    and generates all DLSCH allocations for subframe \f$n\f$ and ULSCH allocations for subframe \f$n+k$\f.
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param subframe Index of current subframe
 @param calibration_flag Flag to indicate that eNB scheduler should schedule TDD auto-calibration PUSCH.
 */
 void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);  //, int calibration_flag);
 
 /* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param preamble_index index of the received RA request
 @param timing_offset Offset in samples of the received PRACH w.r.t. eNB timing. This is used to
 @param rnti RA rnti corresponding to this PRACH preamble
@@ -252,8 +258,9 @@ void initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
                       uint8_t rach_resource_type
                      );
 
-/* \brief Function in eNB to fill RAR pdu when requested by PHY.  This provides a single RAR SDU for the moment and returns the t-CRNTI.
-@param Mod_id Instance ID of eNB
+/* \brief Function in eNB to fill RAR pdu when requested by PHY.  This provides a single RAR SDU for the moment and returns the
+t-CRNTI.
+@param module_idP Instance ID of eNB
 @param dlsch_buffer Pointer to DLSCH input buffer
 @param N_RB_UL Number of UL resource blocks
 @returns t_CRNTI
@@ -274,9 +281,8 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
                            uint8_t *const dlsch_buffer,
                            const uint8_t ce_level);
 
-
 /* \brief Function to indicate a failed RA response.  It removes all temporary variables related to the initial connection of a UE
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param preamble_index index of the received RA request.
 */
 void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
@@ -285,7 +291,7 @@ void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 /* \brief Function used by PHY to inform MAC that an uplink is scheduled
           for Msg3 in given subframe. This is used so that the MAC
           scheduler marks as busy the RBs used by the Msg3.
-@param Mod_id        Instance ID of eNB
+@param module_idP        Instance ID of eNB
 @param CC_id         CC ID of eNB
 @param frame         current frame
 @param subframe      current subframe
@@ -296,14 +302,10 @@ void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 
 void clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
 
-void set_msg3_subframe(module_id_t Mod_id,
-                       int CC_id,
-                       int frame,
-                       int subframe,
-                       int rnti, int Msg3_frame, int Msg3_subframe);
+void set_msg3_subframe(module_id_t module_idP, int CC_id, int frame, int subframe, int rnti, int Msg3_frame, int Msg3_subframe);
 
 /* \brief Function to indicate a received SDU on ULSCH.
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param CC_id Component carrier index
 @param rnti RNTI of UE transmitting the SDU
 @param sdu Pointer to received SDU
@@ -320,9 +322,8 @@ void rx_sdu(const module_id_t enb_mod_idP,
             const uint16_t sdu_lenP,
             const uint16_t timing_advance, const uint8_t ul_cqi);
 
-
 /* \brief Function to indicate a scheduled schduling request (SR) was received by eNB.
-@param Mod_idP Instance ID of eNB
+@param module_idPP Instance ID of eNB
 @param CC_idP CC_id of received SR
 @param frameP of received SR
 @param subframeP Index of subframe where SR was received
@@ -333,17 +334,16 @@ void SR_indication(module_id_t module_idP, int CC_id, frame_t frameP,
                    sub_frame_t subframe, rnti_t rnti, uint8_t ul_cqi);
 
 /* \brief Function to indicate a UL failure was detected by eNB PHY.
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param CC_id Component carrier
 @param frameP Frame index
 @param rnti RNTI of UE transmitting the SR
 @param subframe Index of subframe where SR was received
 */
-void UL_failure_indication(module_id_t Mod_id, int CC_id, frame_t frameP,
-                           rnti_t rnti, sub_frame_t subframe);
+void UL_failure_indication(module_id_t module_idP, int CC_id, frame_t frameP, rnti_t rnti, sub_frame_t subframe);
 
 /* \brief Function to indicate an HARQ ACK/NAK.
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param CC_id Component carrier
 @param frameP Frame index
 @param subframeP subframe index
@@ -354,7 +354,7 @@ void harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
                      nfapi_harq_indication_pdu_t *harq_pdu);
 
 /* \brief Function to indicate a received CQI pdu
-@param Mod_id Instance ID of eNB
+@param module_idP Instance ID of eNB
 @param CC_id Component carrier
 @param frameP Frame index
 @param subframeP subframe index
@@ -369,19 +369,15 @@ void cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 uint8_t *get_dlsch_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                        rnti_t rnti, uint8_t TBindex);
 
-/* \brief Function to retrieve MCH transport block and MCS used for MCH in this MBSFN subframe.  Returns null if no MCH is to be transmitted
-@param Mod_id Instance ID of eNB
+/* \brief Function to retrieve MCH transport block and MCS used for MCH in this MBSFN subframe.  Returns null if no MCH is to be
+transmitted
+@param module_idP Instance ID of eNB
 @param frame Index of frame
 @param subframe Index of current subframe
 @param mcs Pointer to mcs used by PHY (to be filled by MAC)
 @returns Pointer to MCH transport block and mcs for subframe
 */
-MCH_PDU *get_mch_sdu(module_id_t Mod_id, int CC_id, frame_t frame,
-                     sub_frame_t subframe);
-
-
-
-
+MCH_PDU *get_mch_sdu(module_id_t module_idP, int CC_id, frame_t frame, sub_frame_t subframe);
 
 void ue_mac_reset(module_id_t module_idP, uint8_t eNB_index);
 void ue_init_mac(module_id_t module_idP);
@@ -431,11 +427,11 @@ void set_ue_dai(sub_frame_t subframeP,
                 uint8_t CC_id, uint8_t tdd_config, UE_info_t *UE_info);
 
 uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
-/** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
-@param Mod_id Instance ID of eNB
-@param frame Frame index
-@param subframe Subframe number on which to act
-@param paging_ue_index
+/** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a
+function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
+@param module_idP Instance ID of eNB
+@param frameP Frame index
+@param subframeP Subframe number on which to act
 */
 void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
@@ -444,7 +440,8 @@ uint8_t find_num_active_UEs_in_cbagroup(module_id_t module_idP,
 uint8_t UE_is_to_be_scheduled(module_id_t module_idP, int CC_id,
                               uint8_t UE_id);
 /** \brief Round-robin scheduler for ULSCH traffic.
-@param Mod_id Instance ID for eNB
+@param module_idP Instance ID for eNB
+@param UE_id
 @param subframe Subframe number on which to act
 @returns UE index that is to be scheduled if needed/room
 */
@@ -463,13 +460,13 @@ uint32_t allocate_prbs(int UE_id, uint8_t nb_rb, int N_RB_DL,
 
 /* \fn uint32_t req_new_ulsch(module_id_t module_idP)
 \brief check for a new transmission in any drb
-@param Mod_id Instance id of UE in machine
+@param module_idP Instance id of UE in machine
 @returns 1 for new transmission, 0 for none
 */
 uint32_t req_new_ulsch(module_id_t module_idP);
 
 /* \brief Get SR payload (0,1) from UE MAC
-@param Mod_id Instance id of UE in machine
+@param module_idP Instance id of UE in machine
 @param CC_id Component Carrier index
 @param eNB_id Index of eNB that UE is attached to
 @param rnti C_RNTI of UE
@@ -508,7 +505,7 @@ void ue_send_sl_sdu(module_id_t module_idP,
                    );
 
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
-@param Mod_id Index of module instance
+@param module_idP Index of module instance
 @param frame Frame index
 @param sdu Pointer to transport block
 @param sdu_len Length of transport block
@@ -520,24 +517,34 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
                      uint8_t sync_area);
 
 /*\brief Function to check if UE PHY needs to decode MCH for MAC.
-@param Mod_id Index of protocol instance
+@param module_idP Index of protocol instance
 @param frame Index of frame
 @param subframe Index of subframe
 @param eNB_index index of eNB for this MCH
 @param[out] sync_area return the sync area
 @param[out] mcch_active flag indicating whether this MCCH is active in this SF
 */
-int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
-                 sub_frame_t subframe, uint8_t eNB_index,
-                 uint8_t *sync_area, uint8_t *mcch_active);
+int ue_query_mch(module_id_t module_idP,
+                 uint8_t CC_id,
+                 uint32_t frame,
+                 sub_frame_t subframe,
+                 uint8_t eNB_index,
+                 uint8_t *sync_area,
+                 uint8_t *mcch_active);
 
-int ue_query_mch_fembms(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
-		 sub_frame_t subframe, uint8_t eNB_index,
-		 uint8_t * sync_area, uint8_t * mcch_active);
+int ue_query_mch_fembms(module_id_t module_idP,
+                        uint8_t CC_id,
+                        uint32_t frame,
+                        sub_frame_t subframe,
+                        uint8_t eNB_index,
+                        uint8_t *sync_area,
+                        uint8_t *mcch_active);
 
-
-/* \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.
-@param Mod_id Instance id of UE in machine
+/* \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and
+DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and
+DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3
+SDUs and generates header and forms the complete MAC SDU.
+@param module_idP Instance id of UE in machine
 @param eNB_id Index of eNB that UE is attached to
 @param rnti C_RNTI of UE
 @param subframe subframe number
@@ -548,7 +555,7 @@ void ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                 uint8_t *access_mode);
 
 /* \brief Called by PHY to get sdu for PSBCH/SSS/PSS transmission.
-@param Mod_id Instance id of UE in machine
+@param module_idP Instance id of UE in machine
 @param frame_tx TX frame index
 @param subframe_tx TX subframe index
 @returns pointer to SLSS_t descriptor
@@ -556,7 +563,7 @@ void ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 SLSS_t *ue_get_slss(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
 
 /* \brief Called by PHY to get sdu for PSDCH transmission.
-@param Mod_id Instance id of UE in machine
+@param module_idP Instance id of UE in machine
 @param frame_tx TX frame index
 @param subframe_tx TX subframe index
 @returns pointer to SLDCH_t descriptor
@@ -564,16 +571,19 @@ SLSS_t *ue_get_slss(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_
 SLDCH_t *ue_get_sldch(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
 
 /* \brief Called by PHY to get sdu for PSSCH transmission.
-@param Mod_id Instance id of UE in machine
+@param module_idP Instance id of UE in machine
 @param frame_tx TX frame index
 @param subframe_tx TX subframe index
 @returns pointer to SLSCH_t descriptor
 */
 SLSCH_t *ue_get_slsch(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
 
-/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
-@param Mod_id Index of UE instance
-@param Mod_id Component Carrier Index
+/* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode
+for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in
+PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for
+random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
+@param module_idP Index of UE instance
+@param module_idP Component Carrier Index
 @param New_Msg3 Flag to indicate this call is for a new Msg3
 @param subframe Index of subframe for PRACH transmission (0 ... 9)
 @returns A pointer to a PRACH_RESOURCES_t */
@@ -581,8 +591,9 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                                frame_t frameP, uint8_t new_Msg3,
                                sub_frame_t subframe);
 
-/* \brief Function called by PHY to process the received RAR.  It checks that the preamble matches what was sent by the eNB and provides the timing advance and t-CRNTI.
-@param Mod_id Index of UE instance
+/* \brief Function called by PHY to process the received RAR.  It checks that the preamble matches what was sent by the eNB and
+provides the timing advance and t-CRNTI.
+@param module_idP Index of UE instance
 @param CC_id Index to a component carrier
 @param frame Frame index
 @param ra_rnti RA_RNTI value
@@ -653,10 +664,10 @@ uint8_t *parse_ulsch_header(uint8_t *mac_header,
 int to_prb(int);
 int to_rbg(int);
 int mac_init(void);
-int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid, uint8_t rach_resource_type);
-int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
+int add_new_ue(module_id_t module_idP, int CC_id, rnti_t rnti, int harq_pid, uint8_t rach_resource_type);
+int rrc_mac_remove_ue(module_id_t module_idP, rnti_t rntiP);
 
-void store_dlsch_buffer(module_id_t Mod_id, int CC_id, frame_t frameP, sub_frame_t subframeP);
+void store_dlsch_buffer(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t subframeP);
 
 int prev(UE_list_t *listP, int nodeP);
 void add_ue_list(UE_list_t *listP, int UE_id);
@@ -680,7 +691,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    frame_t sched_frameP,
                                    sub_frame_t sched_subframeP);
 
-int phy_stats_exist(module_id_t Mod_id, int rnti);
+int phy_stats_exist(module_id_t module_idP, int rnti);
 
 /*! \fn  UE_L2_state_t ue_scheduler(const module_id_t module_idP,const frame_t frameP, const sub_frame_t subframe, const lte_subframe_t direction,const uint8_t eNB_index)
    \brief UE scheduler where all the ue background tasks are done.  This function performs the following:  1) Trigger PDCP every 5ms 2) Call RRC for link status return to PHY3) Perform SR/BSR procedures for scheduling feedback 4) Perform PHR procedures.
@@ -701,37 +712,34 @@ UE_L2_STATE_t ue_scheduler(const module_id_t module_idP,
                            const lte_subframe_t direction,
                            const uint8_t eNB_index, const int CC_id);
 
-/*! \fn  int cba_access(module_id_t module_idP,frame_t frameP,sub_frame_t subframe, uint8_t eNB_index,uint16_t buflen);
+/*! \fn  int cba_access
 \brief determine whether to use cba resource to transmit or not
-\param[in] Mod_id instance of the UE
-\param[in] frame the frame number
+\param[in] module_idP instance of the UE
+\param[in] frameP the frame number
 \param[in] subframe the subframe number
 \param[in] eNB_index instance of eNB
-\param[out] access(1) or postpone (0)
 */
 int cba_access(module_id_t module_idP, frame_t frameP,
                sub_frame_t subframe, uint8_t eNB_index, uint16_t buflen);
 
 /*! \fn  BSR_SHORT *  get_bsr_short(module_id_t module_idP, uint8_t bsr_len)
 \brief get short bsr level
-\param[in] Mod_id instance of the UE
+\param[in]  module_idP instance of the UE
 \param[in] bsr_len indicator for no, short, or long bsr
-\param[out] bsr_s pointer to short bsr
 */
 BSR_SHORT *get_bsr_short(module_id_t module_idP, uint8_t bsr_len);
 
 /*! \fn  BSR_LONG * get_bsr_long(module_id_t module_idP, uint8_t bsr_len)
 \brief get long bsr level
-\param[in] Mod_id instance of the UE
+\param[in]  module_idP instance of the UE
 \param[in] bsr_len indicator for no, short, or long bsr
-\param[out] bsr_l pointer to long bsr
 */
 BSR_LONG *get_bsr_long(module_id_t module_idP, uint8_t bsr_len);
 
 /*! \fn  bool update_bsr(module_id_t module_idP, frame_t frameP,sub_frame_t subframeP)
    \brief get the rlc stats and update the bsr level for each lcid
-\param[in] Mod_id instance of the UE
-\param[in] frame Frame index
+\param[in] module_idP instance of the UE
+\param[in] frameP Frame index
 */
 bool update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, eNB_index_t eNB_index);
 
@@ -745,22 +753,20 @@ bool update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, e
 uint8_t locate_BsrIndexByBufferSize(const uint32_t *table, int size,
                                     int value);
 
-
 /*! \fn  int get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
    \brief get the number of subframe from the periodic BSR timer configured by the higher layers
-\param[in] periodicBSR_Timer timer for periodic BSR
 \return the number of subframe
 */
 int get_sf_periodicBSRTimer(uint8_t bucketSize);
 
 /*! \fn  int get_ms_bucketsizeduration(uint8_t bucketSize)
    \brief get the time in ms form the bucket size duration configured by the higher layer
-\param[in]  bucketSize the bucket size duration
+\param[in] bucketsizeduration the bucket size duration
 \return the time in ms
 */
 int get_ms_bucketsizeduration(uint8_t bucketsizeduration);
 
-/*! \fn  int get_sf_retxBSRTimer(uint8_t retxBSR_Timer)
+/*! \fn get_sf_retxBSRTimer
    \brief get the number of subframe form the bucket size duration configured by the higher layer
 \param[in]  retxBSR_Timer timer for regular BSR
 \return the time in sf
@@ -790,8 +796,9 @@ int get_db_dl_PathlossChange(uint8_t dl_PathlossChange);
 
 /*! \fn  uint8_t get_phr_mapping (module_id_t module_idP, int CC_id,uint8_t eNB_index)
    \brief get phr mapping as described in 36.313
-\param[in]  Mod_id index of eNB
+\param[in] module_idP  index of eNB
 \param[in] CC_id Component Carrier Index
+\param[in]  eNB_index
 \return phr mapping
 */
 uint8_t get_phr_mapping(module_id_t module_idP, int CC_id,
@@ -799,22 +806,25 @@ uint8_t get_phr_mapping(module_id_t module_idP, int CC_id,
 
 /*! \fn  void update_phr (module_id_t module_idP)
    \brief update/reset the phr timers
-\param[in]  Mod_id index of eNB
+\param[in]  module_idP index of eNB
 \param[in] CC_id Component carrier index
 \return void
 */
 void update_phr(module_id_t module_idP, int CC_id);
 
 /*! \brief Function to indicate Msg3 transmission/retransmission which initiates/reset Contention Resolution Timer
-\param[in] Mod_id Instance index of UE
+\param[in] module_idP  Instance index of UE
+\param[in] CC_id carrier component id of UE
+\param[in] frameP
 \param[in] eNB_id Index of eNB
 */
 void Msg3_tx(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
              uint8_t eNB_id);
 
-
 /*! \brief Function to indicate the transmission of msg1/rach
-\param[in] Mod_id Instance index of UE
+\param[in] module_idP Instance index of UE
+\param[in] CC_id carrier component id of UE
+\param[in] frameP
 \param[in] eNB_id Index of eNB
 */
 
@@ -873,15 +883,18 @@ int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char short_padding,
                           unsigned short post_padding);
 
-/** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
-@param Mod_id Instance ID of eNB
+/** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI),
+RRCConnectionSetup and RRCConnectionReconfiguration messages.
+@param module_idP Instance ID of eNB
 @param CC_id Component Carrier of the eNB
 @param mib Pointer to MIB
 
 @param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
-@param physicalConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
+@param physicalConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if
+NULL keep existing configuration)
 @param measObj Structure from RRCConnectionReconfiguration for UE measurement procedures
-@param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep existing configuration)
+@param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep
+existing configuration)
 @param logicalChannelIdentity Logical channel identity index of corresponding logical channel config
 @param logicalChannelConfig Pointer to logical channel configuration
 @param measGapConfig Measurement Gap configuration for MAC (if NULL keep existing configuration)
@@ -943,14 +956,18 @@ typedef struct {
 
 int rrc_mac_config_req_eNB(const module_id_t module_idP, const rrc_mac_config_req_eNB_t *);
 
-/** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
-@param Mod_id Instance ID of ue
+/** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI),
+RRCConnectionSetup and RRCConnectionReconfiguration messages.
+@param module_idP Instance ID of ue
 @param CC_id Component Carrier of the ue
-@param eNB_id Index of eNB
+@param eNB_index Index of eNB
 @param radioResourceConfigCommon Structure from SIB2 for common radio parameters (if NULL keep existing configuration)
-@param physcialConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if NULL keep existing configuration)
+@param physicalConfigDedicated Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated PHY parameters (if
+NULL keep existing configuration)
+@param sCellToAddMod_r10
 @param measObj Structure from RRCConnectionReconfiguration for UE measurement procedures
-@param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep existing configuration)
+@param mac_MainConfig Structure from RRCConnectionSetup or RRCConnectionReconfiguration for dedicated MAC parameters (if NULL keep
+existing configuration)
 @param logicalChannelIdentity Logical channel identity index of corresponding logical channel config
 @param logicalChannelConfig Pointer to logical channel configuration
 @param measGapConfig Measurement Gap configuration for MAC (if NULL keep existing configuration)
@@ -958,10 +975,19 @@ int rrc_mac_config_req_eNB(const module_id_t module_idP, const rrc_mac_config_re
 @param mobilityControlInfo mobility control info received for Handover
 @param SIwindowsize SI Windowsize from SIB1 (if NULL keep existing configuration)
 @param SIperiod SI Period from SIB1 (if NULL keep existing configuration)
+@param ul_CarrierFreq
+@param ul_Bandwidth
+@param additionalSpectrumEmission
 @param MBMS_Flag indicates MBMS transmission
 @param mbsfn_SubframeConfigList pointer to mbsfn subframe configuration list from SIB2
 @param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
 @param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
+@param config_action
+@param sourceL2Id
+@param  destinationL2Id
+@param FeMBMS_Flag
+@param nonMBSFN_SubframeConfig
+@param mbsfn_AreaInfoList_fembms
 */
 int rrc_mac_config_req_ue(module_id_t module_idP,
                           int CC_id,
@@ -1205,7 +1231,7 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
 
 /* DRX Configuration */
 /* Configure local DRX timers and thresholds in UE context, following the drx_configuration input */
-void eNB_Config_Local_DRX(instance_t Mod_id, rrc_mac_drx_config_req_t *rrc_mac_drx_config_req);                        
+void eNB_Config_Local_DRX(instance_t module_idP, rrc_mac_drx_config_req_t *rrc_mac_drx_config_req);
 
 /* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
 uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe);

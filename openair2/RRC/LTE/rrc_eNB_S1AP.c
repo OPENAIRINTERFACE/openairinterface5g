@@ -335,13 +335,10 @@ get_next_ue_initial_id(
   return ue_initial_id[mod_id];
 }
 
-
-
-
-/*! \fn uint8_t get_UE_index_from_s1ap_ids(uint8_t mod_id, uint16_t ue_initial_id, uint32_t eNB_ue_s1ap_id)
+/*! \fn rrc_eNB_get_ue_context_from_s1ap_ids
  *\brief retrieve UE index in the eNB from the UE initial ID if not equal to UE_INDEX_INVALID or
  *\brief from the eNB_ue_s1ap_id previously transmitted by S1AP.
- *\param mod_id Instance ID of eNB.
+ *\param instanceP Instance ID of eNB.
  *\param ue_initial_id The UE initial ID sent to S1AP.
  *\param eNB_ue_s1ap_id The value sent by S1AP.
  *\return the UE index or UE_INDEX_INVALID if not found.

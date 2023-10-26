@@ -44,15 +44,15 @@ typedef enum {SF_DL_NB_IoT, SF_UL_NB_IoT, SF_S_NB_IoT} NB_IoT_subframe_t;
 /////////////////////////
   /// Union for \ref TPC_PDCCH_CONFIG::tpc_Index.
 typedef union {
-  /// Index of N when DCI format 3 is used. See TS 36.212 (5.3.3.1.6). \vr{[1..15]}
+  /// Index of N when DCI format 3 is used. See TS 36.212 (5.3.3.1.6). {[1..15]}
   uint8_t indexOfFormat3;
-  /// Index of M when DCI format 3A is used. See TS 36.212 (5.3.3.1.7). \vr{[1..31]}
+  /// Index of M when DCI format 3A is used. See TS 36.212 (5.3.3.1.7). {[1..31]}
   uint8_t indexOfFormat3A;
 } TPC_INDEX_NB_IoT_t;
 
 /// TPC-PDCCH-Config Information Element from 36.331 RRC spec
 typedef struct {
-  /// RNTI for power control using DCI format 3/3A, see TS 36.212. \vr{[0..65535]}
+  /// RNTI for power control using DCI format 3/3A, see TS 36.212. {[0..65535]}
   uint16_t rnti;
   /// Index of N or M, see TS 36.212 (5.3.3.1.6 and 5.3.3.1.7), where N or M is dependent on the used DCI format (i.e. format 3 or 3a).
   TPC_INDEX_NB_IoT_t tpc_Index;
@@ -72,22 +72,22 @@ typedef enum {
 
 /// PUCCH-ConfigDedicated from 36.331 RRC spec
 typedef struct {
-  /// Flag to indicate ACK NAK repetition activation, see TS 36.213 (10.1). \vr{[0..1]}
+  /// Flag to indicate ACK NAK repetition activation, see TS 36.213 (10.1). {[0..1]}
   uint8_t ackNackRepetition;
   /// Parameter: \f$N_\text{ANRep}\f$, see TS 36.213 (10.1).
   ACKNAKREP_NB_IoT_t repetitionFactor;
-  /// Parameter: \f$n^{(1)}_\text{PUCCH,ANRep}\f$, see TS 36.213 (10.1). \vr{[0..2047]}
+  /// Parameter: \f$n^{(1)}_\text{PUCCH,ANRep}\f$, see TS 36.213 (10.1). {[0..2047]}
   uint16_t n1PUCCH_AN_Rep;
   /// Feedback mode, see TS 36.213 (7.3). \details Applied to both PUCCH and PUSCH feedback. For TDD, should always be set to bundling.
   ANFBmode_NB_IoT_t tdd_AckNackFeedbackMode;
 } PUCCH_CONFIG_DEDICATED_NB_IoT;
   // UE specific PUSCH configuration.
 typedef struct {
-  /// Parameter: \f$I^\text{HARQ-ACK}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-1). \vr{[0..15]}
+  /// Parameter: \f$I^\text{HARQ-ACK}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-1). {[0..15]}
   uint16_t betaOffset_ACK_Index;
-  /// Parameter: \f$I^{RI}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-2). \vr{[0..15]}
+  /// Parameter: \f$I^{RI}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-2). {[0..15]}
   uint16_t betaOffset_RI_Index;
-  /// Parameter: \f$I^{CQI}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-3). \vr{[0..15]}
+  /// Parameter: \f$I^{CQI}_\text{offset}\f$, see TS 36.213 (Table 8.6.3-3). {[0..15]}
   uint16_t betaOffset_CQI_Index;
 } PUSCH_CONFIG_DEDICATED_NB_IoT;
 /// Enumeration for Parameter \f$P_A\f$ \ref PDSCH_CONFIG_DEDICATED::p_a.
@@ -110,39 +110,46 @@ typedef struct {
 
 /// UplinkPowerControlDedicated Information Element from 36.331 RRC spec
 typedef struct {
-  /// Parameter: \f$P_\text{0\_UE\_PUSCH}(1)\f$, see TS 36.213 (5.1.1.1), unit dB. \vr{[-8..7]}\n This field is applicable for non-persistent scheduling, only.
+  /// Parameter: \f$P_\text{0\_UE\_PUSCH}(1)\f$, see TS 36.213 (5.1.1.1), unit dB. {[-8..7]}\n This field is applicable for
+  /// non-persistent scheduling, only.
   int8_t p0_UE_PUSCH;
-  /// Parameter: Ks, see TS 36.213 (5.1.1.1). \vr{[0..1]}\n en0 corresponds to value 0 corresponding to state “disabled”. en1 corresponds to value 1.25 corresponding to “enabled”. \note the specification sais it is an enumerated value. \warning the enumeration values do not correspond to the given values in the specification (en1 should be 1.25).
+  /// Parameter: Ks, see TS 36.213 (5.1.1.1). {[0..1]}\n en0 corresponds to value 0 corresponding to state “disabled”. en1
+  /// corresponds to value 1.25 corresponding to “enabled”. \note the specification sais it is an enumerated value. \warning the
+  /// enumeration values do not correspond to the given values in the specification (en1 should be 1.25).
   uint8_t deltaMCS_Enabled;
-  /// Parameter: Accumulation-enabled, see TS 36.213 (5.1.1.1). \vr{[0..1]} 1 corresponds to "enabled" whereas 0 corresponds to "disabled".
+  /// Parameter: Accumulation-enabled, see TS 36.213 (5.1.1.1). {[0..1]} 1 corresponds to "enabled" whereas 0 corresponds to
+  /// "disabled".
   uint8_t accumulationEnabled;
-  /// Parameter: \f$P_\text{0\_UE\_PUCCH}(1)\f$, see TS 36.213 (5.1.2.1), unit dB. \vr{[-8..7]}
+  /// Parameter: \f$P_\text{0\_UE\_PUCCH}(1)\f$, see TS 36.213 (5.1.2.1), unit dB. {[-8..7]}
   int8_t p0_UE_PUCCH;
-  /// Parameter: \f$P_\text{SRS\_OFFSET}\f$, see TS 36.213 (5.1.3.1). \vr{[0..15]}\n For Ks=1.25 (\ref deltaMCS_Enabled), the actual parameter value is pSRS_Offset value - 3. For Ks=0, the actual parameter value is -10.5 + 1.5*pSRS_Offset value.
+  /// Parameter: \f$P_\text{SRS\_OFFSET}\f$, see TS 36.213 (5.1.3.1). {[0..15]}\n For Ks=1.25 (\ref deltaMCS_Enabled), the actual
+  /// parameter value is pSRS_Offset value - 3. For Ks=0, the actual parameter value is -10.5 + 1.5*pSRS_Offset value.
   int8_t pSRS_Offset;
   /// Specifies the filtering coefficient for RSRP measurements used to calculate path loss, as specified in TS 36.213 (5.1.1.1).\details The same filtering mechanism applies as for quantityConfig described in 5.5.3.2. \note the specification sais it is an enumerated value.
   uint8_t filterCoefficient;
 } UL_POWER_CONTROL_DEDICATED_NB_IoT;
 
 /// Union for \ref TPC_PDCCH_CONFIG::tpc_Index.
-//typedef union {
-  /// Index of N when DCI format 3 is used. See TS 36.212 (5.3.3.1.6). \vr{[1..15]}
- // uint8_t indexOfFormat3;
-  /// Index of M when DCI format 3A is used. See TS 36.212 (5.3.3.1.7). \vr{[1..31]}
- // uint8_t indexOfFormat3A;
+// typedef union {
+/// Index of N when DCI format 3 is used. See TS 36.212 (5.3.3.1.6). {[1..15]}
+// uint8_t indexOfFormat3;
+/// Index of M when DCI format 3A is used. See TS 36.212 (5.3.3.1.7). {[1..31]}
+// uint8_t indexOfFormat3A;
 //} TPC_INDEX_NB_IoT_t;
 
 /// CQI-ReportPeriodic
 typedef struct {
-  /// Parameter: \f$n^{(2)}_\text{PUCCH}\f$, see TS 36.213 (7.2). \vr{[0..1185]}, -1 indicates inactivity
+  /// Parameter: \f$n^{(2)}_\text{PUCCH}\f$, see TS 36.213 (7.2). {[0..1185]}, -1 indicates inactivity
   int16_t cqi_PUCCH_ResourceIndex;
-  /// Parameter: CQI/PMI Periodicity and Offset Configuration Index \f$I_\text{CQI/PMI}\f$, see TS 36.213 (tables 7.2.2-1A and 7.2.2-1C). \vr{[0..1023]}
+  /// Parameter: CQI/PMI Periodicity and Offset Configuration Index \f$I_\text{CQI/PMI}\f$, see TS 36.213 (tables 7.2.2-1A
+  /// and 7.2.2-1C). {[0..1023]}
   int16_t cqi_PMI_ConfigIndex;
-  /// Parameter: K, see 36.213 (4.2.2). \vr{[1..4]}
+  /// Parameter: K, see 36.213 (4.2.2). {[1..4]}
   uint8_t K;
-  /// Parameter: RI Config Index \f$I_\text{RI}\f$, see TS 36.213 (7.2.2-1B). \vr{[0..1023]}, -1 indicates inactivity
+  /// Parameter: RI Config Index \f$I_\text{RI}\f$, see TS 36.213 (7.2.2-1B). {[0..1023]}, -1 indicates inactivity
   int16_t ri_ConfigIndex;
-  /// Parameter: Simultaneous-AN-and-CQI, see TS 36.213 (10.1). \vr{[0..1]} 1 indicates that simultaneous transmission of ACK/NACK and CQI is allowed.
+  /// Parameter: Simultaneous-AN-and-CQI, see TS 36.213 (10.1). {[0..1]} 1 indicates that simultaneous transmission of ACK/NACK and
+  /// CQI is allowed.
   uint8_t simultaneousAckNackAndCQI;
   /// parameter computed from Tables 7.2.2-1A and 7.2.2-1C
   uint16_t Npd;
@@ -163,26 +170,29 @@ typedef enum {
 typedef struct {
   /// Parameter: reporting mode. Value rm12 corresponds to Mode 1-2, rm20 corresponds to Mode 2-0, rm22 corresponds to Mode 2-2 etc. PUSCH reporting modes are described in TS 36.213 [23, 7.2.1].
   CQI_REPORTMODEAPERIODIC_NB_IoT cqi_ReportModeAperiodic;
-  /// Parameter: \f$\Delta_\text{offset}\f$, see TS 36.213 (7.2.3). \vr{[-1..6]}\n Actual value = IE value * 2 [dB].
+  /// Parameter: \f$\Delta_\text{offset}\f$, see TS 36.213 (7.2.3). {[-1..6]}\n Actual value = IE value * 2 [dB].
   int8_t nomPDSCH_RS_EPRE_Offset;
   CQI_REPORTPERIODIC_NB_IoT CQI_ReportPeriodic;
 } CQI_REPORT_CONFIG_NB_IoT;
 
 /// SoundingRS-UL-ConfigDedicated Information Element from 36.331 RRC spec
 typedef struct {
-  /// Parameter: \f$B_\text{SRS}\f$, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). \vr{[0..3]} \note the specification sais it is an enumerated value.
+  /// Parameter: \f$B_\text{SRS}\f$, see TS 36.211 (table 5.5.3.2-1, 5.5.3.2-2, 5.5.3.2-3 and 5.5.3.2-4). {[0..3]} \note the
+  /// specification sais it is an enumerated value.
   uint8_t srs_Bandwidth;
-  /// Parameter: SRS hopping bandwidth \f$b_\text{hop}\in\{0,1,2,3\}\f$, see TS 36.211 (5.5.3.2) \vr{[0..3]} \note the specification sais it is an enumerated value.
+  /// Parameter: SRS hopping bandwidth \f$b_\text{hop}\in\{0,1,2,3\}\f$, see TS 36.211 (5.5.3.2) {[0..3]} \note the specification
+  /// sais it is an enumerated value.
   uint8_t srs_HoppingBandwidth;
-  /// Parameter: \f$n_\text{RRC}\f$, see TS 36.211 (5.5.3.2). \vr{[0..23]}
+  /// Parameter: \f$n_\text{RRC}\f$, see TS 36.211 (5.5.3.2). {[0..23]}
   uint8_t freqDomainPosition;
-  /// Parameter: Duration, see TS 36.213 (8.2). \vr{[0..1]} 0 corresponds to "single" and 1 to "indefinite".
+  /// Parameter: Duration, see TS 36.213 (8.2). {[0..1]} 0 corresponds to "single" and 1 to "indefinite".
   uint8_t duration;
-  /// Parameter: \f$k_\text{TC}\in\{0,1\}\f$, see TS 36.211 (5.5.3.2). \vr{[0..1]}
+  /// Parameter: \f$k_\text{TC}\in\{0,1\}\f$, see TS 36.211 (5.5.3.2). {[0..1]}
   uint8_t transmissionComb;
-  /// Parameter: \f$I_\text{SRS}\f$, see TS 36.213 (table 8.2-1). \vr{[0..1023]}
+  /// Parameter: \f$I_\text{SRS}\f$, see TS 36.213 (table 8.2-1). {[0..1023]}
   uint16_t srs_ConfigIndex;
-  /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). \vr{[0..7]} \note the specification sais it is an enumerated value.
+  /// Parameter: \f$n^\text{CS}_\text{SRS}\f$. See TS 36.211 (5.5.3.1). {[0..7]} \note the specification sais it is an enumerated
+  /// value.
   uint8_t cyclicShift;
   // Parameter: internal implementation: UE SRS configured
   uint8_t srsConfigDedicatedSetup;
@@ -204,9 +214,9 @@ typedef enum {
 
 /// SchedulingRequestConfig Information Element from 36.331 RRC spec
 typedef struct {
-  /// Parameter: \f$n^{(1)}_\text{PUCCH,SRI}\f$, see TS 36.213 (10.1). \vr{[0..2047]}
+  /// Parameter: \f$n^{(1)}_\text{PUCCH,SRI}\f$, see TS 36.213 (10.1). {[0..2047]}
   uint16_t sr_PUCCH_ResourceIndex;
-  /// Parameter: \f$I_\text{SR}\f$, see TS 36.213 (10.1). \vr{[0..155]}
+  /// Parameter: \f$I_\text{SR}\f$, see TS 36.213 (10.1). {[0..155]}
   uint8_t sr_ConfigIndex;
   /// Parameter for SR transmission in TS 36.321 (5.4.4). \details The value n4 corresponds to 4 transmissions, n8 corresponds to 8 transmissions and so on.
   DSR_TRANSMAX_NB_IoT_t dsr_TransMax;
@@ -404,7 +414,7 @@ typedef struct {
 typedef struct {
   /// nprach_CP_Length_r13, for the CP length(unit us) only 66.7 and 266.7 is implemented
   uint16_t nprach_CP_Length;
-  /// The criterion for UEs to select a NPRACH resource. Up to 2 RSRP threshold values can be signalled.  \vr{[1..2]}
+  /// The criterion for UEs to select a NPRACH resource. Up to 2 RSRP threshold values can be signalled.  {[1..2]}
   rsrp_ThresholdsNPrachInfoList *rsrp_ThresholdsPrachInfoList;
   /// NPRACH Parameters List
   NPRACH_List_NB_IoT_t nprach_ParametersList;
@@ -413,7 +423,7 @@ typedef struct {
 
 /// NPDSCH-ConfigCommon from 36.331 RRC spec
 typedef struct {
-  ///see TS 36.213 (16.2). \vr{[-60..50]}\n Provides the downlink reference-signal EPRE. The actual value in dBm.
+  /// see TS 36.213 (16.2). {[-60..50]}\n Provides the downlink reference-signal EPRE. The actual value in dBm.
   uint16_t nrs_Power;
 } NPDSCH_CONFIG_COMMON;
 
@@ -433,11 +443,11 @@ typedef struct{
 
 /// UL-ReferenceSignalsNPUSCH from 36.331 RRC spec
 typedef struct {
-  /// Parameter: Group-hopping-enabled, see TS 36.211 (5.5.1.3). \vr{[0..1]}
+  /// Parameter: Group-hopping-enabled, see TS 36.211 (5.5.1.3). {[0..1]}
   uint8_t groupHoppingEnabled;
-  /// , see TS 36.211 (5.5.1.3). \vr{[0..29]}
+  /// , see TS 36.211 (5.5.1.3). {[0..29]}
   uint8_t groupAssignmentNPUSCH;
-  /// Parameter: cyclicShift, see TS 36.211 (Table 5.5.2.1.1-2). \vr{[0..7]}
+  /// Parameter: cyclicShift, see TS 36.211 (Table 5.5.2.1.1-2). {[0..7]}
   uint8_t cyclicShift;
   /// nPRS for cyclic shift of DRS \note not part of offical UL-ReferenceSignalsPUSCH ASN1 specification.
   uint8_t nPRS[20];
@@ -454,7 +464,7 @@ typedef struct {
   uint8_t ack_NACK_NumRepetitions_Msg4[3];
   /// SRS SubframeConfiguration. See TS 36.211 [21, table 5.5.3.3-1]. Value sc0 corresponds to value 0, sc1 to value 1 and so on.
   uint8_t srs_SubframeConfig;
-  /// Parameter: \f$N^{HO}_{RB}\f$, see TS 36.211 (5.3.4). \vr{[0..98]}
+  /// Parameter: \f$N^{HO}_{RB}\f$, see TS 36.211 (5.3.4). {[0..98]}
   DMRS_CONFIG_t dmrs_Config;
   /// Ref signals configuration
   UL_REFERENCE_SIGNALS_NPUSCH_t ul_ReferenceSignalsNPUSCH;

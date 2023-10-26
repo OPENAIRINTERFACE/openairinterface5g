@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/defs.h
-* \brief data structures for PDSCH/DLSCH/PUSCH/ULSCH physical and transport channel descriptors (TX/RX)
-* \author R. Knopp
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr, florian.kaltenberger@eurecom.fr, oscar.tonelli@yahoo.it
-* \note
-* \warning
-*/
+/*! \file nr_transport_ue.h
+ * \brief data structures for PDSCH/DLSCH/PUSCH/ULSCH physical and transport channel descriptors (TX/RX)
+ * \author R. Knopp
+ * \date 2011
+ * \version 0.1
+ * \company Eurecom
+ * \email: raymond.knopp@eurecom.fr, florian.kaltenberger@eurecom.fr, oscar.tonelli@yahoo.it
+ * \note
+ * \warning
+ */
 #ifndef __NR_TRANSPORT_UE__H__
 #define __NR_TRANSPORT_UE__H__
 #include <limits.h>
@@ -164,7 +164,4 @@ typedef struct {
   // PTRS symbol index, to be updated every PTRS symbol within a slot.
   uint8_t ptrs_symbol_index;
 } NR_UE_DLSCH_t;
-
-
-/**@}*/
 #endif

@@ -457,33 +457,31 @@ struct openair0_device_t {
       @param timestamp The timestamp at whicch the first sample MUST be sent
       @param buff Buffer which holds the samples (1 dimensional)
       @param nsamps number of samples to be sent
-      @param antenna_id index of the antenna if the device has multiple anteannas
       @param flags flags must be set to true if timestamp parameter needs to be applied
   */
   int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void **buff, int fd_ind,int nsamps, int flags,int nant);
 
   /*! \brief Receive samples from hardware.
-   * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
+   * Read nsamps samples from each channel to buffers. buff[0] is the array for
    * the first channel. *ptimestamp is the time at which the first sample
    * was received.
    * \param device the hardware to use
    * \param[out] ptimestamp the time at which the first sample was received.
-   * \param[out] buff An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of samples \ref nsamps.
-   * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
-   * \param num_antennas number of antennas from which to receive samples
-   * \returns the number of sample read
+   * \param[out] buff An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of
+   * samples nsamps. \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte. \param num_antennas number of
+   * antennas from which to receive samples \returns the number of sample read
    */
 
   int (*trx_read_func)(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps,int num_antennas);
 
   /*! \brief Receive samples from hardware, this version provides a single antenna at a time and returns.
-   * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
+   * Read nsamps samples from each channel to buffers. buff[0] is the array for
    * the first channel. *ptimestamp is the time at which the first sample
    * was received.
    * \param device the hardware to use
    * \param[out] ptimestamp the time at which the first sample was received.
-   * \param[out] buff A pointer to a buffer[ant_id][] for received samples. The buffer[ant_id] must be large enough to hold the number of samples \ref nsamps * the number of packets.
-   * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
+   * \param[out] buff A pointer to a buffer[ant_id][] for received samples. The buffer[ant_id] must be large enough to hold the
+   * number of samples nsamps * the number of packets. \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
    * \param packet_idx offset into
    * \param antenna_id Index of antenna from which samples were received
    * \returns the number of sample read
@@ -628,8 +626,9 @@ openair0_timestamp get_usrp_time(openair0_device *device);
  * \returns 0 in success
  */
 int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg);
-/*! \brief read the iq record/player configuration */
+/*! \brief read the iq record-player configuration */
 extern int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_state);
+
 /*! \brief store recorded iqs from memory to file. */
 extern void iqrecorder_end(openair0_device *device);
 
@@ -638,9 +637,7 @@ extern void iqrecorder_end(openair0_device *device);
 #ifndef gettid
 #define gettid() syscall(__NR_gettid)
 #endif
-/*@}*/
-
-
+/**@}*/
 
 #ifdef __cplusplus
 }

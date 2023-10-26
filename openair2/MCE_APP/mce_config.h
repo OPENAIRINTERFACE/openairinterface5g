@@ -65,6 +65,4 @@ int RCconfig_m2_mcch(m2ap_setup_resp_t * m2ap_setup_resp, uint32_t i);
 int RCconfig_M2_SCHEDULING(MessageDef *msg_p, uint32_t i);
 int RCconfig_m2_scheduling(m2ap_mbms_scheduling_information_t *m2ap_mbms_scheduling_information, uint32_t i);
 
-
 #endif /* MCE_CONFIG_H_ */
-/** @} */

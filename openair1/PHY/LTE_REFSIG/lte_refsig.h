@@ -186,3 +186,4 @@ int lte_generate_srs(int32_t **txdataF,
 
 
 #endif
+/** @}*/

@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/TOOLS/ALAW/alaw_lut.h
-* \brief 
-* \author S. Sandeep Kumar, Raymond Knopp
-* \date 2016
-* \version 0.1
-* \company Eurecom
-* \email: ee13b1025@iith.ac.in, knopp@eurecom.fr 
-* \note
-* \warning
-*/
+/*! \file alaw_lut.h
+ * \brief
+ * \author S. Sandeep Kumar, Raymond Knopp
+ * \date 2016
+ * \version 0.1
+ * \company Eurecom
+ * \email: ee13b1025@iith.ac.in, knopp@eurecom.fr
+ * \note
+ * \warning
+ */
 
 // Linear to ALaw
 // 16 bit signed integer (typecasted as uint16_t) to 8 bit unsigned integer

@@ -155,6 +155,5 @@ void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
                                int rnti);
 
 int configure_NR_SL_Preconfig(int sync_source);
-/** @}*/
 #endif
 

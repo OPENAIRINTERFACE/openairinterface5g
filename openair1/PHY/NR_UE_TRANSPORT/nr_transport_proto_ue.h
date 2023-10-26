@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_UE_TRANSPORT/transport_proto_ue.h
+/*! \file nr_transport_proto_ue.h
  * \brief Function prototypes for PHY physical/transport channel processing and generation V8.6 2009-03
  * \author R. Knopp, F. Kaltenberger
  * \date 2011
@@ -71,6 +71,7 @@ void nr_qpsk_qpsk(int16_t *stream0_in,
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
+    @param len
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
@@ -87,16 +88,14 @@ int32_t nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                             uint16_t pbch_pss_sss_adj,
                             int16_t **llr128p);
 
-/** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
+/** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
+    @param len
     @param first_symbol_flag
     @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr128p pointer to pointer to symbol in dlsch_llr
-    @param beamforming_mode beamforming mode
 */
 int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                    int32_t *rxdataF_comp,
@@ -111,13 +110,12 @@ int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
    @param frame_parms Frame descriptor structure
    @param rxdataF_comp Compensated channel output
    @param dlsch_llr llr output
-   @param dl_ch_mag Squared-magnitude of channel in each resource element position corresponding to allocation and weighted for mid-point in 16QAM constellation
+   @param dl_ch_mag Squared-magnitude of channel in each resource element position corresponding to allocation and weighted for
+   mid-point in 16QAM constellation
+   @param len
    @param symbol OFDM symbol index in sub-frame
    @param first_symbol_flag
    @param nb_rb number of RBs for this allocation
-   @param pbch_pss_sss_adjust  Adjustment factor in RE for PBCH/PSS/SSS allocations
-   @param llr128p pointer to pointer to symbol in dlsch_llr
-   @param beamforming_mode beamforming mode
 */
 
 void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
@@ -133,13 +131,14 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
    @param frame_parms Frame descriptor structure
    @param rxdataF_comp Compensated channel output
    @param dlsch_llr llr output
-   @param dl_ch_mag Squared-magnitude of channel in each resource element position corresponding to allocation, weighted by first mid-point of 64-QAM constellation
-   @param dl_ch_magb Squared-magnitude of channel in each resource element position corresponding to allocation, weighted by second mid-point of 64-QAM constellation
+   @param dl_ch_mag Squared-magnitude of channel in each resource element position corresponding to allocation, weighted by first
+   mid-point of 64-QAM constellation
+   @param dl_ch_magb Squared-magnitude of channel in each resource element position corresponding to allocation, weighted by second
+   mid-point of 64-QAM constellation
    @param symbol OFDM symbol index in sub-frame
+   @param len
    @param first_symbol_flag
    @param nb_rb number of RBs for this allocation
-   @param pbch_pss_sss_adjust PBCH/PSS/SSS RE adjustment (in REs)
-   @param beamforming_mode beamforming mode
 */
 
 void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
@@ -184,14 +183,18 @@ void nr_conjch0_mult_ch1(int *ch0,
     one segment or correct decoding of all segments.  Only the segment CRCs are check for the moment, the
     overall CRC is ignored.  Finally transport block reassembly is performed.
     @param phy_vars_ue Pointer to ue variables
+    @param proc
+    @param eNB_id
     @param dlsch_llr Pointer to LLR values computed by dlsch_demodulation
-    @param lte_frame_parms Pointer to frame descriptor
+    @param frame_parms Pointer to frame descriptor
     @param dlsch Pointer to DLSCH descriptor
+    @param harq_process
     @param frame Frame number
+    @param nb_symb_sch
     @param nr_slot_rx Slot number
-    @param num_pdcch_symbols Number of PDCCH symbols
-    @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
-    @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
+    @param harq_pid
+    @param b_size
+    @param b
     @returns 0 on success, 1 on unsuccessful decoding
 */
 
@@ -217,12 +220,12 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                      unsigned int G);
 
 /*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
-  @param[in] in, Pointer to input bits
-  @param[in] size, of input bits
-  @param[in] Nid, cell id
-  @param[in] n_RNTI, CRNTI
+  @param[in] in Pointer to input bits
+  @param[in] size of input bits
+  @param[in] Nid cell id
+  @param[in] n_RNTI CRNTI
   @param[in] uci_on_pusch whether UCI placeholder bits need to be scrambled (true -> no optimized scrambling)
-  @param[out] out, the scrambled bits
+  @param[out] out the scrambled bits
 */
 void nr_pusch_codeword_scrambling(uint8_t *in,
                                   uint32_t size,
@@ -312,8 +315,10 @@ int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue, UE_nr_rxtx_proc_t *proc, char* bu
   end, the basic frame parameters are known (Frame configuration - TDD/FDD and cyclic prefix length,
   N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSCH SI to retrieve the rest.  Once these
   parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
+@param proc
   @param phy_vars_ue Pointer to UE variables
-  @param mode current running mode
+@param n_frames
+  @param sa current running mode
 */
 int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                     PHY_VARS_NR_UE *phy_vars_ue,
@@ -321,8 +326,9 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                     int sa);
 
 /*!
-  \brief This function gets the carrier frequencies either from FP or command-line-set global variables, depending on the availability of the latter
-  @param fp         Pointer to frame params
+  \brief This function gets the carrier frequencies either from FP or command-line-set global variables, depending on the
+  availability of the latter
+  @param ue
   @param dl_Carrier Pointer to DL carrier to be set
   @param ul_Carrier Pointer to UL carrier to be set
 */
@@ -341,11 +347,7 @@ void nr_get_carrier_frequencies_sl(PHY_VARS_NR_UE *ue,
 /*!
   \brief This function sets the OAI RF card rx/tx params
   @param openair0_cfg   Pointer OAI config for a specific card
-  @param tx_gain_off    Tx gain offset
   @param rx_gain_off    Rx gain offset
-  @param ul_Carrier     UL carrier to be set
-  @param dl_Carrier     DL carrier to be set
-  @param freq_offset    Freq offset to be set
 */
 void nr_rf_card_config_gain(openair0_config_t *openair0_cfg,
                             double rx_gain_off);
@@ -371,8 +373,8 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   fapi_nr_dci_indication_t *dci_ind,
                                   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
-
-/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
+/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel
+   estimation.  It performs
     - RB extraction (signal and channel estimates)
     - channel compensation (matched filtering)
     - RE extraction (pilot, PBCH, synch. signals)
@@ -380,13 +382,23 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
     - LLR computation
     This function supports TM1, 2, 3, 5, and 6.
     @param ue Pointer to PHY variables
-    @param type Type of PDSCH (SI_PDSCH,RA_PDSCH,PDSCH,PMCH)
-    @param eNB_id eNb index (Nid1) 0,1,2
-    @param eNB_id_i Interfering eNB index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
-    @param frame Frame number
-    @param nr_slot_rx Slot number
+    @param proc
+    @prama dlsch
     @param symbol Symbol on which to act (within sub-frame)
     @param first_symbol_flag set to 1 on first DLSCH symbol
+    @param harq_pid
+    @param pdsch_est_size
+    @param dl_ch_estimates
+    @param llr
+    @param dl_valid_re
+    @param rxdataF
+    @param llr_offset
+    @param log2_maxhrx_size_symbol
+    @param rx_size_symbol
+    @param nbRx
+    @param rxdataF_comp
+    @param ptrs_phase_per_slot
+    @param ptrs_re_per_slot
 */
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,

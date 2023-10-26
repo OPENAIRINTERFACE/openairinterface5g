@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/prach_utils.h
-* \brief computation of some PRACH variables used in both MAC and PHY 
-* \author R. Knopp
-* \date 2020
-* \version 0.1
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr, florian.kaltenberger@eurecom.fr, oscar.tonelli@yahoo.it
-* \note
-* \warning
-*/
+/*! \file prach_utils.h
+ * \brief computation of some PRACH variables used in both MAC and PHY
+ * \author R. Knopp
+ * \date 2020
+ * \version 0.1
+ * \company Eurecom
+ * \email: raymond.knopp@eurecom.fr, florian.kaltenberger@eurecom.fr, oscar.tonelli@yahoo.it
+ * \note
+ * \warning
+ */
 uint8_t get_prach_fmt(int prach_ConfigIndex,int frame_type);
 
 uint8_t get_prach_prb_offset(int frame_type,

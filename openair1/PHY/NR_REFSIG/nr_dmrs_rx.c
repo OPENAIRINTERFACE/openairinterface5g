@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_REFSIG/nr_dl_dmrs.c
+/*! \file nr_dmrs_rx.c
  * \brief Top-level routines for generating DMRS from 38-211
  * \author
  * \date 2018

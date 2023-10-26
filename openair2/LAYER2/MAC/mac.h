@@ -19,7 +19,7 @@
 *      contact@openairinterface.org
 */
 
-/*! \file LAYER2/MAC/defs.h
+/*! \file mac.h
 * \brief MAC data structures, constant, and function prototype
 * \author Navid Nikaein and Raymond Knopp
 * \date 2011
@@ -32,7 +32,7 @@
  * @{
  */
 
-/*@}*/
+/**@}*/
 
 #ifndef __LAYER2_MAC_DEFS_H__
 #define __LAYER2_MAC_DEFS_H__
@@ -139,7 +139,7 @@
 #define MIN_CQI_VALUE  0
 /*!\brief maximum value for channel quality indicator */
 #define MAX_CQI_VALUE  15
-/*!\briefmaximum number of supported bandwidth (1.4, 5, 10, 20 MHz) */
+/*!\brief maximum number of supported bandwidth (1.4, 5, 10, 20 MHz) */
 #define MAX_SUPPORTED_BW  4
 /*!\brief CQI values range from 1 to 15 (4 bits) */
 #define CQI_VALUE_RANGE 16
@@ -467,7 +467,6 @@ typedef struct {
 #define SHORT_BSR 29
 /*!\brief LCID of long BSR for ULSCH */
 #define LONG_BSR 30
-/*!\bitmaps for BSR Triggers */
 #define BSR_TRIGGER_NONE    (0) /* No BSR Trigger */
 #define BSR_TRIGGER_REGULAR   (1) /* For Regular and ReTxBSR Expiry Triggers */
 #define BSR_TRIGGER_PERIODIC  (2) /* For BSR Periodic Timer Expiry Trigger */
@@ -1680,5 +1679,5 @@ typedef  struct {
 
 #include "mac_proto.h"
 
-/*@}*/
+/**@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

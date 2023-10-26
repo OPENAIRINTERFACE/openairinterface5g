@@ -1,16 +1,16 @@
 /*******************************************************************************
 
  *******************************************************************************/
-/*! \file PHY/LTE_REFSIG/defs_NB_IoT.c
-* \function called by lte_dl_cell_spec_NB_IoT.c ,	 TS 36-211, V13.4.0 2017-02
-* \author M. KANJ
-* \date 2017
-* \version 0.0
-* \company bcom
-* \email: matthieu.kanj@b-com.com
-* \note
-* \warning
-*/
+/*! \file defs_NB_IoT.h
+ * \function called by lte_dl_cell_spec_NB_IoT.c ,	 TS 36-211, V13.4.0 2017-02
+ * \author M. KANJ
+ * \date 2017
+ * \version 0.0
+ * \company bcom
+ * \email: matthieu.kanj@b-com.com
+ * \note
+ * \warning
+ */
 
 /* Definitions for NB_IoT Reference signals */
 
@@ -58,3 +58,4 @@ void generate_ul_ref_sigs_rx_NB_IoT(void);
 void free_ul_ref_sigs_NB_IoT(void);
 			 
 #endif
+/** @}*/

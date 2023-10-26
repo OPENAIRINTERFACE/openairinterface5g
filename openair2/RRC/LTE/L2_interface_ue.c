@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file l2_interface_ue.c
+/*! \file L2_interface_ue.c
  * \brief layer 2 interface, used to support different RRC sublayer
  * \author Raymond Knopp and Navid Nikaein
  * \date 2010-2014
@@ -28,15 +28,13 @@
  * \email: raymond.knopp@eurecom.fr
  */
 
-
-/*! \file l2_interface_ue.c
+/*! \file L2_interface_ue.c
  * \brief layer 2 interface, added support for FeMBMS RRC sublayer
  * \author J. Morgade
  * \date 2020
  * \version 1.0
  * \email: javier.morgade@ieee.org
  */
-
 
 #include "platform_types.h"
 #include "rrc_defs.h"

@@ -92,12 +92,11 @@ float owd_const_mobile_core(void);
 */
 float owd_const_IP_backbone(void);
 
-/*! \fn float owd_const_applicatione();
-*\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
-*\param[out] float: application delay constant
-*\note
-*@ingroup  _otg
-*/
+/*! \fn owd_const_application
+ *\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine
+ *Communication in LTE-Based System Architecture" \note
+ *@ingroup  _otg
+ */
 float owd_const_application(void);
 
 

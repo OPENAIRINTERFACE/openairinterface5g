@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file lte-softmodem-common.h
+/*! \file softmodem-common.h
  * \brief Top-level threads for eNodeB
- * \author 
+ * \author
  * \date 2012
  * \version 0.1
  * \company Eurecom
- * \email: 
+ * \email:
  * \note
  * \warning
  */

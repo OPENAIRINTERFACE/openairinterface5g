@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/dlsch_decoding.c
-* \brief Top-level routines for transmission of the PDSCH 38211 v 15.2.0
-* \author Guy De Souza
-* \date 2018
-* \version 0.1
-* \company Eurecom
-* \email: desouza@eurecom.fr
-* \note
-* \warning
-*/
+/*! \file nr_dlsch.c
+ * \brief Top-level routines for transmission of the PDSCH 38211 v 15.2.0
+ * \author Guy De Souza
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom
+ * \email: desouza@eurecom.fr
+ * \note
+ * \warning
+ */
 
 #include "nr_dlsch.h"
 #include "nr_dci.h"

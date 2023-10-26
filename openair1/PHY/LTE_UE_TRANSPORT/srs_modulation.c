@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/srs_modulation.c
-* \brief Top-level routines for generating sounding reference signal (SRS) V8.6 2009-03
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr, florian.kaltenberger@eurecom.fr
-* \note
-* \warning
-*/
+/*! \file srs_modulation.c
+ * \brief Top-level routines for generating sounding reference signal (SRS) V8.6 2009-03
+ * \author R. Knopp, F. Kaltenberger
+ * \date 2011
+ * \version 0.1
+ * \company Eurecom
+ * \email: knopp@eurecom.fr, florian.kaltenberger@eurecom.fr
+ * \note
+ * \warning
+ */
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern.h"
 #include "common/utils/LOG/log.h"

@@ -37,7 +37,7 @@
 
 /*! \brief read the oai recorder or player configuration, called from common device code
  * \param recplay_conf:  store parameters
- *        recplay_state: store recorder or player data while the device runs
+ * \param recplay_state: store recorder or player data while the device runs
  */
 int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_state) {
   *recplay_conf = calloc(sizeof(recplay_conf_t),1);
@@ -76,7 +76,7 @@ int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_
 
 /*! \brief Terminate operation of the oai iq recorder. to be called by any device
  * used in record mode
- * \param device, the hardware used
+ * \param device the hardware used
  */
 void iqrecorder_end(openair0_device *device) {
   if (device->recplay_state != NULL) { // subframes store

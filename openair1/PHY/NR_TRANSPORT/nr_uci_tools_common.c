@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_TRANSPORT/nr_dci_tools_common.c
+/*! \file nr_uci_tools_common.c
  * \brief
  * \author
  * \date 2020

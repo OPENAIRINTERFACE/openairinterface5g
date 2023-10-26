@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*!\file PHY/CODING/nrPolar_tools/nr_polar_procedures.h
+/*! \file nr_polar_procedures.c
  * \brief
  * \author Turker Yilmaz
  * \date 2018

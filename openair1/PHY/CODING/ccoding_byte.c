@@ -246,5 +246,3 @@ main() {
   printf("\n");
 }
 #endif
-
-/** @}*/

@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*!\file ldpc_encoder2.c
+/*! \file ldpc_encoder_optim8seg.c
  * \brief Defines the optimized LDPC encoder
  * \author Florian Kaltenberger, Raymond Knopp, Kien le Trung (Eurecom)
  * \email openair_tech@eurecom.fr

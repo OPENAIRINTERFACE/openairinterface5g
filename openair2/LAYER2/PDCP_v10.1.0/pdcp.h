@@ -336,16 +336,6 @@ void pdcp_add_UE(const protocol_ctxt_t *const  ctxt_pP);
 */
 bool pdcp_remove_UE(const protocol_ctxt_t *const  ctxt_pP);
 
-/*! \fn void rrc_pdcp_config_release( const protocol_ctxt_t* const, rb_id_t)
-* \brief This functions is unused
-* \param[in]  ctxt_pP           Running context.
-* \param[in] rab_id Radio Bearer ID of relevant PDCP entity
-* \return none
-* \note None
-* @ingroup _pdcp
-*/
-//void rrc_pdcp_config_release ( const protocol_ctxt_t* const  ctxt_pP, rb_id_t);
-
 /*! \fn void pdcp_mbms_run(const protocol_ctxt_t* const  ctxt_pP)
 * \brief Runs PDCP entity to let it handle incoming/outgoing SDUs
 * \param[in]  ctxt_pP           Running context.
@@ -506,4 +496,4 @@ extern notifiedFIFO_t         pdcp_sdu_list;
 extern hash_table_t  *pdcp_coll_p;
 
 #endif
-/*@}*/
+/** @}*/

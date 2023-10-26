@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/initial_sync.c
-* \brief Routines for initial UE synchronization procedure (PSS,SSS,PBCH and frame format detection)
-* \author R. Knopp, F. Kaltenberger
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,kaltenberger@eurecom.fr
-* \note
-* \warning
-*/
+/*! \file nr_initial_sync.c
+ * \brief Routines for initial UE synchronization procedure (PSS,SSS,PBCH and frame format detection)
+ * \author R. Knopp, F. Kaltenberger
+ * \date 2011
+ * \version 0.1
+ * \company Eurecom
+ * \email: knopp@eurecom.fr,kaltenberger@eurecom.fr
+ * \note
+ * \warning
+ */
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/MODULATION/modulation_UE.h"
