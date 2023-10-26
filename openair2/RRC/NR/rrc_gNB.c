@@ -2346,6 +2346,8 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   /* Instruction towards the DU for DRB configuration and tunnel creation */
   int nb_drb = resp->pduSession[0].numDRBSetup;
   f1ap_drb_to_be_setup_t drbs[nb_drb];
+  rrc_pdu_session_param_t *RRC_pduSession = find_pduSession(UE, e1ap_resp->pduSession[0].id, false);
+  DevAssert(RRC_pduSession);
   for (int i = 0; i < nb_drb; i++) {
     drbs[i].drb_id = resp->pduSession[0].DRBnGRanList[i].id;
     drbs[i].rlc_mode = rrc->configuration.um_on_default_drb ? RLC_MODE_UM : RLC_MODE_AM;
@@ -2353,6 +2355,8 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
     drbs[i].up_ul_tnl[0].port = rrc->eth_params_s.my_portd;
     drbs[i].up_ul_tnl[0].teid = resp->pduSession[0].DRBnGRanList[i].UpParamList[0].teId;
     drbs[i].up_ul_tnl_length = 1;
+    /* pass NSSAI info to MAC */
+    drbs[i].nssai = RRC_pduSession->param.nssai;
   }
 
   /* Instruction towards the DU for SRB2 configuration */
