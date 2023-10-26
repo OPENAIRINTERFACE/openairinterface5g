@@ -215,12 +215,6 @@ typedef struct ngap_gNB_amf_data_s {
   struct ngap_gNB_instance_s *ngap_gNB_instance;
 } ngap_gNB_amf_data_t;
 
-typedef struct ngap_gNB_NSSAI_s{
-  uint8_t sST;
-  uint8_t sD_flag;
-  uint8_t sD[3];
-}ngap_gNB_NSSAI_t;
-
 typedef struct ngap_gNB_instance_s {
   /* Next ngap gNB association.
    * Only used for virtual mode.
@@ -265,8 +259,8 @@ typedef struct ngap_gNB_instance_s {
   uint8_t   num_plmn;
 
   uint16_t   num_nssai[PLMN_LIST_MAX_SIZE];
-  ngap_gNB_NSSAI_t s_nssai[PLMN_LIST_MAX_SIZE][8];
-  
+  nssai_t s_nssai[PLMN_LIST_MAX_SIZE][8];
+
   /* Default Paging DRX of the gNB as defined in TS 38.304 */
   ngap_paging_drx_t default_drx;
 } ngap_gNB_instance_t;

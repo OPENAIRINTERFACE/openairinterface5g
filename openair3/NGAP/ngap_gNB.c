@@ -453,17 +453,17 @@ static int ngap_gNB_generate_ng_setup_request(
 
         for(int si = 0; si < instance_p->num_nssai[i]; si++) {
           ssi = (NGAP_SliceSupportItem_t *)calloc(1, sizeof(NGAP_SliceSupportItem_t));
-          INT8_TO_OCTET_STRING(instance_p->s_nssai[i][si].sST, &ssi->s_NSSAI.sST);
+          INT8_TO_OCTET_STRING(instance_p->s_nssai[i][si].sst, &ssi->s_NSSAI.sST);
 
-          if (instance_p->s_nssai[i][si].sD_flag) {
+          const uint32_t sd = instance_p->s_nssai[i][si].sd;
+          if (sd != 0xffffff) {
             ssi->s_NSSAI.sD = calloc(1, sizeof(NGAP_SD_t));
             ssi->s_NSSAI.sD->buf = calloc(3, sizeof(uint8_t));
             ssi->s_NSSAI.sD->size = 3;
-            ssi->s_NSSAI.sD->buf[0] = instance_p->s_nssai[i][si].sD[0];
-            ssi->s_NSSAI.sD->buf[1] = instance_p->s_nssai[i][si].sD[1];
-            ssi->s_NSSAI.sD->buf[2] = instance_p->s_nssai[i][si].sD[2];
+            ssi->s_NSSAI.sD->buf[0] = (sd & 0xff0000) >> 16;
+            ssi->s_NSSAI.sD->buf[1] = (sd & 0x00ff00) >> 8;
+            ssi->s_NSSAI.sD->buf[2] = (sd & 0x0000ff);
           }
-          
 
           asn1cSeqAdd(&plmn->tAISliceSupportList.list, ssi);
         }
