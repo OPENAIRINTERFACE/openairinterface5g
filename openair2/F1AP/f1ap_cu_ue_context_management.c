@@ -398,15 +398,12 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
         /* 12.1.2.2 sNSSAI */
         {
           /* sST */
-          OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, "1", 1);
+          OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, (char *)&f1ap_ue_context_setup_req->drbs_to_be_setup[i].nssai.sst, 1);
 
           /* OPTIONAL */
-          /* sD */
-          if (0) {
-            asn1cCalloc(DRB_Information->sNSSAI.sD, tmp);
-            OCTET_STRING_fromBuf(tmp, "asdsa1d32sa1d31asd31as",
-                               strlen("asdsa1d32sa1d31asd31as"));
-          }
+          const uint32_t sd = (f1ap_ue_context_setup_req->drbs_to_be_setup[i].nssai.sd & 0xffffff);
+          if (sd != 0xffffff)
+            OCTET_STRING_fromBuf(DRB_Information->sNSSAI.sD, (char *)&sd, 3);
         }
 
         /* OPTIONAL */
@@ -1313,16 +1310,12 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
         /* 12.1.2.2 sNSSAI */
         {
           /* sST */
-
-          OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, "1", 1);
+          OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, (char *)&f1ap_ue_context_modification_req->drbs_to_be_setup[i].nssai.sst, 1);
 
           /* OPTIONAL */
-          /* sD */
-          if (0) {
-            asn1cCalloc(DRB_Information->sNSSAI.sD, tmp);
-            OCTET_STRING_fromBuf(tmp, "asdsa1d32sa1d31asd31as",
-            strlen("asdsa1d32sa1d31asd31as"));
-          }
+          const uint32_t sd = (f1ap_ue_context_modification_req->drbs_to_be_setup[i].nssai.sd & 0xffffff);
+          if (sd != 0xffffff)
+            OCTET_STRING_fromBuf(DRB_Information->sNSSAI.sD, (char *)&sd, 3);
         }
 
         /* OPTIONAL */

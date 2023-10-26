@@ -26,6 +26,7 @@
 #include <netinet/sctp.h>
 #include "rlc.h"
 #include "s1ap_messages_types.h"
+#include "ngap_messages_types.h"
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
@@ -290,6 +291,7 @@ typedef struct f1ap_drb_to_be_setup_s {
   f1ap_up_tnl_t  up_dl_tnl[2];
   uint8_t        up_dl_tnl_length;
   rlc_mode_t     rlc_mode;
+  nssai_t nssai;
 } f1ap_drb_to_be_setup_t;
 
 typedef struct f1ap_srb_to_be_setup_s {
