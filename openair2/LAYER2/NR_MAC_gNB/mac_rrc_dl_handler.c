@@ -222,6 +222,17 @@ static NR_CellGroupConfig_t *clone_CellGroupConfig(const NR_CellGroupConfig_t *o
   return cloned;
 }
 
+static void set_nssaiConfig(const int drb_len, const f1ap_drb_to_be_setup_t *req_drbs, NR_UE_sched_ctrl_t *sched_ctrl)
+{
+  for (int i = 0; i < drb_len; i++) {
+    const f1ap_drb_to_be_setup_t *drb = &req_drbs[i];
+
+    long lcid = drb->drb_id + 3; /* LCID is DRB + 3 */
+    sched_ctrl->dl_lc_nssai[lcid] = drb->nssai;
+    LOG_I(NR_MAC, "Setting NSSAI sst: %d, sd: %d for DRB: %ld\n", drb->nssai.sst, drb->nssai.sd, drb->drb_id);
+  }
+}
+
 void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
 {
   gNB_MAC_INST *mac = RC.nrmac[0];
@@ -287,6 +298,9 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
 
   /* TODO: need to apply after UE context reconfiguration confirmed? */
   nr_mac_prepare_cellgroup_update(mac, UE, new_CellGroup);
+
+  /* Set NSSAI config in MAC for each active DRB */
+  set_nssaiConfig(req->drbs_to_be_setup_length, req->drbs_to_be_setup, &UE->UE_sched_ctrl);
 
   NR_SCHED_UNLOCK(&mac->sched_lock);
 
@@ -384,6 +398,9 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
     resp.du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded + 7) >> 3;
 
     nr_mac_prepare_cellgroup_update(mac, UE, new_CellGroup);
+
+    /* Set NSSAI config in MAC for each active DRB */
+    set_nssaiConfig(req->drbs_to_be_setup_length, req->drbs_to_be_setup, &UE->UE_sched_ctrl);
   } else {
     ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, new_CellGroup); // we actually don't need it
   }

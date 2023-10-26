@@ -2346,7 +2346,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   /* Instruction towards the DU for DRB configuration and tunnel creation */
   int nb_drb = resp->pduSession[0].numDRBSetup;
   f1ap_drb_to_be_setup_t drbs[nb_drb];
-  rrc_pdu_session_param_t *RRC_pduSession = find_pduSession(UE, e1ap_resp->pduSession[0].id, false);
+  rrc_pdu_session_param_t *RRC_pduSession = find_pduSession(UE, resp->pduSession[0].id, false);
   DevAssert(RRC_pduSession);
   for (int i = 0; i < nb_drb; i++) {
     drbs[i].drb_id = resp->pduSession[0].DRBnGRanList[i].id;
