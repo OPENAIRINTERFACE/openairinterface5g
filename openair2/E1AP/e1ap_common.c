@@ -134,6 +134,9 @@ int e1ap_decode_successful_outcome(E1AP_E1AP_PDU_t *pdu) {
     case E1AP_ProcedureCode_id_bearerContextSetup:
       break;
 
+    case E1AP_ProcedureCode_id_bearerContextModification:
+      break;
+
     default:
       LOG_E(E1AP, "Unsupported procedure code (%d) for successful message\n",
             (int)pdu->choice.successfulOutcome->procedureCode);

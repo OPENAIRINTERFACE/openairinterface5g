@@ -47,10 +47,14 @@
 #include <E1AP_DRB-Failed-Item-NG-RAN.h>
 #include <E1AP_BearerContextSetupResponse.h>
 #include <E1AP_BearerContextSetupRequest.h>
+#include <E1AP_DRB-Modified-Item-NG-RAN.h>
+#include <E1AP_DRB-Modified-List-NG-RAN.h>
 #include <E1AP_DRB-To-Setup-Item-EUTRAN.h>
 #include <E1AP_DRB-To-Setup-Item-NG-RAN.h>
 #include <E1AP_Cell-Group-Information-Item.h>
 #include <E1AP_PDU-Session-Resource-To-Setup-Item.h>
+#include <E1AP_PDU-Session-Resource-Modified-Item.h>
+#include <E1AP_PDU-Session-Resource-Modified-List.h>
 #include <E1AP_PDU-Session-Resource-To-Modify-List.h>
 #include <E1AP_PDU-Session-Resource-To-Modify-Item.h>
 #include <E1AP_DRB-To-Modify-List-NG-RAN.h>

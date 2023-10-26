@@ -50,7 +50,9 @@ const e1ap_message_processing_t e1ap_message_processing[E1AP_NUM_MSG_HANDLERS][3
     {e1apCUUP_handle_BEARER_CONTEXT_SETUP_REQUEST,
      e1apCUCP_handle_BEARER_CONTEXT_SETUP_RESPONSE,
      e1apCUCP_handle_BEARER_CONTEXT_SETUP_FAILURE}, /* bearerContextSetup */
-    {e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST, 0, 0}, /* bearerContextModification */
+    {e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST,
+     e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_RESPONSE,
+     0}, /* bearerContextModification */
     {0, 0, 0}, /* bearerContextModificationRequired */
     {e1apCUUP_handle_BEARER_CONTEXT_RELEASE_COMMAND, e1apCUCP_handle_BEARER_CONTEXT_RELEASE_COMPLETE, 0}, /* bearerContextRelease */
     {0, 0, 0}, /* bearerContextReleaseRequired */
@@ -1185,9 +1187,69 @@ static void e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc
   e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
 }
 
-int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
-  return -1;
+static void fill_BEARER_CONTEXT_MODIFICATION_RESPONSE(const e1ap_bearer_modif_resp_t *resp, E1AP_E1AP_PDU_t *pdu)
+{
+  pdu->present = E1AP_E1AP_PDU_PR_successfulOutcome;
+  asn1cCalloc(pdu->choice.successfulOutcome, msg);
+  msg->procedureCode = E1AP_ProcedureCode_id_bearerContextModification;
+  msg->criticality = E1AP_Criticality_reject;
+  msg->value.present = E1AP_SuccessfulOutcome__value_PR_BearerContextModificationResponse;
+  E1AP_BearerContextModificationResponse_t *out = &pdu->choice.successfulOutcome->value.choice.BearerContextModificationResponse;
+
+  /* mandatory */
+  /* c1. gNB-CU-CP UE E1AP ID */
+  asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationResponseIEs_t, ieCuCpId);
+  ieCuCpId->id = E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID;
+  ieCuCpId->criticality = E1AP_Criticality_reject;
+  ieCuCpId->value.present = E1AP_BearerContextModificationResponseIEs__value_PR_GNB_CU_CP_UE_E1AP_ID;
+  ieCuCpId->value.choice.GNB_CU_CP_UE_E1AP_ID = resp->gNB_cu_cp_ue_id;
+
+  /* mandatory */
+  /* c2. gNB-CU-UP UE E1AP ID */
+  asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationResponseIEs_t, ieCuUpId);
+  ieCuUpId->id = E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID;
+  ieCuUpId->criticality = E1AP_Criticality_reject;
+  ieCuUpId->value.present = E1AP_BearerContextModificationResponseIEs__value_PR_GNB_CU_UP_UE_E1AP_ID;
+  ieCuUpId->value.choice.GNB_CU_UP_UE_E1AP_ID = resp->gNB_cu_up_ue_id;
+
+  /* optional */
+  /* PDU sessions that have been modified */
+  asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationResponseIEs_t, ieSys);
+  ieSys->id = E1AP_ProtocolIE_ID_id_System_BearerContextModificationResponse;
+  ieSys->criticality = E1AP_Criticality_ignore;
+  ieSys->value.present = E1AP_BearerContextModificationResponseIEs__value_PR_System_BearerContextModificationResponse;
+
+  E1AP_System_BearerContextModificationResponse_t *sys = &ieSys->value.choice.System_BearerContextModificationResponse;
+  E1AP_ProtocolIE_Container_4932P29_t *piel = calloc(1, sizeof(*piel));
+  sys->present = E1AP_System_BearerContextModificationResponse_PR_nG_RAN_BearerContextModificationResponse;
+  sys->choice.nG_RAN_BearerContextModificationResponse = (struct E1AP_ProtocolIE_Container *)piel;
+  asn1cSequenceAdd(piel->list, E1AP_NG_RAN_BearerContextModificationResponse_t, ngran_bcmr);
+  ngran_bcmr->id = E1AP_ProtocolIE_ID_id_PDU_Session_Resource_Modified_List;
+  ngran_bcmr->criticality = E1AP_Criticality_reject;
+  ngran_bcmr->value.present = E1AP_NG_RAN_BearerContextModificationResponse__value_PR_PDU_Session_Resource_Modified_List;
+  E1AP_PDU_Session_Resource_Modified_List_t *pdu_mod_l = &ngran_bcmr->value.choice.PDU_Session_Resource_Modified_List;
+  for (int i = 0; i < resp->numPDUSessionsMod; ++i) {
+    const pdu_session_modif_t *pdu = &resp->pduSessionMod[i];
+    asn1cSequenceAdd(pdu_mod_l->list, E1AP_PDU_Session_Resource_Modified_Item_t, iePdu);
+    iePdu->pDU_Session_ID = pdu->id;
+    if (pdu->numDRBModified > 0) {
+      iePdu->dRB_Modified_List_NG_RAN = calloc(1, sizeof(*iePdu->dRB_Modified_List_NG_RAN));
+      AssertFatal(iePdu->dRB_Modified_List_NG_RAN != NULL, "out of memory\n");
+      E1AP_DRB_Modified_List_NG_RAN_t *drb_mod_l = iePdu->dRB_Modified_List_NG_RAN;
+      for (int j = 0; j < pdu->numDRBModified; ++j) {
+        const DRB_nGRAN_modified_t *drb = &pdu->DRBnGRanModList[j];
+        asn1cSequenceAdd(drb_mod_l->list, E1AP_DRB_Modified_Item_NG_RAN_t, drb_mod);
+        drb_mod->dRB_ID = drb->id;
+      }
+    }
+  }
+}
+
+static int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc_id, const e1ap_bearer_modif_resp_t *resp)
+{
+  E1AP_E1AP_PDU_t pdu = {0};
+  fill_BEARER_CONTEXT_MODIFICATION_RESPONSE(resp, &pdu);
+  return e1ap_encode_send(UPtype, assoc_id, &pdu, 0, __func__);
 }
 
 int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_FAILURE(instance_t instance) {
@@ -1288,13 +1350,86 @@ int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, e
   return 0;
 }
 
-int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_RESPONSE(instance_t instance,
-                                                         sctp_assoc_t assoc_id,
-                                                         uint32_t stream,
-                                                         E1AP_E1AP_PDU_t *pdu)
+static void extract_BEARER_CONTEXT_MODIFICATION_RESPONSE(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_modif_resp_t *resp)
 {
-  AssertFatal(false,"Not implemented yet\n");
-  return -1;
+  memset(resp, 0, sizeof(*resp));
+  const E1AP_BearerContextModificationResponse_t *in = &pdu->choice.successfulOutcome->value.choice.BearerContextModificationResponse;
+
+  for (int i = 0; i < in->protocolIEs.list.count; ++i) {
+    E1AP_BearerContextModificationResponseIEs_t *ie = in->protocolIEs.list.array[i];
+
+    switch (ie->id) {
+      case E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID:
+        DevAssert(ie->criticality == E1AP_Criticality_reject);
+        DevAssert(ie->value.present == E1AP_BearerContextModificationResponseIEs__value_PR_GNB_CU_CP_UE_E1AP_ID);
+        resp->gNB_cu_cp_ue_id = ie->value.choice.GNB_CU_CP_UE_E1AP_ID;
+        break;
+
+      case E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID:
+        DevAssert(ie->criticality == E1AP_Criticality_reject);
+        DevAssert(ie->value.present == E1AP_BearerContextModificationResponseIEs__value_PR_GNB_CU_UP_UE_E1AP_ID);
+        resp->gNB_cu_up_ue_id = ie->value.choice.GNB_CU_UP_UE_E1AP_ID;
+        break;
+
+      case E1AP_ProtocolIE_ID_id_System_BearerContextModificationResponse:
+        DevAssert(ie->criticality == E1AP_Criticality_ignore);
+        DevAssert(ie->value.present == E1AP_BearerContextModificationResponseIEs__value_PR_System_BearerContextModificationResponse);
+        DevAssert(ie->value.choice.System_BearerContextModificationResponse.present
+                  == E1AP_System_BearerContextModificationResponse_PR_nG_RAN_BearerContextModificationResponse);
+        E1AP_ProtocolIE_Container_4932P29_t *msgNGRAN_list =
+            (E1AP_ProtocolIE_Container_4932P29_t *)
+                ie->value.choice.System_BearerContextModificationResponse.choice.nG_RAN_BearerContextModificationResponse;
+        DevAssert(msgNGRAN_list->list.count == 1);
+        E1AP_NG_RAN_BearerContextModificationResponse_t *msgNGRAN = msgNGRAN_list->list.array[0];
+        DevAssert(msgNGRAN->id == E1AP_ProtocolIE_ID_id_PDU_Session_Resource_Modified_List);
+        DevAssert(msgNGRAN->criticality == E1AP_Criticality_reject);
+        DevAssert(msgNGRAN->value.present == E1AP_NG_RAN_BearerContextModificationResponse__value_PR_PDU_Session_Resource_Modified_List);
+        E1AP_PDU_Session_Resource_Modified_List_t *pduModifiedList = &msgNGRAN->value.choice.PDU_Session_Resource_Modified_List;
+        resp->numPDUSessionsMod = pduModifiedList->list.count;
+
+        for (int i=0; i < pduModifiedList->list.count; i++) {
+          pdu_session_modif_t *pduModified = &resp->pduSessionMod[i];
+          E1AP_PDU_Session_Resource_Modified_Item_t *mod_it = pduModifiedList->list.array[i];
+          pduModified->id = mod_it->pDU_Session_ID;
+
+          AssertFatal(mod_it->nG_DL_UP_TNL_Information == NULL, "not implemented\n");
+          AssertFatal(mod_it->securityResult == NULL, "not implemented\n");
+          AssertFatal(mod_it->pDU_Session_Data_Forwarding_Information_Response == NULL, "not implemented\n");
+          AssertFatal(mod_it->dRB_Setup_List_NG_RAN == NULL, "not implemented\n");
+          AssertFatal(mod_it->dRB_Failed_List_NG_RAN == NULL, "not implemented\n");
+          AssertFatal(mod_it->dRB_Failed_To_Modify_List_NG_RAN == NULL, "not implemented\n");
+
+          pduModified->numDRBModified = mod_it->dRB_Modified_List_NG_RAN->list.count;
+          for (int j=0; j < mod_it->dRB_Modified_List_NG_RAN->list.count; j++) {
+            DRB_nGRAN_modified_t *drbModified = &pduModified->DRBnGRanModList[j];
+            E1AP_DRB_Modified_Item_NG_RAN_t *drb = mod_it->dRB_Modified_List_NG_RAN->list.array[j];
+
+            drbModified->id = drb->dRB_ID;
+
+            AssertFatal(drb->uL_UP_Transport_Parameters == NULL, "not implemented\n");
+            AssertFatal(drb->pDCP_SN_Status_Information == NULL, "not implemented\n");
+            AssertFatal(drb->flow_Setup_List == NULL, "not implemented\n");
+            AssertFatal(drb->flow_Failed_List == NULL, "not implemented\n");
+          }
+        }
+        break;
+    }
+  }
+}
+
+int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *e1_inst, const E1AP_E1AP_PDU_t *pdu)
+{
+  DevAssert(pdu != NULL);
+  DevAssert(pdu->present == E1AP_E1AP_PDU_PR_successfulOutcome);
+  DevAssert(pdu->choice.successfulOutcome->procedureCode == E1AP_ProcedureCode_id_bearerContextModification);
+  DevAssert(pdu->choice.successfulOutcome->criticality == E1AP_Criticality_reject);
+  DevAssert(pdu->choice.successfulOutcome->value.present == E1AP_SuccessfulOutcome__value_PR_BearerContextModificationResponse);
+
+  MessageDef *msg = itti_alloc_new_message(TASK_CUUP_E1, 0, E1AP_BEARER_CONTEXT_MODIFICATION_RESP);
+  e1ap_bearer_modif_resp_t *modif = &E1AP_BEARER_CONTEXT_MODIFICATION_RESP(msg);
+  extract_BEARER_CONTEXT_MODIFICATION_RESPONSE(pdu, modif);
+  itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
+  return 0;
 }
 
 int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_FAILURE(instance_t instance,
@@ -1780,11 +1915,10 @@ void *E1AP_CUUP_task(void *arg) {
         } break;
 
       case E1AP_BEARER_CONTEXT_MODIFICATION_RESP: {
-        //const e1ap_bearer_modif_resp_t *resp = &E1AP_BEARER_CONTEXT_MODIFICATION_RESP(msg);
+        const e1ap_bearer_modif_resp_t *resp = &E1AP_BEARER_CONTEXT_MODIFICATION_RESP(msg);
         const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
         AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
-        LOG_W(E1AP, "E1AP_BEARER_CONTEXT_MODIFICATION_RESP lost!\n");
-        //e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_RESPONSE
+        e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_RESPONSE(inst->cuup.assoc_id, resp);
         } break;
 
       default:
