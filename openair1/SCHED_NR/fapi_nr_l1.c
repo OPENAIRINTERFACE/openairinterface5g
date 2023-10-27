@@ -161,7 +161,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
       notifiedFIFO_elt_t *res=NULL;
       processingData_L1tx_t *msgTx=NULL;
       if (!gNB->reorder_thread_disable) {
-	res = pullTpool(&gNB->L1_tx_free, &gNB->threadPool);
+        res = pullNotifiedFIFO(&gNB->L1_tx_free);
         if (res == NULL)
           return; // Tpool has been stopped, nothing to process
         msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
