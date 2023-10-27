@@ -1168,6 +1168,24 @@ void *ru_thread( void *param ) {
 
     // Start IF device if any
     if (ru->nr_start_if) {
+      LOG_I(PHY, "starting transport\n");
+      ret = openair0_transport_load(&ru->ifdevice, &ru->openair0_cfg, &ru->eth_params);
+      AssertFatal(ret == 0, "RU %u: openair0_transport_init() ret %d: cannot initialize transport protocol\n", ru->idx, ret);
+
+      if (ru->ifdevice.get_internal_parameter != NULL) {
+        /* it seems the device can "overwrite" (request?) to set the callbacks
+         * for fh_south_in()/fh_south_out() differently */
+        void *t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_in");
+        if (t != NULL)
+          ru->fh_south_in = t;
+        t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_out");
+        if (t != NULL)
+          ru->fh_south_out = t;
+      } else {
+
+        malloc_IF4p5_buffer(ru);
+      }
+
       LOG_I(PHY,"Starting IF interface for RU %d, nb_rx %d\n",ru->idx,ru->nb_rx);
       AssertFatal(ru->nr_start_if(ru,NULL) == 0, "Could not start the IF device\n");
 
@@ -1631,8 +1649,6 @@ void init_precoding_weights(PHY_VARS_gNB *gNB) {
 }*/
 
 void set_function_spec_param(RU_t *ru) {
-  int ret;
-
   switch (ru->if_south) {
     case LOCAL_RF:   // this is an RU with integrated RF (RRU, gNB)
       reset_meas(&ru->rx_fhaul);
@@ -1653,13 +1669,6 @@ void set_function_spec_param(RU_t *ru) {
         reset_meas(&ru->tx_fhaul);
         reset_meas(&ru->compression);
         reset_meas(&ru->transport);
-        ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-        printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
-
-        if (ret<0) {
-          printf("Exiting, cannot initialize transport protocol\n");
-          exit(-1);
-        }
       } else if (ru->function == NGFI_RRU_IF4p5) {
         ru->do_prach              = 1;                        // do part of prach processing in RU
         ru->fh_north_in           = NULL;                     // no synchronous incoming fronthaul from north
@@ -1676,15 +1685,6 @@ void set_function_spec_param(RU_t *ru) {
         reset_meas(&ru->tx_fhaul);
         reset_meas(&ru->compression);
         reset_meas(&ru->transport);
-        ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-        printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
-
-        if (ret<0) {
-          printf("Exiting, cannot initialize transport protocol\n");
-          exit(-1);
-        }
-
-        malloc_IF4p5_buffer(ru);
       } else if (ru->function == gNodeB_3GPP) {
         ru->do_prach             = 0;                       // no prach processing in RU
         ru->feprx                = nr_fep_tp;     // this is frequency-shift + DFTs
@@ -1733,15 +1733,6 @@ void set_function_spec_param(RU_t *ru) {
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
 
-      printf("starting transport : rx_num_antennas %d, tx_num_antennas %d\n",ru->openair0_cfg.rx_num_channels,ru->openair0_cfg.tx_num_channels); 
-      ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
-      printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
-
-      if (ret<0) {
-        printf("Exiting, cannot initialize transport protocol\n");
-        exit(-1);
-      }
-
       break;
 
     case REMOTE_IF4p5:
@@ -1761,27 +1752,6 @@ void set_function_spec_param(RU_t *ru) {
       ru->ifdevice.host_type     = RAU_HOST;
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
-      ret = openair0_transport_load(&ru->ifdevice, &ru->openair0_cfg, &ru->eth_params);
-      printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
-
-      if (ret<0) {
-        printf("Exiting, cannot initialize transport protocol\n");
-        exit(-1);
-      }
-
-      if (ru->ifdevice.get_internal_parameter != NULL) {
-        void *t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_in");
-
-        if (t != NULL)
-          ru->fh_south_in = t;
-
-        t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_out");
-
-        if (t != NULL)
-          ru->fh_south_out = t;
-      }
-
-      malloc_IF4p5_buffer(ru);
       break;
 
     default:
