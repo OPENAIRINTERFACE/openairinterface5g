@@ -45,7 +45,13 @@ nr_pdcp_ue_manager_t *new_nr_pdcp_ue_manager(int enb_flag)
     exit(1);
   }
 
-  if (pthread_mutex_init(&ret->lock, NULL)) abort();
+  pthread_mutexattr_t Attr;
+  pthread_mutexattr_init(&Attr);
+  // We need to be recursive because pdcp locks before forwarding, and calls in same thread,
+  // so, if same thread wants to send something back, and there is no itti intermediate thread, we deadlock on ourselves
+  pthread_mutexattr_settype(&Attr, PTHREAD_MUTEX_RECURSIVE);
+  if (pthread_mutex_init(&ret->lock, &Attr))
+    abort();
   ret->enb_flag = enb_flag;
 
   return ret;
