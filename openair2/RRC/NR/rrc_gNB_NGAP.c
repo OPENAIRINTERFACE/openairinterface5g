@@ -785,7 +785,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     pdu->nssai.sst = nssai->sST;
     pdu->nssai.sd = 0xffffff;
     if (nssai->sD_flag)
-      pdu->nssai.sd = nssai->sD[0] << 16 | nssai->sD[1] << 8 | nssai->sD[0];
+      pdu->nssai.sd = nssai->sD[0] << 16 | nssai->sD[1] << 8 | nssai->sD[2];
     if (cuup_nssai.sst == 0)
       cuup_nssai = pdu->nssai; /* for CU-UP selection below */
     pdu->integrityProtectionIndication = rrc->security.do_drb_integrity ? E1AP_IntegrityProtectionIndication_required : E1AP_IntegrityProtectionIndication_not_needed;
