@@ -47,8 +47,8 @@ int create_tasks_ue(uint32_t ue_nb) {
       if (users == NULL) abort();
 
       users->count = ue_nb;
-
-      if (itti_create_task (TASK_NAS_UE, nas_ue_task, users) < 0) {
+      ittiTask_parms_t parms = {users, NULL};
+      if (itti_create_task(TASK_NAS_UE, nas_ue_task, &parms) < 0) {
         LOG_E(NAS, "Create task for NAS UE failed\n");
         return -1;
       }

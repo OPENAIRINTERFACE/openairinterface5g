@@ -484,9 +484,11 @@ void itti_poll_msg(task_id_t task_id, MessageDef **received_msg);
    \param args_p Optional argument to pass to the start routine
    @returns -1 on failure, 0 otherwise
  **/
-int itti_create_task(task_id_t task_id,
-                     void *(*start_routine) (void *),
-                     void *args_p);
+typedef struct {
+  void *args_to_start_routine;
+  void *(*shortcut_func)(void *);
+} ittiTask_parms_t;
+int itti_create_task(const task_id_t task_id, void *(*start_routine)(void *), const ittiTask_parms_t *args_p);
 
 int itti_create_queue(const task_info_t *task_info);
 
