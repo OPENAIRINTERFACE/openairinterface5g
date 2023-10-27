@@ -129,17 +129,13 @@ void nr_polar_uxG(uint64_t *D, const uint64_t *u, const uint64_t **G_N_tab, uint
     int n_ones = 0;
     for (int a = 0; a < N_array; a++) {
       uint64_t uxG = u[a] & Gn[a];
-      for (int m = 0; m < 64; m++) {
-        if (((uxG >> m) & 1) == 1) {
-          n_ones++;
-        }
-      }
+      if (uxG != 0)
+        n_ones += count_bits_set(uxG);
     }
-    uint64_t bit = n_ones % 2;
 
     int n1 = n >> 6;
     int n2 = n - (n1 << 6);
-    D[n1] |= bit << n2;
+    D[n1] |= ((uint64_t)n_ones & 1) << n2;
   }
 }
 
