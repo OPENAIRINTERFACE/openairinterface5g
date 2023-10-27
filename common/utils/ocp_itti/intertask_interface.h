@@ -568,8 +568,6 @@ void itti_set_task_real_time(task_id_t task_id);
 void itti_send_terminate_message(task_id_t task_id);
 
 void *itti_malloc(task_id_t origin_task_id, task_id_t destination_task_id, ssize_t size);
-void *calloc_or_fail(size_t size);
-void *malloc_or_fail(size_t size);
 int memory_read(const char *datafile, void *data, size_t size);
 int itti_free(task_id_t task_id, void *ptr);
 

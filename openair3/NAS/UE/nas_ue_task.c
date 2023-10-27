@@ -67,7 +67,7 @@ static bool nas_ue_process_events(nas_user_container_t *users, struct epoll_even
 
 // Initialize user api id and port number
 void nas_user_api_id_initialize(nas_user_t *user) {
-  user_api_id_t *user_api_id = calloc_or_fail(sizeof(user_api_id_t));
+  user_api_id_t *user_api_id = calloc_or_fail(1, sizeof(user_api_id_t));
   user->user_api_id = user_api_id;
   char *port = make_port_str_from_ueid(NAS_PARSER_DEFAULT_USER_PORT_NUMBER, user->ueid);
   if ( port == NULL ) {
@@ -130,9 +130,9 @@ void *nas_ue_task(void *args_p)
       /* Initialize user interface (to exchange AT commands with user process) */
       nas_user_api_id_initialize(user);
       /* allocate needed structures */
-      user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));
-      user->at_response = calloc_or_fail(sizeof(at_response_t));
-      user->lowerlayer_data = calloc_or_fail(sizeof(lowerlayer_data_t));
+      user->user_at_commands = calloc_or_fail(1, sizeof(user_at_commands_t));
+      user->at_response = calloc_or_fail(1, sizeof(at_response_t));
+      user->lowerlayer_data = calloc_or_fail(1, sizeof(lowerlayer_data_t));
       /* Initialize NAS user */
       nas_user_initialize(user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
     }
@@ -170,9 +170,9 @@ void *nas_ue_task(void *args_p)
       /* Initialize user interface (to exchange AT commands with user process) */
       nas_user_api_id_initialize(user);
       /* allocate needed structures */
-      user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));
-      user->at_response = calloc_or_fail(sizeof(at_response_t));
-      user->lowerlayer_data = calloc_or_fail(sizeof(lowerlayer_data_t));
+      user->user_at_commands = calloc_or_fail(1, sizeof(user_at_commands_t));
+      user->at_response = calloc_or_fail(1, sizeof(at_response_t));
+      user->lowerlayer_data = calloc_or_fail(1, sizeof(lowerlayer_data_t));
       /* Initialize NAS user */
       nas_user_initialize(user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
       user->ueid = 0;

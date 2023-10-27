@@ -119,7 +119,7 @@ esm_ebr_data_t *esm_ebr_initialize(void)
   LOG_FUNC_IN;
 
   int i;
-  esm_ebr_data_t *esm_ebr_data = calloc_or_fail(sizeof(esm_ebr_data_t));
+  esm_ebr_data_t *esm_ebr_data = calloc_or_fail(1, sizeof(esm_ebr_data_t));
 
   esm_ebr_data->index = 0;
 
