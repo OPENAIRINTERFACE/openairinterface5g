@@ -289,6 +289,7 @@ class Containerize():
 		self.proxyCommit = None
 		self.eNB_instance = 0
 		self.eNB_serverId = ['', '', '']
+		self.deployKind = [True, True, True]
 		self.yamlPath = ['', '', '']
 		self.services = ['', '', '']
 		self.nb_healthy = [0, 0, 0]
@@ -835,6 +836,7 @@ class Containerize():
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		logging.debug('\u001B[1m Deploying OAI Object on server: ' + lIpAddr + '\u001B[0m')
+		self.deployKind[self.eNB_instance] = True
 
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
@@ -1037,6 +1039,7 @@ class Containerize():
 		logging.debug('\u001B[1m Checking Services to deploy\u001B[0m')
 		# Implicitly we are running locally
 		myCmd = cls_cmd.LocalCmd(d = self.yamlPath[0])
+		self.deployKind[0] = False
 		cmd = 'docker-compose config --services'
 		listServices = myCmd.run(cmd)
 		if listServices.returncode != 0:

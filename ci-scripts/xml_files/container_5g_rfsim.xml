@@ -33,10 +33,15 @@
  000002
  000003
  000004
+ 000005
+ 000006
+ 000007
  020001
  020002
  020003
  020004
+ 020105
+ 444445
  030001
  030002
  444444
@@ -44,7 +49,7 @@
  020005
  444444
  333333
- 020005
+ 020006
  100001
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
@@ -96,6 +101,30 @@
                 <nb_healthy>9</nb_healthy>
         </testCase>
 
+        <testCase id="000005">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G NR-UEs (#3, #4, #5) RF sim SA</desc>
+                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <services>oai-nr-ue3 oai-nr-ue4 oai-nr-ue5</services>
+                <nb_healthy>12</nb_healthy>
+        </testCase>
+
+        <testCase id="000006">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G NR-UEs (#6, #7, #8) RF sim SA</desc>
+                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <services>oai-nr-ue6 oai-nr-ue7 oai-nr-ue8</services>
+                <nb_healthy>15</nb_healthy>
+        </testCase>
+
+        <testCase id="000007">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G NR-UEs (#9, #10) RF sim SA</desc>
+                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <services>oai-nr-ue9 oai-nr-ue10</services>
+                <nb_healthy>17</nb_healthy>
+        </testCase>
+
         <testCase id="020001">
                 <class>Ping</class>
                 <desc>Ping ext-dn from NR-UE</desc>
@@ -136,6 +165,22 @@
                 <ping_packetloss_threshold>5</ping_packetloss_threshold>
         </testCase>
 
+        <testCase id="020006">
+                <class>Ping</class>
+                <desc>Ping ext-dn from both UEs</desc>
+                <id>rfsim5g_ue rfsim5g_ue2</id>
+                <ping_args>-c 20 192.168.72.135</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+        <testCase id="020105">
+                <class>Ping</class>
+                <desc>Ping ext-dn from all UEs</desc>
+                <id>rfsim5g_ue rfsim5g_ue2 rfsim5g_ue3 rfsim5g_ue4 rfsim5g_ue5 rfsim5g_ue6 rfsim5g_ue7 rfsim5g_ue8 rfsim5g_ue9 rfsim5g_ue10</id>
+                <ping_args>-c 100 192.168.72.135 -i 0.2 -s 1016</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
         <testCase id="030001">
                 <class>IperfFromContainer</class>
                 <desc>Iperf UDP Downlink</desc>
@@ -164,6 +209,12 @@
                 <class>Detach_UE</class>
                 <desc>Detach OAI UE 1 and 2</desc>
                 <id>rfsim5g_ue rfsim5g_ue2</id>
+        </testCase>
+
+        <testCase id="444445">
+                <class>Detach_UE</class>
+                <desc>Detach OAI UE 2 to 10</desc>
+                <id>rfsim5g_ue3 rfsim5g_ue4 rfsim5g_ue5 rfsim5g_ue6 rfsim5g_ue7 rfsim5g_ue8 rfsim5g_ue9 rfsim5g_ue10</id>
         </testCase>
 
         <testCase id="100001">
