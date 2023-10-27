@@ -608,8 +608,6 @@ int nr_csi_rs_pmi_estimation(const PHY_VARS_NR_UE *ue,
                              uint32_t *precoded_sinr_dB) {
 
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  memset(i1,0,3*sizeof(uint8_t));
-  i2[0] = 0;
 
   // i1 is a three-element vector in the form of [i11 i12 i13], when CodebookType is specified as 'Type1SinglePanel'.
   // Note that i13 is not applicable when the number of transmission layers is one of {1, 5, 6, 7, 8}.
