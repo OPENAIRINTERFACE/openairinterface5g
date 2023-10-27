@@ -175,7 +175,7 @@
 
         <testCase id="020105">
                 <class>Ping</class>
-                <desc>Ping ext-dn from both UEs</desc>
+                <desc>Ping ext-dn from all UEs</desc>
                 <id>rfsim5g_ue rfsim5g_ue2 rfsim5g_ue3 rfsim5g_ue4 rfsim5g_ue5 rfsim5g_ue6 rfsim5g_ue7 rfsim5g_ue8 rfsim5g_ue9 rfsim5g_ue10</id>
                 <ping_args>-c 100 192.168.72.135 -i 0.2 -s 1016</ping_args>
                 <ping_packetloss_threshold>5</ping_packetloss_threshold>
