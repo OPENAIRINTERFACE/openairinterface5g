@@ -1302,57 +1302,6 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRC
   rrc_gNB_generate_RRCReestablishment(ue_context_p, msg->du2cu_rrc_container, old_rnti, du);
 }
 
-static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_rrc_message_t *msg)
-{
-  gNB_RRC_INST *rrc = RC.nrrrc[module_id];
-
-  LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, payload_size %d\n", msg->crnti, msg->rrc_container_length);
-  NR_UL_CCCH_Message_t *ul_ccch_msg = NULL;
-  asn_dec_rval_t dec_rval =
-      uper_decode(NULL, &asn_DEF_NR_UL_CCCH_Message, (void **)&ul_ccch_msg, msg->rrc_container, msg->rrc_container_length, 0, 0);
-
-  if (dec_rval.code != RC_OK || dec_rval.consumed == 0) {
-    LOG_E(NR_RRC, " FATAL Error in receiving CCCH\n");
-    return -1;
-  }
-
-  if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
-    switch (ul_ccch_msg->message.choice.c1->present) {
-      case NR_UL_CCCH_MessageType__c1_PR_NOTHING:
-        LOG_W(NR_RRC, "Received PR_NOTHING on UL-CCCH-Message, ignoring message\n");
-        break;
-
-      case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
-        LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %04x)\n", msg->crnti);
-        rrc_handle_RRCSetupRequest(rrc, &ul_ccch_msg->message.choice.c1->choice.rrcSetupRequest->rrcSetupRequest, msg);
-        break;
-
-      case NR_UL_CCCH_MessageType__c1_PR_rrcResumeRequest:
-        LOG_E(NR_RRC, "Received rrcResumeRequest message, but handling is not implemented\n");
-        break;
-
-      case NR_UL_CCCH_MessageType__c1_PR_rrcReestablishmentRequest: {
-        LOG_D(NR_RRC, "Received RRCReestablishmentRequest on UL-CCCH-Message (UE RNTI %04x)\n", msg->crnti);
-        rrc_handle_RRCReestablishmentRequest(
-            rrc,
-            &ul_ccch_msg->message.choice.c1->choice.rrcReestablishmentRequest->rrcReestablishmentRequest,
-            msg);
-      } break;
-
-      case NR_UL_CCCH_MessageType__c1_PR_rrcSystemInfoRequest:
-        LOG_I(NR_RRC, "UE %04x receive rrcSystemInfoRequest message \n", msg->crnti);
-        /* TODO */
-        break;
-
-      default:
-        LOG_E(NR_RRC, "UE %04x Unknown message\n", msg->crnti);
-        break;
-    }
-  }
-  ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
-  return 0;
-}
-
 /*! \fn uint64_t bitStr_to_uint64(BIT_STRING_t *)
  *\brief  This function extract at most a 64 bits value from a BIT_STRING_t object, the exact bits number depend on the BIT_STRING_t contents.
  *\param[in] pointer to the BIT_STRING_t object.
@@ -1786,22 +1735,55 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
 
 void rrc_gNB_process_initial_ul_rrc_message(const f1ap_initial_ul_rrc_message_t *ul_rrc)
 {
-  // first get RRC instance (note, no the ITTI instance)
-  module_id_t i = 0;
-  for (i=0; i < RC.nb_nr_inst; i++) {
-    gNB_RRC_INST *rrc = RC.nrrrc[i];
-    if (rrc->nr_cellid == ul_rrc->nr_cellid)
-      break;
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
+  LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, payload_size %d\n", ul_rrc->crnti, ul_rrc->rrc_container_length);
+  NR_UL_CCCH_Message_t *ul_ccch_msg = NULL;
+  asn_dec_rval_t dec_rval = uper_decode(NULL,
+                                        &asn_DEF_NR_UL_CCCH_Message,
+                                        (void **)&ul_ccch_msg,
+                                        ul_rrc->rrc_container,
+                                        ul_rrc->rrc_container_length,
+                                        0,
+                                        0);
+  if (dec_rval.code != RC_OK || dec_rval.consumed == 0) {
+    LOG_E(NR_RRC, " FATAL Error in receiving CCCH\n");
+    return;
   }
-  //AssertFatal(i != RC.nb_nr_inst, "Cell_id not found\n");
-  // TODO REMOVE_DU_RRC in monolithic mode, the MAC does not have the
-  // nr_cellid. Thus, the above check would fail. For the time being, just put
-  // a warning, as we handle one DU only anyway
-  if (i == RC.nb_nr_inst) {
-    i = 0;
-    LOG_W(RRC, "initial UL RRC message nr_cellid %ld does not match RRC's %ld\n", ul_rrc->nr_cellid, RC.nrrrc[0]->nr_cellid);
+
+  if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
+    switch (ul_ccch_msg->message.choice.c1->present) {
+      case NR_UL_CCCH_MessageType__c1_PR_NOTHING:
+        LOG_W(NR_RRC, "Received PR_NOTHING on UL-CCCH-Message, ignoring message\n");
+        break;
+
+      case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
+        LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %04x)\n", ul_rrc->crnti);
+        rrc_handle_RRCSetupRequest(rrc, &ul_ccch_msg->message.choice.c1->choice.rrcSetupRequest->rrcSetupRequest, ul_rrc);
+        break;
+
+      case NR_UL_CCCH_MessageType__c1_PR_rrcResumeRequest:
+        LOG_E(NR_RRC, "Received rrcResumeRequest message, but handling is not implemented\n");
+        break;
+
+      case NR_UL_CCCH_MessageType__c1_PR_rrcReestablishmentRequest: {
+        LOG_D(NR_RRC, "Received RRCReestablishmentRequest on UL-CCCH-Message (UE RNTI %04x)\n", ul_rrc->crnti);
+        rrc_handle_RRCReestablishmentRequest(
+            rrc,
+            &ul_ccch_msg->message.choice.c1->choice.rrcReestablishmentRequest->rrcReestablishmentRequest,
+            ul_rrc);
+      } break;
+
+      case NR_UL_CCCH_MessageType__c1_PR_rrcSystemInfoRequest:
+        LOG_I(NR_RRC, "UE %04x receive rrcSystemInfoRequest message \n", ul_rrc->crnti);
+        /* TODO */
+        break;
+
+      default:
+        LOG_E(NR_RRC, "UE %04x Unknown message\n", ul_rrc->crnti);
+        break;
+    }
   }
-  nr_rrc_gNB_decode_ccch(i, ul_rrc);
+  ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
 
   if (ul_rrc->rrc_container)
     free(ul_rrc->rrc_container);
