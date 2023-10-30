@@ -22,7 +22,9 @@
 #include "rrc_gNB_du.h"
 #include "common/ran_context.h"
 #include "nr_rrc_defs.h"
+#include "rrc_gNB_UE_context.h"
 #include "openair2/F1AP/f1ap_common.h"
+#include "openair2/F1AP/f1ap_ids.h"
 #include "executables/softmodem-common.h"
 
 
@@ -163,6 +165,25 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
   */
 }
 
+static int invalidate_du_connections(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id)
+{
+  int count = 0;
+  rrc_gNB_ue_context_t *ue_context_p = NULL;
+  RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &rrc->rrc_ue_head) {
+    uint32_t ue_id = ue_context_p->ue_context.rrc_ue_id;
+    f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_id);
+    if (ue_data.du_assoc_id == assoc_id) {
+      /* this UE belongs to the DU that disconnected, set du_assoc_id to 0,
+       * meaning DU is offline */
+      cu_remove_f1_ue_data(ue_id);
+      f1_ue_data_t new = {.secondary_ue = ue_data.secondary_ue, .du_assoc_id = 0 };
+      cu_add_f1_ue_data(ue_id, &new);
+      count++;
+    }
+  }
+  return count;
+}
+
 void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
 {
   AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
@@ -182,7 +203,10 @@ void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t
   free(rrc->du);
   rrc->du = NULL;
 
-  /* TODO invalidate UE assoc IDs */
+  int num = invalidate_du_connections(rrc, assoc_id);
+  if (num > 0) {
+    LOG_I(NR_RRC, "%d UEs lost through DU disconnect\n", num);
+  }
 }
 
 nr_rrc_du_container_t *get_du_for_ue(gNB_RRC_INST *rrc, uint32_t ue_id)
