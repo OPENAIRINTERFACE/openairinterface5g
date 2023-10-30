@@ -107,7 +107,7 @@ static IdleMode_callback_t _emm_indication_notify;
  ***************************************************************************/
 void IdleMode_initialize(nas_user_t *user, IdleMode_callback_t cb)
 {
-  emm_plmn_list_t *emm_plmn_list = calloc_or_fail( sizeof(emm_plmn_list_t));
+  emm_plmn_list_t *emm_plmn_list = calloc_or_fail(1, sizeof(emm_plmn_list_t));
   user->emm_plmn_list = emm_plmn_list;
   /* Initialize the list of available PLMNs */
   emm_plmn_list->n_plmns = 0;
