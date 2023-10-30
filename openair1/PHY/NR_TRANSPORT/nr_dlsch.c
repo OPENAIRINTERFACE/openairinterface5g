@@ -42,6 +42,7 @@
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
+// #define DEBUG_DLSCH_PRECODING_PRINT_WITH_TRIVIAL // TODO: For debug, to be removed if want to merge to develop
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint32_t size,
@@ -491,11 +492,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx, int frame, int slot)
           const size_t txdataF_offset_per_symbol = l_symbol * frame_parms->ofdm_symbol_size + txdataF_offset;
 
           //get pmi info
-          uint8_t pmi;
-          if (0 /*rel15->precodingAndBeamforming.prg_size > 0*/)
-            pmi = rel15->precodingAndBeamforming.prgs_list[(int)rb/rel15->precodingAndBeamforming.prg_size].pm_idx;
-          else
-            pmi = 0;//no precoding
+          const uint8_t pmi = (rel15->precodingAndBeamforming.prg_size > 0) ?
+            (rel15->precodingAndBeamforming.prgs_list[(int)rb/rel15->precodingAndBeamforming.prg_size].pm_idx) : 0;
 
           if (pmi == 0) {//unitary Precoding
             if (subCarrier + NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) { // RB does not cross DC
@@ -531,8 +529,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx, int frame, int slot)
               subCarrier -= frame_parms->ofdm_symbol_size;
             }
           }
-          else {
-            if(frame_parms->nb_antennas_tx==1){//no precoding matrix defined
+          else { // non-unitary Precoding
+            if(frame_parms->nb_antennas_tx == 1){ // no precoding matrix defined
               memcpy(&txdataF[ant][txdataF_offset_per_symbol + subCarrier],
                      &txdataF_precoding[ant][l_symbol][subCarrier],
                      NR_NB_SC_PER_RB * sizeof(**txdataF));
@@ -541,35 +539,87 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx, int frame, int slot)
                  subCarrier -= frame_parms->ofdm_symbol_size;
               }
             }
-            else {
+            else { // precoding with more than 1 tx
               //get the precoding matrix weights:
               c16_t **mat = (c16_t**)gNB->nr_mimo_precoding_matrix[rel15->nrOfLayers - 1];
               //i_row =0,...,dl_antenna_port
               //j_col =0,...,nrOfLayers
               //mat[pmi][i_rows*2+j_col]
               c16_t *W_prec = &mat[pmi][ant * rel15->nrOfLayers];
-              for (int i=0; i<NR_NB_SC_PER_RB; i++) {
-                txdataF[ant][txdataF_offset_per_symbol + subCarrier] = nr_layer_precoder_cm(rel15->nrOfLayers,
-                                                                                            NR_SYMBOLS_PER_SLOT,
-                                                                                            frame_parms->ofdm_symbol_size,
-                                                                                            txdataF_precoding,
-                                                                                            W_prec,
-                                                                                            l_symbol,
-                                                                                            subCarrier);
-#ifdef DEBUG_DLSCH_MAPPING
-                printf("antenna %d\t l %d \t subCarrier %d \t txdataF: %d %d\n",
-                       ant,
-                       l_symbol,
-                       subCarrier,
-                       txdataF[ant][l_symbol * frame_parms->ofdm_symbol_size + subCarrier + txdataF_offset].r,
-                       txdataF[ant][l_symbol * frame_parms->ofdm_symbol_size + subCarrier + txdataF_offset].i);
-#endif
-                if (++subCarrier >= frame_parms->ofdm_symbol_size) {
-                  subCarrier -= frame_parms->ofdm_symbol_size;
+              if((subCarrier+NR_NB_SC_PER_RB) < frame_parms->ofdm_symbol_size){ // within ofdm_symbol_size, use SIMDe
+                // Do 4 RE in one iteration, 3 iterations for 1 RB
+                for(uint16_t sc=subCarrier; sc<subCarrier+NR_NB_SC_PER_RB; sc+=4){
+                  #ifdef DEBUG_DLSCH_PRECODING_PRINT_WITH_TRIVIAL // Get result with trivial solution, TODO: To be removed
+                    // Trivial
+                    c16_t y_triv[4];
+                    for(int i=0; i<4; i++)
+                      y_triv[i] = nr_layer_precoder_cm(rel15->nrOfLayers,
+                                                       NR_SYMBOLS_PER_SLOT,
+                                                       frame_parms->ofdm_symbol_size,
+                                                       txdataF_precoding,
+                                                       W_prec,
+                                                       l_symbol,
+                                                       sc + i);
+                    memcpy(&txdataF[ant][txdataF_offset_per_symbol + sc], y_triv, sizeof(y_triv));
+                  #endif
+
+                  // Matrix multiplication for 4 elements of the result (sizeof(simde__m128i) / sizeof(c16_t) = 4)
+                  simde__m128i y = simde_mm_set1_epi16(0); // Y = W[0]*X[0] + W[1]*X[1] + ... + W[nrOfLayers-1]*X[nrOfLayers-1]
+                  for(int nl = 0; nl < rel15->nrOfLayers; nl++){
+                    simde__m128i x = simde_mm_loadu_epi32(&txdataF_precoding[nl][l_symbol][sc]);
+                    const simde__m128i w_c   = simde_mm_set1_epi32(c16toI32(c16conj(W_prec[nl])));   // broadcast conjugate of w
+                    const simde__m128i w_s   = simde_mm_set1_epi32(c16toI32(c16swap(W_prec[nl])));   // broadcast swapped real and img of w
+                    const simde__m128i reals = simde_mm_srai_epi32(simde_mm_madd_epi16(x, w_c), 15); // (int32_t) .r = (x.r * w.r - x.i * w.i) >> 15
+                    const simde__m128i imags = simde_mm_srai_epi32(simde_mm_madd_epi16(x, w_s), 15); // (int32_t) .i = (x.r * w.i + x.i * w.r) >> 15
+
+                    // Re-arrange to match c16_t format
+                    const simde__m128i produ = simde_mm_set_epi16( // take hi16(reals_32[]) and lo16(imags_32[]) to form a c16_t
+                      simde_mm_extract_epi16(imags, 6), simde_mm_extract_epi16(reals, 6),
+                      simde_mm_extract_epi16(imags, 4), simde_mm_extract_epi16(reals, 4),
+                      simde_mm_extract_epi16(imags, 2), simde_mm_extract_epi16(reals, 2),
+                      simde_mm_extract_epi16(imags, 0), simde_mm_extract_epi16(reals, 0));
+
+                    // Accumulate the product
+                    y = nl == 0 ? produ : simde_mm_add_epi16(y, produ);
+                  }
+                  // Store the result to txdataF
+                  simde_mm_storeu_si128((simde__m128i*)&txdataF[ant][txdataF_offset_per_symbol + sc], y);
+
+                  #ifdef DEBUG_DLSCH_PRECODING_PRINT_WITH_TRIVIAL // Print simd and trivial result, TODO: To be removed
+                    c16_t *y_simd = (c16_t*) &y;
+                    printf("debug_to_be_removed sc=%d, y_simd=(%+4d,%+4d), (%+4d,%+4d), (%+4d,%+4d), (%+4d,%+4d)\n",
+                           sc, y_simd[0].r, y_simd[0].i, y_simd[1].r, y_simd[1].i, y_simd[2].r, y_simd[2].i, y_simd[3].r, y_simd[3].i);
+                    printf("debug_to_be_removed sc=%d, y_triv=(%+4d,%+4d), (%+4d,%+4d), (%+4d,%+4d), (%+4d,%+4d)\n",
+                           sc, y_triv[0].r, y_triv[0].i, y_triv[1].r, y_triv[1].i, y_triv[2].r, y_triv[2].i, y_triv[3].r, y_triv[3].i);
+                  #endif
                 }
+                subCarrier += NR_NB_SC_PER_RB;
               }
-            }
-          }
+              else{ // crossing ofdm_symbol_size, use simple arithmetic operations
+                for (int i = 0; i < NR_NB_SC_PER_RB; i++) {
+                  txdataF[ant][txdataF_offset_per_symbol + subCarrier] =
+                      nr_layer_precoder_cm(rel15->nrOfLayers,
+                                           NR_SYMBOLS_PER_SLOT,
+                                           frame_parms->ofdm_symbol_size,
+                                           txdataF_precoding,
+                                           W_prec,
+                                           l_symbol,
+                                           subCarrier);
+#ifdef DEBUG_DLSCH_MAPPING
+                  printf("antenna %d\t l %d \t subCarrier %d \t txdataF: %d %d\n",
+                        ant,
+                        symbol,
+                        subCarrier,
+                        txdataF[ant][l_symbol * frame_parms->ofdm_symbol_size + subCarrier + txdataF_offset].r,
+                        txdataF[ant][l_symbol * frame_parms->ofdm_symbol_size + subCarrier + txdataF_offset].i);
+#endif
+                  if (++subCarrier >= frame_parms->ofdm_symbol_size) {
+                    subCarrier -= frame_parms->ofdm_symbol_size;
+                  }
+                }
+              } // else{ // crossing ofdm_symbol_size, use simple arithmetic operations
+            } // else { // precoding with more than 1 tx
+          } // else { // non-unitary Precoding
         } //RB loop
       } // symbol loop
     } // port loop

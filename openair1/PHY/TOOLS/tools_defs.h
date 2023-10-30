@@ -161,6 +161,24 @@ extern "C" {
 #define squaredMod(a) ((a).r*(a).r + (a).i*(a).i)
 #define csum(res, i1, i2) (res).r = (i1).r + (i2).r ; (res).i = (i1).i + (i2).i
 
+  __attribute__((always_inline)) inline c16_t c16conj(const c16_t a) {
+    return (c16_t) {
+      .r =  a.r,
+      .i = (int16_t)-a.i
+    };
+  }
+
+  __attribute__((always_inline)) inline uint32_t c16toI32(const c16_t a) {
+    return *((uint32_t*)&a);
+  }
+
+  __attribute__((always_inline)) inline c16_t c16swap(const c16_t a) {
+    return (c16_t){
+        .r = a.i,
+        .i = a.r
+    };
+  }
+
   __attribute__((always_inline)) inline uint32_t c16amp2(const c16_t a) {
     return a.r * a.r + a.i * a.i;
   }
