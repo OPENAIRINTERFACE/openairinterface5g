@@ -639,6 +639,7 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_
   F1AP_UEContextSetupResponseIEs_t *ie;
   DevAssert(pdu);
   msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_SETUP_RESP);
+  msg_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_setup_t *f1ap_ue_context_setup_resp = &F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   container = &pdu->choice.successfulOutcome->value.choice.UEContextSetupResponse;
   int i;
@@ -772,6 +773,7 @@ int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t instance, sctp_assoc_t assoc_i
 int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_CU_F1, 0,  F1AP_UE_CONTEXT_RELEASE_REQ);
+  msg->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_release_req_t *req = &F1AP_UE_CONTEXT_RELEASE_REQ(msg);
   F1AP_UEContextReleaseRequest_t    *container;
   F1AP_UEContextReleaseRequestIEs_t *ie;
@@ -921,6 +923,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, sctp_assoc_t asso
   F1AP_UEContextReleaseCompleteIEs_t *ie;
   DevAssert(pdu);
   MessageDef *msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_RELEASE_COMPLETE);
+  msg_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_release_complete_t *complete = &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_p);
   container = &pdu->choice.successfulOutcome->value.choice.UEContextReleaseComplete;
   /* GNB_CU_UE_F1AP_ID */
@@ -1576,6 +1579,7 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, sctp_assoc_t
   F1AP_UEContextModificationResponseIEs_t *ie;
   DevAssert(pdu);
   msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_MODIFICATION_RESP);
+  msg_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_modif_resp_t *f1ap_ue_context_modification_resp = &F1AP_UE_CONTEXT_MODIFICATION_RESP(msg_p);
   container = &pdu->choice.successfulOutcome->value.choice.UEContextModificationResponse;
   int i;
@@ -1704,6 +1708,7 @@ int CU_handle_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance, sctp_assoc_t
   DevAssert(pdu != NULL);
 
   MessageDef *msg_p = itti_alloc_new_message(TASK_DU_F1, 0, F1AP_UE_CONTEXT_MODIFICATION_REQUIRED);
+  msg_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_modif_required_t *required = &F1AP_UE_CONTEXT_MODIFICATION_REQUIRED(msg_p);
 
   F1AP_UEContextModificationRequired_t *container = &pdu->choice.initiatingMessage->value.choice.UEContextModificationRequired;

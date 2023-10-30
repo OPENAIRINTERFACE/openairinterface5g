@@ -37,6 +37,7 @@ static bool rrc_gNB_plmn_matches(const gNB_RRC_INST *rrc, const f1ap_served_cell
 
 void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
 {
+  AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   DevAssert(rrc);
 
@@ -164,6 +165,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
 
 void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
 {
+  AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
   AssertFatal(rrc->du != NULL, "no DU connected, cannot received F1 lost connection\n");
   AssertFatal(rrc->du->assoc_id == assoc_id,
               "previously connected DU (%d) does not match DU for which connection has been lost (%d)\n",

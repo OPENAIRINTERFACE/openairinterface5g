@@ -88,6 +88,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t 
 
   // create an ITTI message and copy SDU
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
+  message_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_initial_ul_rrc_message_t *ul_rrc = &F1AP_INITIAL_UL_RRC_MESSAGE(message_p);
   ul_rrc->gNB_DU_ue_id = du_ue_id;
   ul_rrc->nr_cellid = nr_cellid; // CU instance

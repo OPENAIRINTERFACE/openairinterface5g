@@ -1151,7 +1151,7 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
   return 0;
 }
 
-static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, const NR_RRCSetupRequest_IEs_t *rrcSetupRequest, const f1ap_initial_ul_rrc_message_t *msg)
+static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id, const NR_RRCSetupRequest_IEs_t *rrcSetupRequest, const f1ap_initial_ul_rrc_message_t *msg)
 {
   rrc_gNB_ue_context_t *ue_context_p = NULL;
   if (NR_InitialUE_Identity_PR_randomValue == rrcSetupRequest->ue_Identity.present) {
@@ -1175,7 +1175,7 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, const NR_RRCSetupReque
       AssertFatal(false, "not implemented\n");
     }
 
-    ue_context_p = rrc_gNB_create_ue_context(msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
   } else if (NR_InitialUE_Identity_PR_ng_5G_S_TMSI_Part1 == rrcSetupRequest->ue_Identity.present) {
     /* <5G-S-TMSI> = <AMF Set ID><AMF Pointer><5G-TMSI> 48-bit */
     /* ng-5G-S-TMSI-Part1                  BIT STRING (SIZE (39)) */
@@ -1202,7 +1202,7 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, const NR_RRCSetupReque
     } else {
       LOG_I(NR_RRC, "UE %04x 5G-S-TMSI-Part1 doesn't exist, setting ng_5G_S_TMSI_Part1 => %ld\n", msg->crnti, s_tmsi_part1);
 
-      ue_context_p = rrc_gNB_create_ue_context(msg->crnti, rrc, s_tmsi_part1, msg->gNB_DU_ue_id);
+      ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, s_tmsi_part1, msg->gNB_DU_ue_id);
       AssertFatal(ue_context_p != NULL, "out of memory\n");
       gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
       UE->Initialue_identity_5g_s_TMSI.presence = true;
@@ -1214,7 +1214,7 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, const NR_RRCSetupReque
            rrcSetupRequest->ue_Identity.choice.randomValue.buf,
            rrcSetupRequest->ue_Identity.choice.randomValue.size);
 
-    ue_context_p = rrc_gNB_create_ue_context(msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
     LOG_E(NR_RRC, "RRCSetupRequest without random UE identity or S-TMSI not supported, let's reject the UE %04x\n", msg->crnti);
     rrc_gNB_generate_RRCReject(0, ue_context_p);
     return;
@@ -1227,7 +1227,7 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, const NR_RRCSetupReque
   rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
 }
 
-static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRCReestablishmentRequest_IEs_t *req, const f1ap_initial_ul_rrc_message_t *msg)
+static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id, const NR_RRCReestablishmentRequest_IEs_t *req, const f1ap_initial_ul_rrc_message_t *msg)
 {
   const NR_ReestablishmentCause_t cause = req->reestablishmentCause;
   const long physCellId = req->ue_Identity.physCellId;
@@ -1239,7 +1239,6 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRC
             ? "Other Failure"
             : (cause == NR_ReestablishmentCause_handoverFailure ? "Handover Failure" : "reconfigurationFailure"));
 
-  sctp_assoc_t assoc_id = 0; // currently, we have only one DU
   const nr_rrc_du_container_t *du = get_du_by_assoc_id(rrc, assoc_id);
   if (du == NULL) {
     LOG_E(RRC, "received CCCH message, but no corresponding DU found\n");
@@ -1270,7 +1269,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRC
   random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
   if (ue_context_p == NULL) {
     LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC setup\n");
-    ue_context_p = rrc_gNB_create_ue_context(msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
     ue_context_p->ue_context.Srb[1].Active = 1;
     rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
     return;
@@ -1282,7 +1281,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRC
     LOG_E(NR_RRC,
           "NR_RRCReestablishmentRequest c_RNTI %04lx range error, fallback to RRC setup\n",
           req->ue_Identity.c_RNTI);
-    ue_context_p = rrc_gNB_create_ue_context(msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
     ue_context_p->ue_context.Srb[1].Active = 1;
     rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
     return;
@@ -1293,7 +1292,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRC
   // update with new RNTI, and update secondary UE association
   UE->rnti = msg->crnti;
   cu_remove_f1_ue_data(UE->rrc_ue_id);
-  f1_ue_data_t ue_data = {.secondary_ue = msg->gNB_DU_ue_id};
+  f1_ue_data_t ue_data = {.secondary_ue = msg->gNB_DU_ue_id, .du_assoc_id = assoc_id};
   cu_add_f1_ue_data(UE->rrc_ue_id, &ue_data);
 
   UE->reestablishment_cause = cause;
@@ -1733,8 +1732,10 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
   return 0;
 }
 
-void rrc_gNB_process_initial_ul_rrc_message(const f1ap_initial_ul_rrc_message_t *ul_rrc)
+void rrc_gNB_process_initial_ul_rrc_message(sctp_assoc_t assoc_id, const f1ap_initial_ul_rrc_message_t *ul_rrc)
 {
+  AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
+
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, payload_size %d\n", ul_rrc->crnti, ul_rrc->rrc_container_length);
   NR_UL_CCCH_Message_t *ul_ccch_msg = NULL;
@@ -1758,7 +1759,7 @@ void rrc_gNB_process_initial_ul_rrc_message(const f1ap_initial_ul_rrc_message_t 
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
         LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %04x)\n", ul_rrc->crnti);
-        rrc_handle_RRCSetupRequest(rrc, &ul_ccch_msg->message.choice.c1->choice.rrcSetupRequest->rrcSetupRequest, ul_rrc);
+        rrc_handle_RRCSetupRequest(rrc, assoc_id, &ul_ccch_msg->message.choice.c1->choice.rrcSetupRequest->rrcSetupRequest, ul_rrc);
         break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcResumeRequest:
@@ -1769,6 +1770,7 @@ void rrc_gNB_process_initial_ul_rrc_message(const f1ap_initial_ul_rrc_message_t 
         LOG_D(NR_RRC, "Received RRCReestablishmentRequest on UL-CCCH-Message (UE RNTI %04x)\n", ul_rrc->crnti);
         rrc_handle_RRCReestablishmentRequest(
             rrc,
+            assoc_id,
             &ul_ccch_msg->message.choice.c1->choice.rrcReestablishmentRequest->rrcReestablishmentRequest,
             ul_rrc);
       } break;
@@ -2242,7 +2244,7 @@ void *rrc_gnb_task(void *args_p) {
       case F1AP_INITIAL_UL_RRC_MESSAGE:
         AssertFatal(NODE_IS_CU(RC.nrrrc[instance]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[instance]->node_type),
                     "should not receive F1AP_INITIAL_UL_RRC_MESSAGE, need call by CU!\n");
-        rrc_gNB_process_initial_ul_rrc_message(&F1AP_INITIAL_UL_RRC_MESSAGE(msg_p));
+        rrc_gNB_process_initial_ul_rrc_message(msg_p->ittiMsgHeader.originInstance, &F1AP_INITIAL_UL_RRC_MESSAGE(msg_p));
         break;
 
       /* Messages from PDCP */
