@@ -183,3 +183,16 @@ void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t
   /* TODO invalidate UE assoc IDs */
 }
 
+nr_rrc_du_container_t *get_du_for_ue(gNB_RRC_INST *rrc, uint32_t ue_id)
+{
+  nr_rrc_du_container_t *du = rrc->du;
+  if (du == NULL)
+    return NULL;
+  return du;
+}
+
+nr_rrc_du_container_t *get_du_by_assoc_id(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id)
+{
+  AssertFatal(assoc_id == rrc->du->assoc_id, "cannot handle multiple DUs yet\n");
+  return rrc->du;
+}

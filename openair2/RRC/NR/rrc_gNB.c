@@ -524,9 +524,6 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   ue_p->xids[xid] = RRC_DEFAULT_RECONF;
 
-  const nr_rrc_du_container_t *du = rrc->du;
-  DevAssert(du != NULL);
-
   struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList = CALLOC(1, sizeof(*dedicatedNAS_MessageList));
 
   /* Add all NAS PDUs to the list */
@@ -551,7 +548,8 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     dedicatedNAS_MessageList = NULL;
   }
 
-  AssertFatal(du->setup_req->num_cells_available == 1, "cannot handle more than one cell, but have %d\n", du->setup_req->num_cells_available);
+  const nr_rrc_du_container_t *du = get_du_for_ue(rrc, ue_p->rrc_ue_id);
+  DevAssert(du != NULL);
   f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
   int scs = get_ssb_scs(cell_info);
   int band = get_dl_band(cell_info);
@@ -1241,10 +1239,12 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRC
             ? "Other Failure"
             : (cause == NR_ReestablishmentCause_handoverFailure ? "Handover Failure" : "reconfigurationFailure"));
 
-  /* look up corresponding DU. For the moment, there is only one */
-  const nr_rrc_du_container_t *du = rrc->du;
-  AssertFatal(du != NULL, "received CCCH message, but no corresponding DU found\n");
-  AssertFatal(du->setup_req->num_cells_available == 1, "cannot handle more than one cell\n");
+  sctp_assoc_t assoc_id = 0; // currently, we have only one DU
+  const nr_rrc_du_container_t *du = get_du_by_assoc_id(rrc, assoc_id);
+  if (du == NULL) {
+    LOG_E(RRC, "received CCCH message, but no corresponding DU found\n");
+    return;
+  }
   const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
   if (physCellId != cell_info->nr_pci) {
     /* UE was moving from previous cell so quickly that RRCReestablishment for previous cell was received in this cell */
@@ -1293,7 +1293,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRC
   // update with new RNTI, and update secondary UE association
   UE->rnti = msg->crnti;
   cu_remove_f1_ue_data(UE->rrc_ue_id);
-  f1_ue_data_t ue_data = {.secondary_ue = msg->gNB_DU_ue_id, .du_assoc_id = assoc_id};
+  f1_ue_data_t ue_data = {.secondary_ue = msg->gNB_DU_ue_id};
   cu_add_f1_ue_data(UE->rrc_ue_id, &ue_data);
 
   UE->reestablishment_cause = cause;
@@ -2416,9 +2416,6 @@ rrc_gNB_generate_SecurityModeCommand(
     cu2du.uE_CapabilityRAT_ContainerList = ue_p->ue_cap_buffer.buf;
     cu2du.uE_CapabilityRAT_ContainerList_length = ue_p->ue_cap_buffer.len;
   }
-
-  const nr_rrc_du_container_t *du = rrc->du;
-  DevAssert(du != NULL);
 
   /* the callback will fill the UE context setup request and forward it */
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
