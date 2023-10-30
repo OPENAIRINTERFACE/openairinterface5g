@@ -629,6 +629,23 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
     ue->dl_stats[i] = 0;
 }
 
+void clean_UE_harq(PHY_VARS_NR_UE *UE)
+{
+  for (int harq_pid = 0; harq_pid < NR_MAX_DLSCH_HARQ_PROCESSES; harq_pid++) {
+    for (int i = 0; i < 2; i++) {
+      NR_DL_UE_HARQ_t *dl_harq_process = &UE->dl_harq_processes[i][harq_pid];
+      init_downlink_harq_status(dl_harq_process);
+    }
+  }
+  for (int harq_pid = 0; harq_pid < NR_MAX_ULSCH_HARQ_PROCESSES; harq_pid++) {
+    NR_UL_UE_HARQ_t *ul_harq_process = &UE->ul_harq_processes[harq_pid];
+    ul_harq_process->tx_status = NEW_TRANSMISSION_HARQ;
+    ul_harq_process->status = SCH_IDLE;
+    ul_harq_process->round = 0;
+    ul_harq_process->first_tx = 1;
+  }
+}
+
 
 void init_N_TA_offset(PHY_VARS_NR_UE *ue){
 
