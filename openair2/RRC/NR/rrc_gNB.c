@@ -78,6 +78,7 @@
 #include "openair3/SECU/secu_defs.h"
 
 #include "rrc_gNB_NGAP.h"
+#include "rrc_gNB_du.h"
 
 #include "rrc_gNB_GTPV1U.h"
 
@@ -1790,137 +1791,6 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
   return 0;
 }
 
-static bool rrc_gNB_plmn_matches(const gNB_RRC_INST *rrc, const f1ap_served_cell_info_t *info)
-{
-  const gNB_RrcConfigurationReq *conf = &rrc->configuration;
-  return conf->num_plmn == 1 // F1 supports only one
-    && conf->mcc[0] == info->plmn.mcc
-    && conf->mnc[0] == info->plmn.mnc
-    && rrc->nr_cellid == info->nr_cellid;
-}
-
-static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
-{
-  gNB_RRC_INST *rrc = RC.nrrrc[0];
-  DevAssert(rrc);
-
-  LOG_I(NR_RRC, "Received F1 Setup Request from gNB_DU %lu (%s) on assoc_id %d\n", req->gNB_DU_id, req->gNB_DU_name, assoc_id);
-
-  // check:
-  // - it is the first DU
-  // - it is one cell
-  // - PLMN and Cell ID matches
-  // else reject
-  f1ap_setup_failure_t fail = {.cause = F1AP_CauseRadioNetwork_gNB_CU_Cell_Capacity_Exceeded};
-  if (rrc->du != NULL) {
-    const f1ap_setup_req_t *other = rrc->du->setup_req;
-    LOG_E(NR_RRC, "can only handle one DU, but already serving DU %ld (%s)\n", other->gNB_DU_id, other->gNB_DU_name);
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    return;
-  }
-  if (req->num_cells_available != 1) {
-    LOG_E(NR_RRC, "can only handle on DU cell, but gNB_DU %ld has %d\n", req->gNB_DU_id, req->num_cells_available);
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    return;
-  }
-  f1ap_served_cell_info_t *cell_info = &req->cell[0].info;
-  if (!rrc_gNB_plmn_matches(rrc, cell_info)) {
-    LOG_E(NR_RRC,
-          "PLMN mismatch: CU %d%d cellID %ld, DU %d%d cellID %ld\n",
-          rrc->configuration.mcc[0],
-          rrc->configuration.mnc[0],
-          rrc->nr_cellid,
-          cell_info->plmn.mcc,
-          cell_info->plmn.mnc,
-          cell_info->nr_cellid);
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    return;
-  }
-  // if there is no system info or no SIB1 and we run in SA mode, we cannot handle it
-  const f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
-  if (sys_info == NULL || sys_info->mib == NULL || (sys_info->sib1 == NULL && get_softmodem_params()->sa)) {
-    LOG_E(NR_RRC, "no system information provided by DU, rejecting\n");
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    return;
-  }
-
-  /* do we need the MIB? for the moment, just check it is valid, then drop it */
-  NR_BCCH_BCH_Message_t *mib = NULL;
-  asn_dec_rval_t dec_rval =
-      uper_decode_complete(NULL, &asn_DEF_NR_BCCH_BCH_Message, (void **)&mib, sys_info->mib, sys_info->mib_length);
-  if (dec_rval.code != RC_OK || mib->message.present != NR_BCCH_BCH_MessageType_PR_mib
-      || mib->message.choice.messageClassExtension == NULL) {
-    LOG_E(RRC, "Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, mib);
-    return;
-  }
-
-  NR_SIB1_t *sib1 = NULL;
-  if (sys_info->sib1) {
-    dec_rval = uper_decode_complete(NULL, &asn_DEF_NR_SIB1, (void **)&sib1, sys_info->sib1, sys_info->sib1_length);
-    if (dec_rval.code != RC_OK) {
-      LOG_E(RRC, "Failed to decode NR_SIB1 (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
-      rrc->mac_rrc.f1_setup_failure(&fail);
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB1, sib1);
-      return;
-    }
-    if (LOG_DEBUGFLAG(DEBUG_ASN1))
-      xer_fprint(stdout, &asn_DEF_NR_SIB1, sib1);
-  }
-
-  LOG_I(RRC, "Accepting DU %ld (%s), sending F1 Setup Response\n", req->gNB_DU_id, req->gNB_DU_name);
-
-  // we accept the DU
-  rrc->du = calloc(1, sizeof(*rrc->du));
-  AssertFatal(rrc->du != NULL, "out of memory\n");
-  rrc->du->assoc_id = assoc_id;
-
-  /* ITTI will free the setup request message via free(). So the memory
-   * "inside" of the message will remain, but the "outside" container no, so
-   * allocate memory and copy it in */
-  rrc->du->setup_req = malloc(sizeof(*rrc->du->setup_req));
-  AssertFatal(rrc->du->setup_req != NULL, "out of memory\n");
-  *rrc->du->setup_req = *req;
-  rrc->du->mib = mib->message.choice.mib;
-  mib->message.choice.mib = NULL;
-  ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_MessageType, mib);
-  rrc->du->sib1 = sib1;
-
-  served_cells_to_activate_t cell = {
-      .plmn = cell_info->plmn,
-      .nr_cellid = cell_info->nr_cellid,
-      .nrpci = cell_info->nr_pci,
-      .num_SI = 0,
-  };
-  f1ap_setup_resp_t resp = {.num_cells_to_activate = 1, .cells_to_activate[0] = cell};
-  if (rrc->node_name != NULL)
-    resp.gNB_CU_name = strdup(rrc->node_name);
-  rrc->mac_rrc.f1_setup_response(&resp);
-
-  /*
-  MessageDef *msg_p2 = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).gNB_CU_name = rrc->node_name;
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].plmn.mcc = rrc->configuration.mcc[0];
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].plmn.mnc = rrc->configuration.mnc[0];
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0];
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].nr_cellid = rrc->nr_cellid;
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].nrpci = req->cell[0].info.nr_pci;
-  int num_SI = 0;
-
-  if (rrc->carrier.SIB23) {
-    F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].SI_container[2] = rrc->carrier.SIB23;
-    F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].SI_container_length[2] = rrc->carrier.sizeof_SIB23;
-    num_SI++;
-  }
-
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].num_SI = num_SI;
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).num_cells_to_activate = 1;
-  // send
-  itti_send_msg_to_task(TASK_CU_F1, 0, msg_p2);
-  */
-}
-
 void rrc_gNB_process_initial_ul_rrc_message(const f1ap_initial_ul_rrc_message_t *ul_rrc)
 {
   // first get RRC instance (note, no the ITTI instance)
@@ -2258,21 +2128,6 @@ void rrc_gNB_process_e1_bearer_context_release_cplt(const e1ap_bearer_release_cp
   // UE context release complete arrived from the DU first, after which we free
   // the UE context
   LOG_I(RRC, "UE %d: received bearer release complete\n", cplt->gNB_cu_cp_ue_id);
-}
-
-static void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
-{
-  AssertFatal(rrc->du != NULL, "no DU connected, cannot received F1 lost connection\n");
-  AssertFatal(rrc->du->assoc_id == assoc_id,
-              "previously connected DU (%d) does not match DU for which connection has been lost (%d)\n",
-              rrc->du->assoc_id,
-              assoc_id);
-  (void) lc; // unused for the moment
-  ASN_STRUCT_FREE(asn_DEF_NR_MIB, rrc->du->mib);
-  ASN_STRUCT_FREE(asn_DEF_NR_SIB1, rrc->du->sib1);
-  free(rrc->du);
-  rrc->du = NULL;
-  LOG_I(RRC, "dropping DU with assoc_id %d (UE connections remain, if any)\n", assoc_id);
 }
 
 static void print_rrc_meas(FILE *f, const NR_MeasResults_t *measresults)
