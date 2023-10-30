@@ -214,11 +214,6 @@ static int get_dl_band(const f1ap_served_cell_info_t *cell_info)
   return cell_info->mode == F1AP_MODE_TDD ? cell_info->tdd.freqinfo.band : cell_info->fdd.dl_freqinfo.band;
 }
 
-static int get_ul_band(const f1ap_served_cell_info_t *cell_info)
-{
-  return cell_info->mode == F1AP_MODE_TDD ? cell_info->tdd.freqinfo.band : cell_info->fdd.ul_freqinfo.band;
-}
-
 static int get_ssb_scs(const f1ap_served_cell_info_t *cell_info)
 {
   return cell_info->mode == F1AP_MODE_TDD ? cell_info->tdd.tbw.scs : cell_info->fdd.dl_tbw.scs;
@@ -2164,158 +2159,6 @@ unsigned int mask_flip(unsigned int x) {
   return((((x>>8) + (x<<8))&0xffff)>>6);
 }
 
-static unsigned int get_dl_bw_mask(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_band = get_dl_band(cell_info);
-  int common_scs  = get_ssb_scs(cell_info);
-  for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
-     NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
-     if (bandNRinfo->bandNR == common_band) {
-       if (common_band < 257) { // FR1
-          switch (common_scs) {
-            case NR_SubcarrierSpacing_kHz15 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr1 &&
-                   bandNRinfo->channelBWs_DL->choice.fr1->scs_15kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_15kHz->buf));
- 	      break;
-            case NR_SubcarrierSpacing_kHz30 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr1 &&
-                   bandNRinfo->channelBWs_DL->choice.fr1->scs_30kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_30kHz->buf));
-              break;
-            case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr1 &&
-                   bandNRinfo->channelBWs_DL->choice.fr1->scs_60kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_60kHz->buf));
-              break;
-          }
-       }
-       else {
-          switch (common_scs) {
-            case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr2 &&
-                   bandNRinfo->channelBWs_DL->choice.fr2->scs_60kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr2->scs_60kHz->buf));
-              break;
-            case NR_SubcarrierSpacing_kHz120 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr2 &&
-                   bandNRinfo->channelBWs_DL->choice.fr2->scs_120kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr2->scs_120kHz->buf));
-              break;
-       }
-     }
-   }
-  }
-  return(0);
-}
-
-static unsigned int get_ul_bw_mask(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_band = get_ul_band(cell_info);
-  int common_scs  = get_ssb_scs(cell_info);
-  for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
-     NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
-     if (bandNRinfo->bandNR == common_band) {
-       if (common_band < 257) { // FR1
-          switch (common_scs) {
-            case NR_SubcarrierSpacing_kHz15 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr1 &&
-                   bandNRinfo->channelBWs_UL->choice.fr1->scs_15kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_15kHz->buf));
- 	      break;
-            case NR_SubcarrierSpacing_kHz30 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr1 &&
-                   bandNRinfo->channelBWs_UL->choice.fr1->scs_30kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_30kHz->buf));
-              break;
-            case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr1 &&
-                   bandNRinfo->channelBWs_UL->choice.fr1->scs_60kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_60kHz->buf));
-              break;
-          }
-       }
-       else {
-          switch (common_scs) {
-            case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr2 &&
-                   bandNRinfo->channelBWs_UL->choice.fr2->scs_60kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr2->scs_60kHz->buf));
-              break;
-            case NR_SubcarrierSpacing_kHz120 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr2 &&
-                   bandNRinfo->channelBWs_UL->choice.fr2->scs_120kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr2->scs_120kHz->buf));
-              break;
-       }
-     }
-   }
-  }
-  return(0);
-}
-
-static int get_ul_mimo_layersCB(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_scs  = get_ssb_scs(cell_info);
-
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  if (fs) {
-    // go through UL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsUplinkPerCC->list.count;i++) {
-       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
-           fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH &&
-           fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH)
-           return(1<<*fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH);
-    }
-  }
-  return(1);
-}
-
-static int get_ul_mimo_layers(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_scs  = get_ssb_scs(cell_info);
-
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  if (fs) {
-    // go through UL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsUplinkPerCC->list.count;i++) {
-       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
-           fs->featureSetsUplinkPerCC->list.array[i]->maxNumberMIMO_LayersNonCB_PUSCH)
-           return(1<<*fs->featureSetsUplinkPerCC->list.array[i]->maxNumberMIMO_LayersNonCB_PUSCH);
-    }
-  }
-  return(1);
-}
-
-static int get_dl_mimo_layers(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_scs  = get_ssb_scs(cell_info);
-
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  if (fs) {
-    // go through UL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsDownlinkPerCC->list.count;i++) {
-       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
-           fs->featureSetsDownlinkPerCC->list.array[i]->maxNumberMIMO_LayersPDSCH)
-           return(2<<*fs->featureSetsDownlinkPerCC->list.array[i]->maxNumberMIMO_LayersPDSCH);
-    }
-  }
-  return(1);
-}
-
 void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp, instance_t instance)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -2499,10 +2342,6 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
   {
     const gNB_RRC_UE_t *ue_ctxt = &ue_context_p->ue_context;
     f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_ctxt->rrc_ue_id);
-    /* currently, we support only one DU. If we support multiple, need to
-     * search for the DU corresponding to this UE here */
-    const nr_rrc_du_container_t *du = rrc->du;
-    DevAssert(du != NULL);
 
     fprintf(f,
             "UE %d CU UE ID %d DU UE ID %d RNTI %04x random identity %016lx",
@@ -2524,17 +2363,6 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
       fprintf(f, "    PDU session %d ID %d status %s\n", nb_pdu, pdu->param.pdusession_id, get_pdusession_status_text(pdu->status));
     }
 
-    if (ue_ctxt->UE_Capability_nr) {
-      AssertFatal(du->setup_req->num_cells_available == 1, "only one cell supported at the moment\n");
-      const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
-      fprintf(f,
-              "    UE cap: BW DL %x. BW UL %x, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
-              get_dl_bw_mask(cell_info, ue_ctxt->UE_Capability_nr),
-              get_ul_bw_mask(cell_info, ue_ctxt->UE_Capability_nr),
-              get_dl_mimo_layers(cell_info, ue_ctxt->UE_Capability_nr),
-              get_ul_mimo_layersCB(cell_info, ue_ctxt->UE_Capability_nr),
-              get_ul_mimo_layers(cell_info, ue_ctxt->UE_Capability_nr));
-    }
 
     if (ue_ctxt->measResults)
       print_rrc_meas(f, ue_ctxt->measResults);
