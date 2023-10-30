@@ -110,6 +110,16 @@ static inline uint64_t bitStr_to_uint64(const BIT_STRING_t *asn);
 
 mui_t rrc_gNB_mui = 0;
 
+// the assoc_id might be 0 (if the DU goes offline). Below helper macro to
+// print an error and return from the function in that case
+#define RETURN_IF_INVALID_ASSOC_ID(ue_data)                                \
+  {                                                                        \
+    if (ue_data.du_assoc_id == 0) {                                        \
+      LOG_E(NR_RRC, "cannot send data: invalid assoc_id 0, DU offline\n"); \
+      return;                                                              \
+    }                                                                      \
+  }
+
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
@@ -189,6 +199,7 @@ static void freeDRBlist(NR_DRB_ToAddModList_t *list)
 typedef struct deliver_dl_rrc_message_data_s {
   const gNB_RRC_INST *rrc;
   f1ap_dl_rrc_message_t *dl_rrc;
+  sctp_assoc_t assoc_id;
 } deliver_dl_rrc_message_data_t;
 static void rrc_deliver_dl_rrc_message(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
 {
@@ -197,7 +208,7 @@ static void rrc_deliver_dl_rrc_message(void *deliver_pdu_data, ue_id_t ue_id, in
   data->dl_rrc->rrc_container = (uint8_t *)buf;
   data->dl_rrc->rrc_container_length = size;
   DevAssert(data->dl_rrc->srb_id == srb_id);
-  data->rrc->mac_rrc.dl_rrc_message_transfer(data->dl_rrc);
+  data->rrc->mac_rrc.dl_rrc_message_transfer(data->assoc_id, data->dl_rrc);
 }
 
 
@@ -205,8 +216,9 @@ void nr_rrc_transfer_protected_rrc_message(const gNB_RRC_INST *rrc, const gNB_RR
 {
   DevAssert(size > 0);
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_dl_rrc_message_t dl_rrc = {.gNB_CU_ue_id = ue_p->rrc_ue_id, .gNB_DU_ue_id = ue_data.secondary_ue, .srb_id = srb_id};
-  deliver_dl_rrc_message_data_t data = {.rrc = rrc, .dl_rrc = &dl_rrc};
+  deliver_dl_rrc_message_data_t data = {.rrc = rrc, .dl_rrc = &dl_rrc, .assoc_id = ue_data.du_assoc_id };
   nr_pdcp_data_req_srb(ue_p->rrc_ue_id, srb_id, rrc_gNB_mui++, size, (unsigned char *const)buffer, rrc_deliver_dl_rrc_message, &data);
 }
 
@@ -452,6 +464,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
 
   freeSRBlist(SRBs);
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_dl_rrc_message_t dl_rrc = {
     .gNB_CU_ue_id = ue_p->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -459,7 +472,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
     .rrc_container_length = size,
     .srb_id = CCCH
   };
-  rrc->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
+  rrc->mac_rrc.dl_rrc_message_transfer(ue_data.du_assoc_id, &dl_rrc);
 }
 
 static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context_t *const ue_context_pP)
@@ -481,6 +494,7 @@ static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context
   LOG_I(NR_RRC, " [RAPROC] ue %04x Logical Channel DL-CCCH, Generating NR_RRCReject (bytes %d)\n", ue_p->rnti, size);
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_dl_rrc_message_t dl_rrc = {
     .gNB_CU_ue_id = ue_p->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -490,7 +504,7 @@ static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context
     .execute_duplication  = 1,
     .RAT_frequency_priority_information.en_dc = 0
   };
-  rrc->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
+  rrc->mac_rrc.dl_rrc_message_transfer(ue_data.du_assoc_id, &dl_rrc);
 }
 
 //-----------------------------------------------------------------------------
@@ -1038,12 +1052,13 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   nr_pdcp_reestablishment(ue_p->rrc_ue_id);
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   uint32_t old_gNB_DU_ue_id = old_rnti;
   f1ap_dl_rrc_message_t dl_rrc = {.gNB_CU_ue_id = ue_p->rrc_ue_id,
                                   .gNB_DU_ue_id = ue_data.secondary_ue,
                                   .srb_id = DCCH,
                                   .old_gNB_DU_ue_id = &old_gNB_DU_ue_id};
-  deliver_dl_rrc_message_data_t data = {.rrc = rrc, .dl_rrc = &dl_rrc};
+  deliver_dl_rrc_message_data_t data = {.rrc = rrc, .dl_rrc = &dl_rrc, .assoc_id = ue_data.du_assoc_id};
   nr_pdcp_data_req_srb(ue_p->rrc_ue_id, DCCH, rrc_gNB_mui++, size, (unsigned char *const)buffer, rrc_deliver_dl_rrc_message, &data);
 }
 
@@ -1573,6 +1588,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
 
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
     .gNB_CU_ue_id = UE->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -1583,7 +1599,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
     .servCellId = 0, /* TODO: correct value? */
     .ReconfigComplOutcome = successful_reconfig ? RRCreconf_success : RRCreconf_failure,
   };
-  rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
+  rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
 }
 //-----------------------------------------------------------------------------
 int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
@@ -1953,7 +1969,7 @@ static void rrc_CU_process_ue_modification_required(MessageDef *msg_p)
       .cause = F1AP_CAUSE_RADIO_NETWORK,
       .cause_value = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_cu_ue_f1ap_id,
     };
-    rrc->mac_rrc.ue_context_modification_refuse(&refuse);
+    rrc->mac_rrc.ue_context_modification_refuse(msg_p->ittiMsgHeader.originInstance, &refuse);
     return;
   }
 
@@ -1978,7 +1994,7 @@ static void rrc_CU_process_ue_modification_required(MessageDef *msg_p)
         .cause = F1AP_CAUSE_PROTOCOL,
         .cause_value = F1AP_CauseProtocol_transfer_syntax_error,
       };
-      rrc->mac_rrc.ue_context_modification_refuse(&refuse);
+      rrc->mac_rrc.ue_context_modification_refuse(msg_p->ittiMsgHeader.originInstance, &refuse);
       return;
     }
 
@@ -2065,6 +2081,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   }
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
       .gNB_CU_ue_id = UE->rrc_ue_id,
       .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -2079,7 +2096,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
       .drbs_to_be_setup = drbs,
       .cu_to_du_rrc_information = cu2du_p,
   };
-  rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
+  rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
 }
 
 void rrc_gNB_process_e1_bearer_context_modif_resp(const e1ap_bearer_modif_resp_t *resp)
@@ -2380,6 +2397,7 @@ void *rrc_gnb_task(void *args_p) {
 typedef struct deliver_ue_ctxt_setup_data_t {
   gNB_RRC_INST *rrc;
   f1ap_ue_context_setup_t *setup_req;
+  sctp_assoc_t assoc_id;
 } deliver_ue_ctxt_setup_data_t;
 static void rrc_deliver_ue_ctxt_setup_req(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
 {
@@ -2387,7 +2405,7 @@ static void rrc_deliver_ue_ctxt_setup_req(void *deliver_pdu_data, ue_id_t ue_id,
   deliver_ue_ctxt_setup_data_t *data = deliver_pdu_data;
   data->setup_req->rrc_container = (uint8_t*)buf;
   data->setup_req->rrc_container_length = size;
-  data->rrc->mac_rrc.ue_context_setup_request(data->setup_req);
+  data->rrc->mac_rrc.ue_context_setup_request(data->assoc_id, data->setup_req);
 }
 
 //-----------------------------------------------------------------------------
@@ -2421,6 +2439,7 @@ rrc_gNB_generate_SecurityModeCommand(
 
   /* the callback will fill the UE context setup request and forward it */
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_setup_t ue_context_setup_req = {
       .gNB_CU_ue_id = ue_p->rrc_ue_id,
       .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -2433,7 +2452,7 @@ rrc_gNB_generate_SecurityModeCommand(
       .drbs_to_be_setup = 0, /* no new DRBs */
       .cu_to_du_rrc_information = cu2du_p,
   };
-  deliver_ue_ctxt_setup_data_t data = {.rrc = rrc, .setup_req = &ue_context_setup_req};
+  deliver_ue_ctxt_setup_data_t data = {.rrc = rrc, .setup_req = &ue_context_setup_req, .assoc_id = ue_data.du_assoc_id };
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_setup_req, &data);
 }
 
@@ -2467,6 +2486,7 @@ rrc_gNB_generate_UECapabilityEnquiry(
 typedef struct deliver_ue_ctxt_release_data_t {
   gNB_RRC_INST *rrc;
   f1ap_ue_context_release_cmd_t *release_cmd;
+  sctp_assoc_t assoc_id;
 } deliver_ue_ctxt_release_data_t;
 static void rrc_deliver_ue_ctxt_release_cmd(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
 {
@@ -2474,7 +2494,7 @@ static void rrc_deliver_ue_ctxt_release_cmd(void *deliver_pdu_data, ue_id_t ue_i
   deliver_ue_ctxt_release_data_t *data = deliver_pdu_data;
   data->release_cmd->rrc_container = (uint8_t*) buf;
   data->release_cmd->rrc_container_length = size;
-  data->rrc->mac_rrc.ue_context_release_command(data->release_cmd);
+  data->rrc->mac_rrc.ue_context_release_command(data->assoc_id, data->release_cmd);
 }
 
 //-----------------------------------------------------------------------------
@@ -2500,6 +2520,7 @@ rrc_gNB_generate_RRCRelease(
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   const gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_release_cmd_t ue_context_release_cmd = {
     .gNB_CU_ue_id = UE->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -2507,7 +2528,7 @@ rrc_gNB_generate_RRCRelease(
     .cause_value = 10, // 10 = F1AP_CauseRadioNetwork_normal_release
     .srb_id = DCCH,
   };
-  deliver_ue_ctxt_release_data_t data = {.rrc = rrc, .release_cmd = &ue_context_release_cmd};
+  deliver_ue_ctxt_release_data_t data = {.rrc = rrc, .release_cmd = &ue_context_release_cmd, .assoc_id = ue_data.du_assoc_id};
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_release_cmd, &data);
 
   sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, UE);
@@ -2644,6 +2665,7 @@ void rrc_gNB_trigger_release_bearer(int rnti)
 
   f1ap_drb_to_be_released_t drbs_to_be_released[1] = {{.rb_id = drb_id}};
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
     .gNB_CU_ue_id = ue->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -2659,7 +2681,7 @@ void rrc_gNB_trigger_release_bearer(int rnti)
     .drbs_to_be_released_length = 1,
     .drbs_to_be_released = drbs_to_be_released,
   };
-  rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
+  rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
 }
 
 int rrc_gNB_generate_pcch_msg(sctp_assoc_t assoc_id, const NR_SIB1_t *sib1, uint32_t tmsi, uint8_t paging_drx)

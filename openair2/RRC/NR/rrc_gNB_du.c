@@ -54,13 +54,13 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
     const f1ap_setup_req_t *other = rrc->du->setup_req;
     LOG_E(NR_RRC, "can only handle one DU, but already serving DU %ld (%s)\n", other->gNB_DU_id, other->gNB_DU_name);
     f1ap_setup_failure_t fail = {.cause = F1AP_CauseRadioNetwork_gNB_CU_Cell_Capacity_Exceeded};
-    rrc->mac_rrc.f1_setup_failure(&fail);
+    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
     return;
   }
   if (req->num_cells_available != 1) {
     LOG_E(NR_RRC, "can only handle on DU cell, but gNB_DU %ld has %d\n", req->gNB_DU_id, req->num_cells_available);
     f1ap_setup_failure_t fail = {.cause = F1AP_CauseRadioNetwork_gNB_CU_Cell_Capacity_Exceeded};
-    rrc->mac_rrc.f1_setup_failure(&fail);
+    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
     return;
   }
   f1ap_served_cell_info_t *cell_info = &req->cell[0].info;
@@ -74,7 +74,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
           cell_info->plmn.mnc,
           cell_info->nr_cellid);
     f1ap_setup_failure_t fail = {.cause = F1AP_CauseRadioNetwork_plmn_not_served_by_the_gNB_CU};
-    rrc->mac_rrc.f1_setup_failure(&fail);
+    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
     return;
   }
   // if there is no system info or no SIB1 and we run in SA mode, we cannot handle it
@@ -82,7 +82,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
   if (sys_info == NULL || sys_info->mib == NULL || (sys_info->sib1 == NULL && get_softmodem_params()->sa)) {
     LOG_E(NR_RRC, "no system information provided by DU, rejecting\n");
     f1ap_setup_failure_t fail = {.cause = F1AP_CauseProtocol_semantic_error};
-    rrc->mac_rrc.f1_setup_failure(&fail);
+    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
     return;
   }
 
@@ -94,7 +94,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
       || mib->message.choice.messageClassExtension == NULL) {
     LOG_E(RRC, "Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
     f1ap_setup_failure_t fail = {.cause = F1AP_CauseProtocol_semantic_error};
-    rrc->mac_rrc.f1_setup_failure(&fail);
+    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
     ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, mib);
     return;
   }
@@ -105,7 +105,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
     if (dec_rval.code != RC_OK) {
       LOG_E(RRC, "Failed to decode NR_SIB1 (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
       f1ap_setup_failure_t fail = {.cause = F1AP_CauseProtocol_semantic_error};
-      rrc->mac_rrc.f1_setup_failure(&fail);
+      rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
       ASN_STRUCT_FREE(asn_DEF_NR_SIB1, sib1);
       return;
     }
@@ -140,7 +140,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
   f1ap_setup_resp_t resp = {.num_cells_to_activate = 1, .cells_to_activate[0] = cell};
   if (rrc->node_name != NULL)
     resp.gNB_CU_name = strdup(rrc->node_name);
-  rrc->mac_rrc.f1_setup_response(&resp);
+  rrc->mac_rrc.f1_setup_response(assoc_id, &resp);
 
   /*
   MessageDef *msg_p2 = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);

@@ -145,7 +145,7 @@ void *F1AP_CU_task(void *arg) {
 
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);
-    sctp_assoc_t assoc_id = getCxt(0) != NULL ? getCxt(0)->assoc_id : 0;
+    sctp_assoc_t assoc_id = ITTI_MSG_ORIGIN_INSTANCE(received_msg);
     LOG_D(F1AP, "CU Task Received %s for instance %ld: sending SCTP message via assoc_id %d\n",
           ITTI_MSG_NAME(received_msg), ITTI_MSG_DESTINATION_INSTANCE(received_msg), assoc_id);
     switch (ITTI_MSG_ID(received_msg)) {
