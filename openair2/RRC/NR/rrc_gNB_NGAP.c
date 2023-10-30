@@ -799,7 +799,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
 
       drb->id = i + j + UE->nb_of_pdusessions;
 
-      drb->defaultDRB = E1AP_DefaultDRB_true;
+      drb->defaultDRB = true;
 
       drb->sDAP_Header_UL = !(rrc->configuration.enable_sdap);
       drb->sDAP_Header_DL = !(rrc->configuration.enable_sdap);

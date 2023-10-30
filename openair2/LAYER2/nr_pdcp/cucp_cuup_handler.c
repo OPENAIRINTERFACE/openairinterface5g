@@ -53,8 +53,8 @@ static void fill_DRB_configList_e1(NR_DRB_ToAddModList_t *DRB_configList, const 
 
     asn1cCalloc(sdap_config->mappedQoS_FlowsToAdd, FlowsToAdd);
     for (int j=0; j < drb->numQosFlow2Setup; j++) {
-      asn1cSequenceAdd(FlowsToAdd->list, NR_QFI_t, qfi);
-      *qfi = drb->qosFlows[j].fiveQI;
+      asn1cSequenceAdd(FlowsToAdd->list, NR_QFI_t, id);
+      *id = drb->qosFlows[j].id;
     }
     sdap_config->mappedQoS_FlowsToRelease = NULL;
 
