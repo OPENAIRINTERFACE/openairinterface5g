@@ -327,7 +327,7 @@ void cic_decimator(int16_t *input_buffer, int16_t *output_buffer, int length, in
   }
 
   /* get working buffers */
-  buffer_one = malloc(length*sizeof(int32_t) * 2);   /* for i&q samples */
+  buffer_one = calloc(length, sizeof(int32_t) * 2);   /* for i&q samples */
   if (buffer_one == NULL) {
      msg("Fatal memory allocation problem \n");
      assert(0);

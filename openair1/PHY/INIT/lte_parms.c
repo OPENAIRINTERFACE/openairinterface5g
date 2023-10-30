@@ -151,6 +151,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,
       frame_parms->ofdm_symbol_size = 256*osf;
       frame_parms->samples_per_tti = 3840*osf;
       frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 90;
+      AssertFatal(log2_osf < 4 ,"log2_osf %d will cause undefined behaviour \n", log2_osf);
       frame_parms->nb_prefix_samples>>=(3-log2_osf);
       frame_parms->nb_prefix_samples0>>=(3-log2_osf);
       frame_parms->N_RBGS = 2;
