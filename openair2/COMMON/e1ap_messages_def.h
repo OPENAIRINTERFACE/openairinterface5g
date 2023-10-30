@@ -20,6 +20,9 @@
  */
 
 /* gNB_CUUP application layer -> E1AP messages */
+MESSAGE_DEF(E1AP_REGISTER_REQ, MESSAGE_PRIORITY_MED, e1ap_register_req_t, e1ap_register_req)
+
+/* E1AP messages -> RRC (CU-CP) */
 MESSAGE_DEF(E1AP_SETUP_REQ  , MESSAGE_PRIORITY_MED , e1ap_setup_req_t , e1ap_setup_req)
 
 /* E1AP -> eNB_DU or eNB_CU_RRC -> E1AP application layer messages */
@@ -30,4 +33,7 @@ MESSAGE_DEF(E1AP_BEARER_CONTEXT_SETUP_REQ , MESSAGE_PRIORITY_MED , e1ap_bearer_s
 MESSAGE_DEF(E1AP_BEARER_CONTEXT_SETUP_RESP , MESSAGE_PRIORITY_MED , e1ap_bearer_setup_resp_t , e1ap_bearer_setup_resp)
 
 MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_REQ , MESSAGE_PRIORITY_MED , e1ap_bearer_setup_req_t , e1ap_bearer_mod_req)
+MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_RESP, MESSAGE_PRIORITY_MED, e1ap_bearer_modif_resp_t, e1ap_bearer_modif_resp)
 
+MESSAGE_DEF(E1AP_BEARER_CONTEXT_RELEASE_CMD, MESSAGE_PRIORITY_MED, e1ap_bearer_release_cmd_t, e1ap_bearer_release_cmd)
+MESSAGE_DEF(E1AP_BEARER_CONTEXT_RELEASE_CPLT, MESSAGE_PRIORITY_MED, e1ap_bearer_release_cplt_t, e1ap_bearer_release_cplt)

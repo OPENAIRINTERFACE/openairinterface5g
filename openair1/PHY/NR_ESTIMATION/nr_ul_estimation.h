@@ -28,16 +28,17 @@
  * @{
  */
 
-
 /*!
 \brief This function performs channel estimation including frequency interpolation
 \param gNB Pointer to gNB PHY variables
 \param Ns slot number (0..19)
 \param p
 \param symbol symbol within slot
-\param bwp_start_subcarrier, first allocated subcarrier
-\param nb_rb_pusch, number of allocated RBs for this UE
+\param ul_id
+\param bwp_start_subcarrier first allocated subcarrier
+\param pusch_pdu
 \param max_ch maximum value of estimated channel
+\param nvar
 */
 
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
@@ -95,3 +96,4 @@ void nr_freq_equalization(NR_DL_FRAME_PARMS *frame_parms,
 void nr_init_fde(void);
 
 #endif
+/** @}*/

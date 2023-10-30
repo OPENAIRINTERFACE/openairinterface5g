@@ -64,23 +64,13 @@
 extern "C" {
 #endif
 
-/** @defgroup _LOG LOG Generator
- * @{*/
-/* @}*/
-
-/** @defgroup _macro Macro Definition
- *  @ingroup _LOG
- *  @brief these macros are used in the code of LOG
- * @{*/
-/* @}*/
-
 /** @defgroup _max_length Maximum Length of LOG
  *  @ingroup _macro
  *  @brief the macros that describe the maximum length of LOG
  * @{*/
 
 #define MAX_LOG_TOTAL 16384 /*!< \brief the maximum length of a log */
-/* @}*/
+/** @}*/
 
 /** @defgroup _log_level Message levels defined by LOG
  *  @ingroup _macro
@@ -95,8 +85,7 @@ extern "C" {
 # define  OAILOG_TRACE    5 /*!< \brief second level debug-level messages, for developers, likely impact real-time behavior*/
 
 #define NUM_LOG_LEVEL 6 /*!< \brief the number of message levels users have with LOG (OAILOG_DISABLE is not available to user as a level, so it is not included)*/
-/* @}*/
-
+/** @}*/
 
 /** @defgroup _log_format Defined log format
  *  @ingroup _macro
@@ -112,15 +101,6 @@ extern "C" {
 #define LOG_BLUE "\033[34m" /*!< \brief VT100 sequence for blue foreground */
 #define LOG_CYBL "\033[40;36m"  /*!< \brief VT100 sequence for cyan foreground on black background */
 #define LOG_RESET "\033[0m" /*!< \brief VT100 sequence for reset (black) foreground */
-/* @}*/
-
-
-/** @defgroup _syslog_conf Macros for write in syslog.conf
- *  @ingroup _macro
- *  @brief Macros used to write lines (local/remote) in syslog.conf
- * @{*/
-
-
 #define FLAG_NOCOLOR     0x0001  /*!< \brief use colors in log messages, depending on level */
 #define FLAG_THREAD      0x0008  /*!< \brief display thread name in log messages */
 #define FLAG_LEVEL       0x0010  /*!< \brief display log level in log messages */
@@ -130,6 +110,7 @@ extern "C" {
 #define FLAG_THREAD_ID   0x0200
 #define FLAG_REAL_TIME   0x0400
 #define FLAG_INITIALIZED 0x8000
+/** @}*/
 
 #define SET_LOG_OPTION(O)   g_log->flag = (g_log->flag | O)
 #define CLEAR_LOG_OPTION(O) g_log->flag = (g_log->flag & (~O))
@@ -333,7 +314,7 @@ typedef struct {
   int enable_flag;
 } log_mem_cnt_t;
 
-/* @}*/
+/** @}*/
 
 /*!\fn int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
 \brief Write output file from signal data
@@ -460,8 +441,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_UI(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)
 #define LOG_UDUMPMSG(c, b, s, f, x...) do { log_dump(c, b, s, f, x)  ;}   while (0)  /* */
 #    define LOG_MM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 1);} while(0)
-/* @}*/
-
+/** @}*/
 
 /** @defgroup _useful_functions useful functions in LOG
  *  @ingroup _macro
@@ -472,8 +452,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_EXIT(c)  do { LOG_END(c); return;}while(0)  /*!< \brief Macro to log a message with severity TRACE when exiting a function */
 #define LOG_RETURN(c,r) do {LOG_T(c,"Leaving %s (rc = %08lx)\n", __FUNCTION__ , (unsigned long)(r) );return(r);}while(0)  /*!< \brief Macro to log a function exit, including integer value, then to return a value to the calling function */
 
-
-/* @}*/
+/** @}*/
 
 #ifdef __cplusplus
 }

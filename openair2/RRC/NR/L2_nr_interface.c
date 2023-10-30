@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file l2_nr_interface.c
+/*! \file L2_nr_interface.c
  * \brief layer 2 interface, used to support different RRC sublayer
  * \author Raymond Knopp and Navid Nikaein, WEI-TAI CHEN
  * \date 2010-2014, 2018

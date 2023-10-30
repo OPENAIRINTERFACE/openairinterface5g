@@ -97,8 +97,8 @@ void nas_proc_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
   user->proc.rsrq = NAS_PROC_RSRQ_UNKNOWN;
   user->proc.rsrp = NAS_PROC_RSRP_UNKNOWN;
 
-  user->authentication_data = calloc_or_fail(sizeof(authentication_data_t));
-  user->security_data = calloc_or_fail( sizeof(security_data_t));
+  user->authentication_data = calloc_or_fail(1, sizeof(authentication_data_t));
+  user->security_data = calloc_or_fail(1, sizeof(security_data_t));
 
   /* Initialize the EMM procedure manager */
   emm_main_initialize(user, emm_cb, imei);

@@ -43,7 +43,7 @@ import logging
 import datetime
 import signal
 import statistics as stat
-from multiprocessing import SimpleQueue
+from multiprocessing import SimpleQueue, Lock
 import concurrent.futures
 
 #import our libs
@@ -494,7 +494,7 @@ class OaiCiTest():
 			messages = [f.result() for f in futures]
 		HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
 
-	def Ping_common(self, EPC, ue, RAN):
+	def Ping_common(self, EPC, ue, RAN, printLock):
 		# Launch ping on the EPC side (true for ltebox and old open-air-cn)
 		ping_status = 0
 		ueIP = ue.getIP()
@@ -551,6 +551,8 @@ class OaiCiTest():
 		avg_msg = f'RTT(Avg)   : {rtt_avg} ms'
 		max_msg = f'RTT(Max)   : {rtt_max} ms'
 
+		# adding a lock for cleaner display in command line
+		printLock.acquire()
 		logging.info(f'\u001B[1;37;44m ping result for {ue_header} \u001B[0m')
 		logging.info(f'\u001B[1;34m    {pal_msg} \u001B[0m')
 		logging.info(f'\u001B[1;34m    {min_msg} \u001B[0m')
@@ -563,6 +565,7 @@ class OaiCiTest():
 		if float(packetloss) > float(self.ping_packetloss_threshold):
 			message += '\nPacket Loss too high'
 			logging.error(f'\u001B[1;37;41m Packet Loss too high; Target: {self.ping_packetloss_threshold}%\u001B[0m')
+			printLock.release()
 			return (False, message)
 		elif float(packetloss) > 0:
 			message += '\nPacket Loss is not 0%'
@@ -573,7 +576,9 @@ class OaiCiTest():
 				ping_rttavg_error_msg = f'RTT(Avg) too high: {rtt_avg} ms; Target: {self.ping_rttavg_threshold} ms'
 				message += f'\n {ping_rttavg_error_msg}'
 				logging.error('\u001B[1;37;41m'+ ping_rttavg_error_msg +' \u001B[0m')
+				printLock.release()
 				return (False, message)
+		printLock.release()
 
 		return (True, message)
 
@@ -587,8 +592,9 @@ class OaiCiTest():
 
 		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
 		logging.debug(ues)
+		pingLock = Lock()
 		with concurrent.futures.ThreadPoolExecutor() as executor:
-			futures = [executor.submit(self.Ping_common, EPC, ue, RAN) for ue in ues]
+			futures = [executor.submit(self.Ping_common, EPC, ue, RAN, pingLock) for ue in ues]
 			results = [f.result() for f in futures]
 			# each result in results is a tuple, first member goes to successes, second to messages
 			successes, messages = map(list, zip(*results))
@@ -1358,7 +1364,10 @@ class OaiCiTest():
 			for instance in range(0, len(CONTAINERS.yamlPath)):
 				if CONTAINERS.yamlPath[instance]!='':
 					CONTAINERS.eNB_instance=instance
-					CONTAINERS.UndeployObject(HTML,RAN)
+					if CONTAINERS.deployKind[instance]:
+						CONTAINERS.UndeployObject(HTML,RAN)
+					else:
+						CONTAINERS.UndeployGenObject(HTML,RAN, self)
 		RAN.prematureExit=True
 
 	#this function is called only if eNB/gNB fails to start
@@ -1385,7 +1394,10 @@ class OaiCiTest():
 			for instance in range(0, len(CONTAINERS.yamlPath)):
 				if CONTAINERS.yamlPath[instance]!='':
 					CONTAINERS.eNB_instance=instance
-					CONTAINERS.UndeployObject(HTML,RAN)
+					if CONTAINERS.deployKind[instance]:
+						CONTAINERS.UndeployObject(HTML,RAN)
+					else:
+						CONTAINERS.UndeployGenObject(HTML,RAN,self)
 		RAN.prematureExit=True
 
 	def IdleSleep(self,HTML):

@@ -75,35 +75,3 @@ int rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ctxt_
 
   return 0;
 }
-
-int nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ctxt_pP, const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP, int offset)
-{
-  if (!create_tunnel_resp_pP) {
-    LOG_E(NR_RRC, "create_tunnel_resp_pP error\n");
-    return -1;
-  }
-
-  LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT " RX CREATE_TUNNEL_RESP num tunnels %u \n", PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP), create_tunnel_resp_pP->num_tunnels);
-  /* we look up by CU UE ID! Do NOT change back to RNTI! */
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rntiMaybeUEid);
-  if (!ue_context_p) {
-    LOG_E(NR_RRC, "UE table error\n");
-    return -1;
-  }
-
-  for (int i = 0; i < create_tunnel_resp_pP->num_tunnels; i++) {
-    ue_context_p->ue_context.pduSession[i + offset].param.gNB_teid_N3 = create_tunnel_resp_pP->gnb_NGu_teid[i];
-    ue_context_p->ue_context.pduSession[i + offset].param.gNB_addr_N3 = create_tunnel_resp_pP->gnb_addr;
-    AssertFatal(ue_context_p->ue_context.pduSession[i + offset].param.pdusession_id == create_tunnel_resp_pP->pdusession_id[i], "");
-    LOG_I(NR_RRC,
-          PROTOCOL_NR_RRC_CTXT_UE_FMT
-          " nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel (%u) bearer UE context index %u, id %u, gtp addr len %d \n",
-          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-          create_tunnel_resp_pP->gnb_NGu_teid[i],
-          i,
-          create_tunnel_resp_pP->pdusession_id[i],
-          create_tunnel_resp_pP->gnb_addr.length);
-  }
-
-  return 0;
-}

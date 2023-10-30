@@ -19,11 +19,10 @@
  *      contact@openairinterface.org
  */
 
-/*! \file m3ap_eNB.h
+/*! \file m3ap_MCE.h
  * \brief m3ap tasks for eNB
- * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
- * \date 2018
- * \version 1.0
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein
+ * <Navid.Nikaein@eurecom.fr> \date 2018 \version 1.0
  */
 
 #include <stdio.h>

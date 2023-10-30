@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*!\file PHY/CODING/nrPolar_tools/nr_polar_procedures.h
+/*! \file nr_polar_procedures.c
  * \brief
  * \author Turker Yilmaz
  * \date 2018
@@ -129,17 +129,13 @@ void nr_polar_uxG(uint64_t *D, const uint64_t *u, const uint64_t **G_N_tab, uint
     int n_ones = 0;
     for (int a = 0; a < N_array; a++) {
       uint64_t uxG = u[a] & Gn[a];
-      for (int m = 0; m < 64; m++) {
-        if (((uxG >> m) & 1) == 1) {
-          n_ones++;
-        }
-      }
+      if (uxG != 0)
+        n_ones += count_bits_set(uxG);
     }
-    uint64_t bit = n_ones % 2;
 
     int n1 = n >> 6;
     int n2 = n - (n1 << 6);
-    D[n1] |= bit << n2;
+    D[n1] |= ((uint64_t)n_ones & 1) << n2;
   }
 }
 
@@ -396,9 +392,9 @@ void nr_polar_rate_matching_pattern(uint16_t *rmp,
 				    uint16_t E)
 {
   uint8_t i;
-  uint16_t *d, *y, ind;
+  uint16_t *d, ind;
   d = (uint16_t *)malloc(sizeof(uint16_t) * N);
-  y = (uint16_t *)malloc(sizeof(uint16_t) * N);
+  uint16_t* y = calloc(N, sizeof(uint16_t));
 
   for (int m=0; m<=N-1; m++) d[m]=m;
 
@@ -416,11 +412,11 @@ void nr_polar_rate_matching_pattern(uint16_t *rmp,
   } else {
     if ( (K/(double)E) <= (7.0/16) ) { //puncturing
       for (int k=0; k<=E-1; k++) {
-	rmp[k]=y[k+N-E];
+        rmp[k]=y[k+N-E];
       }
     } else { //shortening
       for (int k=0; k<=E-1; k++) {
-	rmp[k]=y[k];
+        rmp[k]=y[k];
       }
     }
   }

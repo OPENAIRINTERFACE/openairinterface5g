@@ -161,6 +161,78 @@ rfsim5g_ue2:
   DetachScript: docker stop rfsim5g-oai-nr-ue2
   MTU: 1500
 
+rfsim5g_ue3:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue3 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue3
+  IF: oaitun_ue1
+  AttachScript: docker start rfsim5g-oai-nr-ue3
+  DetachScript: docker stop rfsim5g-oai-nr-ue3
+  MTU: 1500
+
+rfsim5g_ue4:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue4 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue4
+  IF: oaitun_ue1
+  AttachScript: docker start rfsim5g-oai-nr-ue4
+  DetachScript: docker stop rfsim5g-oai-nr-ue4
+  MTU: 1500
+
+rfsim5g_ue5:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue5 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue5
+  IF: oaitun_ue1
+  AttachScript: docker start rfsim5g-oai-nr-ue5
+  DetachScript: docker stop rfsim5g-oai-nr-ue5
+  MTU: 1500
+
+rfsim5g_ue6:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue6 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue6
+  IF: oaitun_ue1
+  AttachScript: docker start rfsim5g-oai-nr-ue6
+  DetachScript: docker stop rfsim5g-oai-nr-ue6
+  MTU: 1500
+
+rfsim5g_ue7:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue7 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue7
+  IF: oaitun_ue1
+  AttachScript: docker start rfsim5g-oai-nr-ue7
+  DetachScript: docker stop rfsim5g-oai-nr-ue7
+  MTU: 1500
+
+rfsim5g_ue8:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue8 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue8
+  IF: oaitun_ue1
+  AttachScript: docker start rfsim5g-oai-nr-ue8
+  DetachScript: docker stop rfsim5g-oai-nr-ue8
+  MTU: 1500
+
+rfsim5g_ue9:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue9 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue9
+  IF: oaitun_ue1
+  AttachScript: docker start rfsim5g-oai-nr-ue9
+  DetachScript: docker stop rfsim5g-oai-nr-ue9
+  MTU: 1500
+
+rfsim5g_ue10:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue10 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue10
+  IF: oaitun_ue1
+  AttachScript: docker start rfsim5g-oai-nr-ue10
+  DetachScript: docker stop rfsim5g-oai-nr-ue10
+  MTU: 1500
+
 rfsim5g_ext_dn:
   Host: localhost
   NetworkScript: docker exec rfsim5g-oai-ext-dn ip a show dev eth0

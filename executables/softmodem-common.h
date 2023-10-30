@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file lte-softmodem-common.h
+/*! \file softmodem-common.h
  * \brief Top-level threads for eNodeB
- * \author 
+ * \author
  * \date 2012
  * \version 0.1
  * \company Eurecom
- * \email: 
+ * \email:
  * \note
  * \warning
  */
@@ -109,6 +109,7 @@ extern "C"
 #define CONFIG_HLP_SYNC_REF      "Sync Reference in Sidelink\n"
 #define CONFIG_HLP_NID1          "Set NID1 value in Sidelink\n"
 #define CONFIG_HLP_NID2          "Set NID2 value in Sidelink\n"
+#define CONFIG_HLP_NOITTI "Do not start itti threads, call queue processing in place, inside the caller thread"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                          */
@@ -190,6 +191,7 @@ extern int usrp_tx_thread;
   {"disable-stats",         CONFIG_HLP_STATS_DISABLE, PARAMFLAG_BOOL, .iptr=&stats_disabled,                  .defintval=0,             TYPE_INT,    0},  \
   {"nid1",                  CONFIG_HLP_NID1,          0,              .iptr=&NID1,                            .defintval=10,            TYPE_INT,    0},  \
   {"nid2",                  CONFIG_HLP_NID2,          0,              .iptr=&NID2,                            .defintval=1,             TYPE_INT,    0},  \
+    {"no-itti-threads", CONFIG_HLP_NOITTI,  PARAMFLAG_BOOL, .iptr=&softmodem_params.no_itti,  .defintval=0,             TYPE_INT,    0},  \
 }
 // clang-format on
 
@@ -232,6 +234,7 @@ extern int usrp_tx_thread;
                {"MONOLITHIC", "PNF", "VNF","UE_STUB_PNF","UE_STUB_OFFNET","STANDALONE_PNF"}, \
                {NFAPI_MONOLITHIC, NFAPI_MODE_PNF, NFAPI_MODE_VNF,NFAPI_UE_STUB_PNF,NFAPI_UE_STUB_OFFNET,NFAPI_MODE_STANDALONE_PNF}, \
                6 } }, \
+    { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
@@ -349,6 +352,7 @@ typedef struct {
   int            sync_ref;
   int            nid1;
   int            nid2;
+  int no_itti;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);

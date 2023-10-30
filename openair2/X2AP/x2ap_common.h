@@ -132,5 +132,6 @@ ssize_t x2ap_generate_unsuccessfull_outcome(
  @returns void
  **/
 void x2ap_handle_criticality(X2AP_Criticality_t criticality);
+/** @}*/
 
 #endif /* X2AP_COMMON_H_ */

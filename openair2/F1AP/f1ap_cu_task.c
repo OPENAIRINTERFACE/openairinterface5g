@@ -45,6 +45,7 @@ static instance_t cu_task_create_gtpu_instance(eth_params_t *IPaddrs) {
   openAddr_t tmp= {0};
   strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost)-1);
   sprintf(tmp.originService, "%d", IPaddrs->my_portd);
+  sprintf(tmp.destinationService, "%d", IPaddrs->remote_portd);
   return gtpv1Init(tmp);
 }
 

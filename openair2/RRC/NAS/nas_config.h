@@ -34,7 +34,7 @@
 /*! \fn void void nas_getparams(void)(void)
  * \brief This function get parameters used to configure network interface when running in noS1 mode
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 void nas_getparams(void);
 
@@ -46,7 +46,7 @@ void nas_getparams(void);
  * \param[in] broadcastAddress, the broadcast address for the subnet, e.g. 10.0.1.255
  * \return 0 on success, otherwise 1, if couldn't open a socket and 2 if the ioctl fails
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 int NAS_config(char *interfaceName, char *ipAddress, char *networkMask, char *broadcastAddress);
 
@@ -59,7 +59,7 @@ int NAS_config(char *interfaceName, char *ipAddress, char *networkMask, char *br
  * \param[in] fourth octet of the ip address e.g. for the 10.1.2.3 address would be 3
  * \return 0 on success, otherwise 1, if couldn't open a socket and 2 if the ioctl fails
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifsuffix);
 
@@ -72,7 +72,7 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifsuffix
  * \param[in] fourth octet of the ip address e.g. for the 10.1.2.3 address would be 3
  * \return 0 on success, otherwise 1, if couldn't open a socket and 2 if the ioctl fails
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 int nas_config_mbms(int interface_id, int thirdOctet, int fourthOctet, char *ifsuffix);
 
@@ -85,11 +85,9 @@ int nas_config_mbms(int interface_id, int thirdOctet, int fourthOctet, char *ifs
  * \param[in] fourth octet of the ip address e.g. for the 10.1.2.3 address would be 3
  * \return 0 on success, otherwise 1, if couldn't open a socket and 2 if the ioctl fails
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 int nas_config_mbms_s1(int interface_id, int thirdOctet, int fourthOctet, char *ifsuffix);
-
-
 
 /*! \fn int  blocking_NAS_config(char*, char*, char*, char*)
  * \brief This function initializes the nasmesh interface, in a blocking way,
@@ -100,7 +98,7 @@ int nas_config_mbms_s1(int interface_id, int thirdOctet, int fourthOctet, char *
  * \param[in] broadcastAddress, the broadcast address for the subnet, e.g. 10.0.1.255
  * \return 0 on success, otherwise 1
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 int blocking_NAS_config(char *interfaceName, char *ipAddress, char *networkMask, char *broadcastAddress);
 
@@ -113,7 +111,7 @@ int blocking_NAS_config(char *interfaceName, char *ipAddress, char *networkMask,
  *  SIOCSIFBRDADDR, SIOCSIFFLAGS), e.g. SIOCSIFBRDADDR
  * \return 0 on success, otherwise 1, if couldn't open a socket and 2 if the ioctl fails
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 int setInterfaceParameter(char *interfaceName, char *settingAddress, int operation);
 
@@ -123,7 +121,7 @@ int setInterfaceParameter(char *interfaceName, char *settingAddress, int operati
  * \param[in] address, the address of the gateway, e.g. 10.0.1.2
  * \return 0 on success, otherwise 1, if couldn't open a socket and 2 if the ioctl fails
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 int set_gateway(char *interfaceName, char *gateway);
 
@@ -131,7 +129,7 @@ int set_gateway(char *interfaceName, char *gateway);
  * \brief This function sets the basic network address used
  * \param[in] baseAddr, the new basic address e.g.for 10.0.1.2, would be 10.0
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 void setBaseNetAddress(char *baseAddr);
 
@@ -139,7 +137,7 @@ void setBaseNetAddress(char *baseAddr);
  * \brief This function returns the basic network address used
  * \return the basic network address in use
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 char *getBaseNetAddress(void);
 
@@ -147,7 +145,7 @@ char *getBaseNetAddress(void);
  * \brief This function sets the new default network mask used
  * \param[in] newNetworkMask, the new network mask e.g.for 255.255.0.0
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 void setNetMask(char *baseAddr);
 
@@ -155,7 +153,7 @@ void setNetMask(char *baseAddr);
  * \brief This function returns the network mask address in use
  * \return the network mask in use
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 char *getNetMask(void);
 
@@ -163,7 +161,7 @@ char *getNetMask(void);
  * \brief This function sets the new broadcast address used
  * \param[in] newNetworkMask, the new broadcast address e.g.for 10.0.255.255
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 void setBroadcastAddress(char *baseAddr);
 
@@ -171,7 +169,7 @@ void setBroadcastAddress(char *baseAddr);
  * \brief This function returns the broadcast address in use
  * \return the broadcast address in use
  * \note
- * @ingroup  ?????
+ * @ingroup  _nas
  */
 char *getBroadcastAddress(void);
 

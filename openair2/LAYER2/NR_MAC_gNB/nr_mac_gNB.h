@@ -378,7 +378,6 @@ typedef struct NR_pusch_dmrs {
   uint16_t ul_dmrs_symb_pos;
   uint8_t num_dmrs_cdm_grps_no_data;
   nfapi_nr_dmrs_type_e dmrs_config_type;
-  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
 } NR_pusch_dmrs_t;
 
 typedef struct NR_sched_pusch {
@@ -857,3 +856,4 @@ typedef struct gNB_MAC_INST_s {
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
+/** @}*/

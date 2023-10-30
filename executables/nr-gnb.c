@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file lte-enb.c
+/*! \file nr-gnb.c
  * \brief Top-level threads for gNodeB
  * \author R. Knopp, F. Kaltenberger, Navid Nikaein
  * \date 2012
@@ -290,7 +290,7 @@ void rx_func(void *param)
       pushTpool(&gNB->threadPool, res);
     }
   } else if (get_softmodem_params()->continuous_tx) {
-    notifiedFIFO_elt_t *res = pullTpool(&gNB->L1_tx_free, &gNB->threadPool);
+    notifiedFIFO_elt_t *res = pullNotifiedFIFO(&gNB->L1_tx_free);
     if (res == NULL)
       return; // Tpool has been stopped
     processingData_L1tx_t *syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
@@ -420,10 +420,8 @@ void *nrL1_stats_thread(void *param) {
 // two parallel L1 tx threads.
 void *tx_reorder_thread(void* param) {
   PHY_VARS_gNB *gNB = (PHY_VARS_gNB *)param;
-    notifiedFIFO_elt_t *resL1Reserve = NULL;
   
-
-  resL1Reserve = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
+  notifiedFIFO_elt_t *resL1Reserve = pullNotifiedFIFO(&gNB->L1_tx_out);
   AssertFatal(resL1Reserve != NULL, "pullTpool() did not return start message in %s\n", __func__);
   int next_tx_slot=((processingData_L1tx_t *)NotifiedFifoData(resL1Reserve))->slot;
   
@@ -436,15 +434,15 @@ void *tx_reorder_thread(void* param) {
        if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
          LOG_E(PHY,"order mistake\n");
          resL1Reserve = NULL;
-         resL1 = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
+         resL1 = pullNotifiedFIFO(&gNB->L1_tx_out);
        }
-     } else { 
-       resL1 = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
+     } else {
+       resL1 = pullNotifiedFIFO(&gNB->L1_tx_out);
        if (resL1 != NULL && ((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
           if (resL1Reserve)
               LOG_E(PHY,"error, have a stored packet, then a second one\n");
           resL1Reserve = resL1;
-          resL1 = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
+          resL1 = pullNotifiedFIFO(&gNB->L1_tx_out);
           if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot)
             LOG_E(PHY,"error, pull two msg, none is good\n");
        }

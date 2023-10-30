@@ -24,41 +24,39 @@
 #ifndef E1AP_COMMON_H_
 #define E1AP_COMMON_H_
 #include "openair2/COMMON/e1ap_messages_types.h"
-#include "e1ap_asnc.h"
 #include "openair2/COMMON/sctp_messages_types.h"
 #include "common/ngran_types.h"
 
 typedef struct e1ap_upcp_inst_s {
-  bool incoming_sock;
   instance_t instance;
-  bool same_process;
   E1_t type;
   enum sctp_state_e sockState;
-  sctp_assoc_t assoc_id;
+  struct {
+    sctp_assoc_t assoc_id;
+    e1ap_setup_req_t setupReq;
+  } cuup;
   instance_t gtpInstN3;
   instance_t gtpInstF1U;
-  e1ap_setup_req_t setupReq;
-  e1ap_bearer_setup_req_t bearerSetupReq;
-  e1ap_bearer_setup_resp_t bearerSetupResp;
+  e1ap_net_config_t net_config;
 } e1ap_upcp_inst_t;
 
 extern int asn1_xer_print;
 
-int e1ap_decode_pdu(E1AP_E1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length);
+// forward declaration so we don't require E1AP ASN.1 when including this
+// header
+struct E1AP_E1AP_PDU;
+int e1ap_decode_pdu(struct E1AP_E1AP_PDU *pdu, const uint8_t *const buffer, uint32_t length);
 
 e1ap_upcp_inst_t *getCxtE1(instance_t instance);
 
-E1AP_TransactionID_t E1AP_get_next_transaction_identifier();
+long E1AP_get_next_transaction_identifier();
+void E1AP_free_transaction_identifier(long id);
 
-void createE1inst(E1_t type, instance_t instance, e1ap_setup_req_t *req);
+void createE1inst(E1_t type, instance_t instance, e1ap_net_config_t *nc, e1ap_setup_req_t *req);
 
-bool check_transac_id(E1AP_TransactionID_t id, int *freeIdx);
-
-int e1ap_assoc_id(E1_t type, instance_t instance);
-
-int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu, uint16_t stream, const char *func);
+int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, struct E1AP_E1AP_PDU *pdu, uint16_t stream, const char *func);
 
 void e1ap_common_init();
+void cuup_init_n3(instance_t instance);
 
-void E1AP_free_transaction_identifier(E1AP_TransactionID_t id);
 #endif /* E1AP_COMMON_H_ */

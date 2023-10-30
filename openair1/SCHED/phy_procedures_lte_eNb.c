@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file phy_procedures_lte_eNB.c
+/*! \file phy_procedures_lte_eNb.c
  * \brief Implementation of eNB procedures from 36.213 LTE specifications / FeMBMS 36.231 LTE procedures v14.2
  * \author R. Knopp, F. Kaltenberger, N. Nikaein, X. Foukas, J. Morgade
  * \date 2011

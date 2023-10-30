@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/telnetsrv/telnetsrv_phycmd.c
+/*! \file telnetsrv_enb_phycmd.c
  * \brief: implementation of telnet commands related to softmodem linux process
  * \author Francois TABURET
  * \date 2017

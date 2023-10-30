@@ -55,7 +55,7 @@ uint8_t get_I_TBS(uint8_t I_MCS);
 unsigned char get_I_TBS_UL(unsigned char I_MCS);
 
 /** \brief Compute Q (modulation order) based on downlink I_MCS. Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS
+    @param mcs
     @param nb_rb
     @return Transport block size */
 uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb);
@@ -63,7 +63,7 @@ uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb);
 uint16_t find_nb_rb_DL(uint8_t mcs, uint32_t bytes, uint16_t nb_rb_max, uint16_t rb_gran);
 
 /** \brief Compute Q (modulation order) based on uplink I_MCS. Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS
+    @param mcs
     @param nb_rb
     @return Transport block size */
 uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb);
@@ -212,44 +212,15 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame, uint8_t sub
 
 /*!
   \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index
-  @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
   @returns 0-5 depending on number of available prach
 */
 uint8_t get_num_prach_tdd(module_id_t Mod_id);
 
 /*!
-  \brief Return the PRACH format as a function of the Configuration Index and Frame type.
-  @param prach_ConfigIndex PRACH Configuration Index
-  @param frame_type 0-FDD, 1-TDD
-  @returns 0-1 accordingly
-*/
-/*
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,frame_type_t frame_type);
-*/
-
-/*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
-  @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
   @returns 0-5 depending on number of available prach
 */
 uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index);
-
-/*!
-  \brief Comp ute DFT of PRACH ZC sequences.  Used for generation of prach in UE and reception of PRACH in eNB.
-  @param rootSequenceIndex PRACH root sequence
-  #param prach_ConfigIndex PRACH Configuration Index
-  @param zeroCorrelationZoneConfig PRACH ncs_config
-  @param highSpeedFlat PRACH High-Speed Flag
-  @param frame_type TDD/FDD flag
-  @param Xu DFT output
-*/
-void compute_prach_seq(uint16_t rootSequenceIndex,
-                       uint8_t prach_ConfigIndex,
-                       uint8_t zeroCorrelationZoneConfig,
-                       uint8_t highSpeedFlag,
-                       frame_type_t frame_type,
-                       uint32_t X_u[64][839]);
-
 
 void init_prach_tables(int N_ZC);
 

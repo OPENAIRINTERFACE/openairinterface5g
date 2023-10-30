@@ -154,7 +154,7 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
 {
   LOG_FUNC_IN;
 
-  user->nas_user_nvdata = calloc_or_fail(sizeof(user_nvdata_t));
+  user->nas_user_nvdata = calloc_or_fail(1, sizeof(user_nvdata_t));
 
   /* Get UE data stored in the non-volatile memory device */
   int rc = memory_read(user->user_nvdata_store, user->nas_user_nvdata, sizeof(user_nvdata_t));
@@ -163,7 +163,7 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
     abort();
   }
 
-  user->nas_user_context = calloc_or_fail(sizeof(nas_user_context_t));
+  user->nas_user_context = calloc_or_fail(1, sizeof(nas_user_context_t));
   _nas_user_context_initialize(user->nas_user_context, version);
 
   /* Initialize the internal NAS processing data */

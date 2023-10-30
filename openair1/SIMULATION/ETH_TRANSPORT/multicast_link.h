@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file multicast.h
+/*! \file multicast_link.h
  *  \brief
  *  \author Lionel Gauthier and Navid Nikaein
  *  \date 2011

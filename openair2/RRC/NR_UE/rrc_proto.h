@@ -114,6 +114,7 @@ int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index);
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_nrue_task(void *args_p);
+void *rrc_nrue(void *args_p);
 
 void nr_rrc_handle_timers(NR_UE_Timers_Constants_t *timers);
 
@@ -155,6 +156,5 @@ void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
                                int rnti);
 
 int configure_NR_SL_Preconfig(int sync_source);
-/** @}*/
 #endif
 

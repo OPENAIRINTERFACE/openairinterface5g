@@ -88,7 +88,7 @@ static int _esm_pt_get_available_entry(esm_pt_data_t *esm_pt_data);
 esm_pt_data_t *esm_pt_initialize(void)
 {
   LOG_FUNC_IN;
-  esm_pt_data_t *esm_pt_data = calloc_or_fail(sizeof(esm_pt_data_t));
+  esm_pt_data_t *esm_pt_data = calloc_or_fail(1, sizeof(esm_pt_data_t));
   int i;
 
   esm_pt_data->index = 0;

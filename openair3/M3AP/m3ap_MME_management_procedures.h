@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file m3ap_eNB_management_procedures.h
+/*! \file m3ap_MME_management_procedures.h
  * \brief m3ap tasks for eNB
  * \author Javier Morgade <javier.morgade@ieee.org>
  * \date 2019

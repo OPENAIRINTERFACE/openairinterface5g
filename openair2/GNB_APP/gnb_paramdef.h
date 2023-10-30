@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/GNB_APP/gnb_paramdef.f
- * \brief definition of configuration parameters for all gNodeB modules 
+/*! \file gnb_paramdef.h
+ * \brief definition of configuration parameters for all gNodeB modules
  * \author Francois TABURET, WEI-TAI CHEN
  * \date 2018
  * \version 0.1
@@ -161,7 +161,7 @@ typedef enum {
 {GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            .u64ptr=NULL,.defint64val=1,               TYPE_UINT64,    0},  \
 {GNB_CONFIG_STRING_MINRXTXTIME,                  NULL,   0,            .iptr=NULL,  .defintval=2,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            .strptr=NULL,.defstrval="",                TYPE_STRING,    0},  \
-{GNB_CONFIG_STRING_UMONDEFAULTDRB,               NULL,   0,            .uptr=NULL,  .defuintval=0,                TYPE_UINT,      0},  \
+{GNB_CONFIG_STRING_UMONDEFAULTDRB,               NULL, PARAMFLAG_BOOL, .uptr=NULL,  .defuintval=0,                TYPE_UINT,      0},  \
 {GNB_CONFIG_STRING_FORCE256QAMOFF, GNB_CONFIG_HLP_FORCE256QAMOFF, PARAMFLAG_BOOL, .iptr=NULL, .defintval=0,        TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_ENABLE_SDAP, GNB_CONFIG_HLP_STRING_ENABLE_SDAP, PARAMFLAG_BOOL,.iptr=NULL, .defintval=0,       TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_DRBS, GNB_CONFIG_HLP_STRING_DRBS,     0,            .iptr=NULL,  .defintval=1,                 TYPE_INT,       0},  \
@@ -376,19 +376,16 @@ typedef enum {
 #define GNB_CONFIG_E1_CU_TYPE_IDX                         0
 #define GNB_CONFIG_E1_IPV4_ADDRESS_CUCP                   1
 #define GNB_CONFIG_E1_IPV4_ADDRESS_CUUP 2
-#define GNB_CONFIG_E1_CN_SUPPORT 3
 
 #define GNB_CONFIG_STRING_E1_CU_TYPE                      "type"
 #define GNB_CONFIG_STRING_E1_IPV4_ADDRESS_CUCP "ipv4_cucp"
 #define GNB_CONFIG_STRING_E1_IPV4_ADDRESS_CUUP "ipv4_cuup"
-#define GNB_CONFIG_STRING_E1_CN_SUPPORT                   "cn_support"
 
 // clang-format off
 #define GNBE1PARAMS_DESC { \
   {GNB_CONFIG_STRING_E1_CU_TYPE,           NULL, 0, .strptr=NULL, .defstrval=NULL, TYPE_STRING, 0}, \
   {GNB_CONFIG_STRING_E1_IPV4_ADDRESS_CUCP, NULL, 0, .strptr=NULL, .defstrval=NULL, TYPE_STRING, 0}, \
   {GNB_CONFIG_STRING_E1_IPV4_ADDRESS_CUUP, NULL, 0, .strptr=NULL, .defstrval=NULL, TYPE_STRING, 0}, \
-  {GNB_CONFIG_STRING_E1_CN_SUPPORT,        NULL, 0, .uptr  =NULL, .defintval=1L,   TYPE_UINT,   0} \
   }
 // clang-format on
 /* L1 configuration section names   */

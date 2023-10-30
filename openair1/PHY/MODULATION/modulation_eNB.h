@@ -44,7 +44,6 @@ void remove_7_5_kHz(RU_t *ru,uint8_t subframe);
 after beamforming
     @param beam_weights Beamforming weights applied on each
 antenna element and each carrier
-    @param slot Slot number
     @param symbol Symbol index on which to act
     @param aa physical antenna index
     @param p logical antenna index
@@ -58,18 +57,18 @@ int beam_precoding(int32_t **txdataF,
 		   int aa,
 		   int p,
                    int l1_id);
-				   
+
 /** \brief This function performs beamforming precoding for common
  * data for only one eNB, fdragon
     @param txdataF Table of pointers for frequency-domain TX signals
     @param txdataF_BF Table of pointers for frequency-domain TX signals
-    @param frame_parms Frame descriptor structure
-after beamforming
     @param beam_weights Beamforming weights applied on each
 antenna element and each carrier
-    @param slot Slot number
-    @param symbol Symbol index on which to act
-    @param aa physical antenna index*/
+    @param subframe sf number
+    @param  nb_antenna_ports physical antennas
+@param nb_tx
+@param frame_parms
+*/
 int beam_precoding_one_eNB(int32_t **txdataF,
                            int32_t **txdataF_BF,
                            int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15],

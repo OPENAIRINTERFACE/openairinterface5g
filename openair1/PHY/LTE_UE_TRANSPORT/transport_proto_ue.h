@@ -101,18 +101,6 @@ void qpsk_qpsk(int16_t *stream0_in,
                int16_t *rho01,
                int32_t length);
 
-/** \brief This function perform LLR computation for dual-stream (QPSK/QPSK) transmission.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp_i Compensated channel output for interference
-    @param rho_i Correlation between channel of signal and inteference
-    @param dlsch_llr llr output
-    @param symbol OFDM symbol index in sub-frame
-    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
-    @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr128p pointer to pointer to symbol in dlsch_llr*/
-
 void qpsk_llr(int16_t *stream0_in,
               int16_t *stream0_out,
               int length);
@@ -158,6 +146,7 @@ void qpsk_qam16(int16_t *stream0_in,
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
     @param rho_i Correlation between channel of signal and inteference
+@param dl_ch_mag_i
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
@@ -194,6 +183,7 @@ void qpsk_qam64(int16_t *stream0_in,
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
+@param dl_ch_mag_i
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
@@ -231,13 +221,13 @@ void qam16_qpsk(short *stream0_in,
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param dl_ch_mag   Input from scaled channel magnitude square of h0'*g0
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param pbch_pss_sss_adjust Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
 int dlsch_16qam_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                          int **rxdataF_comp,
@@ -271,14 +261,14 @@ void qam16_qam16(short *stream0_in,
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
-    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param dl_ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param dl_ch_mag_i Input from scaled channel magnitude square of h0'*g1
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param pbch_pss_sss_adjust Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
 int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
@@ -313,14 +303,14 @@ void qam16_qam64(short *stream0_in,
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
-    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param dl_ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param dl_ch_mag_i Input from scaled channel magnitude square of h0'*g1
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param pbch_pss_sss_adjust Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
 int dlsch_16qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
@@ -353,13 +343,13 @@ void qam64_qpsk(short *stream0_in,
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param dl_ch_mag   Input from scaled channel magnitude square of h0'*g0
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param pbch_pss_sss_adjust Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
 int dlsch_64qam_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                          int **rxdataF_comp,
@@ -409,14 +399,14 @@ void qam64_qam16_avx2(short *stream0_in,
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
-    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param dl_ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param dl_ch_mag_i Input from scaled channel magnitude square of h0'*g1
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
+    @param pbch_pss_sss_adjust Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
 int dlsch_64qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
@@ -467,15 +457,16 @@ void qam64_qam64_avx2(int32_t *stream0_in,
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
     @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
-    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
+    @param dl_ch_mag   Input from scaled channel magnitude square of h0'*g0
+    @param dl_ch_mag_i Input from scaled channel magnitude square of h0'*g1
     @param rho_i Correlation between channel of signal and inteference
     @param dlsch_llr llr output
     @param symbol OFDM symbol index in sub-frame
     @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
     @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr16p pointer to pointer to symbol in dlsch_llr*/
+    @param pbch_pss_sss_adjust Number of channel bits taken by PBCH/PSS/SSS
+@param llr_offset
+*/
 int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
                           int **rxdataF_comp_i,
@@ -490,7 +481,6 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                           //short **llr16p,
                           uint32_t llr_offset);
 
-
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
     @param frame_parms Frame descriptor structure
     @param rxdataF_comp Compensated channel output
@@ -499,7 +489,6 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     @param first_symbol_flag
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr128p pointer to pointer to symbol in dlsch_llr
     @param beamforming_mode beamforming mode
 */
 int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -514,16 +503,6 @@ int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
-   @param frame_parms Frame descriptor structure
-   @param rxdataF_comp Compensated channel output
-   @param dlsch_llr llr output
-   @param dl_ch_mag Squared-magnitude of channel in each resource element position corresponding to allocation and weighted for mid-point in 16QAM constellation
-   @param symbol OFDM symbol index in sub-frame
-   @param first_symbol_flag
-   @param nb_rb number of RBs for this allocation
-   @param pbch_pss_sss_adjust  Adjustment factor in RE for PBCH/PSS/SSS allocations
-   @param llr128p pointer to pointer to symbol in dlsch_llr
-   @param beamforming_mode beamforming mode
 */
 
 int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
@@ -551,14 +530,16 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
    @param frame_parms Frame descriptor structure
    @param rxdataF_comp Compensated channel output
+@param sic_buffer
+@param rho_i
+@param num_pdcch_symbols
    @param dlsch_llr llr output
-   @param dl_ch_mag Squared-magnitude of channel in each resource element position corresponding to allocation, weighted by first mid-point of 64-QAM constellation
-   @param dl_ch_magb Squared-magnitude of channel in each resource element position corresponding to allocation, weighted by second mid-point of 64-QAM constellation
-   @param symbol OFDM symbol index in sub-frame
-   @param first_symbol_flag
+   @param dl_ch_mag Squared-magnitude of channel in each resource element position corresponding to allocation, weighted by first
+mid-point of 64-QAM constellation
    @param nb_rb number of RBs for this allocation
-   @param pbch_pss_sss_adjust PBCH/PSS/SSS RE adjustment (in REs)
-   @param beamforming_mode beamforming mode
+@param subframe
+@param  mod_order_0
+@param rb_alloc
 */
 void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
                           int32_t **rxdataF_comp,
@@ -1021,9 +1002,10 @@ void dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
     @param dlsch_llr Pointer to LLR values computed by dlsch_demodulation
     @param lte_frame_parms Pointer to frame descriptor
     @param dlsch Pointer to DLSCH descriptor
+@param harq_process
     @param frame Frame number
     @param subframe Subframe number
-    @param num_pdcch_symbols Number of PDCCH symbols
+@param harq_pid
     @param is_crnti indicates if PDSCH belongs to a CRNTI (necessary for parallelizing decoding threads)
     @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
     @returns 0 on success, 1 on unsuccessful decoding
@@ -1045,7 +1027,8 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
                              PDSCH_t dlsch_id,
                              uint8_t eNB_id);
 
-/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
+/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel
+estimation.  It performs
     - RB extraction (signal and channel estimates)
     - channel compensation (matched filtering)
     - RE extraction (pilot, PBCH, synch. signals)
@@ -1056,11 +1039,17 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     @param type Type of PDSCH (SI_PDSCH,RA_PDSCH,PDSCH,PMCH)
     @param eNB_id eNb index (Nid1) 0,1,2
     @param eNB_id_i Interfering eNB index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
+@param frame
     @param subframe Subframe number
     @param symbol Symbol on which to act (within sub-frame)
     @param first_symbol_flag set to 1 on first DLSCH symbol
-    @param rx_type. rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...]. In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
+    @param rx_type rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first
+stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i
+should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id
+to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...].
+In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
     @param i_mod Modulation order of the interfering stream
+    @param harq_pid
 */
 int32_t rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                  PDSCH_t type,
@@ -1085,6 +1074,7 @@ int32_t rx_pdcch(PHY_VARS_UE *ue,
   @param phy_vars_ue Pointer to UE variables
   @param[out] pss_ext contain the PSS signals after the extraction
   @param[out] sss_ext contain the SSS signals after the extraction
+@param subframe
   @returns 0 on success
 */
 int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
@@ -1095,6 +1085,7 @@ int pss_sss_extract(PHY_VARS_UE *phy_vars_ue,
 /*! \brief Extract only PSS resource elements
   @param phy_vars_ue Pointer to UE variables
   @param[out] pss_ext contain the PSS signals after the extraction
+@param subframe
   @returns 0 on success
 */
 int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
@@ -1104,6 +1095,7 @@ int pss_only_extract(PHY_VARS_UE *phy_vars_ue,
 /*! \brief Extract only SSS resource elements
   @param phy_vars_ue Pointer to UE variables
   @param[out] sss_ext contain the SSS signals after the extraction
+@param subframe
   @returns 0 on success
 */
 int sss_only_extract(PHY_VARS_UE *phy_vars_ue,
@@ -1179,7 +1171,7 @@ void generate_sldch(PHY_VARS_UE *ue,SLDCH_t *sldch,int frame_tx,int subframe_tx)
 
 /*! \brief Top-level generation route for Sidelink Shared Channel
   \param ue pointer to UE descriptor
-  \param slsch pointer to SLSCH configuration and payload
+  \param slss pointer to SLSCH configuration and payload
   \param frame_tx Frame number
   \param subframe_tx subframe number
 */
@@ -1261,13 +1253,13 @@ uint8_t get_I_TBS(uint8_t I_MCS);
 unsigned char get_I_TBS_UL(unsigned char I_MCS);
 
 /** \brief Compute Q (modulation order) based on downlink I_MCS. Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS
+    @param mcs
     @param nb_rb
     @return Transport block size */
 uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb);
 
 /** \brief Compute Q (modulation order) based on uplink I_MCS. Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS
+    @param  mcs
     @param nb_rb
     @return Transport block size */
 uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb);
@@ -1321,10 +1313,13 @@ uint8_t I_TBS2I_MCS(uint8_t I_TBS);
 uint8_t SE2I_TBS(float SE,
                  uint8_t N_PRB,
                  uint8_t symbPerRB);
-/** \brief This function generates the sounding reference symbol (SRS) for the uplink according to 36.211 v8.6.0. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
+/** \brief This function generates the sounding reference symbol (SRS) for the uplink according to 36.211 v8.6.0. If IFFT_FPGA is
+defined, the SRS is quantized to a QPSK sequence.
     @param frame_parms LTE DL Frame Parameters
     @param soundingrs_ul_config_dedicated Dynamic configuration from RRC during Connection Establishment
     @param txdataF pointer to the frequency domain TX signal
+@param amp
+@param subframe
     @returns 0 on success*/
 int generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
                  SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
@@ -1360,13 +1355,6 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
                        unsigned int first_rb,
                        unsigned int nb_rb,
                        uint8_t ant);
-
-
-/*!
-  \brief This function initializes the Group Hopping, Sequence Hopping and nPRS sequences for PUCCH/PUSCH according to 36.211 v8.6.0. It should be called after configuration of UE (reception of SIB2/3) and initial configuration of eNB (or after reconfiguration of cell-specific parameters).
-  @param frame_parms Pointer to a LTE_DL_FRAME_PARMS structure (eNB or UE)*/
-void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
-
 
 /*!
   \brief This function implements the initialization of paging parameters for UE (See Section 7, 36.304).It must be called after setting IMSImod1024 during UE startup and after receiving SIB2
@@ -1464,16 +1452,17 @@ void generate_RIV_tables(void);
   N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSCH SI to retrieve the rest.  Once these
   parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
+@param mode
 */
 int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode);
-
 
 /*!
   \brief Encoding of PUSCH/ACK/RI/ACK from 36-212.
   @param a Pointer to ulsch SDU
-  @param frame_parms Pointer to Frame parameters
-  @param ulsch Pointer to ulsch descriptor
+@param phy_vars_ue
   @param harq_pid HARQ process ID
+@param eNB_id
+@param  subframe_rx
   @param tmode Transmission mode (1-7)
   @param control_only_flag Generate PUSCH with control information only
   @param Nbundled Parameter for ACK/NAK bundling (36.213 Section 7.3)
@@ -1630,44 +1619,40 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame, uint8_t sub
   @param phy_vars_ue Pointer to ue top-level descriptor
   @param eNB_id Index of destination eNB
   @param subframe subframe index to operate on
-  @param index of preamble (0-63)
   @param Nf System frame number
   @returns 0 on success
 
 */
 int32_t generate_prach(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint16_t Nf);
 
-
 /*!
   \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index
-  @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
   @returns 0-5 depending on number of available prach
 */
 uint8_t get_num_prach_tdd(module_id_t Mod_id);
 
 /*!
-  \brief Return the PRACH format as a function of the Configuration Index and Frame type.
-  @param prach_ConfigIndex PRACH Configuration Index
-  @param frame_type 0-FDD, 1-TDD
+  \brief Return the PRACH format as a function of the Configuration Index and Frame type
+  @param prach_ConfigIndex Configuration Index
+  @param frame_type 0-FDD 1-TDD
   @returns 0-1 accordingly
 */
 uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,frame_type_t frame_type);
 
 /*!
-  \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
-  @param frame_parms Pointer to LTE_DL_FRAME_PARMS structure
+  \brief Helper for MAC returns frequency index of PRACH resource in TDD for a particular configuration index
   @returns 0-5 depending on number of available prach
 */
 uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index);
 
 /*!
-  \brief Comp ute DFT of PRACH ZC sequences.  Used for generation of prach in UE and reception of PRACH in eNB.
+  \brief Comp ute DFT of PRACH ZC sequences.  Used for generation of prach in UE and reception of PRACH in eNB
   @param rootSequenceIndex PRACH root sequence
-  #param prach_ConfigIndex PRACH Configuration Index
+  @param prach_ConfigIndex PRACH Configuration Index
   @param zeroCorrelationZoneConfig PRACH ncs_config
-  @param highSpeedFlat PRACH High-Speed Flag
-  @param frame_type TDD/FDD flag
-  @param Xu DFT output
+  @param highSpeedFlag PRACH High-Speed Flag
+  @param frame_type TDD-FDD flag
+  @param X_u DFT output
 */
 void compute_prach_seq(uint16_t rootSequenceIndex,
                        uint8_t prach_ConfigIndex,

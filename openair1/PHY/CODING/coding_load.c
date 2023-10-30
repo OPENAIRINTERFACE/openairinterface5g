@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair1/PHY/CODING
+/*! \file coding_load.c
  * \brief: load library implementing coding/decoding algorithms
  * \author Francois TABURET
  * \date 2017

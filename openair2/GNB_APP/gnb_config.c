@@ -970,16 +970,40 @@ static NR_ServingCellConfigCommon_t *get_scc_config(int minRXTXTIME)
     fix_scc(scc, ssb_bitmap);
   }
   nr_rrc_config_ul_tda(scc, minRXTXTIME);
+
+  // the gNB uses the servingCellConfigCommon everywhere, even when it should use the servingCellConfigCommonSIB.
+  // previously (before this commit), the following fields were indirectly populated through get_SIB1_NR().
+  // since this might lead to memory problems (e.g., double frees), it has been moved here.
+  // note that the "right solution" would be to not populate the servingCellConfigCommon here, and use
+  // an "abstraction struct" that contains the corresponding values, from which SCC/SIB1/... is generated.
+  NR_PDCCH_ConfigCommon_t *pcc = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup;
+  AssertFatal(pcc != NULL && pcc->commonSearchSpaceList == NULL, "memory leak\n");
+  pcc->commonSearchSpaceList = calloc_or_fail(1, sizeof(*pcc->commonSearchSpaceList));
+
+  NR_SearchSpace_t *ss1 = rrc_searchspace_config(true, 1, 0);
+  asn1cSeqAdd(&pcc->commonSearchSpaceList->list, ss1);
+  NR_SearchSpace_t *ss2 = rrc_searchspace_config(true, 2, 0);
+  asn1cSeqAdd(&pcc->commonSearchSpaceList->list, ss2);
+  NR_SearchSpace_t *ss3 = rrc_searchspace_config(true, 3, 0);
+  asn1cSeqAdd(&pcc->commonSearchSpaceList->list, ss3);
+
+  asn1cCallocOne(pcc->searchSpaceSIB1,  0);
+  asn1cCallocOne(pcc->ra_SearchSpace, 1);
+  asn1cCallocOne(pcc->pagingSearchSpace, 2);
+  asn1cCallocOne(pcc->searchSpaceOtherSystemInformation, 3);
+
   return scc;
 }
 
 static NR_ServingCellConfig_t *get_scd_config(void)
 {
-  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
   NR_ServingCellConfig_t *scd = calloc(1, sizeof(*scd));
   prepare_scd(scd);
   paramdef_t SCDsParams[] = SCDPARAMS_DESC(scd);
   paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
+
+  char aprefix[MAX_OPTNAME_SIZE * 2 + 8];
+  snprintf(aprefix, sizeof(aprefix), "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
   config_getlist(&SCDsParamList, NULL, 0, aprefix);
   if (SCDsParamList.numelt > 0) {
     sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0, GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, 0);
@@ -1523,7 +1547,7 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
       char aprefix[MAX_OPTNAME_SIZE*2 + 8];
       sprintf(aprefix,"%s.[%u].%s",GNB_CONFIG_STRING_GNB_LIST,i,GNB_CONFIG_STRING_SCTP_CONFIG);
       config_get(SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
-      rrc->node_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+      rrc->node_id        = gnb_id;
       LOG_I(GNB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,rrc->node_id);
       rrc->node_name = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
       LOG_I(GNB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,rrc->node_name);
@@ -1541,7 +1565,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
 
     rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
 
-    rrc->um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
@@ -1575,7 +1598,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
         for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
           PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
-        nrrrc_config.cell_identity     = gnb_id;
         nrrrc_config.tac               = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
         AssertFatal(!GNBParamList.paramarray[i][GNB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
                     && !GNBParamList.paramarray[i][GNB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
@@ -1606,6 +1628,7 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
         nrrrc_config.enable_sdap = *GNBParamList.paramarray[i][GNB_ENABLE_SDAP_IDX].iptr;
         LOG_I(GNB_APP, "SDAP layer is %s\n", nrrrc_config.enable_sdap ? "enabled" : "disabled");
         nrrrc_config.drbs = *GNBParamList.paramarray[i][GNB_DRBS].iptr;
+        nrrrc_config.um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
         LOG_I(GNB_APP, "Data Radio Bearer count %d\n", nrrrc_config.drbs);
 
       }//

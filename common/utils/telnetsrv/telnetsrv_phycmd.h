@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/telnetsrv_proccmd.h
+/*! \file telnetsrv_phycmd.h
  * \brief: Include file defining telnet commands related to softmodem linux process
  * \author Francois TABURET
  * \date 2017

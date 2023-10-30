@@ -504,5 +504,5 @@ int nr_rate_matching_ldpc_rx(uint32_t Tbslbrm,
 decoder_if_t phy_threegpplte_turbo_decoder;
 decoder_if_t phy_threegpplte_turbo_decoder8;
 decoder_if_t phy_threegpplte_turbo_decoder16;
-
+/** @} */
 #endif

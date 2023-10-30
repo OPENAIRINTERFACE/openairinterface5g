@@ -80,7 +80,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "gnb_config.h"
 #include "openair2/E1AP/e1ap_common.h"
-#include "openair2/E1AP/e1ap_api.h"
 
 #ifdef E2_AGENT
 #include "openair2/E2AP/flexric/src/agent/e2_agent_api.h"
@@ -403,12 +402,16 @@ static int create_gNB_tasks(ngran_node_t node_type)
     if (node_type == ngran_gNB_CU || node_type == ngran_gNB) {
       MessageDef *msg = RCconfig_NR_CU_E1(false);
       instance_t inst = 0;
-      createE1inst(UPtype, inst, &E1AP_SETUP_REQ(msg));
+      createE1inst(UPtype, inst, &E1AP_REGISTER_REQ(msg).net_config, NULL);
       cuup_init_n3(inst);
-      itti_free(TASK_UNKNOWN, msg);
-      getCxtE1(inst)->same_process = true;
-      ;
       RC.nrrrc[gnb_id_start]->e1_inst = inst; // stupid instance !!!*/
+
+      /* send E1 Setup Request to RRC */
+      MessageDef *new_msg = itti_alloc_new_message(TASK_GNB_APP, 0, E1AP_SETUP_REQ);
+      E1AP_SETUP_REQ(new_msg) = E1AP_REGISTER_REQ(msg).setup_req;
+      new_msg->ittiMsgHeader.originInstance = -1; /* meaning, it is local */
+      itti_send_msg_to_task(TASK_RRC_GNB, 0 /*unused by callee*/, new_msg);
+      itti_free(TASK_UNKNOWN, msg);
     }
 
     //Use check on x2ap to consider the NSA scenario 
@@ -562,7 +565,7 @@ void init_pdcp(void) {
     LINK_ENB_PDCP_TO_GTPV1U_BIT;
   
   if (!NODE_IS_DU(get_node_type())) {
-    nr_pdcp_layer_init();
+    nr_pdcp_layer_init(get_node_type() == ngran_gNB_CUCP);
     nr_pdcp_module_init(pdcp_initmask, 0);
   }
 }

@@ -349,14 +349,14 @@ void set_channeldesc_owner(channel_desc_t *cdesc, channelmod_moduleid_t module_i
 /**
 \brief This function set a model name to a model descriptor, can be later used to identify a allocated channel model
 \param cdesc points to the model descriptor
-\param module_name is the C string to use as model name for the channel pointed by cdesc
+\param modelname is the C string to use as model name for the channel pointed by cdesc
 */
 void set_channeldesc_name(channel_desc_t *cdesc,char *modelname);
 
 /** \fn void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc, const uint32_t length)
 \brief This routine generates the complex exponential to apply the Doppler shift
 \param cexp_doppler Output with the complex exponential of Doppler shift
-\param desc Pointer to the channel descriptor
+\param chan_desc Pointer to the channel descriptor
 \param length Size of complex exponential of Doppler shift
 */
 void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc, const uint32_t length);
@@ -378,6 +378,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 \param ts sampling time
 \param delay introduce delay in terms of number of samples
 \param pdu_bit_map bitmap indicating presence of optional PDUs
+\param ptrs_bit_map
 \param nb_antennas_rx number of receive antennas
 */
 void add_noise(c16_t **rxdata,
@@ -467,9 +468,8 @@ void load_pbch_desc(FILE *pbch_file_fd);
 */
 unsigned int taus(void);
 
-
 /**
-\fn void set_taus_seed(unsigned int seed_init)
+\fn set_taus_seed
 \brief Sets the seed for the Tausworthe generator.
 @param seed_init 0 means generate based on CPU time, otherwise provide the seed
 */

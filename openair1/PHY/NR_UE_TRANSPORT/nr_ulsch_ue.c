@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/NR_UE_TRANSPORT/nr_ulsch.c
-* \brief Top-level routines for transmission of the PUSCH TS 38.211 v 15.4.0
-* \author Khalid Ahmed
-* \date 2019
-* \version 0.1
-* \company Fraunhofer IIS
-* \email: khalid.ahmed@iis.fraunhofer.de
-* \note
-* \warning
-*/
+/*! \file nr_ulsch_ue.c
+ * \brief Top-level routines for transmission of the PUSCH TS 38.211 v 15.4.0
+ * \author Khalid Ahmed
+ * \date 2019
+ * \version 0.1
+ * \company Fraunhofer IIS
+ * \email: khalid.ahmed@iis.fraunhofer.de
+ * \note
+ * \warning
+ */
 #include <stdint.h>
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
@@ -292,6 +292,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
   int32_t y[max_num_re] __attribute__ ((aligned(16)));
+  memset(y, 0, max_num_re*sizeof(int32_t));
 
   if (pusch_pdu->transform_precoding == transformPrecoder_enabled) {
 

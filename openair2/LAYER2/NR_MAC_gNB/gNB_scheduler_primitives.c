@@ -27,7 +27,6 @@
  * \version 1.0
  * \company Eurecom
  * @ingroup _mac
-
  */
 
 #include <softmodem-common.h>
@@ -586,6 +585,15 @@ bool nr_find_nb_rb(uint16_t Qm,
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
 
+const NR_DMRS_UplinkConfig_t *get_DMRS_UplinkConfig(const NR_PUSCH_Config_t *pusch_Config, const NR_tda_info_t *tda_info)
+{
+  if (pusch_Config == NULL)
+    return NULL;
+
+  return tda_info->mapping_type == typeA ? pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup
+                                         : pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+}
+
 NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
                                    const NR_UE_UL_BWP_t *ul_bwp,
                                    const NR_tda_info_t *tda_info,
@@ -623,8 +631,6 @@ NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
     num_dmrs_symb += (dmrs.ul_dmrs_symb_pos >> i) & 1;
   dmrs.num_dmrs_symb = num_dmrs_symb;
   dmrs.N_PRB_DMRS = dmrs.num_dmrs_cdm_grps_no_data * (dmrs.dmrs_config_type == 0 ? 6 : 4);
-
-  dmrs.NR_DMRS_UplinkConfig = NR_DMRS_UplinkConfig;
   return dmrs;
 }
 

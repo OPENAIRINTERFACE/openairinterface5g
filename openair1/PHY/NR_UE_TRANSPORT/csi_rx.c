@@ -608,8 +608,6 @@ int nr_csi_rs_pmi_estimation(const PHY_VARS_NR_UE *ue,
                              uint32_t *precoded_sinr_dB) {
 
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  memset(i1,0,3*sizeof(uint8_t));
-  i2[0] = 0;
 
   // i1 is a three-element vector in the form of [i11 i12 i13], when CodebookType is specified as 'Type1SinglePanel'.
   // Note that i13 is not applicable when the number of transmission layers is one of {1, 5, 6, 7, 8}.
@@ -904,8 +902,8 @@ void nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t 
   uint8_t rank_indicator = 0;
   uint32_t precoded_sinr_dB = 0;
   uint8_t cqi = 0;
-  uint8_t i1[3];
-  uint8_t i2[1];
+  uint8_t i1[3] = {0};
+  uint8_t i2[1] = {0};
   nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = convert_csirs_pdu(csirs_config_pdu);
   nr_generate_csi_rs(frame_parms,
                      ue->nr_csi_info->csi_rs_generated_signal,

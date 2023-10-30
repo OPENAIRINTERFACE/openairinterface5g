@@ -134,5 +134,6 @@ typedef int (*ngap_message_decoded_callback)(sctp_assoc_t assoc_id, uint32_t str
  @returns void
  **/
 void ngap_handle_criticality(NGAP_Criticality_t criticality);
+/** @}*/
 
 #endif /* NGAP_COMMON_H_ */

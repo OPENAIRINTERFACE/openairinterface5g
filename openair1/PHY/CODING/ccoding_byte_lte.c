@@ -325,5 +325,3 @@ main() {
   printf("\n");
 }
 #endif
-
-/** @}*/

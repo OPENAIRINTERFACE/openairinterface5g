@@ -20,13 +20,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file time_profiling.h
- * \brief Definitions for proflling real-time scheduling 
- * \author 
+/*! \file rt_profiling.h
+ * \brief Definitions for proflling real-time scheduling
+ * \author
  * \date 2022
  * \version 0.1
  * \company Eurecom
- * \email: 
+ * \email:
  * \note
  * \warning
  */

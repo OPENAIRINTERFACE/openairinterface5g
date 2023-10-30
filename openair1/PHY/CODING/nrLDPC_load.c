@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair1/PHY/CODING/coding_nr_load.c
+/*! \file nrLDPC_load.c
  * \brief: load library implementing coding/decoding algorithms
  * \author Francois TABURET
  * \date 2020

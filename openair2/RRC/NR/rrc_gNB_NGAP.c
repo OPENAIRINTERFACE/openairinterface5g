@@ -378,6 +378,9 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
   uint8_t nb_pdusessions_tosetup = req->nb_of_pdusessions;
   if (nb_pdusessions_tosetup) {
     AssertFatal(false, "PDU sessions in Initial context setup request not handled by E1 yet\n");
+    /* this code should pass by E1: commenting here for future reference, but
+     * already handled in E1 for the "normal case" of a separate request for
+     * PDU session setup.
     gtpv1u_gnb_create_tunnel_req_t create_tunnel_req = {0};
     for (int i = 0; i < nb_pdusessions_tosetup; i++) {
       UE->nb_of_pdusessions++;
@@ -404,6 +407,7 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
     }
 
     nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(&ctxt, &create_tunnel_resp, 0);
+    */
   }
 
   /* NAS PDU */
@@ -757,6 +761,8 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
   UE->amf_ue_ngap_id = msg->amf_ue_ngap_id;
   e1ap_bearer_setup_req_t bearer_req = {0};
 
+
+  e1ap_nssai_t cuup_nssai = {0};
   for (int i = 0; i < msg->nb_pdusessions_tosetup; i++) {
     rrc_pdu_session_param_t *pduSession = find_pduSession(UE, msg->pdusession_setup_params[i].pdusession_id, true);
     pdusession_t *session = &pduSession->param;
@@ -775,7 +781,13 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     pdu_session_to_setup_t *pdu = bearer_req.pduSession + bearer_req.numPDUSessions;
     bearer_req.numPDUSessions++;
     pdu->sessionId = session->pdusession_id;
-    pdu->sst = msg->allowed_nssai[i].sST;
+    ngap_allowed_NSSAI_t *nssai = &msg->allowed_nssai[i];
+    pdu->nssai.sst = nssai->sST;
+    pdu->nssai.sd = 0xffffff;
+    if (nssai->sD_flag)
+      pdu->nssai.sd = nssai->sD[0] << 16 | nssai->sD[1] << 8 | nssai->sD[2];
+    if (cuup_nssai.sst == 0)
+      cuup_nssai = pdu->nssai; /* for CU-UP selection below */
     pdu->integrityProtectionIndication = rrc->security.do_drb_integrity ? E1AP_IntegrityProtectionIndication_required : E1AP_IntegrityProtectionIndication_not_needed;
 
     pdu->confidentialityProtectionIndication = rrc->security.do_drb_ciphering ? E1AP_ConfidentialityProtectionIndication_required : E1AP_ConfidentialityProtectionIndication_not_needed;
@@ -787,7 +799,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
 
       drb->id = i + j + UE->nb_of_pdusessions;
 
-      drb->defaultDRB = E1AP_DefaultDRB_true;
+      drb->defaultDRB = true;
 
       drb->sDAP_Header_UL = !(rrc->configuration.enable_sdap);
       drb->sDAP_Header_DL = !(rrc->configuration.enable_sdap);
@@ -823,7 +835,13 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
   }
   int xid = rrc_gNB_get_next_transaction_identifier(instance);
   UE->xids[xid] = RRC_PDUSESSION_ESTABLISH;
-  rrc->cucp_cuup.bearer_context_setup(&bearer_req, instance);
+  /* Limitation: we assume one fixed CU-UP per UE. We base the selection on
+   * NSSAI, but the UE might have multiple PDU sessions with differing slices,
+   * in which we might need to select different CU-UPs. In this case, we would
+   * actually need to group the E1 bearer context setup for the different
+   * CU-UPs, and send them to the different CU-UPs. */
+  sctp_assoc_t assoc_id = get_new_cuup_for_ue(rrc, UE, cuup_nssai.sst, cuup_nssai.sd);
+  rrc->cucp_cuup.bearer_context_setup(assoc_id, &bearer_req);
   return;
 }
 

@@ -41,12 +41,10 @@
 There is different modules:
 - OAI Address
 - OAI Components
-- \ref _frame
 
 numbering:
 -# OAI Address
 -# OAI Components
--# \ref _frame
 
 The following diagram is based on graphviz (http://www.graphviz.org/), you need to install the package to view the diagram.
  *
@@ -72,11 +70,6 @@ You need at least to set the some variables in the Doxyfile including "PROJECT_N
 Doxygen help and commands can be found at http://www.stack.nl/~dimitri/doxygen/commands.html#cmdprotocol
 
 \section _arch Architecture
-
-You need to set the IMAGE_PATH in your Doxyfile
-
-\image html arch.png "Architecture"
-\image latex arch.eps "Architecture"
 
 \subsection _mac MAC
 thisis the mac
@@ -641,4 +634,4 @@ void terminate_opt(void) {
       break;
   }
 }
-
+/** @}*/

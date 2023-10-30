@@ -185,9 +185,9 @@ typedef enum {
 } VOIP_STATE;
 
 /**
- * \enum ALPHABET
+ * \enum ALPHABET_GEN
  *
- *\brief ALPHABET Alphabet type to generate random string
+ *\brief ALPHABET_GEN Alphabet type to generate random string
  *
  */
 typedef enum {
@@ -217,21 +217,6 @@ typedef enum {
   UDP_IPV6,
   TCP_IPV6,
 } HEADER_TYPE;
-
-/**
- * \enum TRAFFIC_TYPE
- *
- * \brief HEADER_TYPE alows to identify the traffic type no specific type, m2m,etc.
- *
- */
-
-/*
-typedef enum {
-NO_TYPE=0,
-M2M_TYPE,
-}TRAFFIC_TYPE;
- */
-
 
 /*
  otg_models: definitions and structures,
@@ -333,8 +318,9 @@ typedef struct {
  */
 typedef struct {
   int max_nb_frames; /*!< \brief  Max Number of frames*/
-  int application_type[NUMBER_OF_eNB_MAX + MAX_MOBILES_PER_ENB][NUMBER_OF_eNB_MAX + MAX_MOBILES_PER_ENB][MAX_NUM_APPLICATION];  /*!\brief It identify the application of the simulated traffic, could be cbr, m2m, gaming,etc*/
-  /*!\header info */
+  int application_type[NUMBER_OF_eNB_MAX + MAX_MOBILES_PER_ENB][NUMBER_OF_eNB_MAX + MAX_MOBILES_PER_ENB]
+                      [MAX_NUM_APPLICATION]; /*!\brief It identify the application of the simulated traffic, could be cbr, m2m,
+                                                gaming,etc*/
   int trans_proto[NUMBER_OF_eNB_MAX + MAX_MOBILES_PER_ENB][NUMBER_OF_eNB_MAX + MAX_MOBILES_PER_ENB][MAX_NUM_APPLICATION];   /*!\brief Transport Protocol*/
   int ip_v[NUMBER_OF_eNB_MAX + MAX_MOBILES_PER_ENB][NUMBER_OF_eNB_MAX + MAX_MOBILES_PER_ENB][MAX_NUM_APPLICATION];  /*!\brief Ip version */
   //int header_compression;         /*!\brief Specify if header compression is used or not */
