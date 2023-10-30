@@ -53,20 +53,11 @@ static void cu_task_handle_sctp_association_ind(instance_t instance,
                                                 sctp_new_association_ind_t *sctp_new_association_ind,
                                                 eth_params_t *IPaddrs)
 {
-  createF1inst(instance, NULL, NULL);
   // save the assoc id
   f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
   f1ap_cu_data->assoc_id         = sctp_new_association_ind->assoc_id;
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
-  if (RC.nrrrc[instance]->node_type != ngran_gNB_CUCP) {
-    getCxt(instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
-    AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
-  } else
-    LOG_I(F1AP, "In F1AP connection, don't start GTP-U, as we have also E1AP\n");
-  // Fixme: fully inconsistent instances management
-  // dirty global var is a bad fix
-  CUuniqInstance=getCxt(instance)->gtpInst;
 }
 
 static void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
@@ -76,7 +67,6 @@ static void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_a
     f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
     AssertFatal(f1ap_cu_data != NULL, "illegal state: SCTP shutdown for non-existing F1AP endpoint\n");
     LOG_I(F1AP, "Received SCTP shutdown for assoc_id %d, removing endpoint\n", sctp_new_association_resp->assoc_id);
-    destroyF1inst(instance);
     /* inform RRC that the DU is gone */
     MessageDef *message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_LOST_CONNECTION);
     message_p->ittiMsgHeader.originInstance = sctp_new_association_resp->assoc_id;
@@ -139,7 +129,19 @@ void *F1AP_CU_task(void *arg) {
   // Hardcoded instance id!
   IPaddrs = &RC.nrrrc[0]->eth_params_s;
 
-  cu_task_send_sctp_init_req(0, IPaddrs->my_addr);
+  const int instance = 0;
+  createF1inst(instance, NULL, NULL);
+  cu_task_send_sctp_init_req(instance, IPaddrs->my_addr);
+
+  if (RC.nrrrc[instance]->node_type != ngran_gNB_CUCP) {
+    getCxt(instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
+    AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
+  } else {
+    LOG_I(F1AP, "In F1AP connection, don't start GTP-U, as we have also E1AP\n");
+  }
+  // Fixme: fully inconsistent instances management
+  // dirty global var is a bad fix
+  CUuniqInstance=getCxt(instance)->gtpInst;
 
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);
@@ -223,6 +225,8 @@ void *F1AP_CU_task(void *arg) {
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
     received_msg = NULL;
   } // while
+
+  destroyF1inst(instance);
 
   return NULL;
 }
