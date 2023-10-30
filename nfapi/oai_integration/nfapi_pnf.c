@@ -1112,7 +1112,7 @@ notifiedFIFO_elt_t *l1tx_message_extract(PHY_VARS_gNB *gNB, int frame, int slot)
   notifiedFIFO_elt_t *res;
 
   //TODO: This needs to be reworked for nfapi to work
-  res = pullTpool(&gNB->L1_tx_free, &gNB->threadPool);
+  res = pullNotifiedFIFO(&gNB->L1_tx_free);
   return res;
 }
 
