@@ -19,33 +19,28 @@
  *      contact@openairinterface.org
  */
 
-/* "standalone" module to store a "secondary" UE ID for each UE in DU/CU.
- * Separate from the rest of F1, as it is also relevant for monolithic. */
-
-#ifndef F1AP_IDS_H_
-#define F1AP_IDS_H_
+#ifndef CUUP_CUCP_IF_H
+#define CUUP_CUCP_IF_H
 
 #include <stdbool.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/sctp.h>
 
-typedef struct f1_ue_data_t {
-  uint32_t secondary_ue;
-  sctp_assoc_t e1_assoc_id;
-} f1_ue_data_t;
+struct e1ap_bearer_setup_resp_s;
+struct e1ap_bearer_modif_resp_s;
+struct e1ap_bearer_release_cplt_s;
+typedef void (*e1_bearer_setup_response_func_t)(const struct e1ap_bearer_setup_resp_s *resp);
+typedef void (*e1_bearer_modif_response_func_t)(const struct e1ap_bearer_modif_resp_s *resp);
+typedef void (*e1_bearer_release_complete_func_t)(const struct e1ap_bearer_release_cplt_s *cplt);
 
-void cu_init_f1_ue_data(void);
-bool cu_add_f1_ue_data(uint32_t ue_id, const f1_ue_data_t *data);
-bool cu_exists_f1_ue_data(uint32_t ue_id);
-f1_ue_data_t cu_get_f1_ue_data(uint32_t ue_id);
-bool cu_remove_f1_ue_data(uint32_t ue_id);
+typedef struct e1_if_t {
+  e1_bearer_setup_response_func_t bearer_setup_response;
+  e1_bearer_modif_response_func_t bearer_modif_response;
+  e1_bearer_release_complete_func_t bearer_release_complete;
+} e1_if_t;
 
-void du_init_f1_ue_data(void);
-bool du_add_f1_ue_data(uint32_t ue_id, const f1_ue_data_t *data);
-bool du_exists_f1_ue_data(uint32_t ue_id);
-f1_ue_data_t du_get_f1_ue_data(uint32_t ue_id);
-bool du_remove_f1_ue_data(uint32_t ue_id);
+e1_if_t *get_e1_if(void);
+void nr_pdcp_e1_if_init(bool uses_e1);
 
-#endif /* F1AP_IDS_H_ */
+void cuup_cucp_init_direct(e1_if_t *iface);
+void cuup_cucp_init_e1ap(e1_if_t *iface);
+
+#endif /* CUUP_CUCP_IF_H */

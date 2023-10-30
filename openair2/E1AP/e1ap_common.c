@@ -37,18 +37,19 @@ e1ap_upcp_inst_t *getCxtE1(instance_t instance)
   return e1ap_inst[instance];
 }
 
-int e1ap_assoc_id(E1_t type, instance_t instance) {
-  AssertFatal(e1ap_inst[instance] != NULL, "Trying to access uninitiated instance of CUCP\n");
-  return e1ap_inst[instance]->setupReq.assoc_id;
-}
-
-void createE1inst(E1_t type, instance_t instance, e1ap_setup_req_t *req) {
+void createE1inst(E1_t type, instance_t instance, e1ap_net_config_t *nc, e1ap_setup_req_t *req)
+{
   AssertFatal(e1ap_inst[instance] == NULL, "Double call to E1 instance %d\n", (int)instance);
   e1ap_inst[instance] = calloc(1, sizeof(e1ap_upcp_inst_t));
   e1ap_inst[instance]->type = type;
   e1ap_inst[instance]->instance = instance;
-  if (req)
-    memcpy(&e1ap_inst[instance]->setupReq, req, sizeof(*req));
+  e1ap_inst[instance]->cuup.assoc_id = -1;
+  if (nc)
+    memcpy(&e1ap_inst[instance]->net_config, nc, sizeof(*nc));
+  if (req) {
+    AssertFatal(type == UPtype, "E1 setup request only to be stored for CU-UP\n");
+    memcpy(&e1ap_inst[instance]->cuup.setupReq, req, sizeof(*req));
+  }
   e1ap_inst[instance]->gtpInstN3 = -1;
   e1ap_inst[instance]->gtpInstF1U = -1;
 }
@@ -59,8 +60,8 @@ void e1ap_common_init() {
   srand(time(NULL));
 }
 
-bool check_transac_id(E1AP_TransactionID_t id, int *freeIdx) {
-
+static bool check_transac_id(E1AP_TransactionID_t id, int *freeIdx)
+{
   bool isFreeIdxSet = false;
   for (int i=0; i < E1AP_MAX_NUM_TRANSAC_IDS; i++) {
     if (id == transacID[i])
@@ -74,10 +75,10 @@ bool check_transac_id(E1AP_TransactionID_t id, int *freeIdx) {
   return true;
 }
 
-E1AP_TransactionID_t E1AP_get_next_transaction_identifier() {
+long E1AP_get_next_transaction_identifier() {
   E1AP_TransactionID_t genTransacId;
   bool isTransacIdValid = false;
-  int freeIdx;
+  int freeIdx = 0;
 
   while (!isTransacIdValid) {
     genTransacId = rand() & 255;
@@ -89,7 +90,7 @@ E1AP_TransactionID_t E1AP_get_next_transaction_identifier() {
   return genTransacId;
 }
 
-void E1AP_free_transaction_identifier(E1AP_TransactionID_t id) {
+void E1AP_free_transaction_identifier(long id) {
 
   for (int i=0; i < E1AP_MAX_NUM_TRANSAC_IDS; i++) {
     if (id == transacID[i]) {
@@ -116,6 +117,9 @@ int e1ap_decode_initiating_message(E1AP_E1AP_PDU_t *pdu) {
     case E1AP_ProcedureCode_id_bearerContextModification:
       break;
 
+    case E1AP_ProcedureCode_id_bearerContextRelease:
+      break;
+
     default:
       LOG_E(E1AP, "Unsupported procedure code (%d) for initiating message\n",
             (int)pdu->choice.initiatingMessage->procedureCode);
@@ -131,6 +135,12 @@ int e1ap_decode_successful_outcome(E1AP_E1AP_PDU_t *pdu) {
       break;
 
     case E1AP_ProcedureCode_id_bearerContextSetup:
+      break;
+
+    case E1AP_ProcedureCode_id_bearerContextModification:
+      break;
+
+    case E1AP_ProcedureCode_id_bearerContextRelease:
       break;
 
     default:
@@ -195,7 +205,7 @@ int e1ap_decode_pdu(E1AP_E1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
   return -1;
 }
 
-int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu, uint16_t stream, const char *func)
+int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, E1AP_E1AP_PDU_t *pdu, uint16_t stream, const char *func)
 {
   DevAssert(pdu != NULL);
 
@@ -223,11 +233,11 @@ int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu
   }
   MessageDef *message = itti_alloc_new_message((type == CPtype) ? TASK_CUCP_E1 : TASK_CUUP_E1, 0, SCTP_DATA_REQ);
   sctp_data_req_t *s = &message->ittiMsg.sctp_data_req;
-  s->assoc_id = setupReq->assoc_id;
+  s->assoc_id = assoc_id;
   s->buffer = buffer;
   s->buffer_length = encoded;
   s->stream = stream;
-  LOG_I(E1AP, "%s: Sending ITTI message to SCTP Task\n", func);
+  LOG_D(E1AP, "%s: Sending ITTI message to SCTP Task\n", func);
   itti_send_msg_to_task(TASK_SCTP, 0 /*unused by callee*/, message);
 
   return encoded;

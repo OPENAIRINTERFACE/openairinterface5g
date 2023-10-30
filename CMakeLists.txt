@@ -1216,6 +1216,10 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia1.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
+  openair2/LAYER2/nr_pdcp/cucp_cuup_handler.c
+  openair2/LAYER2/nr_pdcp/cuup_cucp_if.c
+  openair2/LAYER2/nr_pdcp/cuup_cucp_direct.c
+  openair2/LAYER2/nr_pdcp/cuup_cucp_e1ap.c
   )
 
 set(NR_SDAP_SRC
@@ -1277,6 +1281,7 @@ set(L2_NR_SRC
   ${NR_RRC_DIR}/rrc_gNB_UE_context.c
   ${NR_RRC_DIR}/rrc_gNB_NGAP.c
   ${NR_RRC_DIR}/rrc_gNB_radio_bearers.c
+  ${NR_RRC_DIR}/rrc_gNB_cuup.c
   )
 
 set(L2_SRC_UE
@@ -1444,12 +1449,6 @@ add_library(e1_if
   )
 
 target_link_libraries(e1_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs asn1_f1ap SECURITY ${OPENSSL_LIBRARIES} e1ap GTPV1U)
-
-add_library(e1_pdcp_if
-  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_e1_api.c
-  )
-
-target_link_libraries(e1_pdcp_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 target_link_libraries(L2_NR PRIVATE f1ap x2ap s1ap ngap nr_rrc e1ap nr_rlc)
 if(E2_AGENT)
@@ -2106,7 +2105,7 @@ add_executable(nr-cuup
 
 target_link_libraries(nr-cuup PRIVATE
                       CONFIG_LIB ITTI SCTP_CLIENT
-                      GTPV1U e1ap e1_pdcp_if f1ap SIMU_ETH
+                      GTPV1U e1ap f1ap SIMU_ETH
                       z sctp dl pthread shlib_loader ${T_LIB})
 target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
                      

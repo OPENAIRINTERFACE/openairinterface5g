@@ -330,11 +330,6 @@ typedef struct {
   uint8_t                                   *SIB23;
   uint8_t                                   sizeof_SIB23;
 
-  NR_SIB2_t                                *sib2;
-  NR_SIB3_t                                *sib3;
-  NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
-  NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
-
 } rrc_gNB_carrier_data_t;
 //---------------------------------------------------
 
@@ -367,6 +362,7 @@ typedef struct nr_mac_rrc_dl_if_s {
 typedef struct cucp_cuup_if_s {
   cucp_cuup_bearer_context_setup_func_t bearer_context_setup;
   cucp_cuup_bearer_context_setup_func_t bearer_context_mod;
+  cucp_cuup_bearer_context_release_func_t bearer_context_release;
 } cucp_cuup_if_t;
 
 typedef struct nr_rrc_du_container_t {
@@ -375,6 +371,14 @@ typedef struct nr_rrc_du_container_t {
   NR_MIB_t *mib;
   NR_SIB1_t *sib1;
 } nr_rrc_du_container_t;
+
+typedef struct nr_rrc_cuup_container_t {
+  /* Tree-related data */
+  RB_ENTRY(nr_rrc_cuup_container_t) entries;
+
+  e1ap_setup_req_t *setup_req;
+  sctp_assoc_t assoc_id;
+} nr_rrc_cuup_container_t;
 
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
@@ -396,24 +400,6 @@ typedef struct gNB_RRC_INST_s {
   // gNB N3 GTPU instance
   instance_t e1_inst;
 
-  // other PLMN parameters
-  /// Mobile country code
-  int mcc;
-  /// Mobile network code
-  int mnc;
-  /// number of mnc digits
-  int mnc_digit_length;
-
-  // other RAN parameters
-  int srb1_timer_poll_retransmit;
-  int srb1_poll_pdu;
-  int srb1_poll_byte;
-  int srb1_max_retx_threshold;
-  int srb1_timer_reordering;
-  int srb1_timer_status_prohibit;
-  int um_on_default_drb;
-  int srs_enable[MAX_NUM_CCs];
-
   char *uecap_file;
 
   // security configuration (preferred algorithms)
@@ -423,6 +409,8 @@ typedef struct gNB_RRC_INST_s {
   cucp_cuup_if_t cucp_cuup;
 
   nr_rrc_du_container_t *du;
+  RB_HEAD(rrc_cuup_tree, nr_rrc_cuup_container_t) cuups; // CU-UPs, indexed by assoc_id
+  size_t num_cuups;
 
 } gNB_RRC_INST;
 

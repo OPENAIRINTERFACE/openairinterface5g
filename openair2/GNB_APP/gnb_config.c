@@ -1523,7 +1523,7 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
       char aprefix[MAX_OPTNAME_SIZE*2 + 8];
       sprintf(aprefix,"%s.[%u].%s",GNB_CONFIG_STRING_GNB_LIST,i,GNB_CONFIG_STRING_SCTP_CONFIG);
       config_get(SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
-      rrc->node_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+      rrc->node_id        = gnb_id;
       LOG_I(GNB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,rrc->node_id);
       rrc->node_name = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
       LOG_I(GNB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,rrc->node_name);
@@ -1541,7 +1541,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
 
     rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
 
-    rrc->um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
@@ -1575,7 +1574,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
         for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
           PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
-        nrrrc_config.cell_identity     = gnb_id;
         nrrrc_config.tac               = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
         AssertFatal(!GNBParamList.paramarray[i][GNB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
                     && !GNBParamList.paramarray[i][GNB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
@@ -1606,6 +1604,7 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
         nrrrc_config.enable_sdap = *GNBParamList.paramarray[i][GNB_ENABLE_SDAP_IDX].iptr;
         LOG_I(GNB_APP, "SDAP layer is %s\n", nrrrc_config.enable_sdap ? "enabled" : "disabled");
         nrrrc_config.drbs = *GNBParamList.paramarray[i][GNB_DRBS].iptr;
+        nrrrc_config.um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
         LOG_I(GNB_APP, "Data Radio Bearer count %d\n", nrrrc_config.drbs);
 
       }//

@@ -132,6 +132,10 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 
 void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP);
 
+sctp_assoc_t get_existing_cuup_for_ue(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue);
+sctp_assoc_t get_new_cuup_for_ue(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue, int sst, int sd);
+int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req);
+
 void bearer_context_setup_direct(e1ap_bearer_setup_req_t *req,
                                  instance_t instance);
 
@@ -143,8 +147,6 @@ void ue_cxt_mod_send_e1ap(MessageDef *msg,
 
 void ue_cxt_mod_direct(MessageDef *msg,
                        instance_t instance);
-
-NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue);
 
 void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_context_p,
                                                  e1ap_bearer_setup_resp_t *e1ap_resp);

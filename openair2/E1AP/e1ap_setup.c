@@ -68,7 +68,7 @@ static void get_NGU_S1U_addr(char **addr, uint16_t *port)
 
 MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
 {
-  MessageDef *msgConfig = itti_alloc_new_message(TASK_GNB_APP, 0, E1AP_SETUP_REQ);
+  MessageDef *msgConfig = itti_alloc_new_message(TASK_GNB_APP, 0, E1AP_REGISTER_REQ);
   if (!msgConfig)
     return NULL;
 
@@ -85,9 +85,11 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     config_getlist(&GNBParamList, GNBParams, sizeofArray(GNBParams), NULL);
     paramdef_t *gnbParms = GNBParamList.paramarray[0];
     AssertFatal(gnbParms[GNB_GNB_ID_IDX].uptr != NULL, "gNB id %d is not defined in configuration file\n", 0);
-    e1ap_setup_req_t *e1Setup = &E1AP_SETUP_REQ(msgConfig);
+    e1ap_setup_req_t *e1Setup = &E1AP_REGISTER_REQ(msgConfig).setup_req;
     msgConfig->ittiMsgHeader.destinationInstance = 0;
     e1Setup->gNB_cu_up_id = *(gnbParms[GNB_GNB_ID_IDX].uptr);
+    if (*gnbParms[GNB_GNB_NAME_IDX].strptr)
+      e1Setup->gNB_cu_up_name = *(gnbParms[GNB_GNB_NAME_IDX].strptr);
 
     paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
     paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
@@ -102,27 +104,41 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     e1Setup->supported_plmns = numPLMNs;
 
     for (int I = 0; I < numPLMNs; I++) {
-      e1Setup->plmns[I].mcc = *PLMNParamList.paramarray[I][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-      e1Setup->plmns[I].mnc = *PLMNParamList.paramarray[I][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-      e1Setup->plmns[I].mnc = *PLMNParamList.paramarray[I][GNB_MNC_DIGIT_LENGTH].u8ptr;
+      e1Setup->plmn[I].id.mcc = *PLMNParamList.paramarray[I][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+      e1Setup->plmn[I].id.mnc = *PLMNParamList.paramarray[I][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+      e1Setup->plmn[I].id.mnc_digit_length = *PLMNParamList.paramarray[I][GNB_MNC_DIGIT_LENGTH].uptr;
+
+      char snssaistr[MAX_OPTNAME_SIZE*2 + 8];
+      sprintf(snssaistr, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0, GNB_CONFIG_STRING_PLMN_LIST, I);
+      paramlist_def_t SNSSAIParamList = {GNB_CONFIG_STRING_SNSSAI_LIST, NULL, 0};
+      paramdef_t SNSSAIParams[] = GNBSNSSAIPARAMS_DESC;
+      config_getlist(&SNSSAIParamList, SNSSAIParams, sizeof(SNSSAIParams)/sizeof(paramdef_t), snssaistr);
+      e1Setup->plmn[I].supported_slices = SNSSAIParamList.numelt;
+      e1Setup->plmn[I].slice = calloc(SNSSAIParamList.numelt, sizeof(*e1Setup->plmn[I].slice));
+      AssertFatal(e1Setup->plmn[I].slice != NULL, "out of memory\n");
+      for (int s = 0; s < SNSSAIParamList.numelt; ++s) {
+        e1ap_nssai_t *slice = &e1Setup->plmn[I].slice[s];
+        slice->sst = *SNSSAIParamList.paramarray[s][GNB_SLICE_SERVICE_TYPE_IDX].uptr;
+        slice->sd = *SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr;
+      }
     }
 
-    e1Setup->remotePortF1U = *(GNBParamList.paramarray[0][GNB_REMOTE_S_PORTD_IDX].uptr);
-    e1Setup->localAddressF1U = strdup(*(GNBParamList.paramarray[0][GNB_LOCAL_S_ADDRESS_IDX].strptr));
-    e1Setup->localPortF1U = *(GNBParamList.paramarray[0][GNB_LOCAL_S_PORTD_IDX].uptr);
-    get_NGU_S1U_addr(&e1Setup->localAddressN3, &e1Setup->localPortN3);
-    e1Setup->remotePortN3 = e1Setup->localPortN3 ;
+    e1ap_net_config_t *e1ap_nc = &E1AP_REGISTER_REQ(msgConfig).net_config;
+    e1ap_nc->remotePortF1U = *(GNBParamList.paramarray[0][GNB_REMOTE_S_PORTD_IDX].uptr);
+    e1ap_nc->localAddressF1U = strdup(*(GNBParamList.paramarray[0][GNB_LOCAL_S_ADDRESS_IDX].strptr));
+    e1ap_nc->localPortF1U = *(GNBParamList.paramarray[0][GNB_LOCAL_S_PORTD_IDX].uptr);
+    get_NGU_S1U_addr(&e1ap_nc->localAddressN3, &e1ap_nc->localPortN3);
+    e1ap_nc->remotePortN3 = e1ap_nc->localPortN3 ;
 
     if (separate_CUUP_process) {
       paramlist_def_t GNBE1ParamList = {GNB_CONFIG_STRING_E1_PARAMETERS, NULL, 0};
       paramdef_t GNBE1Params[] = GNBE1PARAMS_DESC;
       config_getlist(&GNBE1ParamList, GNBE1Params, sizeofArray(GNBE1Params), aprefix);
       paramdef_t *e1Parms = GNBE1ParamList.paramarray[0];
-      strcpy(e1Setup->CUCP_e1_ip_address.ipv4_address, *(e1Parms[GNB_CONFIG_E1_IPV4_ADDRESS_CUCP].strptr));
-      e1Setup->CUCP_e1_ip_address.ipv4 = 1;
-      strcpy(e1Setup->CUUP_e1_ip_address.ipv4_address, *(e1Parms[GNB_CONFIG_E1_IPV4_ADDRESS_CUUP].strptr));
-      e1Setup->CUUP_e1_ip_address.ipv4 = 1;
-      e1Setup->cn_support = *e1Parms[GNB_CONFIG_E1_CN_SUPPORT].uptr;
+      strcpy(e1ap_nc->CUCP_e1_ip_address.ipv4_address, *(e1Parms[GNB_CONFIG_E1_IPV4_ADDRESS_CUCP].strptr));
+      e1ap_nc->CUCP_e1_ip_address.ipv4 = 1;
+      strcpy(e1ap_nc->CUUP_e1_ip_address.ipv4_address, *(e1Parms[GNB_CONFIG_E1_IPV4_ADDRESS_CUUP].strptr));
+      e1ap_nc->CUUP_e1_ip_address.ipv4 = 1;
     }
   }
   return msgConfig;
