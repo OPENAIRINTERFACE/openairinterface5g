@@ -856,3 +856,4 @@ typedef struct gNB_MAC_INST_s {
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
+/** @}*/

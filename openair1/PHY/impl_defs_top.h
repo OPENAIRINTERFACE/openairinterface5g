@@ -37,6 +37,7 @@
  * @{
 
  * @defgroup _PHY_RF_INTERFACE_ PHY - RF Interface
+ * @{
  * @ingroup _PHY_RF_INTERFACE_
  * @{
  * @defgroup _GENERIC_PHY_RF_INTERFACE_ Generic PHY - RF Interface
@@ -44,13 +45,13 @@
  * @defgroup _BLADERF_PHY_RF_INTERFACE_    PHY - BLADERF RF Interface
  * @defgroup _LMSSDR_PHY_RF_INTERFACE_    PHY - LMSSDR RF Interface
  * @}
- *
+ * @}
  * @ingroup _ref_implementation_
  * @{
  * This module is responsible for defining the generic interface between PHY and RF Target
  * @}
- 
- * @defgroup _openair1_ openair1 Reference Implementation 
+
+ * @defgroup _openair1_ openair1 Reference Implementation
  * @ingroup _ref_implementation_
  * @{
 

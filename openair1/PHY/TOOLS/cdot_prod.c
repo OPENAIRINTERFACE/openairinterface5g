@@ -25,13 +25,13 @@
 // returns the complex dot product of x and y
 
 /*! \brief Complex number dot_product
+@param x input vector
+@param y input vector
+@param N size of vectors
+@param output_shift normalization of int multiplications
 */
 
-c32_t dot_product(const c16_t *x,//! input vector
-                  const c16_t *y,//! input vector
-                  const uint32_t N,//! size of the vectors
-                  const int output_shift //! normalization afer int16 multiplication
-                  )
+c32_t dot_product(const c16_t *x, const c16_t *y, const uint32_t N, const int output_shift)
 {
   const int16_t reflip[32] __attribute__((aligned(32))) = {1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1};
   const int8_t imshuffle[64] __attribute__((aligned(32))) = {2, 3, 0, 1, 6, 7, 4, 5, 10, 11, 8, 9, 14, 15, 12, 13, 18, 19, 16, 17, 22, 23, 20, 21, 26, 27, 24, 25, 30, 31, 28, 29};

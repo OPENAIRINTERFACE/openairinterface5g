@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/dlsch_demodulation.c
+/*! \file nr_dlsch_demodulation.c
  * \brief Top-level routines for demodulating the PDSCH physical channel from 38-211, V15.2 2018-06
  * \author H.Wang
  * \date 2018
@@ -126,21 +126,9 @@ static int nr_dlsch_llr(uint32_t rx_size_symbol,
                         uint8_t nr_slot_rx,
                         NR_UE_DLSCH_t dlsch[2],
                         uint32_t llr_offset[NR_SYMBOLS_PER_SLOT]);
-/** \fn dlsch_extract_rbs(int32_t **rxdataF,
-    int32_t **dl_ch_estimates,
-    int32_t **rxdataF_ext,
-    int32_t **dl_ch_estimates_ext,
-    unsigned char symbol
-    uint8_t pilots,
-    uint8_t config_type,
-    unsigned short start_rb,
-    unsigned short nb_rb_pdsch,
-    uint8_t n_dmrs_cdm_groups,
-    uint8_t Nl,
-    NR_DL_FRAME_PARMS *frame_parms,
-    uint16_t dlDmrsSymbPos)
-    \brief This function extracts the received resource blocks, both channel estimates and data symbols,
-    for the current allocation and for multiple layer antenna gNB transmission.
+/** \fn nr_dlsch_extract_rbs
+    \brief This function extracts the received resource blocks, both channel estimates and data symbols,    for the current
+   allocation and for multiple layer antenna gNB transmission.
     @param rxdataF Raw FFT output of received signal
     @param dl_ch_estimates Channel estimates of current slot
     @param rxdataF_ext FFT output for RBs in this allocation

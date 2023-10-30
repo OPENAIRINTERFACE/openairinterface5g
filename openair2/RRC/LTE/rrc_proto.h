@@ -65,7 +65,6 @@ void rrc_top_cleanup(void);
 
 /** \brief Function to update eNB timers every subframe.
 @param ctxt_pP  running context
-@param enb_index
 @param CC_id
 */
 RRC_status_t
@@ -97,8 +96,9 @@ int rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const SRB_INFO *co
 /** \brief Decodes a DL-DCCH message and invokes appropriate routine to handle the message
     \param ctxt_pP Running context
     \param Srb_id Index of Srb (1,2)
-    \param buffer_pP Pointer to received SDU
-    \param eNB_index Index of corresponding eNB/CH*/
+    \param Buffer Pointer to received SDU
+    \param Buffer_size
+    \param eNB_indexP Index of corresponding eNB/CH*/
 void
 rrc_ue_decode_dcch(
   const protocol_ctxt_t *const ctxt_pP,
@@ -136,7 +136,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
 
 /** \brief Establish SRB1 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
     \param module_idP Instance ID of UE
-    \param frame Frame index
+    \param frameP Frame index
     \param eNB_index Index of corresponding eNB/CH
     \param SRB_config Pointer to SRB_ToAddMod IE from configuration
     @returns 0 on success*/
@@ -144,7 +144,7 @@ int32_t  rrc_ue_establish_srb1(module_id_t module_idP,frame_t frameP,uint8_t eNB
 
 /** \brief Establish SRB2 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
     \param module_idP Instance ID of UE
-    \param frame Frame index
+    \param frameP Frame index
     \param eNB_index Index of corresponding eNB/CH
     \param SRB_config Pointer to SRB_ToAddMod IE from configuration
     @returns 0 on success*/
@@ -152,6 +152,7 @@ int32_t  rrc_ue_establish_srb2(module_id_t module_idP,frame_t frameP, uint8_t eN
 
 /** \brief Establish a DRB according to DRB_ToAddMod structure
     \param module_idP Instance ID of UE
+    \param frameP Frame index
     \param eNB_index Index of corresponding CH/eNB
     \param DRB_config Pointer to DRB_ToAddMod IE from configuration
     @returns 0 on success */
@@ -230,8 +231,9 @@ int rrc_eNB_decode_ccch(protocol_ctxt_t *const ctxt_pP,
 
 /**\brief Entry routine to decode a UL-DCCH-Message.  Invokes PER decoder and parses message.
    \param ctxt_pP Context
+\param Srb_id
    \param Rx_sdu Pointer Received Message
-   \param sdu_size Size of incoming SDU*/
+   \param sdu_sizeP Size of incoming SDU*/
 int
 rrc_eNB_decode_dcch(
   const protocol_ctxt_t *const ctxt_pP,
@@ -242,7 +244,8 @@ rrc_eNB_decode_dcch(
 
 /**\brief Generate the RRCConnectionSetup based on information coming from RRM
    \param ctxt_pP       Running context
-   \param ue_context_pP UE context*/
+   \param ue_context_pP UE context
+   \param CC_id*/
 void
 rrc_eNB_generate_RRCConnectionSetup(
   const protocol_ctxt_t *const ctxt_pP,
@@ -275,7 +278,6 @@ rrc_eNB_process_RRCConnectionSetupComplete(
 /**\brief Process the RRCConnectionReconfigurationComplete based on information coming from UE
    \param ctxt_pP       Running context
    \param ue_context_pP RRC UE context
-   \param rrcConnectionReconfigurationComplete Pointer to RRCConnectionReconfigurationComplete message
    \param xid         the transaction id for the rrcconnectionreconfiguration procedure
 */
 void
@@ -324,7 +326,11 @@ rrc_eNB_generate_dedeicatedRRCConnectionReconfiguration(
 
 /**\brief release Data Radio Bearer between ENB and UE
    \param ctxt_pP Running context
-   \param ue_context_pP UE context of UE receiving the message*/
+   \param ue_context_pP UE context of UE receiving the message
+\param xid
+\param nas_length
+\param nas_buffer
+*/
 void
 rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(
   const protocol_ctxt_t   *const ctxt_pP,
@@ -344,15 +350,15 @@ void  rrc_enb_init(void);
 void *rrc_enb_process_itti_msg(void *);
 
 /**\brief RRC eNB task.
-   \param void *args_p Pointer on arguments to start the task. */
+   \param args_p Pointer on arguments to start the task. */
 void *rrc_enb_task(void *args_p);
 
 /**\brief RRC UE task.
-   \param void *args_p Pointer on arguments to start the task. */
+   \param args_p Pointer on arguments to start the task. */
 void *rrc_ue_task(void *args_p);
 
 /**\brief RRC NSA UE task.
-   \param void *args_p Pointer on arguments to start the task. */
+   \param args_p Pointer on arguments to start the task. */
 void *recv_msgs_from_nr_ue(void *args_p);
 
 void init_connections_with_nr_ue(void);
@@ -366,9 +372,7 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
 void rrc_eNB_process_ENDC_x2_setup_request(int mod_id, x2ap_ENDC_setup_req_t *m);
 
 /**\brief Generate/decode the handover RRCConnectionReconfiguration at eNB
-   \param module_idP Instance ID for eNB/CH
-   \param frame Frame index
-   \param ue_module_idP Index of UE transmitting the messages*/
+ */
 void
 rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   const protocol_ctxt_t *const ctxt_pP,
@@ -392,6 +396,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
 
 /** \brief process the received SidelinkUEInformation message at eNB
     \param ctxt_pP Running context
+   \param ue_context_pP RRC UE context
     \param sidelinkUEInformation sidelinkUEInformation message from UE*/
 uint8_t
 rrc_eNB_process_SidelinkUEInformation(

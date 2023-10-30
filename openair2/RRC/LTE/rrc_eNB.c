@@ -3244,8 +3244,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 
 //-----------------------------------------------------------------------------
 /**
- * @fn    :encode_CG_ConfigInfo
- * @param   :enc_buf to store the encoded bits
+ * @fn    encode_CG_ConfigInfo
+ * @param   :buffer to store the encoded bits
  * @param   :ue_context_pP ue context used to fill CG-ConfigInfo
  * @param   :enc_size to store thre size of encoded size
  *      this api is to fill and encode CG-ConfigInfo

@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-/** @defgroup _s1ap_impl_ S1AP Layer Reference Implementation for eNB
+/** @defgroup _s1ap_impl_ S1AP Layer Reference Implementation
  * @ingroup _ref_implementation_
  * @{
  */

@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file nr_ rrc_common.c
+/*! \file nr_rrc_common.c
  * \brief rrc common procedures for gNB
  * \author Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
  * \date 2011 - 2014, 2018

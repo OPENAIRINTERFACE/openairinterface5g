@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/config/cmdline/config_libconfig.c
+/*! \file config_cmdline.c
  * \brief configuration module, command line parsing implementation
  * \author Francois TABURET
  * \date 2017

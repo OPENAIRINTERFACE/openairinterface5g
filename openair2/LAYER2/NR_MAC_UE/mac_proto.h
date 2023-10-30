@@ -121,19 +121,20 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              void *phy_data);
 
 /*! \fn int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
-   \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.
-\param[in] Mod_id Instance id of UE in machine
-\param[in] frameP subframe number
-\param[in] slotP slot number
+   \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and
+DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and
+DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3
+SDUs and generates header and forms the complete MAC SDU. \param[in]  module_idP Instance id of UE in machine \param[in] frameP
+subframe number \param[in] slotP slot number
 */
 int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
 
-/*! \fn  bool update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index)
+/*! \fn  nr_update_bsr
    \brief get the rlc stats and update the bsr level for each lcid
-\param[in] Mod_id instance of the UE
+\param[in] module_idP instance of the UE
 \param[in] frameP Frame index
-\param[in] slot slotP number
-\param[in] uint8_t gNB_index
+\param[in] slotP number
+\param[in] gNB_index
 */
 bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index);
 
@@ -424,4 +425,3 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                         uint16_t rnti,
                         const nr_dci_format_t dci_format);
 #endif
-/** @}*/

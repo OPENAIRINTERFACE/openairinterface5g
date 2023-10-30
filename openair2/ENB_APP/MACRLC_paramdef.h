@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/ENB_APP/MACRLC_paramdef.f
- * \brief definition of configuration parameters for all eNodeB modules 
+/*! \file MACRLC_paramdef.h
+ * \brief definition of configuration parameters for all eNodeB modules
  * \author Francois TABURET
  * \date 2017
  * \version 0.1
@@ -29,7 +29,6 @@
  * \note
  * \warning
  */
-
 
 #ifndef __ENB_APP_MACRLC_PARAMDEF__H__
 #define __ENB_APP_MACRLC_PARAMDEF__H__

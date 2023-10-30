@@ -1,9 +1,9 @@
 
-/*! \file defs_NB_IoT.c
+/*! \file defs_NB_IoT.h
  * \brief MAC layer structures
  * \author  NTUST BMW Lab./
  * \date 2017
- * \email: 
+ * \email:
  * \version 1.0
  *
  */

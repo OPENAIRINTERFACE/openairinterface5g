@@ -130,9 +130,8 @@ unsigned char *header_gen(const int hdr_size);
 */
 unsigned char *payload_pkts(const int payload_size);
 
-
-/*! \fn
-char * serialize_buffer(char* const header, char* const payload, const unsigned int buffer_size, const int flag, const int flow_id, const int ctime, const int seq_num, const int hdr_type, const int state)
+/*! \fn char * serialize_buffer(char* const header, char* const payload, const unsigned int buffer_size, const int flag, const int
+flow_id, const int ctime, const int seq_num, const int hdr_type, const int state)
 * \brief serilize the packet and add otg control information
 * \param[in] char* header pointer to the header
 * \param[in] char* payload pointer to the payload
@@ -173,14 +172,6 @@ unsigned char * serialize_buffer(
 */
 int adjust_size(int size);
 
-
-/*! \fn int header_size_genint src();
-* \brief return the header size corresponding to ip version and transport protocol
-* \param[in]  the sender (src)
-* \param[out] size of packet header
-* \note
-* @ingroup  _otg
-*/
 void header_size_gen(const int src, const int dst, const int application);
 
 void init_predef_multicast_traffic(void);

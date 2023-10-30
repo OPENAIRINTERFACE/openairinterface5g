@@ -163,7 +163,7 @@ double nfix(void)
   }
 }
 
-/*!\Procedure to create tables for normal distribution kn,wn and fn. */
+/*!Procedure to create tables for normal distribution kn,wn and fn. */
 void tableNor(unsigned long seed)
 {
   jsr = seed;

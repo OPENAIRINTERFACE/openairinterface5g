@@ -19,14 +19,14 @@
  *      contact@openairinterface.org
  */
 
-/*! \file vars.h
-* \brief rrc external vars
-* \author Navid Nikaein and Raymond Knopp, Michele Paffetti
-* \date 2011-2017
-* \version 1.0
-* \company Eurecom
-* \email: navid.nikaein@eurecom.fr, michele.paffetti@studio.unibo.it
-*/
+/*! \file extern_NB_IoT.h
+ * \brief rrc external vars
+ * \author Navid Nikaein and Raymond Knopp, Michele Paffetti
+ * \date 2011-2017
+ * \version 1.0
+ * \company Eurecom
+ * \email: navid.nikaein@eurecom.fr, michele.paffetti@studio.unibo.it
+ */
 
 #ifndef __OPENAIR_RRC_EXTERN_NB_IOT_H__
 #define __OPENAIR_RRC_EXTERN_NB_IOT_H__

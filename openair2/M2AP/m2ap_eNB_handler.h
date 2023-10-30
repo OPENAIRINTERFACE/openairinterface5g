@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file m2ap_handler.h
+/*! \file m2ap_eNB_handler.h
  * \brief m2ap handler procedures for eNB
  * \author Javier Morgade <javier.morgade@ieee.org>
  * \date 2019

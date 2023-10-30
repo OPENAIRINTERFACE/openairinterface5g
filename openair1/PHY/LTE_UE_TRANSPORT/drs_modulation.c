@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/drs_modulation.c
-* \brief Top-level routines for generating the Demodulation Reference Signals from 36-211, V8.6 2009-03
-* \author R. Knopp, F. Kaltenberger, A. Bhamri
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,ankit.bhamri@eurecom.fr
-* \note
-* \warning
-*/
+/*! \file drs_modulation.c
+ * \brief Top-level routines for generating the Demodulation Reference Signals from 36-211, V8.6 2009-03
+ * \author R. Knopp, F. Kaltenberger, A. Bhamri
+ * \date 2011
+ * \version 0.1
+ * \company Eurecom
+ * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,ankit.bhamri@eurecom.fr
+ * \note
+ * \warning
+ */
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"

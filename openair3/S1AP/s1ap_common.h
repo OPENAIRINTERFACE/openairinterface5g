@@ -94,5 +94,5 @@ typedef int (*s1ap_message_decoded_callback)(sctp_assoc_t assoc_id, uint32_t str
  @returns void
  **/
 void s1ap_handle_criticality(S1AP_Criticality_t criticality);
-
+/** @}*/
 #endif /* S1AP_COMMON_H_ */

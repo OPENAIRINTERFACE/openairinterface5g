@@ -140,5 +140,6 @@ ssize_t m3ap_generate_unsuccessfull_outcome(
  @returns void
  **/
 void m3ap_handle_criticality(M3AP_Criticality_t criticality);
+/** @}*/
 
 #endif /* M3AP_COMMON_H_ */

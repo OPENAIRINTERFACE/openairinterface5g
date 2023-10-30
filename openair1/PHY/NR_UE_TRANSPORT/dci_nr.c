@@ -19,13 +19,9 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/dci_nr.c
- * \brief Implements PDCCH physical channel TX/RX procedures (36.211) and DCI encoding/decoding (36.212/36.213). Current LTE compliance V8.6 2009-03.
- * \author R. Knopp, A. Mico Pereperez
- * \date 2018
- * \version 0.1
- * \company Eurecom
- * \email: knopp@eurecom.fr
+/*! \file dci_nr.c
+ * \brief Implements PDCCH physical channel TX/RX procedures (36.211) and DCI encoding/decoding (36.212/36.213). Current LTE
+ * compliance V8.6 2009-03. \author R. Knopp, A. Mico Pereperez \date 2018 \version 0.1 \company Eurecom \email: knopp@eurecom.fr
  * \note
  * \warning
  */

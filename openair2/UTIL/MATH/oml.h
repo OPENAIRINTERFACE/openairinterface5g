@@ -41,14 +41,12 @@
 
 #define PI 3.14159265
 
-
-/*! \fn void set_taus_seed(unsigned int seed_type);
-* \brief initialize seeds used for the generation of taus random values
-* \param[in] initial value
-* \param[out]
-* \note
-* @ingroup  _oml
-*/
+/*! \fn set_taus_seed
+ * \brief initialize seeds used for the generation of taus random values
+ * \param[in] seed_type initial value
+ * \note
+ * @ingroup  _oml
+ */
 void set_taus_seed(unsigned int seed_type);
 
 /*! \fn inline unsigned int taus(unsigned int comp);

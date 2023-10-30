@@ -94,7 +94,7 @@ typedef struct {
 /*! \brief Scheduling for UE TX procedures in normal subframes.
   @param ue Pointer to UE variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
-  @param eNB_id Local id of eNB on which to act
+@param phy_data
 */
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_data_tx_t *phy_data);
 
@@ -113,18 +113,15 @@ int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_p
 void processSlotTX(void *arg);
 
 /*! \brief UE PRACH procedures.
-    @param
-    @param
-    @param
  */
 void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc);
 
 int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
 /*! \brief UL time alignment procedures for TA application
-  @param PHY_VARS_NR_UE ue
-  @param int slot_tx
-  @param int frame_tx
+  @param ue
+  @param slot_tx
+  @param frame_tx
 */
 void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx);
 
@@ -138,10 +135,6 @@ int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_
 bool is_csi_rs_in_symbol(fapi_nr_dl_config_csirs_pdu_rel15_t csirs_config_pdu, int symbol);
 
 /*! \brief This function prepares the dl indication to pass to the MAC
-    @param
-    @param
-    @param
-    @param
  */
 void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
                            fapi_nr_dci_indication_t *dci_ind,
@@ -153,10 +146,6 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
 /*@}*/
 
 /*! \brief This function prepares the dl rx indication
-    @param
-    @param
-    @param
-    @param
  */
 void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            uint8_t pdu_type,
@@ -192,4 +181,4 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t r
 void nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 #endif
-
+/** @}*/

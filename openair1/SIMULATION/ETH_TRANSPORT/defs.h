@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file phy_emulation.h
+/*! \file defs.h
  *  \brief specifies the data structure and variable for phy emulation
  *  \author Navid Nikaein, Raymomd Knopp  and Hicham Anouar
  *  \date 2011

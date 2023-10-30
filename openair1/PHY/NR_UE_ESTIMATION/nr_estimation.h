@@ -46,10 +46,6 @@ void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t
 
 /*!
 \brief This function performs channel estimation including frequency and temporal interpolation
-\param ue Pointer to UE PHY variables
-\param gNB_id Index of target gNB
-\param Ns slot number (0..19)
-\param symbol symbol within slot
 */
 void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                  UE_nr_rxtx_proc_t *proc,
@@ -141,5 +137,5 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                               NR_UE_DLSCH_t dlsch[2]);
 
 float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
-
+/** @}*/
 #endif

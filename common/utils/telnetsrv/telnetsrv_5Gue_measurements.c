@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/telnetsrv/telnetsrv_nrue_measurements.c
+/*! \file telnetsrv_5Gue_measurements.c
  * \brief: implementation of telnet commands related to nrUE measurments
  * \author Francois TABURET
  * \date 2021

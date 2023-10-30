@@ -76,12 +76,4 @@ uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index);
 
 int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t subframe);
 
-
-void compute_prach_seq(uint16_t rootSequenceIndex,
-		       uint8_t prach_ConfigIndex,
-		       uint8_t zeroCorrelationZoneConfig,
-		       uint8_t highSpeedFlag,
-		       frame_type_t frame_type,
-		       uint32_t X_u[64][839]);
-
 #endif

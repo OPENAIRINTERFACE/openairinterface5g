@@ -417,4 +417,3 @@ typedef struct gNB_RRC_INST_s {
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error
 
 #endif
-/** @} */

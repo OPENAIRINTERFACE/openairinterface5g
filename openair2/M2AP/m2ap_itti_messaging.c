@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file m2ap_eNB_itti_messaging.c
+/*! \file m2ap_itti_messaging.c
  * \brief m2ap tasks for eNB
  * \author Javier Morgade <javier.morgade@ieee.org>
  * \date 2019

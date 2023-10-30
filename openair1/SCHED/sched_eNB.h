@@ -85,11 +85,9 @@ enum openair_HARQ_TYPE {
  * @{
  */
 
-
-
 /*! \brief Scheduling for eNB TX procedures in normal subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
-  @param abstraction_flag Indicator of PHY abstraction
+@param proc
   @param do_meas Do inline timing measurement
 */
 void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc,int do_meas);
@@ -100,15 +98,9 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc,int d
 */
 void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc);
 
-/*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
-  @param phy_vars_eNB Pointer to eNB variables on which to act
-  @param proc Pointer to RXn-TXnp4 proc information
-  @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
-*/
-
 /*! \brief Scheduling for eNB RX common procedures in normal subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
-  @param abstraction_flag Indicator of PHY abstraction
+  @param proc is context
 */
 void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc);
 
@@ -120,11 +112,12 @@ void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB);
 
 /*! \brief Scheduling for eNB RX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
+@param proc
 */
 void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc);
 
 /*! \brief Scheduling for eNB PRACH RX procedures
-  @param phy_vars_eNB Pointer to eNB variables on which to act
+  @param eNB Pointer to eNB variables on which to act
   @param br_flag indicator for eMTC PRACH
 */
 
@@ -166,12 +159,6 @@ void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
  */
 uint8_t get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t current_subframe);
 
-/*! \brief Get ULSCH harq_pid from PHICH subframe
-   @param frame_parms Pointer to DL Frame Parameters
-   @param subframe subframe of PHICH
-   @returns harq_pid (0 ... 7)
- */
-
 /*! \brief Function to indicate failure of contention resolution or RA procedure.  It places the UE back in PRACH mode.
     @param Mod_id Instance index of UE
     @param CC_id Component Carrier Index
@@ -181,6 +168,7 @@ void ra_failed(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
 /*! \brief Indicates the SR TXOp in current subframe for eNB and particular UE index.  Implements Table 10.1-5 from 36.213.
   @param phy_vars_eNB Pointer to eNB variables
+@param proc
   @param UE_id ID of UE which may be issuing the SR
   @returns 1 if TXOp is active.
 */
@@ -218,8 +206,7 @@ int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subf
 void compute_srs_pos(frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
 void release_rnti_of_phy(module_id_t mod_id);
-/*@}*/
-
+/**@}*/
 
 #endif
 

@@ -29,7 +29,8 @@
 /** \addtogroup _rrc
  *  @{
  */
-
+#ifndef __PROTO_NB_IOT_H
+#define __PROTO_NB_IOT_H
 #include "RRC/LTE/defs_NB_IoT.h"
 #include "pdcp.h"
 #include "rlc.h"
@@ -137,12 +138,13 @@ char openair_rrc_eNB_configuration_NB_IoT(
 
 //-----------------------------
 /**\brief RRC eNB task. (starting of the RRC state machine)
-   \param void *args_p Pointer on arguments to start the task. */
+   \param args_p Pointer on arguments to start the task. */
 void *rrc_enb_task_NB_IoT(void *args_p);
 
 /**\brief Entry routine to decode a UL-CCCH-Message-NB.  Invokes PER decoder and parses message.
    \param ctxt_pP Running context
-   \param Srb_info Pointer to SRB0 information structure (buffer, etc.)*/
+   \param Srb_info Pointer to SRB0 information structure (buffer, etc.)
+\param CC_id*/
 int rrc_eNB_decode_ccch_NB_IoT(
   protocol_ctxt_t* const ctxt_pP,
   const SRB_INFO_NB_IoT*        const Srb_info,
@@ -151,8 +153,9 @@ int rrc_eNB_decode_ccch_NB_IoT(
 
 /**\brief Entry routine to decode a UL-DCCH-Message-NB.  Invokes PER decoder and parses message.
    \param ctxt_pP Context
+\param Srb_id
    \param Rx_sdu Pointer Received Message
-   \param sdu_size Size of incoming SDU*/
+   \param sdu_sizeP Size of incoming SDU*/
 int rrc_eNB_decode_dcch_NB_IoT(
   const protocol_ctxt_t* const ctxt_pP,
   const rb_id_t                Srb_id,
@@ -256,5 +259,5 @@ int8_t mac_rrc_data_req_eNB_NB_IoT(
   uint8_t   flag
 );
 
-
-
+/** @}*/
+#endif

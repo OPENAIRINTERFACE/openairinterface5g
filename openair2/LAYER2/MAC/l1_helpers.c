@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file l1_helper.c
+/*! \file l1_helpers.c
 * \brief phy helper function
 * \author Navid Nikaein, Raymond Knopp
 * \date 2012 - 2014

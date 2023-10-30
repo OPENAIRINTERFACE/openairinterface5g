@@ -238,4 +238,3 @@ typedef struct NR_UE_RRC_INST_s {
 } NR_UE_RRC_INST_t;
 
 #endif
-/** @} */

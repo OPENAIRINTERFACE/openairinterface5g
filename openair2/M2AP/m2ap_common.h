@@ -138,5 +138,6 @@ ssize_t m2ap_generate_unsuccessfull_outcome(
  @returns void
  **/
 void m2ap_handle_criticality(M2AP_Criticality_t criticality);
+/** @}*/
 
 #endif /* M2AP_COMMON_H_ */

@@ -118,10 +118,8 @@ void lte_sync_time_free(void) {
 
 #define SHIFT 17
 
-
-int lte_sync_time(int **rxdata, ///rx data in time domain
-                  LTE_DL_FRAME_PARMS *frame_parms,
-                  int *eNB_id) {
+int lte_sync_time(int **rxdata, LTE_DL_FRAME_PARMS *frame_parms, int *eNB_id)
+{
   // perform a time domain correlation using the oversampled sync sequence
   unsigned int n, ar, s, peak_pos, peak_val, sync_source;
   struct complexd sync_out[3]= {{0}}, sync_out2[3]= {{0}};
@@ -167,7 +165,6 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
   LOG_I(PHY,"[UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d (%d dB)\n",sync_source,peak_pos,peak_val/2,dB_fixed(peak_val/2)/2);
   return(peak_pos);
 }
-
 
 int ru_sync_time_init(RU_t *ru) { // LTE_UE_COMMON *common_vars
   /*

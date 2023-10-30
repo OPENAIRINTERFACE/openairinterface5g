@@ -27,7 +27,6 @@
  * \version 1.0
  * \company Eurecom
  * @ingroup _mac
-
  */
 
 #include <softmodem-common.h>

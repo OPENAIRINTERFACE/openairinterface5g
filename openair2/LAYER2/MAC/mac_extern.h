@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file extern.h
+/*! \file mac_extern.h
 * \brief mac externs
 * \author  Navid Nikaein and Raymond Knopp
 * \date 2010 - 2014
