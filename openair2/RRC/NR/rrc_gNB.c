@@ -2663,7 +2663,10 @@ void rrc_gNB_trigger_release_bearer(int rnti)
   rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
 }
 
-int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t instance, uint8_t CC_id){
+int rrc_gNB_generate_pcch_msg(sctp_assoc_t assoc_id, const NR_SIB1_t *sib1, uint32_t tmsi, uint8_t paging_drx)
+{
+  instance_t instance = 0;
+  uint8_t CC_id = 0;
   const unsigned int Ttab[4] = {32,64,128,256};
   uint8_t Tc;
   uint8_t Tue;
@@ -2674,9 +2677,6 @@ int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t inst
   uint32_t T;  /* DRX cycle */
   uint32_t length;
   uint8_t buffer[RRC_BUF_SIZE];
-  const nr_rrc_du_container_t *du = RC.nrrrc[0]->du;
-  DevAssert(du != NULL);
-  struct NR_SIB1 *sib1 = du->sib1;
 
   /* get default DRX cycle from configuration */
   Tc = sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.defaultPagingCycle;
@@ -2784,6 +2784,7 @@ int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t inst
     return -1;
   }
   // TODO, send message to pdcp
+  (void) assoc_id;
 
   return 0;
 }
