@@ -2212,11 +2212,22 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
       fprintf(f, "    PDU session %d ID %d status %s\n", nb_pdu, pdu->param.pdusession_id, get_pdusession_status_text(pdu->status));
     }
 
+    fprintf(f, "    associated DU: ");
+    if (ue_data.du_assoc_id == -1)
+      fprintf(f, " (local/integrated CU-DU)");
+    else if (ue_data.du_assoc_id == 0)
+      fprintf(f, " DU offline/unavailable");
+    else
+      fprintf(f, " DU assoc ID %d", ue_data.du_assoc_id);
+    fprintf(f, "\n");
 
     if (ue_ctxt->measResults)
       print_rrc_meas(f, ue_ctxt->measResults);
     ++i;
   }
+
+  fprintf(f, "\n");
+  dump_du_info(rrc, f);
 
   fclose(f);
 }

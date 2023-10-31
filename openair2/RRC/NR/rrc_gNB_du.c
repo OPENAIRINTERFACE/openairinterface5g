@@ -257,3 +257,22 @@ nr_rrc_du_container_t *get_du_by_assoc_id(gNB_RRC_INST *rrc, sctp_assoc_t assoc_
   nr_rrc_du_container_t e = {.assoc_id = assoc_id};
   return RB_FIND(rrc_du_tree, &rrc->dus, &e);
 }
+
+void dump_du_info(const gNB_RRC_INST *rrc, FILE *f)
+{
+  fprintf(f, "%ld connected DUs \n", rrc->num_dus);
+  int i = 1;
+  nr_rrc_du_container_t *du = NULL;
+  /* cast is necessary to eliminate warning "discards ‘const’ qualifier" */
+  RB_FOREACH(du, rrc_du_tree, &((gNB_RRC_INST *)rrc)->dus) {
+    const f1ap_setup_req_t *sr = du->setup_req;
+    fprintf(f, "[%d] DU ID %ld (%s) ", i++, sr->gNB_DU_id, sr->gNB_DU_name);
+    if (du->assoc_id == -1) {
+      fprintf(f, "integrated DU-CU");
+    } else {
+      fprintf(f, "assoc_id %d", du->assoc_id);
+    }
+    const f1ap_served_cell_info_t *info = &sr->cell[0].info;
+    fprintf(f, ": nrCellID %ld, PCI %d\n", info->nr_cellid, info->nr_pci);
+  }
+}

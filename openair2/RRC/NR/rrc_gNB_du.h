@@ -25,6 +25,7 @@
 #include <netinet/in.h>
 #include <netinet/sctp.h>
 #include <stdint.h>
+#include <stdio.h>
 
 struct f1ap_setup_req_s;
 struct f1ap_lost_connection_t;
@@ -36,5 +37,7 @@ void rrc_CU_process_f1_lost_connection(struct gNB_RRC_INST_s *rrc, struct f1ap_l
 
 struct nr_rrc_du_container_t *get_du_for_ue(struct gNB_RRC_INST_s *rrc, uint32_t ue_id);
 struct nr_rrc_du_container_t *get_du_by_assoc_id(struct gNB_RRC_INST_s *rrc, sctp_assoc_t assoc_id);
+
+void dump_du_info(const struct gNB_RRC_INST_s *rrc, FILE *f);
 
 #endif /* RRC_GNB_DU_H_ */
