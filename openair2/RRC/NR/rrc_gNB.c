@@ -1293,7 +1293,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, const NR_RRC
   // update with new RNTI, and update secondary UE association
   UE->rnti = msg->crnti;
   cu_remove_f1_ue_data(UE->rrc_ue_id);
-  f1_ue_data_t ue_data = {.secondary_ue = msg->crnti};
+  f1_ue_data_t ue_data = {.secondary_ue = msg->gNB_DU_ue_id, .du_assoc_id = assoc_id};
   cu_add_f1_ue_data(UE->rrc_ue_id, &ue_data);
 
   UE->reestablishment_cause = cause;
