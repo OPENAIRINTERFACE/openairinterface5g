@@ -208,14 +208,6 @@ void *F1AP_CU_task(void *arg) {
                                                &F1AP_UE_CONTEXT_MODIFICATION_REFUSE(received_msg));
         break;
 
-      //    case F1AP_SETUP_RESPONSE: // This is from RRC
-      //    CU_send_F1_SETUP_RESPONSE(instance, *f1ap_setup_ind, &(F1AP_SETUP_RESP) f1ap_setup_resp)
-      //        break;
-
-      //    case F1AP_SETUP_FAILURE: // This is from RRC
-      //    CU_send_F1_SETUP_FAILURE(instance, *f1ap_setup_ind, &(F1AP_SETUP_FAILURE) f1ap_setup_failure)
-      //       break;
-
       case TERMINATE_MESSAGE:
         LOG_W(F1AP, " *** Exiting F1AP thread\n");
         itti_exit_task();

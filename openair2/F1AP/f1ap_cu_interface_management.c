@@ -194,42 +194,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint3
     memcpy(sys_info->sib1, DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
     sys_info->sib1_length = DUsi->sIB1_message.size;
   }
-  
-  // char *measurement_timing_information[F1AP_MAX_NB_CELLS];
-  // uint8_t ranac[F1AP_MAX_NB_CELLS];
-  // int fdd_flag = f1ap_setup_req->fdd_flag;
-  // union {
-  //   struct {
-  //     uint32_t ul_nr_arfcn;
-  //     uint8_t ul_scs;
-  //     uint8_t ul_nrb;
-  //     uint32_t dl_nr_arfcn;
-  //     uint8_t dl_scs;
-  //     uint8_t dl_nrb;
-  //     uint32_t sul_active;
-  //     uint32_t sul_nr_arfcn;
-  //     uint8_t sul_scs;
-  //     uint8_t sul_nrb;
-  //     uint8_t num_frequency_bands;
-  //     uint16_t nr_band[32];
-  //     uint8_t num_sul_frequency_bands;
-  //     uint16_t nr_sul_band[32];
-  //   } fdd;
-  //   struct {
-  //     uint32_t nr_arfcn;
-  //     uint8_t scs;
-  //     uint8_t nrb;
-  //     uint32_t sul_active;
-  //     uint32_t sul_nr_arfcn;
-  //     uint8_t sul_scs;
-  //     uint8_t sul_nrb;
-  //     uint8_t num_frequency_bands;
-  //     uint16_t nr_band[32];
-  //     uint8_t num_sul_frequency_bands;
-  //     uint16_t nr_sul_band[32];
-  //   } tdd;
-  // } nr_mode_info[F1AP_MAX_NB_CELLS];
-  
+
   if (req->num_cells_available > 0) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
   } else {
