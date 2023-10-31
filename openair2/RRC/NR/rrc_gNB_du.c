@@ -28,6 +28,18 @@
 #include "executables/softmodem-common.h"
 
 
+static int du_compare(const nr_rrc_du_container_t *a, const nr_rrc_du_container_t *b)
+{
+  if (a->assoc_id > b->assoc_id)
+    return 1;
+  if (a->assoc_id == b->assoc_id)
+    return 0;
+  return -1; /* a->assoc_id < b->assoc_id */
+}
+
+/* Tree management functions */
+RB_GENERATE/*_STATIC*/(rrc_du_tree, nr_rrc_du_container_t, entries, du_compare);
+
 static bool rrc_gNB_plmn_matches(const gNB_RRC_INST *rrc, const f1ap_served_cell_info_t *info)
 {
   const gNB_RrcConfigurationReq *conf = &rrc->configuration;
@@ -46,17 +58,10 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
   LOG_I(NR_RRC, "Received F1 Setup Request from gNB_DU %lu (%s) on assoc_id %d\n", req->gNB_DU_id, req->gNB_DU_name, assoc_id);
 
   // check:
-  // - it is the first DU
   // - it is one cell
   // - PLMN and Cell ID matches
+  // - no previous DU with the same ID
   // else reject
-  if (rrc->du != NULL) {
-    const f1ap_setup_req_t *other = rrc->du->setup_req;
-    LOG_E(NR_RRC, "can only handle one DU, but already serving DU %ld (%s)\n", other->gNB_DU_id, other->gNB_DU_name);
-    f1ap_setup_failure_t fail = {.cause = F1AP_CauseRadioNetwork_gNB_CU_Cell_Capacity_Exceeded};
-    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
-    return;
-  }
   if (req->num_cells_available != 1) {
     LOG_E(NR_RRC, "can only handle on DU cell, but gNB_DU %ld has %d\n", req->gNB_DU_id, req->num_cells_available);
     f1ap_setup_failure_t fail = {.cause = F1AP_CauseRadioNetwork_gNB_CU_Cell_Capacity_Exceeded};
@@ -77,6 +82,20 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
     rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
     return;
   }
+  nr_rrc_du_container_t *it = NULL;
+  RB_FOREACH(it, rrc_du_tree, &rrc->dus) {
+    if (it->setup_req->gNB_DU_id == req->gNB_DU_id) {
+      LOG_E(NR_RRC,
+            "gNB-DU ID: existing DU %s on assoc_id %d already has ID %ld, rejecting requesting gNB-DU\n",
+            it->setup_req->gNB_DU_name,
+            it->assoc_id,
+            it->setup_req->gNB_DU_id);
+      f1ap_setup_failure_t fail = {.cause = F1AP_CauseMisc_unspecified};
+      rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
+      return;
+    }
+  }
+
   // if there is no system info or no SIB1 and we run in SA mode, we cannot handle it
   const f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
   if (sys_info == NULL || sys_info->mib == NULL || (sys_info->sib1 == NULL && get_softmodem_params()->sa)) {
@@ -116,20 +135,22 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
   LOG_I(RRC, "Accepting DU %ld (%s), sending F1 Setup Response\n", req->gNB_DU_id, req->gNB_DU_name);
 
   // we accept the DU
-  rrc->du = calloc(1, sizeof(*rrc->du));
-  AssertFatal(rrc->du != NULL, "out of memory\n");
-  rrc->du->assoc_id = assoc_id;
+  nr_rrc_du_container_t *du = calloc(1, sizeof(*du));
+  AssertFatal(du != NULL, "out of memory\n");
+  du->assoc_id = assoc_id;
 
   /* ITTI will free the setup request message via free(). So the memory
    * "inside" of the message will remain, but the "outside" container no, so
    * allocate memory and copy it in */
-  rrc->du->setup_req = malloc(sizeof(*rrc->du->setup_req));
-  AssertFatal(rrc->du->setup_req != NULL, "out of memory\n");
-  *rrc->du->setup_req = *req;
-  rrc->du->mib = mib->message.choice.mib;
+  du->setup_req = malloc(sizeof(*du->setup_req));
+  AssertFatal(du->setup_req != NULL, "out of memory\n");
+  *du->setup_req = *req;
+  du->mib = mib->message.choice.mib;
   mib->message.choice.mib = NULL;
   ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_MessageType, mib);
-  rrc->du->sib1 = sib1;
+  du->sib1 = sib1;
+  RB_INSERT(rrc_du_tree, &rrc->dus, du);
+  rrc->num_dus++;
 
   served_cells_to_activate_t cell = {
       .plmn = cell_info->plmn,
@@ -187,21 +208,23 @@ static int invalidate_du_connections(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id)
 void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
 {
   AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
-  AssertFatal(rrc->du != NULL, "no DU connected, cannot received F1 lost connection\n");
-  AssertFatal(rrc->du->assoc_id == assoc_id,
-              "previously connected DU (%d) does not match DU for which connection has been lost (%d)\n",
-              rrc->du->assoc_id,
-              assoc_id);
   (void) lc; // unused for the moment
 
-  nr_rrc_du_container_t *du = rrc->du;
+  nr_rrc_du_container_t e = {.assoc_id = assoc_id};
+  nr_rrc_du_container_t *du = RB_FIND(rrc_du_tree, &rrc->dus, &e);
+  if (du == NULL) {
+    LOG_W(NR_RRC, "no DU connected or not found for assoc_id %d: F1 Setup Failed?\n", assoc_id);
+    return;
+  }
+
   f1ap_setup_req_t *req = du->setup_req;
   LOG_I(RRC, "releasing DU ID %ld (%s) on assoc_id %d\n", req->gNB_DU_id, req->gNB_DU_name, assoc_id);
   ASN_STRUCT_FREE(asn_DEF_NR_MIB, du->mib);
   ASN_STRUCT_FREE(asn_DEF_NR_SIB1, du->sib1);
   /* TODO: free setup request */
-  free(rrc->du);
-  rrc->du = NULL;
+  nr_rrc_du_container_t *removed = RB_REMOVE(rrc_du_tree, &rrc->dus, du);
+  DevAssert(removed != NULL);
+  rrc->num_dus--;
 
   int num = invalidate_du_connections(rrc, assoc_id);
   if (num > 0) {
@@ -211,14 +234,12 @@ void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t
 
 nr_rrc_du_container_t *get_du_for_ue(gNB_RRC_INST *rrc, uint32_t ue_id)
 {
-  nr_rrc_du_container_t *du = rrc->du;
-  if (du == NULL)
-    return NULL;
-  return du;
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_id);
+  return get_du_by_assoc_id(rrc, ue_data.du_assoc_id);
 }
 
 nr_rrc_du_container_t *get_du_by_assoc_id(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id)
 {
-  AssertFatal(assoc_id == rrc->du->assoc_id, "cannot handle multiple DUs yet\n");
-  return rrc->du;
+  nr_rrc_du_container_t e = {.assoc_id = assoc_id};
+  return RB_FIND(rrc_du_tree, &rrc->dus, &e);
 }
