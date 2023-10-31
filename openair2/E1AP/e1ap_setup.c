@@ -53,10 +53,12 @@ static void get_NGU_S1U_addr(char **addr, uint16_t *port)
   char *address;
   if (NETParams[1].strptr != NULL) {
     LOG_I(GTPU, "SA mode \n");
+    AssertFatal(gnb_ipv4_address_for_NGU != NULL, "Undefined Behaviour");
     address = strdup(gnb_ipv4_address_for_NGU);
     *port = gnb_port_for_NGU;
   } else {
     LOG_I(GTPU, "NSA mode \n");
+    AssertFatal(gnb_ipv4_address_for_S1U != NULL, "Undefined Behaviour");
     address = strdup(gnb_ipv4_address_for_S1U);
     *port = gnb_port_for_S1U;
   }
