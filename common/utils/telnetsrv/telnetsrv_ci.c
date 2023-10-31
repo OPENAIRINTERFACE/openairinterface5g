@@ -87,7 +87,7 @@ int get_reestab_count(char *buf, int debug, telnet_printfunc_t prnt)
     rnti = strtol(buf, NULL, 16);
     if (rnti < 1 || rnti >= 0xfffe)
       ERROR_MSG_RET("RNTI needs to be [1,0xfffe]\n");
-    ue = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], rnti);
+    ue = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], rnti);
     if (!ue)
       ERROR_MSG_RET("could not find UE with RNTI %04x in RRC\n");
   }

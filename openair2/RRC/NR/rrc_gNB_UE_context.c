@@ -87,7 +87,19 @@ rrc_gNB_ue_context_t *rrc_gNB_get_ue_context(gNB_RRC_INST *rrc_instance_pP, ue_i
   return RB_FIND(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, &temp);
 }
 
-rrc_gNB_ue_context_t *rrc_gNB_get_ue_context_by_rnti(gNB_RRC_INST *rrc_instance_pP, rnti_t rntiP)
+rrc_gNB_ue_context_t *rrc_gNB_get_ue_context_by_rnti(gNB_RRC_INST *rrc_instance_pP, sctp_assoc_t assoc_id, rnti_t rntiP)
+{
+  rrc_gNB_ue_context_t *ue_context_p;
+  RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(rrc_instance_pP->rrc_ue_head)) {
+    f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_context_p->ue_context.rrc_ue_id);
+    if (ue_data.du_assoc_id == assoc_id && ue_context_p->ue_context.rnti == rntiP)
+      return ue_context_p;
+  }
+  LOG_W(NR_RRC, "search by RNTI %04x and assoc_id %d: no UE found\n", rntiP, assoc_id);
+  return NULL;
+}
+
+rrc_gNB_ue_context_t *rrc_gNB_get_ue_context_by_rnti_any_du(gNB_RRC_INST *rrc_instance_pP, rnti_t rntiP)
 {
   rrc_gNB_ue_context_t *ue_context_p;
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(rrc_instance_pP->rrc_ue_head))

@@ -1276,9 +1276,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
   }
 
   rnti_t old_rnti = req->ue_Identity.c_RNTI;
-  // TODO: we need to check within a specific DU!
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, old_rnti);
-  gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, assoc_id, old_rnti);
   /* in case we need to do RRC Setup, give the UE a new random identity */
   uint64_t random_value;
   fill_random(&random_value, sizeof(random_value));
@@ -1291,6 +1289,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
     return;
   }
 
+  gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   // 3GPP TS 38.321 version 15.13.0 Section 7.1 Table 7.1-1: RNTI values
   if (req->ue_Identity.c_RNTI < 0x1 || req->ue_Identity.c_RNTI > 0xffef) {
     /* c_RNTI range error should not happen */
@@ -2546,7 +2545,7 @@ void rrc_gNB_trigger_new_bearer(int rnti)
 {
   /* get RRC and UE */
   gNB_RRC_INST *rrc = RC.nrrrc[0];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti_any_du(rrc, rnti);
   if (ue_context_p == NULL) {
     LOG_E(RRC, "unknown UE RNTI %04x\n", rnti);
     return;
@@ -2628,7 +2627,7 @@ void rrc_gNB_trigger_release_bearer(int rnti)
 {
   /* get RRC and UE */
   gNB_RRC_INST *rrc = RC.nrrrc[0];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti_any_du(rrc, rnti);
   if (ue_context_p == NULL) {
     LOG_E(RRC, "unknown UE RNTI %04x\n", rnti);
     return;

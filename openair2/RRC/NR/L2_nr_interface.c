@@ -58,7 +58,7 @@ int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
                                  const rnti_t          rntiP,
                                  const int             dl_bwp_id,
                                  const int             ul_bwp_id) {
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[module_idP], rntiP);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[module_idP], rntiP);
 
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, GNB_FLAG_YES, rntiP, frameP, sub_frameP, 0);
