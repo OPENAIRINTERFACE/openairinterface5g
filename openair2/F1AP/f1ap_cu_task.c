@@ -145,8 +145,9 @@ void *F1AP_CU_task(void *arg) {
 
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);
-    LOG_D(F1AP, "CU Task Received %s for instance %ld\n",
-          ITTI_MSG_NAME(received_msg), ITTI_MSG_DESTINATION_INSTANCE(received_msg));
+    sctp_assoc_t assoc_id = getCxt(0) != NULL ? getCxt(0)->assoc_id : 0;
+    LOG_D(F1AP, "CU Task Received %s for instance %ld: sending SCTP message via assoc_id %d\n",
+          ITTI_MSG_NAME(received_msg), ITTI_MSG_DESTINATION_INSTANCE(received_msg), assoc_id);
     switch (ITTI_MSG_ID(received_msg)) {
       case SCTP_NEW_ASSOCIATION_IND:
         cu_task_handle_sctp_association_ind(ITTI_MSG_ORIGIN_INSTANCE(received_msg),
@@ -165,48 +166,48 @@ void *F1AP_CU_task(void *arg) {
         break;
 
       case F1AP_SETUP_RESP: // from rrc
-        CU_send_F1_SETUP_RESPONSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_F1_SETUP_RESPONSE(assoc_id,
                                   &F1AP_SETUP_RESP(received_msg));
         break;
 
       case F1AP_GNB_CU_CONFIGURATION_UPDATE: // from rrc
-        CU_send_gNB_CU_CONFIGURATION_UPDATE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_gNB_CU_CONFIGURATION_UPDATE(assoc_id,
                                             &F1AP_GNB_CU_CONFIGURATION_UPDATE(received_msg));
         break;
 
       case F1AP_DL_RRC_MESSAGE: // from rrc
-        CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_DL_RRC_MESSAGE_TRANSFER(assoc_id,
                                         &F1AP_DL_RRC_MESSAGE(received_msg));
         free(F1AP_DL_RRC_MESSAGE(received_msg).rrc_container);
         break;
 
       case F1AP_UE_CONTEXT_SETUP_REQ: // from rrc
-        CU_send_UE_CONTEXT_SETUP_REQUEST(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_SETUP_REQUEST(assoc_id,
                                          &F1AP_UE_CONTEXT_SETUP_REQ(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_REQ:
-        CU_send_UE_CONTEXT_MODIFICATION_REQUEST(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_MODIFICATION_REQUEST(assoc_id,
                                                 &F1AP_UE_CONTEXT_MODIFICATION_REQ(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_CMD: // from rrc
-        CU_send_UE_CONTEXT_RELEASE_COMMAND(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_RELEASE_COMMAND(assoc_id,
                                            &F1AP_UE_CONTEXT_RELEASE_CMD(received_msg));
         break;
 
       case F1AP_PAGING_IND:
-        CU_send_Paging(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_Paging(assoc_id,
                        &F1AP_PAGING_IND(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_CONFIRM:
-        CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(assoc_id,
                                                 &F1AP_UE_CONTEXT_MODIFICATION_CONFIRM(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_REFUSE:
-        CU_send_UE_CONTEXT_MODIFICATION_REFUSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_MODIFICATION_REFUSE(assoc_id,
                                                &F1AP_UE_CONTEXT_MODIFICATION_REFUSE(received_msg));
         break;
 

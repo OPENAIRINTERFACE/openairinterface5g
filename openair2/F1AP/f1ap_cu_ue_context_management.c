@@ -65,8 +65,8 @@ static void setQos(F1AP_NonDynamic5QIDescriptor_t *toFill) {
   }
 }
 
-int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
-                                     f1ap_ue_context_setup_t *f1ap_ue_context_setup_req) {
+int CU_send_UE_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_setup_t *f1ap_ue_context_setup_req)
+{
   F1AP_F1AP_PDU_t  pdu= {0};
   /* Create */
   /* 0. Message Type */
@@ -509,7 +509,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
         /*Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU*/
         /* Use a dummy address and teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU */
         transport_layer_addr_t addr = { .length= 32, .buffer= { 0 } };
-        f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid = newGtpuCreateTunnel(getCxt(instance)->gtpInst,
+        f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid = newGtpuCreateTunnel(getCxt(0)->gtpInst,
                                                                                                f1ap_ue_context_setup_req->gNB_CU_ue_id,
                                                                                                f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
                                                                                                f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
@@ -628,7 +628,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   //   return -1;
   // }
   LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %u bits\n", len);
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
@@ -825,9 +825,8 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t instance, sctp_assoc_t assoc
   return 0;
 }
 
-
-int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
-                                       f1ap_ue_context_release_cmd_t *cmd) {
+int CU_send_UE_CONTEXT_RELEASE_COMMAND(sctp_assoc_t assoc_id, f1ap_ue_context_release_cmd_t *cmd)
+{
   F1AP_F1AP_PDU_t                   pdu= {0};
   F1AP_UEContextReleaseCommand_t    *out;
   uint8_t  *buffer=NULL;
@@ -912,7 +911,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
@@ -951,7 +950,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, sctp_assoc_t asso
   return 0;
 }
 
-int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context_modif_req_t *f1ap_ue_context_modification_req)
+int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_modif_req_t *f1ap_ue_context_modification_req)
 {
   F1AP_F1AP_PDU_t                        pdu= {0};
   F1AP_UEContextModificationRequest_t    *out;
@@ -1555,7 +1554,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
           &drbs_toBeReleased_item_ies->value.choice.DRBs_ToBeReleased_Item;
       /* dRBID */
       drbs_toBeReleased_item->dRBID = f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id;
-      newGtpuDeleteOneTunnel(getCxt(instance)->gtpInst,
+      newGtpuDeleteOneTunnel(getCxt(0)->gtpInst,
                              f1ap_ue_context_modification_req->gNB_CU_ue_id,
                              f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id);
     }
@@ -1566,7 +1565,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT_MODIFICATION REQUEST\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
@@ -1833,7 +1832,7 @@ int CU_handle_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance, sctp_assoc_t
   return 0;
 }
 
-int CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance, f1ap_ue_context_modif_confirm_t *confirm)
+int CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(sctp_assoc_t assoc_id, f1ap_ue_context_modif_confirm_t *confirm)
 {
   F1AP_F1AP_PDU_t pdu = {0};
   pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
@@ -1891,11 +1890,11 @@ int CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance, f1ap_ue_context
     LOG_E(F1AP, "Failed to encode F1 UE Context Modification Confirm\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
-int CU_send_UE_CONTEXT_MODIFICATION_REFUSE(instance_t instance, f1ap_ue_context_modif_refuse_t *refuse)
+int CU_send_UE_CONTEXT_MODIFICATION_REFUSE(sctp_assoc_t assoc_id, f1ap_ue_context_modif_refuse_t *refuse)
 {
   F1AP_F1AP_PDU_t pdu = {0};
   pdu.present = F1AP_F1AP_PDU_PR_unsuccessfulOutcome;
@@ -1958,6 +1957,6 @@ int CU_send_UE_CONTEXT_MODIFICATION_REFUSE(instance_t instance, f1ap_ue_context_
     LOG_E(F1AP, "Failed to encode F1 UE Context Modification Refuse\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }

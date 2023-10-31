@@ -32,5 +32,5 @@
 
 #ifndef F1AP_CU_PAGING_H_
 #define F1AP_CU_PAGING_H_
-int CU_send_Paging(instance_t instance, f1ap_paging_ind_t *paging);
+int CU_send_Paging(sctp_assoc_t assoc_id, f1ap_paging_ind_t *paging);
 #endif /* F1AP_DU_PAGING_H_ */

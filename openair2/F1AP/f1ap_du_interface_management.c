@@ -55,11 +55,12 @@ int DU_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream,
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int DU_send_RESET_ACKKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int DU_send_RESET_ACKKNOWLEDGE(sctp_assoc_t assoc_id, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int DU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
+int DU_send_RESET(sctp_assoc_t assoc_id, F1AP_Reset_t *Reset)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -72,7 +73,8 @@ int DU_handle_RESET_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint
     Error Indication
 */
 
-int DU_send_ERROR_INDICATION(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
+int DU_send_ERROR_INDICATION(sctp_assoc_t assoc_id, F1AP_F1AP_PDU_t *pdu_p)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -86,7 +88,7 @@ int DU_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint3
 */
 
 // SETUP REQUEST
-int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
+int DU_send_F1_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_setup_req_t *setup_req)
 {
   F1AP_F1AP_PDU_t       pdu= {0};
   uint8_t  *buffer;
@@ -298,7 +300,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
@@ -494,10 +496,8 @@ int DU_handle_F1_SETUP_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint3
     gNB-DU Configuration Update
 */
 
-//void DU_send_gNB_DU_CONFIGURATION_UPDATE(F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
-int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
-                                        instance_t du_mod_idP,
-                                        f1ap_setup_req_t *f1ap_setup_req) {
+int DU_send_gNB_DU_CONFIGURATION_UPDATE(sctp_assoc_t assoc_id, f1ap_setup_req_t *f1ap_setup_req)
+{
   F1AP_F1AP_PDU_t                     pdu= {0};
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
@@ -893,14 +893,16 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, sctp_assoc_t asso
   return 0;
 }
 
-int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
+int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(sctp_assoc_t assoc_id,
     f1ap_gnb_cu_configuration_update_failure_t *GNBCUConfigurationUpdateFailure) {
   AssertFatal(1==0,"received gNB CU CONFIGURATION UPDATE FAILURE with cause %d\n",
               GNBCUConfigurationUpdateFailure->cause);
 }
 
-int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-    f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(
+    sctp_assoc_t assoc_id,
+    f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge)
+{
   AssertFatal(GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated == 0,
               "%d cells failed to activate\n",
               GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated);
@@ -939,13 +941,13 @@ int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
-
-int DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
-    F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest) {
+int DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(sctp_assoc_t assoc_id,
+                                                 F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest)
+{
   AssertFatal(0, "Not implemented yet\n");
 }
 
