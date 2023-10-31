@@ -392,10 +392,11 @@ static int create_gNB_tasks(ngran_node_t node_type)
       return -1;
     }
 
-    LOG_I(NR_RRC, "Creating NR RRC gNB Task, that will also create TASKS\n");
-    if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
-      LOG_E(NR_RRC, "Create task for NR RRC gNB failed\n");
-      return -1;
+    if (!NODE_IS_DU(node_type)) {
+      if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
+        LOG_E(NR_RRC, "Create task for NR RRC gNB failed\n");
+        return -1;
+      }
     }
 
     // If CU
