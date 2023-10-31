@@ -170,6 +170,10 @@ void *F1AP_CU_task(void *arg) {
                                   &F1AP_SETUP_RESP(received_msg));
         break;
 
+      case F1AP_SETUP_FAILURE:
+        CU_send_F1_SETUP_FAILURE(assoc_id, &F1AP_SETUP_FAILURE(received_msg));
+        break;
+
       case F1AP_GNB_CU_CONFIGURATION_UPDATE: // from rrc
         CU_send_gNB_CU_CONFIGURATION_UPDATE(assoc_id,
                                             &F1AP_GNB_CU_CONFIGURATION_UPDATE(received_msg));

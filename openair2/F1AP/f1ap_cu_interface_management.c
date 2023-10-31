@@ -196,13 +196,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint3
     sys_info->sib1_length = DUsi->sIB1_message.size;
   }
 
-  if (req->num_cells_available > 0) {
-      itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
-  } else {
-    CU_send_F1_SETUP_FAILURE(assoc_id);
-    itti_free(TASK_CU_F1,message_p);
-    return -1;
-  }
+  itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
   
   return 0;
 }
@@ -309,7 +303,7 @@ int CU_send_F1_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_setup_resp_t *f1ap_set
   return 0;
 }
 
-int CU_send_F1_SETUP_FAILURE(sctp_assoc_t assoc_id)
+int CU_send_F1_SETUP_FAILURE(sctp_assoc_t assoc_id, const f1ap_setup_failure_t *fail)
 {
   LOG_D(F1AP, "CU_send_F1_SETUP_FAILURE\n");
   F1AP_F1AP_PDU_t           pdu= {0};
