@@ -435,13 +435,12 @@ typedef struct nr_lcordered_info_s {
 /*!\brief Top level UE MAC structure */
 typedef struct {
   NR_UE_L2_STATE_t state;
-  int                             servCellIndex;
-  long                            physCellId;
-  ////  MAC config
-  int                             first_sync_frame;
-  bool                            get_sib1;
-  bool                            get_otherSI;
-  NR_MIB_t                        *mib;
+  int servCellIndex;
+  long physCellId;
+  int first_sync_frame;
+  bool get_sib1;
+  bool get_otherSI;
+  NR_MIB_t *mib;
   struct NR_SI_SchedulingInfo *si_SchedulingInfo;
   int si_window_start;
   ssb_list_info_t ssb_list;

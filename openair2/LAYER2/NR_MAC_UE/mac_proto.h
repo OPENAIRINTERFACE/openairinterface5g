@@ -39,6 +39,12 @@
 #define NR_DL_MAX_DAI                            (4)                      /* TS 38.213 table 9.1.3-1 Value of counter DAI for DCI format 1_0 and 1_1 */
 #define NR_DL_MAX_NB_CW                          (2)                      /* number of downlink code word */
 
+#define updateMACie(destination, origin, type) {  \
+  type *tmp = origin;                             \
+  origin = destination;                           \
+  destination = tmp;                              \
+}                                                 \
+
 /**\brief initialize the field in nr_mac instance
    \param module_id      module id */
 void nr_ue_init_mac(module_id_t module_idP);

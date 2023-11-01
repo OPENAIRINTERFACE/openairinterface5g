@@ -167,6 +167,7 @@ void nr_ue_init_mac(module_id_t module_idP)
   mac->get_sib1 = false;
   mac->get_otherSI = false;
   mac->phy_config_request_sent = false;
+  memset(&mac->phy_config, 0, sizeof(mac->phy_config));
   mac->state = UE_NOT_SYNC;
   mac->si_window_start = -1;
   mac->servCellIndex = 0;
