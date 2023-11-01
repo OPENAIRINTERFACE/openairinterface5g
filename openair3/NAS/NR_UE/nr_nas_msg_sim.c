@@ -916,48 +916,47 @@ static void send_nas_uplink_data_req(instance_t instance, const as_nas_info_t *i
 
 static void parse_allowed_nssai(nr_nas_msg_snssai_t nssaiList[8], const uint8_t *buf, const uint32_t len)
 {
-  int offset = 0;
   int nssai_cnt = 0;
-  while (offset < len) {
-    int length = *(buf + offset);
+  const uint8_t *end = buf + len;
+  while (buf < end) {
+    const int length = *buf++;
     nr_nas_msg_snssai_t *nssai = nssaiList + nssai_cnt;
-    nssai->sd = 0xFFFFFF;
+    nssai->sd = 0xffffff;
 
     switch (length) {
       case 1:
-        nssai->sst = *(buf + offset + 1);
-        offset += 2;
+        nssai->sst = *buf++;
         nssai_cnt++;
         break;
 
       case 2:
-        nssai->sst = *(buf + offset + 1);
-        nssai->hplmn_sst = *(buf + offset + 2);
-        offset += 3;
+        nssai->sst = *buf++;
+        nssai->hplmn_sst = *buf++;
         nssai_cnt++;
         break;
 
       case 4:
-        nssai->sst = *(buf + offset + 1);
-        nssai->sd = 0xFFFFFF & (*(buf + offset + 4) | (*(buf + offset + 3) << 8) | (*(buf + offset + 2) << 16));
-        offset += 5;
+        nssai->sst = *buf++;
+        nssai->sd = 0xffffff & (buf[2] | buf[1] << 8 | buf[0] << 16);
+        buf += 3;
         nssai_cnt++;
         break;
 
       case 5:
-        nssai->sst = *(buf + offset + 1);
-        nssai->sd = 0xFFFFFF & (*(buf + offset + 4) | (*(buf + offset + 3) << 8) | (*(buf + offset + 2) << 16));
-        nssai->hplmn_sst = *(buf + offset + 5);
-        offset += 6;
+        nssai->sst = *buf++;
+        nssai->sd = 0xffffff & (buf[2] | buf[1] << 8 | buf[0] << 16);
+        buf += 3;
+        nssai->hplmn_sst = *buf++;
         nssai_cnt++;
         break;
 
       case 8:
-        nssai->sst = *(buf + offset + 1);
-        nssai->sd = 0xFFFFFF & (*(buf + offset + 4) | (*(buf + offset + 3) << 8) | (*(buf + offset + 2) << 16));
-        nssai->hplmn_sst = *(buf + offset + 5);
-        nssai->hplmn_sd = 0xFFFFFF & (*(buf + offset + 8) | (*(buf + offset + 7) << 8) | (*(buf + offset + 6) << 16));
-        offset += 9;
+        nssai->sst = *buf++;
+        nssai->sd = 0xffffff & (buf[2] | buf[1] << 8 | buf[0] << 16);
+        buf += 3;
+        nssai->hplmn_sst = *buf++;
+        nssai->hplmn_sd = 0xffffff & (buf[2] | buf[1] << 8 | buf[0] << 16);
+        buf += 3;
         nssai_cnt++;
         break;
 
@@ -968,6 +967,14 @@ static void parse_allowed_nssai(nr_nas_msg_snssai_t nssaiList[8], const uint8_t 
   }
 }
 
+static inline uint16_t ntohs_unaligned(const uint8_t *v)
+{
+  // sanitize may complain on unaligned access, even if it works on Intel/AMD
+  uint16_t tmp;
+  memcpy(&tmp, v, sizeof(tmp));
+  return ntohs(tmp);
+}
+
 /* Extract Allowed NSSAI from Regestration Accept according to
    3GPP TS 24.501 Table 8.2.7.1.1
 */
@@ -976,38 +983,33 @@ static void get_allowed_nssai(nr_nas_msg_snssai_t nssai[8], const uint8_t *pdu_b
   if ((pdu_buffer == NULL) || (pdu_length <= 0))
     return;
 
-  int offset = 1 + 1 + 1 + 2; // Mandatory fields offset
+  const uint8_t *end = pdu_buffer + pdu_length;
+  pdu_buffer += 1 + 1 + 1 + 2; // Mandatory fields offset
   if (((nas_msg_header_t *)(pdu_buffer))->choice.security_protected_nas_msg_header_t.security_header_type > 0) {
-    offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+    pdu_buffer += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
   }
 
-  bool unknown_IEI_found = false;
-
   /* optional fields */
-  int length = 0;
-  while ((offset < pdu_length) && !unknown_IEI_found) {
-    int type = *(pdu_buffer + offset);
+  while (pdu_buffer < end) {
+    const int type = *pdu_buffer++;
     switch (type) {
       case 0x77: // 5GS mobile identity
-        length = (*(pdu_buffer + offset + 1) << 8) | *(pdu_buffer + offset + 2);
-        offset += (length + 1 + 2); // 1: type, 2: length
+        pdu_buffer += ntohs_unaligned(pdu_buffer) + sizeof(uint16_t);
         break;
 
       case 0x4A: // PLMN list
       case 0x54: // 5GS tracking area identity
-        length = *((uint8_t *)(pdu_buffer + offset + 1));
-        offset += (length + 1 + 1); // 1: type, 2: length
+        pdu_buffer += *pdu_buffer + 1; // offset length + 1 byte which contains the length
         break;
 
       case 0x15: // allowed NSSAI
-        length = *((uint8_t *)(pdu_buffer + offset + 1));
-        parse_allowed_nssai(nssai, pdu_buffer + offset + 2, length);
-        offset += (length + 1 + 1); // 1: type, 2: length
+        const int length = *pdu_buffer++;
+        parse_allowed_nssai(nssai, pdu_buffer, length);
         break;
 
       default:
-        LOG_E(NAS, "This NAS IEI is not handled when extracting list of allowed NSSAI\n");
-        unknown_IEI_found = true;
+        LOG_W(NAS, "This NAS IEI is not handled when extracting list of allowed NSSAI\n");
+        pdu_buffer = end;
         break;
     }
   }
