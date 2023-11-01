@@ -73,6 +73,16 @@
 #define PAYLOAD_CONTAINER_LENGTH_MIN                       3
 #define PAYLOAD_CONTAINER_LENGTH_MAX                       65537
 
+/* List of allowed NSSAI from NAS messaging. */
+typedef struct {
+  int sst;
+  int hplmn_sst;
+  int sd;
+  int hplmn_sd;
+} nr_nas_msg_snssai_t;
+
+extern nr_nas_msg_snssai_t nas_allowed_nssai[8];
+
 /* Security Key for SA UE */
 typedef struct {
   uint8_t kausf[32];
@@ -170,13 +180,6 @@ typedef struct {
     uint16_t                payload_container_length;
     fgs_sm_nas_msg_header_t sm_nas_msg_header;
 } dl_nas_transport_t;
-
-typedef struct {
-  int sst;
-  int hplmn_sst;
-  int sd;
-  int hplmn_sd;
-} nr_nas_msg_snssai_t;
 
 nr_ue_nas_t *get_ue_nas_info(module_id_t module_id);
 void generateRegistrationRequest(as_nas_info_t *initialNasMsg, nr_ue_nas_t *nas);
