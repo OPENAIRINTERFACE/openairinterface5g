@@ -49,75 +49,75 @@ adb_ue_2:
 
 amarisoft_ue:
   Host: amariue
-  InitScript: /root/2023-06-10/lteue-linux-2023-06-10/lteue /root/oaicicd/ran_sa_aw2s_asue/aw2s-multi-20897-2x2.cfg &
-  TermScript: /root/2023-06-10/libs/ws.js -t 10 127.0.0.1:9002 '{"message":"quit"}' || killall -KILL lteue-avx2
+  InitScript: /root/lteue-linux-2023-10-27/ue/lteue /root/oaicicd/ran_sa_aw2s_asue/aw2s-multi-20897-2x2.cfg &
+  TermScript: /root/2023-10-27/libs/ws.js -t 10 127.0.0.1:9002 '{"message":"quit"}' || killall -KILL lteue-avx2
 amarisoft_ue_1:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":1}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":1}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":1}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":1}'
   NetworkScript: ip netns exec ue1 ip a show dev pdn0
   CmdPrefix: ip netns exec ue1
   MTU: 1500
 amarisoft_ue_2:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":2}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":2}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":2}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":2}'
   NetworkScript: ip netns exec ue2 ip a show dev pdn0
   CmdPrefix: ip netns exec ue2
   MTU: 1500
 amarisoft_ue_3:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":3}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":3}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":3}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":3}'
   NetworkScript: ip netns exec ue3 ip a show dev pdn0
   CmdPrefix: ip netns exec ue3
   MTU: 1500
 amarisoft_ue_4:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":4}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":4}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":4}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":4}'
   NetworkScript: ip netns exec ue4 ip a show dev pdn0
   CmdPrefix: ip netns exec ue4
   MTU: 1500
 amarisoft_ue_5:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":5}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":5}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":5}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":5}'
   NetworkScript: ip netns exec ue5 ip a show dev pdn0
   CmdPrefix: ip netns exec ue5
   MTU: 1500
 amarisoft_ue_6:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":6}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":6}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":6}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":6}'
   NetworkScript: ip netns exec ue6 ip a show dev pdn0
   CmdPrefix: ip netns exec ue6
   MTU: 1500
 amarisoft_ue_7:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":7}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":7}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":7}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":7}'
   NetworkScript: ip netns exec ue7 ip a show dev pdn0
   CmdPrefix: ip netns exec ue7
   MTU: 1500
 amarisoft_ue_8:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":8}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":8}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":8}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":8}'
   NetworkScript: ip netns exec ue8 ip a show dev pdn0
   CmdPrefix: ip netns exec ue8
   MTU: 1500
 amarisoft_ue_9:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":9}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":9}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":9}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":9}'
   NetworkScript: ip netns exec ue9 ip a show dev pdn0
   CmdPrefix: ip netns exec ue9
   MTU: 1500
 amarisoft_ue_10:
   Host: amariue
-  AttachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":10}'
-  DetachScript: /root/2023-06-10/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":10}'
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":10}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":10}'
   NetworkScript: ip netns exec ue10 ip a show dev pdn0
   CmdPrefix: ip netns exec ue10
   MTU: 1500
