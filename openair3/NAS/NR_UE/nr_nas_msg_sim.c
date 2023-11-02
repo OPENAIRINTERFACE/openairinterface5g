@@ -985,6 +985,7 @@ static void get_allowed_nssai(nr_nas_msg_snssai_t nssai[8], const uint8_t *pdu_b
   /* optional fields */
   while (pdu_buffer < end) {
     const int type = *pdu_buffer++;
+    int length = 0;
     switch (type) {
       case 0x77: // 5GS mobile identity
         pdu_buffer += ntoh_int16_buf(pdu_buffer) + sizeof(uint16_t);
@@ -996,7 +997,7 @@ static void get_allowed_nssai(nr_nas_msg_snssai_t nssai[8], const uint8_t *pdu_b
         break;
 
       case 0x15: // allowed NSSAI
-        const int length = *pdu_buffer++;
+        length = *pdu_buffer++;
         parse_allowed_nssai(nssai, pdu_buffer, length);
         break;
 
