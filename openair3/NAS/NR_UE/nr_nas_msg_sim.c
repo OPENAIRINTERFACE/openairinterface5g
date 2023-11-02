@@ -968,14 +968,6 @@ static void parse_allowed_nssai(nr_nas_msg_snssai_t nssaiList[8], const uint8_t 
   }
 }
 
-static inline uint16_t ntohs_unaligned(const uint8_t *v)
-{
-  // sanitize may complain on unaligned access, even if it works on Intel/AMD
-  uint16_t tmp;
-  memcpy(&tmp, v, sizeof(tmp));
-  return ntohs(tmp);
-}
-
 /* Extract Allowed NSSAI from Regestration Accept according to
    3GPP TS 24.501 Table 8.2.7.1.1
 */
@@ -995,7 +987,7 @@ static void get_allowed_nssai(nr_nas_msg_snssai_t nssai[8], const uint8_t *pdu_b
     const int type = *pdu_buffer++;
     switch (type) {
       case 0x77: // 5GS mobile identity
-        pdu_buffer += ntohs_unaligned(pdu_buffer) + sizeof(uint16_t);
+        pdu_buffer += ntoh_int16_buf(pdu_buffer) + sizeof(uint16_t);
         break;
 
       case 0x4A: // PLMN list
