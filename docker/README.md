@@ -114,6 +114,23 @@ ran-base            latest              5c9c02a5b4a8        1 minute ago        
 
 Note that the steps are identical for `rocky-linux`.
 
+You can also create `address-sanitizer` version of the ran-build image. This is only available for the Ubuntu-20 version.
+
+```bash
+docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.ubuntu20 --build-arg "SANITIZE_OPTION=--sanitize" .
+```
+
+After building:
+
+```bash
+docker image ls
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+ran-build           latest              f2633a7f5102        1 minute ago        8.78GB
+...
+```
+
+Note that the image is much bigger.
+
 ## 3.3. Building any target image ##
 
 For example, the eNB:
@@ -140,6 +157,14 @@ docker image prune --force
 ```
 
 Note that the steps are identical for `rocky-linux`.
+
+If you have used the sanitizer option, then you should also pass it when building the target image:
+
+```bash
+docker build --target oai-gnb --tag oai-gnb:latest --file docker/Dockerfile.gNB.ubuntu20 --build-arg "SANITIZE_OPTION=--sanitize" .
+```
+
+Normally the target image will be around 200 Mbytes bigger.
 
 # 4. Building using `podman` under Red Hat Entreprise Linux 8.2 #
 
