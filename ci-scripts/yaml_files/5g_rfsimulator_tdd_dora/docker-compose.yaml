@@ -6,6 +6,7 @@ services:
         container_name: rfsim5g-oai-gnb
         environment:
             USE_ADDITIONAL_OPTIONS: --do-ra --rfsim --rfsimulator.wait_timeout 20 --noS1 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         networks:
             public_net:
                 ipv4_address: 192.168.71.140
@@ -24,6 +25,7 @@ services:
         container_name: rfsim5g-oai-nr-ue
         environment:
             USE_ADDITIONAL_OPTIONS: --do-ra --rfsim --noS1 --reconfig-file etc/rrc/reconfig.raw --rbconfig-file etc/rrc/rbconfig.raw --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         volumes:
             - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
             - rrc.config:/opt/oai-nr-ue/etc/rrc/

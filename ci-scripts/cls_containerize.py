@@ -1070,6 +1070,12 @@ class Containerize():
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			# Maybe we've only pulled sanitized versions of oai-gnb and oai-nr-ue
+			if image == 'oai-gnb' or image == 'oai-nr-ue':
+				ret = myCmd.run(f'docker image inspect oai-ci/{tagToUse}', reportNonZero=False)
+				if ret.returncode != 0:
+					tagToUse = tagToUse.replace('oai-gnb', 'oai-gnb-asan')
+					tagToUse = tagToUse.replace('oai-nr-ue', 'oai-nr-ue-asan')
 			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@oai-ci/{tagToUse}@" docker-compose-ci.yml'
 			myCmd.run(cmd, silent=self.displayedNewTags)
 		self.displayedNewTags = True
@@ -1211,6 +1217,15 @@ class Containerize():
 		myCmd.run(cmd, silent=self.displayedNewTags)
 		for image in IMAGES:
 			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			# Maybe we've only pulled sanitized versions of oai-gnb and oai-nr-ue
+			if image == 'oai-gnb' or image == 'oai-nr-ue':
+				ret = myCmd.run(f'docker image inspect oai-ci/{tagToUse}', reportNonZero=False)
+				if ret.returncode != 0:
+					tagToUse = tagToUse.replace('oai-gnb', 'oai-gnb-asan')
+					tagToUse = tagToUse.replace('oai-nr-ue', 'oai-nr-ue-asan')
+					logging.debug(f'Using sanitized version of {image} with {tagToUse}')
+			if image == 'oai-gnb-asan' or image == 'oai-nr-ue-asan':
+				continue
 			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@oai-ci/{tagToUse}@" docker-compose-ci.yml'
 			myCmd.run(cmd, silent=self.displayedNewTags)
 		self.displayedNewTags = True
