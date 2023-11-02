@@ -55,7 +55,8 @@ static void cu_task_handle_sctp_association_ind(instance_t instance,
 {
   // save the assoc id
   f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
-  f1ap_cu_data->assoc_id         = sctp_new_association_ind->assoc_id;
+  // we don't need the assoc_id, subsequent messages (the first being F1 Setup
+  // Request), will deliver the assoc_id
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
 }

@@ -76,11 +76,11 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   }
 
   // save the assoc id
-  f1ap_du_data->assoc_id         = sctp_new_association_resp->assoc_id;
+  f1ap_du_data->du.assoc_id = sctp_new_association_resp->assoc_id;
   f1ap_du_data->sctp_in_streams  = sctp_new_association_resp->in_streams;
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
   /* setup parameters for F1U and start the server */
-  DU_send_F1_SETUP_REQUEST(f1ap_du_data->assoc_id, &f1ap_du_data->setupReq);
+  DU_send_F1_SETUP_REQUEST(f1ap_du_data->du.assoc_id, &f1ap_du_data->setupReq);
 }
 
 void du_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {
@@ -102,7 +102,7 @@ void *F1AP_DU_task(void *arg) {
     MessageDef *msg = NULL;
     itti_receive_msg(TASK_DU_F1, &msg);
     instance_t myInstance=ITTI_MSG_DESTINATION_INSTANCE(msg);
-    sctp_assoc_t assoc_id = getCxt(0) != NULL ? getCxt(0)->assoc_id : 0;
+    sctp_assoc_t assoc_id = getCxt(0) != NULL ? getCxt(0)->du.assoc_id : 0;
     LOG_D(F1AP, "DU Task Received %s for instance %ld: sending SCTP messages via assoc_id %d\n", ITTI_MSG_NAME(msg), myInstance, assoc_id);
     switch (ITTI_MSG_ID(msg)) {
       case F1AP_SETUP_REQ:
