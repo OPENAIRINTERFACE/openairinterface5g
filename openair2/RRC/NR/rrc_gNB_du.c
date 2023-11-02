@@ -91,6 +91,23 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
       rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
       return;
     }
+    // note: we assume that each DU contains only one cell; otherwise, we would
+    // need to check every cell in the requesting DU to any existing cell.
+    const f1ap_served_cell_info_t *exist_info = &it->setup_req->cell[0].info;
+    const f1ap_served_cell_info_t *new_info = &req->cell[0].info;
+    if (exist_info->nr_cellid == new_info->nr_cellid || exist_info->nr_pci == new_info->nr_pci) {
+      LOG_E(NR_RRC,
+            "existing DU %s on assoc_id %d already has cellID %ld/physCellId %d, rejecting requesting gNB-DU with cellID %ld/physCellId %d\n",
+            it->setup_req->gNB_DU_name,
+            it->assoc_id,
+            exist_info->nr_cellid,
+            exist_info->nr_pci,
+            new_info->nr_cellid,
+            new_info->nr_pci);
+      f1ap_setup_failure_t fail = {.cause = F1AP_CauseMisc_unspecified};
+      rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
+      return;
+    }
   }
 
   // if there is no system info or no SIB1 and we run in SA mode, we cannot handle it
