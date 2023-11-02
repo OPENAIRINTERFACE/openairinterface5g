@@ -941,11 +941,13 @@ static uint8_t pack_ul_tti_request_prach_pdu(nfapi_nr_prach_pdu_t *prach_pdu, ui
   prach_pdu->beamforming.dig_bf_interface = 0;
 
   if (prach_pdu->beamforming.prgs_list == NULL) {
-    prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs, sizeof(*prach_pdu->beamforming.prgs_list));
+    prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs == 0 ? 1 : prach_pdu->beamforming.num_prgs,
+                                              sizeof(*prach_pdu->beamforming.prgs_list));
   }
   if (prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list == NULL) {
     prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list =
-        calloc(prach_pdu->beamforming.dig_bf_interface, sizeof(*prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
+        calloc(prach_pdu->beamforming.dig_bf_interface == 0 ? 1 : prach_pdu->beamforming.dig_bf_interface,
+               sizeof(*prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
   }
   prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = 0;
 
@@ -4771,11 +4773,13 @@ static uint8_t unpack_ul_tti_request_prach_pdu(void *tlv, uint8_t **ppReadPacked
   }
   // TODO: ignoring beamforming tlv for now
   if (prach_pdu->beamforming.prgs_list == NULL) {
-    prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs, sizeof(*prach_pdu->beamforming.prgs_list));
+    prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs == 0 ? 1 : prach_pdu->beamforming.num_prgs,
+                                              sizeof(*prach_pdu->beamforming.prgs_list));
   }
   if (prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list == NULL) {
     prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list =
-        calloc(prach_pdu->beamforming.dig_bf_interface, sizeof(*prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
+        calloc(prach_pdu->beamforming.dig_bf_interface == 0 ? 1 : prach_pdu->beamforming.dig_bf_interface,
+               sizeof(*prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
   }
   // Pack RX Beamforming PDU
   if (!(pull16(ppReadPackedMsg, &prach_pdu->beamforming.num_prgs, end)
