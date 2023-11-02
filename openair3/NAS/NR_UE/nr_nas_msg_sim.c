@@ -52,6 +52,7 @@
 #include <openair1/SIMULATION/ETH_TRANSPORT/proto.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 #include "openair3/SECU/nas_stream_eia2.h"
+#include "openair3/UTILS/conversions.h"
 
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
@@ -937,14 +938,14 @@ static void parse_allowed_nssai(nr_nas_msg_snssai_t nssaiList[8], const uint8_t 
 
       case 4:
         nssai->sst = *buf++;
-        nssai->sd = 0xffffff & (buf[2] | buf[1] << 8 | buf[0] << 16);
+        nssai->sd = 0xffffff & ntoh_int24_buf(buf);
         buf += 3;
         nssai_cnt++;
         break;
 
       case 5:
         nssai->sst = *buf++;
-        nssai->sd = 0xffffff & (buf[2] | buf[1] << 8 | buf[0] << 16);
+        nssai->sd = 0xffffff & ntoh_int24_buf(buf);
         buf += 3;
         nssai->hplmn_sst = *buf++;
         nssai_cnt++;
@@ -952,10 +953,10 @@ static void parse_allowed_nssai(nr_nas_msg_snssai_t nssaiList[8], const uint8_t 
 
       case 8:
         nssai->sst = *buf++;
-        nssai->sd = 0xffffff & (buf[2] | buf[1] << 8 | buf[0] << 16);
+        nssai->sd = 0xffffff & ntoh_int24_buf(buf);
         buf += 3;
         nssai->hplmn_sst = *buf++;
-        nssai->hplmn_sd = 0xffffff & (buf[2] | buf[1] << 8 | buf[0] << 16);
+        nssai->hplmn_sd = 0xffffff & ntoh_int24_buf(buf);
         buf += 3;
         nssai_cnt++;
         break;
