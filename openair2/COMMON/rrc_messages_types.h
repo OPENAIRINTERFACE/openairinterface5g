@@ -441,7 +441,6 @@ typedef nas_release_ind_t       NasConnReleaseInd;
 typedef ul_info_transfer_cnf_t  NasUlDataCnf;
 typedef dl_info_transfer_ind_t  NasDlDataInd;
 
-typedef nas_pdu_session_req_t NasPduSessionReq;
 // eNB: realtime -> RRC messages
 typedef struct rrc_subframe_process_s {
   protocol_ctxt_t ctxt;
