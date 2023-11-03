@@ -2822,6 +2822,9 @@ void nr_mac_release_ue(gNB_MAC_INST *mac, int rnti)
   // MAC context, decode the PDU, find the C-RNTI MAC CE, and then throw the
   // newly created context away. See also in _nr_rx_sdu() and commit 93f59a3c6e56f
   if (du_exists_f1_ue_data(rnti)) {
+    // unlock the scheduler temporarily to prevent possible deadlocks with
+    // du_remove_f1_ue_data() (and also while sending the message to RRC)
+    NR_SCHED_UNLOCK(&mac->sched_lock);
     f1_ue_data_t ue_data = du_get_f1_ue_data(rnti);
     f1ap_ue_context_release_complete_t complete = {
       .gNB_CU_ue_id = ue_data.secondary_ue,
@@ -2830,6 +2833,7 @@ void nr_mac_release_ue(gNB_MAC_INST *mac, int rnti)
     mac->mac_rrc.ue_context_release_complete(&complete);
 
     du_remove_f1_ue_data(rnti);
+    NR_SCHED_LOCK(&mac->sched_lock);
   }
 }
 
