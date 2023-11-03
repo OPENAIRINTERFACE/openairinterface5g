@@ -2499,10 +2499,6 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
   {
     const gNB_RRC_UE_t *ue_ctxt = &ue_context_p->ue_context;
     f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_ctxt->rrc_ue_id);
-    /* currently, we support only one DU. If we support multiple, need to
-     * search for the DU corresponding to this UE here */
-    const nr_rrc_du_container_t *du = rrc->du;
-    DevAssert(du != NULL);
 
     fprintf(f,
             "UE %d CU UE ID %d DU UE ID %d RNTI %04x random identity %016lx",
@@ -2524,7 +2520,10 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
       fprintf(f, "    PDU session %d ID %d status %s\n", nb_pdu, pdu->param.pdusession_id, get_pdusession_status_text(pdu->status));
     }
 
-    if (ue_ctxt->UE_Capability_nr) {
+    /* currently, we support only one DU. If we support multiple, need to
+     * search for the DU corresponding to this UE here */
+    const nr_rrc_du_container_t *du = rrc->du;
+    if (du != NULL && ue_ctxt->UE_Capability_nr) {
       AssertFatal(du->setup_req->num_cells_available == 1, "only one cell supported at the moment\n");
       const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
       fprintf(f,
