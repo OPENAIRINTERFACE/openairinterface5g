@@ -317,7 +317,6 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint
   F1AP_F1SetupResponseIEs_t *ie;
   int TransactionId = -1;
   int num_cells_to_activate = 0;
-  F1AP_Cells_to_be_Activated_List_Item_t *cell;
   f1ap_setup_resp_t resp = {0};
 
   for (int i=0; i < in->protocolIEs.list.count; i++) {
@@ -365,7 +364,8 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint
                       "cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject");
           AssertFatal(cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item,
                       "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
-          cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
+          F1AP_Cells_to_be_Activated_List_Item_t *cell =
+              &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
           TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity,
                           resp.cells_to_activate[i].plmn.mcc,
                           resp.cells_to_activate[i].plmn.mnc,
@@ -377,6 +377,8 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint
                 cell->nRCGI.nRCellIdentity.buf[3],
                 cell->nRCGI.nRCellIdentity.buf[4]);
           BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity, resp.cells_to_activate[i].nr_cellid);
+          if (cell->nRPCI != NULL)
+            resp.cells_to_activate[i].nrpci = *cell->nRPCI;
           F1AP_ProtocolExtensionContainer_10696P112_t *ext = (F1AP_ProtocolExtensionContainer_10696P112_t *)cell->iE_Extensions;
 
           if (ext==NULL)
