@@ -175,20 +175,20 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
     rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0;
   }
 
+  NR_UE_ServingCell_Info_t *sc_info = &mac->sc_info;
   // loop over RNTI type and configure resource allocation for DCI
   for (int i = 0; i < rel15->num_dci_options; i++) {
     rel15->ss_type_options[i] = ss->searchSpaceType->present;
     const int dci_format = rel15->dci_format_options[i];
     uint16_t alt_size = 0;
     if(current_DL_BWP) {
-
       // computing alternative size for padding
       dci_pdu_rel15_t temp_pdu;
       if(dci_format == NR_DL_DCI_FORMAT_1_0)
         alt_size =
             nr_dci_size(current_DL_BWP,
                         current_UL_BWP,
-                        mac->crossCarrierSchedulingConfig,
+                        sc_info,
                         mac->pdsch_HARQ_ACK_Codebook,
                         &temp_pdu,
                         NR_UL_DCI_FORMAT_0_0,
@@ -202,7 +202,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
         alt_size =
             nr_dci_size(current_DL_BWP,
                         current_UL_BWP,
-                        mac->crossCarrierSchedulingConfig,
+                        sc_info,
                         mac->pdsch_HARQ_ACK_Codebook,
                         &temp_pdu,
                         NR_DL_DCI_FORMAT_1_0,
@@ -216,7 +216,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
 
     rel15->dci_length_options[i] = nr_dci_size(current_DL_BWP,
                                                current_UL_BWP,
-                                               mac->crossCarrierSchedulingConfig,
+                                               sc_info,
                                                mac->pdsch_HARQ_ACK_Codebook,
                                                &mac->def_dci_pdu_rel15[dl_config->slot][dci_format],
                                                dci_format,

@@ -825,9 +825,7 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
 
-    const NR_SIB1_t *sib1 = cc->sib1 ? cc->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-    config_uldci(sib1,
-                 scc,
+    config_uldci(NULL,
                  pusch_pdu,
                  &uldci_payload,
                  NULL,
@@ -836,8 +834,7 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
                  1, // Not toggling NDI in msg3 retransmissions
                  ul_bwp);
 
-    fill_dci_pdu_rel15(scc,
-                       ra->CellGroup,
+    fill_dci_pdu_rel15(NULL, // parameter not needed for DCI 0_0
                        &ra->DL_BWP,
                        ul_bwp,
                        dci_pdu,
@@ -1363,8 +1360,7 @@ static void nr_generate_Msg2(module_id_t module_idP,
           pdcch_pdu_rel15->StartSymbolIndex,
           pdcch_pdu_rel15->DurationSymbols);
 
-    fill_dci_pdu_rel15(scc,
-                       ra->CellGroup,
+    fill_dci_pdu_rel15(NULL, // parameter not needed for DCI 1_0
                        dl_bwp,
                        &ra->UL_BWP,
                        &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
@@ -1586,8 +1582,7 @@ static void prepare_dl_pdus(gNB_MAC_INST *nr_mac,
         pdcch_pdu_rel15->DurationSymbols,
         pdsch_pdu_rel15->BWPSize);
 
-  fill_dci_pdu_rel15(scc,
-                     ra->CellGroup,
+  fill_dci_pdu_rel15(NULL, // parameter not needed for DCI 1_0
                      dl_bwp,
                      &ra->UL_BWP,
                      &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],

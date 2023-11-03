@@ -2075,13 +2075,11 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
 
   NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[0].ServingCellConfigCommon;
   NR_UEs_t *UE_info = &nr_mac->UE_info;
-  const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
   UE_iterator( UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     if (sched_ctrl->ul_failure && !get_softmodem_params()->phy_test)
       continue;
 
-    NR_CellGroupConfig_t *cg = UE->CellGroup;
     NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
     UE->mac_stats.ul.current_bytes = 0;
@@ -2281,10 +2279,11 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
     pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(sched_pusch->tb_size<<3,sched_pusch->R);
-    if(current_BWP->pusch_servingcellconfig &&
-       current_BWP->pusch_servingcellconfig->rateMatching) {
+
+    NR_UE_ServingCell_Info_t *sc_info = &UE->sc_info;
+    if(sc_info->rateMatching_PUSCH) {
       // TBS_LBRM according to section 5.4.2.1 of 38.212
-      long *maxMIMO_Layers = current_BWP->pusch_servingcellconfig->ext1->maxMIMO_Layers;
+      long *maxMIMO_Layers = sc_info->maxMIMO_Layers_PUSCH;
       if (!maxMIMO_Layers)
         maxMIMO_Layers = current_BWP->pusch_Config->maxRank;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
@@ -2373,8 +2372,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
 
-    config_uldci(sib1,
-                 scc,
+    config_uldci(&UE->sc_info,
                  pusch_pdu,
                  &uldci_payload,
                  &sched_ctrl->srs_feedback,
@@ -2383,8 +2381,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
                  cur_harq->ndi,
                  current_BWP);
 
-    fill_dci_pdu_rel15(scc,
-                       cg,
+    fill_dci_pdu_rel15(&UE->sc_info,
                        &UE->current_DL_BWP,
                        current_BWP,
                        dci_pdu,

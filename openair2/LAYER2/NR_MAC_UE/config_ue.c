@@ -744,11 +744,7 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
   }
 
   if(spCellConfigDedicated) {
-    UL_BWP->supplementaryUplink = spCellConfigDedicated->supplementaryUplink;
     UL_BWP->csi_MeasConfig = spCellConfigDedicated->csi_MeasConfig ? spCellConfigDedicated->csi_MeasConfig->choice.setup : NULL;
-    UL_BWP->pusch_servingcellconfig =
-        spCellConfigDedicated->uplinkConfig && spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig ? spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL;
-    DL_BWP->pdsch_servingcellconfig = spCellConfigDedicated->pdsch_ServingCellConfig ? spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup : NULL;
 
     if (spCellConfigDedicated->firstActiveDownlinkBWP_Id)
       DL_BWP->bwp_id = *spCellConfigDedicated->firstActiveDownlinkBWP_Id;
@@ -1013,6 +1009,109 @@ void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroupConfig_
   }
 }
 
+void configure_servingcell_info(NR_UE_ServingCell_Info_t *sc_info,
+                                NR_ServingCellConfig_t *scd)
+{
+  if (scd->supplementaryUplink)
+    updateMACie(sc_info->supplementaryUplink,
+                scd->supplementaryUplink,
+                NR_UplinkConfig_t);
+  if (scd->crossCarrierSchedulingConfig)
+    updateMACie(sc_info->crossCarrierSchedulingConfig,
+                scd->crossCarrierSchedulingConfig,
+                NR_CrossCarrierSchedulingConfig_t);
+  if (scd->pdsch_ServingCellConfig) {
+    switch (scd->pdsch_ServingCellConfig->present) {
+      case NR_SetupRelease_PDSCH_ServingCellConfig_PR_NOTHING :
+        break;
+      case NR_SetupRelease_PDSCH_ServingCellConfig_PR_release :
+        // release all configurations
+        if (sc_info->pdsch_CGB_Transmission) {
+          ASN_STRUCT_FREE(asn_DEF_NR_PDSCH_CodeBlockGroupTransmission,
+                          sc_info->pdsch_CGB_Transmission);
+          sc_info->pdsch_CGB_Transmission = NULL;
+        }
+        if (sc_info->xOverhead_PDSCH) {
+          free(sc_info->xOverhead_PDSCH);
+          sc_info->xOverhead_PDSCH = NULL;
+        }
+        if (sc_info->maxMIMO_Layers_PDSCH) {
+          free(sc_info->maxMIMO_Layers_PDSCH);
+          sc_info->maxMIMO_Layers_PDSCH = NULL;
+        }
+        break;
+      case NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup : {
+        NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = scd->pdsch_ServingCellConfig->choice.setup;
+        if (pdsch_servingcellconfig->codeBlockGroupTransmission)
+          handleMACsetuprelease(sc_info->pdsch_CGB_Transmission,
+                                pdsch_servingcellconfig->codeBlockGroupTransmission,
+                                NR_PDSCH_CodeBlockGroupTransmission_t,
+                                asn_DEF_NR_PDSCH_CodeBlockGroupTransmission);
+        updateMACie(sc_info->xOverhead_PDSCH,
+                    pdsch_servingcellconfig->xOverhead,
+                    long);
+        if (pdsch_servingcellconfig->ext1 &&
+            pdsch_servingcellconfig->ext1->maxMIMO_Layers)
+          updateMACie(sc_info->maxMIMO_Layers_PDSCH,
+                      pdsch_servingcellconfig->ext1->maxMIMO_Layers,
+                      long);
+        break;
+      }
+      default :
+        AssertFatal(false, "Invalid case\n");
+    }
+  }
+  if (scd->uplinkConfig &&
+      scd->uplinkConfig->pusch_ServingCellConfig) {
+    switch (scd->uplinkConfig->pusch_ServingCellConfig->present) {
+      case NR_SetupRelease_PUSCH_ServingCellConfig_PR_NOTHING :
+        break;
+      case NR_SetupRelease_PUSCH_ServingCellConfig_PR_release :
+        // release all configurations
+        if (sc_info->pusch_CGB_Transmission) {
+          ASN_STRUCT_FREE(asn_DEF_NR_PUSCH_CodeBlockGroupTransmission,
+                          sc_info->pusch_CGB_Transmission);
+          sc_info->pdsch_CGB_Transmission = NULL;
+        }
+        if (sc_info->rateMatching_PUSCH) {
+          free(sc_info->rateMatching_PUSCH);
+          sc_info->rateMatching_PUSCH = NULL;
+        }
+        if (sc_info->xOverhead_PUSCH) {
+          free(sc_info->xOverhead_PUSCH);
+          sc_info->xOverhead_PUSCH = NULL;
+        }
+        if (sc_info->maxMIMO_Layers_PUSCH) {
+          free(sc_info->maxMIMO_Layers_PUSCH);
+          sc_info->maxMIMO_Layers_PUSCH = NULL;
+        }
+        break;
+      case NR_SetupRelease_PUSCH_ServingCellConfig_PR_setup : {
+        NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig = scd->uplinkConfig->pusch_ServingCellConfig->choice.setup;
+        updateMACie(sc_info->rateMatching_PUSCH,
+                    pusch_servingcellconfig->rateMatching,
+                    long);
+        updateMACie(sc_info->xOverhead_PUSCH,
+                    pusch_servingcellconfig->xOverhead,
+                    long);
+        if (pusch_servingcellconfig->ext1 &&
+            pusch_servingcellconfig->ext1->maxMIMO_Layers)
+          updateMACie(sc_info->maxMIMO_Layers_PUSCH,
+                      pusch_servingcellconfig->ext1->maxMIMO_Layers,
+                      long);
+        if (pusch_servingcellconfig->codeBlockGroupTransmission)
+          handleMACsetuprelease(sc_info->pusch_CGB_Transmission,
+                                pusch_servingcellconfig->codeBlockGroupTransmission,
+                                NR_PUSCH_CodeBlockGroupTransmission_t,
+                                asn_DEF_NR_PUSCH_CodeBlockGroupTransmission);
+        break;
+      }
+      default :
+        AssertFatal(false, "Invalid case\n");
+    }
+  }
+}
+
 void nr_rrc_mac_config_req_cg(module_id_t module_id,
                               int cc_idP,
                               NR_CellGroupConfig_t *cell_group_config)
@@ -1029,14 +1128,15 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
 
   if (cell_group_config->spCellConfig) {
     NR_SpCellConfig_t *spCellConfig = cell_group_config->spCellConfig;
+    NR_ServingCellConfig_t *scd = spCellConfig->spCellConfigDedicated;
     mac->servCellIndex = spCellConfig->servCellIndex ? *spCellConfig->servCellIndex : 0;
     if (spCellConfig->reconfigurationWithSync) {
       LOG_A(NR_MAC, "Received reconfigurationWithSync\n");
       handle_reconfiguration_with_sync(mac, module_id, cc_idP, spCellConfig->reconfigurationWithSync);
     }
-    if (spCellConfig->spCellConfigDedicated) {
-      mac->crossCarrierSchedulingConfig = spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig;
-      configure_current_BWP(mac, NULL, spCellConfig->spCellConfigDedicated);
+    if (scd) {
+      configure_servingcell_info(&mac->sc_info, scd);
+      configure_current_BWP(mac, NULL, scd);
     }
   }
 

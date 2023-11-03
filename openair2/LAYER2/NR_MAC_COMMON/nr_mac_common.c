@@ -2865,7 +2865,7 @@ uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
 }
 
 // #define DEBUG_SRS_RESOURCE_IND
-uint8_t compute_srs_resource_indicator(NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig,
+uint8_t compute_srs_resource_indicator(long *maxMIMO_Layers,
                                        NR_PUSCH_Config_t *pusch_Config,
                                        NR_SRS_Config_t *srs_config,
                                        nr_srs_feedback_t *srs_feedback,
@@ -2930,15 +2930,10 @@ uint8_t compute_srs_resource_indicator(NR_PUSCH_ServingCellConfig_t *pusch_servi
       // - otherwise, Lmax is given by the maximum number of layers for PUSCH supported by the UE for the serving cell
       // for non-codebook based operation.
       int Lmax = 0;
-      if (pusch_servingcellconfig != NULL) {
-        if (pusch_servingcellconfig->ext1->maxMIMO_Layers != NULL) {
-          Lmax = *pusch_servingcellconfig->ext1->maxMIMO_Layers;
-        } else {
-          AssertFatal(1 == 0, "MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
-        }
-      } else {
+      if (maxMIMO_Layers != NULL)
+        Lmax = *maxMIMO_Layers;
+      else
         AssertFatal(1 == 0, "MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
-      }
       int lmin = 0;
       int lsum = 0;
       int count = 0;
@@ -3278,7 +3273,7 @@ uint16_t get_rb_bwp_dci(nr_dci_format_t format,
 
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
-                     const NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig,
+                     const NR_UE_ServingCell_Info_t *sc_info,
                      long pdsch_HARQ_ACK_Codebook,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
@@ -3329,13 +3324,13 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       /// fixed: Format identifier 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2, ULSCH indicator 1 --16
       size += 16;
       // Carrier indicator
-      if (crossCarrierSchedulingConfig != NULL) {
-        dci_pdu->carrier_indicator.nbits=3;
+      if (sc_info->crossCarrierSchedulingConfig) {
+        dci_pdu->carrier_indicator.nbits = 3;
         size += dci_pdu->carrier_indicator.nbits;
       }
       // UL/SUL indicator
-      if (UL_BWP->supplementaryUplink != NULL) {
-        dci_pdu->carrier_indicator.nbits=1;
+      if (sc_info->supplementaryUplink) {
+        dci_pdu->carrier_indicator.nbits = 1;
         size += dci_pdu->ul_sul_indicator.nbits;
       }
       // BWP Indicator
@@ -3384,12 +3379,12 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       size += dci_pdu->dai[0].nbits;
       LOG_D(NR_MAC, "DAI1 nbits %d\n", dci_pdu->dai[0].nbits);
       // 2nd DAI
-      if (DL_BWP->pdsch_servingcellconfig && DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
+      if (sc_info->pdsch_CGB_Transmission) {
         dci_pdu->dai[1].nbits = 2;
         size += dci_pdu->dai[1].nbits;
       }
       // SRS resource indicator
-      dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(UL_BWP->pusch_servingcellconfig, pusch_Config, srs_config, NULL, NULL);
+      dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(sc_info->maxMIMO_Layers_PUSCH, pusch_Config, srs_config, NULL, NULL);
       size += dci_pdu->srs_resource_indicator.nbits;
       LOG_D(NR_MAC, "dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
@@ -3417,7 +3412,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       size += dci_pdu->antenna_ports.nbits;
       LOG_D(NR_MAC,"dci_pdu->antenna_ports.nbits = %d\n",dci_pdu->antenna_ports.nbits);
       // SRS request
-      if (UL_BWP->supplementaryUplink == NULL)
+      if (sc_info->supplementaryUplink == NULL)
         dci_pdu->srs_request.nbits = 2;
       else
         dci_pdu->srs_request.nbits = 3;
@@ -3430,8 +3425,8 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         }
       }
       // CBGTI
-      if (UL_BWP->pusch_servingcellconfig && UL_BWP->pusch_servingcellconfig->codeBlockGroupTransmission != NULL) {
-        int num = UL_BWP->pusch_servingcellconfig->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock;
+      if (sc_info->pusch_CGB_Transmission) {
+        int num = sc_info->pusch_CGB_Transmission->maxCodeBlockGroupsPerTransportBlock;
         dci_pdu->cbgti.nbits = 2 + (num<<1);
         size += dci_pdu->cbgti.nbits;
       }
@@ -3482,8 +3477,8 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       // Format identifier
       size = 1;
       // Carrier indicator
-      if (crossCarrierSchedulingConfig != NULL) {
-        dci_pdu->carrier_indicator.nbits=3;
+      if (sc_info->crossCarrierSchedulingConfig) {
+        dci_pdu->carrier_indicator.nbits = 3;
         size += dci_pdu->carrier_indicator.nbits;
       }
 
@@ -3576,20 +3571,20 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         size += dci_pdu->transmission_configuration_indication.nbits;
       }
       // SRS request
-      if (UL_BWP->supplementaryUplink == NULL)
+      if (sc_info->supplementaryUplink == NULL)
         dci_pdu->srs_request.nbits = 2;
       else
         dci_pdu->srs_request.nbits = 3;
       size += dci_pdu->srs_request.nbits;
       // CBGTI
-      if (DL_BWP->pdsch_servingcellconfig && DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
-        uint8_t maxCBGperTB = (DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
+      if (sc_info->pdsch_CGB_Transmission) {
+        uint8_t maxCBGperTB = (sc_info->pdsch_CGB_Transmission->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
         long *maxCWperDCI_rrc = pdsch_Config->maxNrofCodeWordsScheduledByDCI;
         uint8_t maxCW = (maxCWperDCI_rrc == NULL) ? 1 : *maxCWperDCI_rrc;
         dci_pdu->cbgti.nbits = maxCBGperTB * maxCW;
         size += dci_pdu->cbgti.nbits;
         // CBGFI
-        if (DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission->choice.setup->codeBlockGroupFlushIndicator) {
+        if (sc_info->pdsch_CGB_Transmission->codeBlockGroupFlushIndicator) {
           dci_pdu->cbgfi.nbits = 1;
           size += dci_pdu->cbgfi.nbits;
         }

@@ -569,7 +569,6 @@ typedef struct NR_UE_DL_BWP {
   uint16_t initial_BWPStart;
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_PDSCH_Config_t *pdsch_Config;
-  NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig;
   uint8_t mcsTableIdx;
   nr_dci_format_t dci_format;
   int bw_tbslbrm;
@@ -585,13 +584,11 @@ typedef struct NR_UE_UL_BWP {
   uint16_t initial_BWPSize;
   uint16_t initial_BWPStart;
   NR_RACH_ConfigCommon_t *rach_ConfigCommon;
-  NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig;
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_ConfiguredGrantConfig_t *configuredGrantConfig;
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;
   NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon;
-  NR_UplinkConfig_t *supplementaryUplink;
   NR_CSI_MeasConfig_t *csi_MeasConfig;
   NR_SRS_Config_t *srs_Config;
   long *msg3_DeltaPreamble;
@@ -601,6 +598,21 @@ typedef struct NR_UE_UL_BWP {
   int bw_tbslbrm;
   int max_fb_time;
 } NR_UE_UL_BWP_t;
+
+// non-BWP seving cell configuration
+typedef struct {
+  NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig;
+  NR_SRS_CarrierSwitching_t *carrierSwitching;
+  NR_UplinkConfig_t *supplementaryUplink;
+  NR_PDSCH_CodeBlockGroupTransmission_t *pdsch_CGB_Transmission;
+  long *xOverhead_PDSCH;
+  long *nrofHARQ_ProcessesForPDSCH;
+  long *maxMIMO_Layers_PDSCH;
+  NR_PUSCH_CodeBlockGroupTransmission_t *pusch_CGB_Transmission;
+  long *rateMatching_PUSCH;
+  long *xOverhead_PUSCH;
+  long *maxMIMO_Layers_PUSCH;
+} NR_UE_ServingCell_Info_t;
 
 typedef enum {
   defaultA = 0,

@@ -71,7 +71,7 @@ bool is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, s
 
 bool is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slotP, frame_type_t frame_type);
 
-uint8_t compute_srs_resource_indicator(NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig,
+uint8_t compute_srs_resource_indicator(long *maxMIMO_Layers,
                                        NR_PUSCH_Config_t *pusch_Config,
                                        NR_SRS_Config_t *srs_config,
                                        nr_srs_feedback_t *srs_feedback,
@@ -95,7 +95,7 @@ NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda
 
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
-                     const NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig,
+                     const NR_UE_ServingCell_Info_t *sc_info,
                      long pdsch_HARQ_ACK_Codebook,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,

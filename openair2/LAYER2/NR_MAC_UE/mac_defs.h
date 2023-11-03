@@ -445,6 +445,7 @@ typedef struct {
   int si_window_start;
   ssb_list_info_t ssb_list;
 
+  NR_UE_ServingCell_Info_t sc_info;
   NR_UE_DL_BWP_t current_DL_BWP;
   NR_UE_UL_BWP_t current_UL_BWP;
   NR_BWP_DownlinkCommon_t *bwp_dlcommon;
@@ -464,7 +465,6 @@ typedef struct {
   NR_SearchSpace_t *search_space_zero;
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon;
-  NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig;
 
   bool phy_config_request_sent;
   frame_type_t frame_type;

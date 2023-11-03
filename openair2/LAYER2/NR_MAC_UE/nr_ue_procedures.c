@@ -715,7 +715,11 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
   int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
   if (R > 0) {
     dlsch_pdu->targetCodeRate = R;
-    int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
+    int nb_rb_oh;
+    if (mac->sc_info.xOverhead_PDSCH)
+      nb_rb_oh = 6 * (1 + *mac->sc_info.xOverhead_PDSCH);
+    else
+      nb_rb_oh = 0;
     int nb_re_dmrs = ((dlsch_pdu->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
     dlsch_pdu->TBS = nr_compute_tbs(dlsch_pdu->qamModOrder,
                                     R,
@@ -1133,7 +1137,13 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
     if ((dlsch_pdu->dmrs_ports >> i) & 0x01)
       Nl += 1;
   }
-  int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
+
+  NR_UE_ServingCell_Info_t *sc_info = &mac->sc_info;
+  int nb_rb_oh;
+  if (sc_info->xOverhead_PDSCH)
+    nb_rb_oh = 6 * (1 + *sc_info->xOverhead_PDSCH);
+  else
+    nb_rb_oh = 0;
   int nb_re_dmrs = ((dmrs_type == NULL) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
 
   NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
@@ -1158,9 +1168,8 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   }
 
   // TBS_LBRM according to section 5.4.2.1 of 38.212
-  long *maxMIMO_Layers = current_DL_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
-  AssertFatal(maxMIMO_Layers != NULL, "Option with max MIMO layers not configured is not supported\n");
-  int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+  AssertFatal(sc_info->maxMIMO_Layers_PDSCH != NULL, "Option with max MIMO layers not configured is not supported\n");
+  int nl_tbslbrm = *sc_info->maxMIMO_Layers_PDSCH < 4 ? *sc_info->maxMIMO_Layers_PDSCH : 4;
   dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, current_DL_BWP->bw_tbslbrm, nl_tbslbrm);
   /*PTRS configuration */
   dlsch_pdu->pduBitmap = 0;
@@ -1306,7 +1315,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            fapi_nr_ul_config_pucch_pdu *pucch_pdu)
 {
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UE_ServingCell_Info_t *sc_info = &mac->sc_info;
   NR_PUCCH_FormatConfig_t *pucchfmt;
   long *pusch_id = NULL;
   long *id0 = NULL;
@@ -1363,7 +1372,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         mac->pdsch_HARQ_ACK_Codebook != NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) {
       LOG_E(MAC,"PUCCH Unsupported cell group configuration\n");
       return;
-    } else if (current_DL_BWP && current_DL_BWP->pdsch_servingcellconfig && current_DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
+    } else if (sc_info->pdsch_CGB_Transmission) {
       LOG_E(MAC,"PUCCH Unsupported code block group for serving cell config\n");
       return;
     }

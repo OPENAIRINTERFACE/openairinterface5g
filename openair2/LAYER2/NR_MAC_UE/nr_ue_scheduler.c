@@ -429,6 +429,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   int rnti_type = get_rnti_type(mac, rnti);
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_ServingCell_Info_t *sc_info = &mac->sc_info;
 
   // Common configuration
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
@@ -657,14 +658,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                                pusch_config_pdu->start_symbol_index,
                                mac->dmrs_TypeA_Position);
 
-    // Num PRB Overhead from PUSCH-ServingCellConfig
-    if (current_UL_BWP->pusch_servingcellconfig && current_UL_BWP->pusch_servingcellconfig->xOverhead)
-      N_PRB_oh = *current_UL_BWP->pusch_servingcellconfig->xOverhead;
+    if (sc_info->xOverhead_PUSCH)
+      N_PRB_oh = 6 * (1 + *sc_info->xOverhead_PUSCH);
     else
       N_PRB_oh = 0;
 
-    if (current_UL_BWP->pusch_servingcellconfig && current_UL_BWP->pusch_servingcellconfig->rateMatching) {
-      long *maxMIMO_Layers = current_UL_BWP->pusch_servingcellconfig->ext1->maxMIMO_Layers;
+    if (sc_info->rateMatching_PUSCH) {
+      long *maxMIMO_Layers = sc_info->maxMIMO_Layers_PUSCH;
       if (!maxMIMO_Layers)
         maxMIMO_Layers = pusch_Config ? pusch_Config->maxRank : NULL;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
