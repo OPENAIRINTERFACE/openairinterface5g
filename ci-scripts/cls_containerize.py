@@ -384,10 +384,10 @@ class Containerize():
 			if self.host == 'Ubuntu':
 				imageNames.append(('oai-lte-ru', 'lteRU', 'oai-lte-ru', ''))
 				# Building again the 5G images with Address Sanitizer
-				imageNames.append(('ran-build', 'build', 'ran-build-asan', '--build-arg "SANITIZE_OPTION=--sanitize"'))
-				imageNames.append(('oai-gnb', 'gNB', 'oai-gnb-asan', '--build-arg "SANITIZE_OPTION=--sanitize"'))
-				imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue-asan', '--build-arg "SANITIZE_OPTION=--sanitize"'))
-				imageNames.append(('oai-nr-cuup', 'nr-cuup', 'oai-nr-cuup-asan', '--build-arg "SANITIZE_OPTION=--sanitize"'))
+				imageNames.append(('ran-build', 'build', 'ran-build-asan', '--build-arg "BUILD_OPTION=--sanitize"'))
+				imageNames.append(('oai-gnb', 'gNB', 'oai-gnb-asan', '--build-arg "BUILD_OPTION=--sanitize"'))
+				imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue-asan', '--build-arg "BUILD_OPTION=--sanitize"'))
+				imageNames.append(('oai-nr-cuup', 'nr-cuup', 'oai-nr-cuup-asan', '--build-arg "BUILD_OPTION=--sanitize"'))
 		result = re.search('build_cross_arm64', self.imageKind)
 		if result is not None:
 			self.dockerfileprefix = '.ubuntu20.cross-arm64'
@@ -707,10 +707,11 @@ class Containerize():
 		orgTag = 'develop'
 		if self.ranAllowMerge:
 			orgTag = 'ci-temp'
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup', 'oai-gnb-asan', 'oai-nr-ue-asan', 'oai-nr-cuup-asan']
-		for image in imageNames:
+		for image in IMAGES:
 			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
 			mySSH.command(f'docker image tag {image}:{orgTag} {imagePrefix}/{tagToUse}', '\$', 5)
+			if re.search('Error response from daemon: No such image:', mySSH.getBefore()) is not None:
+				continue
 			mySSH.command(f'docker push {imagePrefix}/{tagToUse}', '\$', 120)
 			if re.search(': digest:', mySSH.getBefore()) is None:
 				logging.debug(mySSH.getBefore())
@@ -1070,12 +1071,16 @@ class Containerize():
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
-			# Maybe we've only pulled sanitized versions of oai-gnb and oai-nr-ue
-			if image == 'oai-gnb' or image == 'oai-nr-ue':
-				ret = myCmd.run(f'docker image inspect oai-ci/{tagToUse}', reportNonZero=False)
+			# In the scenario, for 5G images, we have the choice of either pulling normal images
+			# or -asan images. We need to detect which kind we did pull.
+			if image == 'oai-gnb' or image == 'oai-nr-ue' or image == 'oai-nr-cuup':
+				ret = myCmd.run(f'docker image inspect oai-ci/{tagToUse}', reportNonZero=False, silent=self.displayedNewTags)
 				if ret.returncode != 0:
 					tagToUse = tagToUse.replace('oai-gnb', 'oai-gnb-asan')
 					tagToUse = tagToUse.replace('oai-nr-ue', 'oai-nr-ue-asan')
+					tagToUse = tagToUse.replace('oai-nr-cuup', 'oai-nr-cuup-asan')
+					if not self.displayedNewTags:
+						logging.debug(f'\u001B[1m Using sanitized version of {image} with {tagToUse}\u001B[0m')
 			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@oai-ci/{tagToUse}@" docker-compose-ci.yml'
 			myCmd.run(cmd, silent=self.displayedNewTags)
 		self.displayedNewTags = True
@@ -1214,21 +1219,7 @@ class Containerize():
 		logPath = '../cmake_targets/log/' + ymlPath[1]
 		myCmd = cls_cmd.LocalCmd(d = self.yamlPath[0])
 		cmd = 'cp docker-compose.y*ml docker-compose-ci.yml'
-		myCmd.run(cmd, silent=self.displayedNewTags)
-		for image in IMAGES:
-			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
-			# Maybe we've only pulled sanitized versions of oai-gnb and oai-nr-ue
-			if image == 'oai-gnb' or image == 'oai-nr-ue':
-				ret = myCmd.run(f'docker image inspect oai-ci/{tagToUse}', reportNonZero=False)
-				if ret.returncode != 0:
-					tagToUse = tagToUse.replace('oai-gnb', 'oai-gnb-asan')
-					tagToUse = tagToUse.replace('oai-nr-ue', 'oai-nr-ue-asan')
-					logging.debug(f'Using sanitized version of {image} with {tagToUse}')
-			if image == 'oai-gnb-asan' or image == 'oai-nr-ue-asan':
-				continue
-			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@oai-ci/{tagToUse}@" docker-compose-ci.yml'
-			myCmd.run(cmd, silent=self.displayedNewTags)
-		self.displayedNewTags = True
+		myCmd.run(cmd)
 
 		# check which containers are running for log recovery later
 		cmd = 'docker-compose -f docker-compose-ci.yml ps --all'

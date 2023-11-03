@@ -32,7 +32,7 @@ FROM ran-build:latest AS nr-ue-build
 
 #start from scratch for target executable
 FROM ubuntu:focal as oai-nr-ue
-ARG SANITIZE_OPTION
+ARG BUILD_OPTION
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Paris
 
@@ -58,7 +58,7 @@ RUN apt-get update && \
         iproute2 \
         iperf && \
 # if the --sanitize option was used to build, additional packages are required
-    /bin/bash -c 'if [[ "$SANITIZE_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+    /bin/bash -c 'if [[ "$BUILD_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         libasan5 \
         libubsan1; fi' && \
     rm -rf /var/lib/apt/lists/*

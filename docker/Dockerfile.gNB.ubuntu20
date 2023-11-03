@@ -32,7 +32,7 @@ FROM ran-build:latest AS gnb-build
 
 #start from scratch for target executable
 FROM ubuntu:focal as oai-gnb
-ARG SANITIZE_OPTION
+ARG BUILD_OPTION
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe
 
@@ -58,7 +58,7 @@ RUN apt-get update && \
         python3-requests \
         libusb-1.0-0 && \
 # if the --sanitize option was used to build, additional packages are required
-    /bin/bash -c 'if [[ "$SANITIZE_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+    /bin/bash -c 'if [[ "$BUILD_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         libasan5 \
         libubsan1 \
         liblapacke; fi' && \

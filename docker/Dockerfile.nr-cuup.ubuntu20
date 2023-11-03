@@ -31,7 +31,7 @@ FROM ran-build:latest AS gnb-build
 
 
 FROM ubuntu:focal as oai-nr-cuup
-ARG SANITIZE_OPTION
+ARG BUILD_OPTION
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe
 
@@ -42,7 +42,7 @@ RUN apt-get update && \
         libconfig9 \
         openssl && \
 # if the --sanitize option was used to build, additional packages are required
-    /bin/bash -c 'if [[ "$SANITIZE_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+    /bin/bash -c 'if [[ "$BUILD_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         libasan5 \
         libubsan1 \
         liblapacke; fi' && \
