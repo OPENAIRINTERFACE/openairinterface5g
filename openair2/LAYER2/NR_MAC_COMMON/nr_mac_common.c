@@ -3418,9 +3418,9 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         dci_pdu->srs_request.nbits = 3;
       size += dci_pdu->srs_request.nbits;
       // CSI request
-      if (UL_BWP->csi_MeasConfig != NULL) {
-        if (UL_BWP->csi_MeasConfig->reportTriggerSize != NULL) {
-          dci_pdu->csi_request.nbits = *UL_BWP->csi_MeasConfig->reportTriggerSize;
+      if (sc_info->csi_MeasConfig != NULL) {
+        if (sc_info->csi_MeasConfig->reportTriggerSize != NULL) {
+          dci_pdu->csi_request.nbits = *sc_info->csi_MeasConfig->reportTriggerSize;
           size += dci_pdu->csi_request.nbits;
         }
       }

@@ -2157,14 +2157,12 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, vo
   }
 }
 
-void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
-
-  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-
-  if (!current_UL_BWP->csi_MeasConfig)
+void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot)
+{
+  if (!mac->sc_info.csi_MeasConfig)
     return;
 
-  NR_CSI_MeasConfig_t *csi_measconfig = current_UL_BWP->csi_MeasConfig;
+  NR_CSI_MeasConfig_t *csi_measconfig = mac->sc_info.csi_MeasConfig;
 
   if (csi_measconfig->csi_IM_ResourceToAddModList == NULL)
     return;
@@ -2295,14 +2293,12 @@ uint8_t set_csirs_measurement_bitmap(NR_CSI_MeasConfig_t *csi_measconfig,
   return meas_bitmap;
 }
 
-void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
-
-  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-
-  if (!current_UL_BWP->csi_MeasConfig)
+void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot)
+{
+  if (!mac->sc_info.csi_MeasConfig)
     return;
 
-  NR_CSI_MeasConfig_t *csi_measconfig = current_UL_BWP->csi_MeasConfig;
+  NR_CSI_MeasConfig_t *csi_measconfig = mac->sc_info.csi_MeasConfig;
 
   if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList == NULL)
     return;

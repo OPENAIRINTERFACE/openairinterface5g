@@ -589,7 +589,6 @@ typedef struct NR_UE_UL_BWP {
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;
   NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon;
-  NR_CSI_MeasConfig_t *csi_MeasConfig;
   NR_SRS_Config_t *srs_Config;
   long *msg3_DeltaPreamble;
   long transform_precoding;
@@ -612,6 +611,8 @@ typedef struct {
   long *rateMatching_PUSCH;
   long *xOverhead_PUSCH;
   long *maxMIMO_Layers_PUSCH;
+  NR_CSI_MeasConfig_t *csi_MeasConfig;
+  NR_CSI_AperiodicTriggerStateList_t *aperiodicTriggerStateList;
 } NR_UE_ServingCell_Info_t;
 
 typedef enum {

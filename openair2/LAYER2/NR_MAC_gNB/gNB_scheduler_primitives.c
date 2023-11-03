@@ -2117,7 +2117,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     UL_BWP->pusch_Config = ubwpd->pusch_Config->choice.setup;
     UL_BWP->pucch_Config = ubwpd->pucch_Config->choice.setup;
     UL_BWP->srs_Config = ubwpd->srs_Config->choice.setup;
-    UL_BWP->csi_MeasConfig = servingCellConfig->csi_MeasConfig ? servingCellConfig->csi_MeasConfig->choice.setup : NULL;
   }
   else {
     DL_BWP->bwp_id = 0;
@@ -2126,7 +2125,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     DL_BWP->pdsch_Config = NULL;
     UL_BWP->pusch_Config = NULL;
     UL_BWP->pucch_Config = NULL;
-    UL_BWP->csi_MeasConfig = NULL;
     UL_BWP->configuredGrantConfig = NULL;
   }
 
@@ -2183,6 +2181,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   if(UE) {
     NR_UE_ServingCell_Info_t *sc_info = &UE->sc_info;
     if (servingCellConfig) {
+      if(servingCellConfig->csi_MeasConfig) {
+        sc_info->csi_MeasConfig = servingCellConfig->csi_MeasConfig->choice.setup;
+        compute_csi_bitlen (sc_info->csi_MeasConfig, UE->csi_report_template);
+      }
       if (servingCellConfig->pdsch_ServingCellConfig &&
           servingCellConfig->pdsch_ServingCellConfig->choice.setup) {
         NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = servingCellConfig->pdsch_ServingCellConfig->choice.setup;
@@ -2246,9 +2248,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                          (sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1 ?
                          NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) :
                          NR_UL_DCI_FORMAT_0_0;
-
-    if (UL_BWP->csi_MeasConfig)
-      compute_csi_bitlen (UL_BWP->csi_MeasConfig, UE->csi_report_template);
 
     set_max_fb_time(UL_BWP, DL_BWP);
     set_sched_pucch_list(sched_ctrl, UL_BWP, scc);
@@ -2574,7 +2573,6 @@ void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slo
 
   UE_iterator(UE_info->list, UE) {
     NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
-    NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
 
     // CSI-RS is common to all UEs in a given BWP
     // therefore we need to schedule only once per BWP
@@ -2587,9 +2585,10 @@ void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slo
       continue;
     }
 
-    if (!ul_bwp->csi_MeasConfig) continue;
+    if (!UE->sc_info.csi_MeasConfig)
+      continue;
 
-    NR_CSI_MeasConfig_t *csi_measconfig = ul_bwp->csi_MeasConfig;
+    NR_CSI_MeasConfig_t *csi_measconfig = UE->sc_info.csi_MeasConfig;
 
     // looking for the correct CSI-RS resource in current BWP
     NR_NZP_CSI_RS_ResourceSetId_t *nzp = NULL;

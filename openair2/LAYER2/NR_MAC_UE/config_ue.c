@@ -40,6 +40,7 @@
 #include "common/utils/nr/nr_common.h"
 #include "executables/softmodem-common.h"
 #include "SCHED_NR/phy_frame_config_nr.h"
+#include "oai_asn1.h"
 
 const long logicalChannelGroup0_NR = 0;
 typedef struct NR_LogicalChannelConfig__ul_SpecificParameters LcConfig_UlParamas_t;
@@ -744,8 +745,6 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
   }
 
   if(spCellConfigDedicated) {
-    UL_BWP->csi_MeasConfig = spCellConfigDedicated->csi_MeasConfig ? spCellConfigDedicated->csi_MeasConfig->choice.setup : NULL;
-
     if (spCellConfigDedicated->firstActiveDownlinkBWP_Id)
       DL_BWP->bwp_id = *spCellConfigDedicated->firstActiveDownlinkBWP_Id;
     if (spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id)
@@ -1009,9 +1008,328 @@ void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroupConfig_
   }
 }
 
-void configure_servingcell_info(NR_UE_ServingCell_Info_t *sc_info,
-                                NR_ServingCellConfig_t *scd)
+static void configure_csiconfig(NR_UE_ServingCell_Info_t *sc_info,
+                                struct NR_SetupRelease_CSI_MeasConfig *csi_MeasConfig_sr)
 {
+  switch (csi_MeasConfig_sr->present) {
+    case NR_SetupRelease_CSI_MeasConfig_PR_NOTHING :
+      break;
+    case NR_SetupRelease_CSI_MeasConfig_PR_release :
+      ASN_STRUCT_FREE(asn_DEF_NR_CSI_MeasConfig,
+                      sc_info->csi_MeasConfig);
+      sc_info->csi_MeasConfig = NULL;
+      break;
+    case NR_SetupRelease_CSI_MeasConfig_PR_setup :
+      if (!sc_info->csi_MeasConfig) {  // setup
+        updateMACie(sc_info->csi_MeasConfig,
+                    csi_MeasConfig_sr->choice.setup,
+                    NR_CSI_MeasConfig_t);
+      }
+      else { // modification
+        NR_CSI_MeasConfig_t *csi_MeasConfig = csi_MeasConfig_sr->choice.setup;
+        if (csi_MeasConfig->reportTriggerSize)
+          updateMACie(sc_info->csi_MeasConfig->reportTriggerSize,
+                      csi_MeasConfig->reportTriggerSize,
+                      long);
+        if (csi_MeasConfig->aperiodicTriggerStateList)
+          handleMACsetuprelease(sc_info->aperiodicTriggerStateList,
+                                csi_MeasConfig->aperiodicTriggerStateList,
+                                NR_CSI_AperiodicTriggerStateList_t,
+                                asn_DEF_NR_CSI_AperiodicTriggerStateList);
+        if (csi_MeasConfig->semiPersistentOnPUSCH_TriggerStateList)
+          handleMACsetuprelease(sc_info->csi_MeasConfig->semiPersistentOnPUSCH_TriggerStateList->choice.setup,
+                                csi_MeasConfig->semiPersistentOnPUSCH_TriggerStateList,
+                                NR_CSI_SemiPersistentOnPUSCH_TriggerStateList_t,
+                                asn_DEF_NR_CSI_SemiPersistentOnPUSCH_TriggerStateList);
+        // NZP-CSI-RS-Resources
+        if (csi_MeasConfig->nzp_CSI_RS_ResourceToReleaseList) {
+          for (int i = 0; i < csi_MeasConfig->nzp_CSI_RS_ResourceToReleaseList->list.count; i++) {
+            long id = *csi_MeasConfig->nzp_CSI_RS_ResourceToReleaseList->list.array[i];
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.array[j]->nzp_CSI_RS_ResourceId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.count)
+              asn_sequence_del(&sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list, j, 1);
+            else
+              LOG_E(NR_MAC, "Element not present in the list, impossible to release\n");
+          }
+        }
+        if (csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList) {
+          for (int i = 0; i < csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.count; i++) {
+            NR_NZP_CSI_RS_Resource_t *res = csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.array[i];
+            long id = res->nzp_CSI_RS_ResourceId;
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.array[j]->nzp_CSI_RS_ResourceId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.count) { // modify
+              NR_NZP_CSI_RS_Resource_t *mac_res = sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.array[j];
+              mac_res->resourceMapping = res->resourceMapping;
+              mac_res->powerControlOffset = res->powerControlOffset;
+              updateMACie(mac_res->powerControlOffsetSS,
+                          res->powerControlOffsetSS,
+                          long);
+              mac_res->scramblingID = res->scramblingID;
+              if (res->periodicityAndOffset)
+                updateMACie(mac_res->periodicityAndOffset,
+                            res->periodicityAndOffset,
+                            NR_CSI_ResourcePeriodicityAndOffset_t);
+              if (res->qcl_InfoPeriodicCSI_RS)
+                updateMACie(mac_res->qcl_InfoPeriodicCSI_RS,
+                            res->qcl_InfoPeriodicCSI_RS,
+                            NR_TCI_StateId_t);
+            }
+            else { // add
+              asn1cSequenceAdd(sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,
+                               NR_NZP_CSI_RS_Resource_t,
+                               nzp_csi_rs);
+              updateMACie(nzp_csi_rs, res, NR_NZP_CSI_RS_Resource_t);
+            }
+          }
+        }
+        // NZP-CSI-RS-ResourceSets
+        if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList) {
+          for (int i = 0; i < csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList->list.count; i++) {
+            long id = *csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList->list.array[i];
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[j]->nzp_CSI_ResourceSetId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count)
+              asn_sequence_del(&sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list, j, 1);
+            else
+              LOG_E(NR_MAC, "Element not present in the list, impossible to release\n");
+          }
+        }
+        if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList) {
+          for (int i = 0; i < csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count; i++) {
+            NR_NZP_CSI_RS_ResourceSet_t *res = csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[i];
+            long id = res->nzp_CSI_ResourceSetId;
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[j]->nzp_CSI_ResourceSetId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count) { // modify
+              NR_NZP_CSI_RS_ResourceSet_t *mac_res = sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[j];
+              updateMACie(mac_res, res, NR_NZP_CSI_RS_ResourceSet_t);
+            }
+            else { // add
+              asn1cSequenceAdd(sc_info->csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,
+                               NR_NZP_CSI_RS_ResourceSet_t,
+                               nzp_csi_rsset);
+              updateMACie(nzp_csi_rsset, res, NR_NZP_CSI_RS_ResourceSet_t);
+            }
+          }
+        }
+        // CSI-IM-Resource
+        if (csi_MeasConfig->csi_IM_ResourceToReleaseList) {
+          for (int i = 0; i < csi_MeasConfig->csi_IM_ResourceToReleaseList->list.count; i++) {
+            long id = *csi_MeasConfig->csi_IM_ResourceToReleaseList->list.array[i];
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list.array[j]->csi_IM_ResourceId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list.count)
+              asn_sequence_del(&sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list, j, 1);
+            else
+              LOG_E(NR_MAC, "Element not present in the list, impossible to release\n");
+          }
+        }
+        if (csi_MeasConfig->csi_IM_ResourceToAddModList) {
+          for (int i = 0; i < csi_MeasConfig->csi_IM_ResourceToAddModList->list.count; i++) {
+            NR_CSI_IM_Resource_t *res = csi_MeasConfig->csi_IM_ResourceToAddModList->list.array[i];
+            long id = res->csi_IM_ResourceId;
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list.array[j]->csi_IM_ResourceId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list.count) { // modify
+              NR_CSI_IM_Resource_t *mac_res = sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list.array[j];
+              if (res->csi_IM_ResourceElementPattern)
+                updateMACie(mac_res->csi_IM_ResourceElementPattern,
+                            res->csi_IM_ResourceElementPattern,
+                            struct NR_CSI_IM_Resource__csi_IM_ResourceElementPattern);
+              if (res->freqBand)
+                updateMACie(mac_res->freqBand,
+                            res->freqBand,
+                            NR_CSI_FrequencyOccupation_t);
+              if (res->periodicityAndOffset)
+                updateMACie(mac_res->periodicityAndOffset,
+                            res->periodicityAndOffset,
+                            NR_CSI_ResourcePeriodicityAndOffset_t);
+            }
+            else { // add
+              asn1cSequenceAdd(sc_info->csi_MeasConfig->csi_IM_ResourceToAddModList->list,
+                               NR_CSI_IM_Resource_t,
+                               csi_im);
+              updateMACie(csi_im, res, NR_CSI_IM_Resource_t);
+            }
+          }
+        }
+        // CSI-IM-ResourceSets
+        if (csi_MeasConfig->csi_IM_ResourceSetToReleaseList) {
+          for (int i = 0; i < csi_MeasConfig->csi_IM_ResourceSetToReleaseList->list.count; i++) {
+            long id = *csi_MeasConfig->csi_IM_ResourceSetToReleaseList->list.array[i];
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.array[j]->csi_IM_ResourceSetId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.count)
+              asn_sequence_del(&sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list, j, 1);
+            else
+              LOG_E(NR_MAC, "Element not present in the list, impossible to release\n");
+          }
+        }
+        if (csi_MeasConfig->csi_IM_ResourceSetToAddModList) {
+          for (int i = 0; i < csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.count; i++) {
+            NR_CSI_IM_ResourceSet_t *res = csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.array[i];
+            long id = res->csi_IM_ResourceSetId;
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.array[j]->csi_IM_ResourceSetId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.count) { // modify
+              NR_CSI_IM_ResourceSet_t *mac_res = sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list.array[j];
+              updateMACie(mac_res, res, NR_CSI_IM_ResourceSet_t);
+            }
+            else { // add
+              asn1cSequenceAdd(sc_info->csi_MeasConfig->csi_IM_ResourceSetToAddModList->list,
+                               NR_CSI_IM_ResourceSet_t,
+                               csi_im_set);
+              updateMACie(csi_im_set, res, NR_CSI_IM_ResourceSet_t);
+            }
+          }
+        }
+        // CSI-SSB-ResourceSets
+        if (csi_MeasConfig->csi_SSB_ResourceSetToReleaseList) {
+          for (int i = 0; i < csi_MeasConfig->csi_SSB_ResourceSetToReleaseList->list.count; i++) {
+            long id = *csi_MeasConfig->csi_SSB_ResourceSetToReleaseList->list.array[i];
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[j]->csi_SSB_ResourceSetId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count)
+              asn_sequence_del(&sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list, j, 1);
+            else
+              LOG_E(NR_MAC, "Element not present in the list, impossible to release\n");
+          }
+        }
+        if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList) {
+          for (int i = 0; i < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; i++) {
+            NR_CSI_SSB_ResourceSet_t *res = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[i];
+            long id = res->csi_SSB_ResourceSetId;
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[j]->csi_SSB_ResourceSetId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count) { // modify
+              NR_CSI_SSB_ResourceSet_t *mac_res = sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[j];
+              updateMACie(mac_res, res, NR_CSI_SSB_ResourceSet_t);
+            }
+            else { // add
+              asn1cSequenceAdd(sc_info->csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,
+                               NR_CSI_SSB_ResourceSet_t,
+                               csi_ssb_set);
+              updateMACie(csi_ssb_set, res, NR_CSI_SSB_ResourceSet_t);
+            }
+          }
+        }
+        // CSI-ResourceConfigs
+        if (csi_MeasConfig->csi_ResourceConfigToReleaseList) {
+          for (int i = 0; i < csi_MeasConfig->csi_ResourceConfigToReleaseList->list.count; i++) {
+            long id = *csi_MeasConfig->csi_ResourceConfigToReleaseList->list.array[i];
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[j]->csi_ResourceConfigId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list.count)
+              asn_sequence_del(&sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list, j, 1);
+            else
+              LOG_E(NR_MAC, "Element not present in the list, impossible to release\n");
+          }
+        }
+        if (csi_MeasConfig->csi_ResourceConfigToAddModList) {
+          for (int i = 0; i < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; i++) {
+            NR_CSI_ResourceConfig_t *res = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[i];
+            long id = res->csi_ResourceConfigId;
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[j]->csi_ResourceConfigId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list.count) { // modify
+              NR_CSI_ResourceConfig_t *mac_res = sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[j];
+              updateMACie(mac_res, res, NR_CSI_ResourceConfig_t);
+            }
+            else { // add
+              asn1cSequenceAdd(sc_info->csi_MeasConfig->csi_ResourceConfigToAddModList->list,
+                               NR_CSI_ResourceConfig_t,
+                               csi_config);
+              updateMACie(csi_config, res, NR_CSI_ResourceConfig_t);
+            }
+          }
+        }
+        // CSI-ReportConfigs
+        if (csi_MeasConfig->csi_ReportConfigToReleaseList) {
+          for (int i = 0; i < csi_MeasConfig->csi_ReportConfigToReleaseList->list.count; i++) {
+            long id = *csi_MeasConfig->csi_ReportConfigToReleaseList->list.array[i];
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list.array[j]->reportConfigId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list.count)
+              asn_sequence_del(&sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list, j, 1);
+            else
+              LOG_E(NR_MAC, "Element not present in the list, impossible to release\n");
+          }
+        }
+        if (csi_MeasConfig->csi_ReportConfigToAddModList) {
+          for (int i = 0; i < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; i++) {
+            NR_CSI_ReportConfig_t *res = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[i];
+            long id = res->reportConfigId;
+            int j;
+            for (j = 0; j < sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list.count; j++) {
+              if(id == sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list.array[j]->reportConfigId)
+                break;
+            }
+            if (j < sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list.count) { // modify
+              NR_CSI_ReportConfig_t *mac_res = sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list.array[j];
+              updateMACie(mac_res, res, NR_CSI_ReportConfig_t);
+            }
+            else { // add
+              asn1cSequenceAdd(sc_info->csi_MeasConfig->csi_ReportConfigToAddModList->list,
+                               NR_CSI_ReportConfig_t,
+                               csi_rep);
+              updateMACie(csi_rep, res, NR_CSI_ReportConfig_t);
+            }
+          }
+        }
+      }
+      break;
+    default :
+      AssertFatal(false, "Invalid case\n");
+  }
+}
+
+static void configure_servingcell_info(NR_UE_ServingCell_Info_t *sc_info,
+                                       NR_ServingCellConfig_t *scd)
+{
+  if (scd->csi_MeasConfig)
+    configure_csiconfig(sc_info, scd->csi_MeasConfig);
+
   if (scd->supplementaryUplink)
     updateMACie(sc_info->supplementaryUplink,
                 scd->supplementaryUplink,
