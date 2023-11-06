@@ -1245,7 +1245,7 @@ class Containerize():
 		fullStatus = True
 		if anyLogs:
 			# Analyzing log file(s)!
-			listOfPossibleRanContainers = ['enb', 'gnb', 'cu', 'du']
+			listOfPossibleRanContainers = ['enb*', 'gnb*', 'cu*', 'du*']
 			for container in listOfPossibleRanContainers:
 				filenames = './*-oai-' + container + '.log'
 				cmd = f'ls {filenames}'
