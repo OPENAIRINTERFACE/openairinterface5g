@@ -32,9 +32,8 @@
  000022
  000023
  000024
+ 000025
  020021
- 020022
- 030021
  100021
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
@@ -72,33 +71,33 @@
 
         <testCase id="000023">
                 <class>DeployGenObject</class>
-                <desc>Deploy OAI 5G DU RF sim SA</desc>
+                <desc>Deploy 3 OAI 5G DUs RF sim SA</desc>
                 <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>oai-du</services>
-                <nb_healthy>8</nb_healthy>
+                <services>oai-du oai-du2 oai-du3</services>
+                <nb_healthy>10</nb_healthy>
         </testCase>
 
         <testCase id="000024">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
                 <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>oai-nr-ue</services>
-                <nb_healthy>9</nb_healthy>
+                <services>oai-nr-ue oai-nr-ue2</services>
+                <nb_healthy>12</nb_healthy>
+        </testCase>
+
+        <testCase id="000025">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
+                <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
+                <services>oai-nr-ue3</services>
+                <nb_healthy>13</nb_healthy>
         </testCase>
 
         <testCase id="020021">
                 <class>Ping</class>
-                <desc>Ping ext-dn from NR-UE</desc>
-                <id>rfsim5g_ue</id>
-                <ping_args> -c 20 192.168.72.135</ping_args>
-                <ping_packetloss_threshold>5</ping_packetloss_threshold>
-        </testCase>
-
-        <testCase id="020022">
-                <class>Ping</class>
-                <desc>Ping NR-UE from ext-dn</desc>
-                <id>rfsim5g_ext_dn</id>
-                <ping_args>-c 20 12.1.1.2</ping_args>
+                <desc>Ping ext-dn from all NR-UEs</desc>
+                <id>rfsim5g_ue rfsim5g_ue2 rfsim5g_ue3</id>
+                <ping_args> -c 20 192.168.72.135 -i0.25</ping_args>
                 <ping_packetloss_threshold>5</ping_packetloss_threshold>
         </testCase>
 
