@@ -977,11 +977,11 @@ static void get_allowed_nssai(nr_nas_msg_snssai_t nssai[8], const uint8_t *pdu_b
     return;
 
   const uint8_t *end = pdu_buffer + pdu_length;
-  pdu_buffer += 1 + 1 + 1 + 2; // Mandatory fields offset
   if (((nas_msg_header_t *)(pdu_buffer))->choice.security_protected_nas_msg_header_t.security_header_type > 0) {
     pdu_buffer += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
   }
 
+  pdu_buffer += 1 + 1 + 1 + 2; // Mandatory fields offset
   /* optional fields */
   while (pdu_buffer < end) {
     const int type = *pdu_buffer++;
@@ -1009,15 +1009,24 @@ static void get_allowed_nssai(nr_nas_msg_snssai_t nssai[8], const uint8_t *pdu_b
   }
 }
 
-static void request_default_pdusession(int instance)
+static void request_default_pdusession(int instance, int nssai_idx)
 {
   MessageDef *message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_PDU_SESSION_REQ);
   NAS_PDU_SESSION_REQ(message_p).pdusession_id = 10; /* first or default pdu session */
   NAS_PDU_SESSION_REQ(message_p).pdusession_type = 0x91;
-  /* take the first allowed S-NSSAI for default PDU session */
-  NAS_PDU_SESSION_REQ(message_p).sst = nas_allowed_nssai[0].sst;
-  NAS_PDU_SESSION_REQ(message_p).sd = nas_allowed_nssai[0].sd;
+  NAS_PDU_SESSION_REQ(message_p).sst = nas_allowed_nssai[nssai_idx].sst;
+  NAS_PDU_SESSION_REQ(message_p).sd = nas_allowed_nssai[nssai_idx].sd;
   itti_send_msg_to_task(TASK_NAS_NRUE, instance, message_p);
+}
+
+static int get_user_nssai_idx(const nr_nas_msg_snssai_t allowed_nssai[8], const nr_ue_nas_t *nas)
+{
+  for (int i = 0; i < 8; i++) {
+    const nr_nas_msg_snssai_t *nssai = allowed_nssai + i;
+    if ((nas->uicc->nssai_sst == nssai->sst) && (nas->uicc->nssai_sd == nssai->sd))
+      return i;
+  }
+  return -1;
 }
 
 void *nas_nrue_task(void *args_p)
@@ -1119,7 +1128,12 @@ void *nas_nrue(void *args_p)
             LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
           }
 
-          request_default_pdusession(instance);
+          const int nssai_idx = get_user_nssai_idx(nas_allowed_nssai, nas);
+          if (nssai_idx < 0) {
+            LOG_E(NAS, "NSSAI parameters not match with allowed NSSAI. Couldn't request PDU session.\n");
+          } else {
+            request_default_pdusession(instance, nssai_idx);
+          }
         } else if (msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC) {
           capture_pdu_session_establishment_accept_msg(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
         }
@@ -1197,7 +1211,12 @@ void *nas_nrue(void *args_p)
               send_nas_uplink_data_req(instance, &initialNasMsg);
               LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
             }
-            request_default_pdusession(instance);
+            const int nssai_idx = get_user_nssai_idx(nas_allowed_nssai, nas);
+            if (nssai_idx < 0) {
+              LOG_E(NAS, "NSSAI parameters not match with allowed NSSAI. Couldn't request PDU session.\n");
+            } else {
+              request_default_pdusession(instance, nssai_idx);
+            }
             break;
           case FGS_DEREGISTRATION_ACCEPT:
             LOG_I(NAS, "received deregistration accept\n");
