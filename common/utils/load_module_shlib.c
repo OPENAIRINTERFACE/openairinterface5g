@@ -214,7 +214,7 @@ int load_module_version_shlib(char *modname, char *version, loader_shlibfunc_t *
       int j = 0;
       for (; j < shlib->numfunc; ++j) {
         if (shlib->funcarray[j].fptr == farray[i].fptr) {
-          int rc = strcmp(shlib->funcarray[i].fname, farray[i].fname);
+          int rc = strcmp(shlib->funcarray[j].fname, farray[i].fname);
           AssertFatal(rc == 0,
                       "reloading the same fptr with different fnames (%s, %s)\n",
                       shlib->funcarray[i].fname, farray[i].fname);
