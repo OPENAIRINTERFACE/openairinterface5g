@@ -275,7 +275,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   const int frame = proc->frame_rx;
   const int nr_slot_rx = proc->nr_slot_rx;
   const int gNB_id = proc->gNB_id;
-
   uint8_t slot = 0;
 
   int32_t codeword_TB0 = -1;
@@ -699,7 +698,7 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
   N_bundle = nb_rb_pdsch/L;
   C=N_bundle/R;
 
-  uint32_t *bundle_deint = malloc(N_bundle*sizeof(uint32_t));
+  uint32_t *bundle_deint = calloc(N_bundle, sizeof(uint32_t));
 
   printf("N_bundle %u L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
 

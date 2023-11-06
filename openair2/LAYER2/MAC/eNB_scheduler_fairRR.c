@@ -1648,7 +1648,6 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
             header_len_dcch += 2;
             UE_info->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DCCH1] += 1;
             UE_info->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[DCCH1] += sdu_lengths[num_sdus];
-            num_sdus++;
 #ifdef DEBUG_eNB_SCHEDULER
             LOG_T(MAC,
                   "[eNB %d][DCCH1] CC_id %d Got %d bytes :",
@@ -1660,6 +1659,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
             LOG_T(MAC, "\n");
 #endif
+            num_sdus++;
           }
         }
 

@@ -94,11 +94,9 @@ double dac_fixed_gain(double *s_re[2],
 
   int i;
   int aa;
-  double amp1_local,*amp1p;
+  double amp1_local = 0.0;
+  double *amp1p = (amp1 == NULL) ? &amp1_local : amp1;
   double amp = pow(10.0,.05*txpwr_dBm)/sqrt(nb_tx_antennas); //this is amp per tx antenna
-
-  if (amp1==NULL) amp1p = &amp1_local;
-  else            amp1p = amp1;
 
   if (do_amp_compute==1) {
     *amp1p = 0;
@@ -124,6 +122,7 @@ double dac_fixed_gain(double *s_re[2],
 
 #endif
 
+  AssertFatal(amp1p != NULL && *amp1p != 0.0, "Precondition to avoid UB\n");
   for (i=0; i<length; i++) {
     for (aa=0; aa<nb_tx_antennas; aa++) {
       s_re[aa][i] = amp*((double)(((short *)input[aa]))[((i+input_offset)<<1)])/(*amp1p); 

@@ -895,6 +895,8 @@ void nr_generate_pucch3_4(const PHY_VARS_NR_UE *ue,
    * n_id = N_ID_cell       if higher layer parameter not configured
    */
   uint8_t btilde[M_bit];
+  memset(btilde, 0, sizeof(btilde));
+  
   // rnti is given by the C-RNTI
   uint16_t rnti=pucch_pdu->rnti, n_id=0;
 #ifdef DEBUG_NR_PUCCH_TX
@@ -912,6 +914,8 @@ void nr_generate_pucch3_4(const PHY_VARS_NR_UE *ue,
    */
   // complex-valued symbol d(0)
   c16_t d[M_bit];
+  memset(d, 0, sizeof(d));
+
   uint16_t m_symbol = (M_bit%2==0) ? M_bit/2 : floor(M_bit/2)+1;
   const int16_t baseVal = (amp * ONE_OVER_SQRT2) >> 15;
 
@@ -962,6 +966,7 @@ void nr_generate_pucch3_4(const PHY_VARS_NR_UE *ue,
   // uint8_t nrofSymbols;
   // complex-valued symbol d(0)
   c16_t y_n[4 * M_bit]; // 4 is the maximum number n_SF_PUCCH_s, so is the maximunm size of y_n
+  memset(y_n, 0, sizeof(y_n));
   // Re part orthogonal sequences w_n(k) for PUCCH format 4 when N_SF_PUCCH4 = 2 (Table 6.3.2.6.3-1)
   // k={0,..11} n={0,1,2,3}
   // parameter PUCCH-F4-preDFT-OCC-index set of {0,1,2,3} -> n
@@ -1051,6 +1056,8 @@ void nr_generate_pucch3_4(const PHY_VARS_NR_UE *ue,
    * Implementing Transform pre-coding subclause 6.3.2.6.4
    */
   c16_t z[4 * M_bit]; // 4 is the maximum number n_SF_PUCCH_s
+  memset(z, 0 , sizeof(z));
+
 #define M_PI 3.14159265358979323846 // pi
   const int64_t base = round(32767 / sqrt(12 * nrofPRB));
   for (int l=0; l<floor((n_SF_PUCCH_s*m_symbol)/(12*nrofPRB)); l++) {

@@ -267,6 +267,7 @@ static int do_pss_sss_extract_nr(
     c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) // add flag to indicate extracting only PSS, only SSS, or both
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  AssertFatal(frame_parms->nb_antennas_rx > 0, "UB as sss_ext is not set to any value\n");
 
   for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     int pss_symbol = 0;
@@ -370,7 +371,9 @@ bool rx_sss_nr(PHY_VARS_NR_UE *ue,
 {
   uint8_t i;
   c16_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR];
+  memset(pss_ext, 0, NB_ANTENNAS_RX * LENGTH_SSS_NR * sizeof(c16_t));
   c16_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR];
+  memset(sss_ext, 0, NB_ANTENNAS_RX * LENGTH_SSS_NR * sizeof(c16_t));
   uint8_t Nid2 = GET_NID2(ue->common_vars.nid2);
   uint16_t Nid1;
   uint8_t phase;

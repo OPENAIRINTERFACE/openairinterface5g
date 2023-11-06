@@ -74,9 +74,10 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   }
 
   // filter position to reduce jitter
-  if (clear == 1)
+  if (clear == 1){
+    AssertFatal(max_pos > -1, "The result of the left shift is undefined if the left operand is negative");
     ue->max_pos_fil = max_pos << 15;
-  else
+  } else
     ue->max_pos_fil = ((ue->max_pos_fil * coef) >> 15) + (max_pos * ncoef);
 
   // do not filter to have proactive timing adjustment
