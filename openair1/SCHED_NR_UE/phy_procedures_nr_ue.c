@@ -132,7 +132,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
     dl_harq0 = &ue->dl_harq_processes[0][dlsch0->dlsch_config.harq_process_nbr];
     trace_NRpdu(DIRECTION_DOWNLINK,
 		b,
-		dl_harq0->tb_size / 8,
+		dlsch0->dlsch_config.TBS / 8,
 		t,
 		dlsch0->rnti,
 		proc->frame_rx,
@@ -148,7 +148,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
         rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.harq_pid = dlsch0->dlsch_config.harq_process_nbr;
         rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.ack_nack = dl_harq0->ack;
         rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = b;
-        rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dl_harq0->tb_size / 8;
+        rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->dlsch_config.TBS / 8;
       }
       if(dlsch1) {
         AssertFatal(1==0,"Second codeword currently not supported\n");
@@ -764,7 +764,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, NULL);
   nr_fill_rx_indication(&rx_ind, ind_type, ue, &dlsch[0], NULL, number_pdus, proc, NULL, p_b);
 
-  LOG_D(PHY, "DL PDU length in bits: %d, in bytes: %d \n", dl_harq0->tb_size, dl_harq0->tb_size / 8);
+  LOG_D(PHY, "DL PDU length in bits: %d, in bytes: %d \n", dlsch[0].dlsch_config.TBS, dlsch[0].dlsch_config.TBS / 8);
 
   stop_meas(&ue->dlsch_decoding_stats);
   if (cpumeas(CPUMEAS_GETSTATE))  {
@@ -814,7 +814,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats.p_time)/(cpuf*1000.0));
       }
-  LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dl_harq1->tb_size);
+  LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch[1].dlsch_config.TBS);
   }
 
   //  send to mac
