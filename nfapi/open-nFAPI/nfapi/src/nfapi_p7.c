@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdint.h>
+#include "assertions.h"
 
 #include <nfapi_interface.h>
 #include <nfapi.h>
@@ -934,24 +935,8 @@ static uint8_t pack_ul_tti_request_prach_pdu(nfapi_nr_prach_pdu_t *prach_pdu, ui
     return 0;
   }
 
-  // TODO: put these hardoded values elsewhere
-  //  Beamforming
-  prach_pdu->beamforming.num_prgs = 0;
-  prach_pdu->beamforming.prg_size = 0;
-  prach_pdu->beamforming.dig_bf_interface = 0;
-
-  if (prach_pdu->beamforming.prgs_list == NULL && prach_pdu->beamforming.num_prgs > 0) {
-    prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs, sizeof(*prach_pdu->beamforming.prgs_list));
-    // If the first one is NULL, the other indexes, if existing, are most likely also NULL
-    if (prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list == NULL && prach_pdu->beamforming.dig_bf_interface > 0) {
-      for (int prg_idx = 0; prg_idx < prach_pdu->beamforming.num_prgs; prg_idx++) {
-        prach_pdu->beamforming.prgs_list[prg_idx].dig_bf_interface_list =
-            calloc(prach_pdu->beamforming.dig_bf_interface, sizeof(*prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
-        for (int dbi_idx = 0; dbi_idx < prach_pdu->beamforming.dig_bf_interface; dbi_idx++) {
-          prach_pdu->beamforming.prgs_list[prg_idx].dig_bf_interface_list[dbi_idx].beam_idx = 0;
-        }
-      }
-    }
+  if (prach_pdu->beamforming.num_prgs > 0 || prach_pdu->beamforming.prg_size > 0 || prach_pdu->beamforming.dig_bf_interface > 0) {
+    AssertFatal(1 == 0, "PRACH PDU Beamforming not supported yet");
   }
 
   // Pack RX Beamforming PDU
