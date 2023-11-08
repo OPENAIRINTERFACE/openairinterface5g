@@ -163,7 +163,6 @@ void ldpc8blocks(void *p)
 {
   encoder_implemparams_t *impp=(encoder_implemparams_t *) p;
   NR_DL_gNB_HARQ_t *harq = (NR_DL_gNB_HARQ_t *)impp->harq;
-  uint16_t Kr = impp->K;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint8_t mod_order = rel15->qamModOrder[0];
   uint16_t nb_rb = rel15->rbSize;
@@ -183,9 +182,10 @@ void ldpc8blocks(void *p)
   // nrLDPC_encoder output is in "d"
   // let's make this interface happy!
   uint8_t tmp[8][68 * 384]__attribute__((aligned(32)));
+  uint8_t *d[impp->n_segments];
   for (int rr=impp->macro_num*8, i=0; rr < impp->n_segments && rr < (impp->macro_num+1)*8; rr++,i++ )
-    impp->d[rr]=tmp[i];
-  nrLDPC_encoder(harq->c,impp->d,*impp->Zc, impp->Kb,Kr,impp->BG,impp);
+    d[rr] = tmp[i];
+  ldpc_interface.LDPCencoder(harq->c, d, impp);
   // Compute where to place in output buffer that is concatenation of all segments
   uint32_t r_offset=0;
   for (int i=0; i < impp->macro_num*8; i++ )
@@ -193,7 +193,7 @@ void ldpc8blocks(void *p)
   for (int rr=impp->macro_num*8; rr < impp->n_segments && rr < (impp->macro_num+1)*8; rr++ ) {
     if (impp->F>0) {
       // writing into positions d[r][k-2Zc] as in clause 5.3.2 step 2) in 38.212
-      memset(&impp->d[rr][Kr-impp->F-2*(*impp->Zc)], NR_NULL, impp->F);
+      memset(&d[rr][impp->K - impp->F - 2 * impp->Zc], NR_NULL, impp->F);
     }
 
 #ifdef DEBUG_DLSCH_CODING
@@ -201,14 +201,18 @@ void ldpc8blocks(void *p)
 #endif
     uint32_t E = nr_get_E(G, impp->n_segments, mod_order, rel15->nrOfLayers, rr);
     //#ifdef DEBUG_DLSCH_CODING
-    LOG_D(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d,nrOfLayer %d)...\n",
+    LOG_D(NR_PHY,
+          "Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb "
+          "%d,nrOfLayer %d)...\n",
           rr,
           impp->n_segments,
           G,
           E,
           impp->F,
-          Kr-impp->F-2*(*impp->Zc),
-          mod_order,nb_rb,rel15->nrOfLayers);
+          impp->K - impp->F - 2 * impp->Zc,
+          mod_order,
+          nb_rb,
+          rel15->nrOfLayers);
 
     uint32_t Tbslbrm = rel15->maintenance_parms_v3.tbSizeLbrmBytes;
 
@@ -216,27 +220,38 @@ void ldpc8blocks(void *p)
     bzero (e, E);
     nr_rate_matching_ldpc(Tbslbrm,
                           impp->BG,
-                          *impp->Zc,
-                          impp->d[rr],
+                          impp->Zc,
+                          d[rr],
                           e,
                           impp->n_segments,
                           impp->F,
-                          Kr-impp->F-2*(*impp->Zc),
+                          impp->K - impp->F - 2 * impp->Zc,
                           rel15->rvIndex[0],
                           E);
-   if (Kr-impp->F-2*(*impp->Zc)> E)  {
-    LOG_E(PHY,"dlsch coding A %d  Kr %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n",
-          A,impp->K,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,(int)mod_order);
- 
-    LOG_E(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Kr %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
-          rr,
-          impp->n_segments,
-          G,
-          E,
-          Kr,
-          impp->F,
-          Kr-impp->F-2*(*impp->Zc),
-          mod_order,nb_rb);
+    if (impp->K - impp->F - 2 * impp->Zc > E) {
+      LOG_E(PHY,
+            "dlsch coding A %d  Kr %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n",
+            A,
+            impp->K,
+            G,
+            nb_rb,
+            nb_symb_sch,
+            nb_re_dmrs,
+            length_dmrs,
+            (int)mod_order);
+
+      LOG_E(NR_PHY,
+            "Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Kr %d, Filler bits %d, Filler offset %d mod_order %d, "
+            "nb_rb %d)...\n",
+            rr,
+            impp->n_segments,
+            G,
+            E,
+            impp->K,
+            impp->F,
+            impp->K - impp->F - 2 * impp->Zc,
+            mod_order,
+            nb_rb);
     }
 #ifdef DEBUG_DLSCH_CODING
 
@@ -279,7 +294,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.output=output;
   unsigned int crc=1;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
-  impp.Zc = &harq->Z;
+  impp.Zc = harq->Z;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
   unsigned char *a=harq->pdu;
@@ -335,14 +350,13 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.BG = rel15->maintenance_parms_v3.ldpcBaseGraph;
 
   start_meas(dlsch_segmentation_stats);
-  impp.Kb = nr_segmentation(harq->b, harq->c, B, &impp.n_segments, &impp.K, impp.Zc, &impp.F, impp.BG);
+  impp.Kb = nr_segmentation(harq->b, harq->c, B, &impp.n_segments, &impp.K, &impp.Zc, &impp.F, impp.BG);
   stop_meas(dlsch_segmentation_stats);
 
   if (impp.n_segments>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*rel15->nrOfLayers) {
     LOG_E(PHY, "nr_segmentation.c: too many segments %d, B %d\n", impp.n_segments, B);
     return(-1);
   }
-
   for (int r=0; r<impp.n_segments; r++) {
     //d_tmp[r] = &harq->d[r][0];
     //channel_input[r] = &harq->d[r][0];
@@ -365,27 +379,26 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.tinput = tinput;
   impp.tparity = tparity;
   impp.toutput = toutput;
-
-  impp.harq=harq;
+  impp.harq = harq;
   notifiedFIFO_t nf;
   initNotifiedFIFO(&nf);
-  int nbJobs=0;
-  for(int j=0; j<(impp.n_segments/8+((impp.n_segments&7)==0 ? 0 : 1)); j++) {
-    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(impp), j, &nf, ldpc8blocks);
-    encoder_implemparams_t* perJobImpp=(encoder_implemparams_t*)NotifiedFifoData(req);
-    *perJobImpp=impp;
-    perJobImpp->macro_num=j;
+  int nbJobs = 0;
+  for (int j = 0; j < (impp.n_segments / 8 + ((impp.n_segments & 7) == 0 ? 0 : 1)); j++) {
+    notifiedFIFO_elt_t *req = newNotifiedFIFO_elt(sizeof(impp), j, &nf, ldpc8blocks);
+    encoder_implemparams_t *perJobImpp = (encoder_implemparams_t *)NotifiedFifoData(req);
+    *perJobImpp = impp;
+    perJobImpp->macro_num = j;
     pushTpool(&gNB->threadPool, req);
     nbJobs++;
   }
-  while(nbJobs) {
-    notifiedFIFO_elt_t *req=pullTpool(&nf, &gNB->threadPool);
+  while (nbJobs) {
+    notifiedFIFO_elt_t *req = pullTpool(&nf, &gNB->threadPool);
     if (req == NULL)
       break; // Tpool has been stopped
     delNotifiedFIFO_elt(req);
     nbJobs--;
-
   }
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return 0;
 }

@@ -524,15 +524,21 @@ int ldpc_autoinit(void) {   // called by the library loader
   return 0;  
 }
 
-extern "C"
-void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out) {
-	set_compact_BG(p_decParams->Z,p_decParams->BG);
-	init_LLR_DMA(p_decParams, p_llr,  p_out);
+extern "C" void LDPCinit(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out)
+{
+  set_compact_BG(p_decParams->Z, p_decParams->BG);
+  init_LLR_DMA(p_decParams, p_llr, p_out);
 }
 
+extern "C" void LDPCshutdown()
+{
+}
 
-extern "C"
-int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out,t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats *time_decoder)
+extern "C" int32_t LDPCdecoder(t_nrLDPC_dec_params* p_decParams,
+                               int8_t* p_llr,
+                               int8_t* p_out,
+                               t_nrLDPC_procBuf* p_procBuf,
+                               t_nrLDPC_time_stats* time_decoder)
 {
     uint16_t Zc          = p_decParams->Z;
     uint8_t  BG         = p_decParams->BG;

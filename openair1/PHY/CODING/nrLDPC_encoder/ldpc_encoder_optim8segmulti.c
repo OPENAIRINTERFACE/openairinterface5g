@@ -38,15 +38,19 @@
 #include "time_meas.h"
 #include "openair1/PHY/CODING/nrLDPC_defs.h"
 #include "PHY/sse_intrin.h"
+#include "openair1/PHY/CODING/nrLDPC_extern.h"
 
 #include "ldpc_encode_parity_check.c"
 #include "ldpc_generate_coefficient.c"
 
-
-int nrLDPC_encod(unsigned char **input,unsigned char **output,int Zc,int Kb,short block_length, short BG, encoder_implemparams_t *impp)
+int LDPCencoder(uint8_t **input, uint8_t **output, encoder_implemparams_t *impp)
 {
   //set_log(PHY, 4);
-  
+
+  int Zc = impp->Zc;
+  int Kb = impp->Kb;
+  short block_length = impp->K;
+  short BG = impp->BG;
 
   int nrows=0,ncols=0;
   int rate=3;

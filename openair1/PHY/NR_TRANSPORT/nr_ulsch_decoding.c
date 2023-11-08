@@ -187,7 +187,7 @@ static void nr_processULSegment(void *arg)
 
   memset(ulsch_harq->c[r], 0, Kr_bytes);
   p_decoderParms->crc_type = crcType(ulsch_harq->C, A);
-  p_decoderParms->block_length = lenWithCrc(ulsch_harq->C, A);
+  p_decoderParms->E = p_decoderParms->block_length = lenWithCrc(ulsch_harq->C, A);
   // start_meas(&phy_vars_gNB->ulsch_ldpc_decoding_stats);
 
   // set first 2*Z_c bits to zeros
@@ -215,7 +215,8 @@ static void nr_processULSegment(void *arg)
   //////////////////////////////////////////////////////////////////////////////////////////
 
   ////////////////////////////////// pl =====> llrProcBuf //////////////////////////////////
-  rdata->decodeIterations = nrLDPC_decoder(p_decoderParms, l, llrProcBuf, p_procTime, &ulsch_harq->abort_decode);
+  rdata->decodeIterations =
+      ldpc_interface.LDPCdecoder(p_decoderParms, 0, 0, 0, l, llrProcBuf, p_procTime, &ulsch_harq->abort_decode);
 
   if (rdata->decodeIterations <= p_decoderParms->numMaxIter)
     memcpy(ulsch_harq->c[r],llrProcBuf,  Kr>>3);
@@ -257,7 +258,7 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   harq_process->processedSegments = 0;
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
 
-  t_nrLDPC_dec_params decParams = {0};
+  t_nrLDPC_dec_params decParams = {.check_crc = check_crc};
   decParams.BG = pusch_pdu->maintenance_parms_v3.ldpcBaseGraph;
   const uint32_t A = (harq_process->TBS) << 3;
   NR_gNB_PHY_STATS_t *stats = get_phy_stats(phy_vars_gNB, ulsch->rnti);

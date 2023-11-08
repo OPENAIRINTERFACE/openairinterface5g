@@ -789,7 +789,7 @@ int main(int argc, char *argv[])
 
   ulsch_input_buffer[0] = 0x31;
   for (i = 1; i < TBS/8; i++) {
-    ulsch_input_buffer[i] = (unsigned char) uniformrandom();
+    ulsch_input_buffer[i] = (uint8_t)rand();
   }
 
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);

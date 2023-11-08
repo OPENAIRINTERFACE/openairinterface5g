@@ -133,13 +133,23 @@
 #include "bnProc128/nrLDPC_bnProc_BG2_R23_128.h"
 #endif
 
-//#define NR_LDPC_ENABLE_PARITY_CHECK
 //#define NR_LDPC_PROFILER_DETAIL(a) a
 #define NR_LDPC_PROFILER_DETAIL(a)
+
+#include "openair1/PHY/CODING/nrLDPC_extern.h"
 
 #ifdef NR_LDPC_DEBUG_MODE
 #include "nrLDPC_tools/nrLDPC_debug.h"
 #endif
+
+// decoder interface
+/**
+   \brief LDPC decoder API type definition
+   \param p_decParams LDPC decoder parameters
+   \param p_llr Input LLRs
+   \param p_llrOut Output vector
+   \param p_profiler LDPC profiler statistics
+*/
 
 static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr,
                                            int8_t* p_out,
@@ -148,13 +158,25 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr,
                                            t_nrLDPC_dec_params* p_decParams,
                                            t_nrLDPC_time_stats* p_profiler,
                                            decode_abort_t* ab);
-void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out) {
+
+int32_t LDPCinit()
+{
+  return 0;
 }
-int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams,
-                     int8_t* p_llr,
-                     int8_t* p_out,
-                     t_nrLDPC_time_stats* p_profiler,
-                     decode_abort_t* ab)
+
+int32_t LDPCshutdown()
+{
+  return 0;
+}
+
+int32_t LDPCdecoder(t_nrLDPC_dec_params* p_decParams,
+                    uint8_t harq_pid,
+                    uint8_t ulsch_id,
+                    uint8_t C,
+                    int8_t* p_llr,
+                    int8_t* p_out,
+                    t_nrLDPC_time_stats* p_profiler,
+                    decode_abort_t* ab)
 {
   uint32_t numLLR;
   t_nrLDPC_lut lut;
@@ -817,31 +839,30 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr,
 #endif
 
    // Parity Check
-#ifdef NR_LDPC_ENABLE_PARITY_CHECK
-        NR_LDPC_PROFILER_DETAIL(start_meas(&p_profiler->cnProcPc));
-        if (BG == 1)
-          pcRes = nrLDPC_cnProcPc_BG1(p_lut, cnProcBuf, cnProcBufRes, Z);
-        else
-          pcRes = nrLDPC_cnProcPc_BG2(p_lut, cnProcBuf, cnProcBufRes, Z);
-        NR_LDPC_PROFILER_DETAIL(stop_meas(&p_profiler->cnProcPc));
-#else
-        if (numIter > 2) {
-          int8_t llrOut[NR_LDPC_MAX_NUM_LLR] __attribute__((aligned(64))) = {0};
-          int8_t* p_llrOut = outMode == nrLDPC_outMode_LLRINT8 ? p_out : llrOut;
-          nrLDPC_llrRes2llrOut(p_lut, p_llrOut, llrRes, Z, BG);
-          if (outMode == nrLDPC_outMode_BIT)
-            nrLDPC_llr2bitPacked(p_out, p_llrOut, numLLR);
-          else // if (outMode == nrLDPC_outMode_BITINT8)
-            nrLDPC_llr2bit(p_out, p_llrOut, numLLR);
-          if (check_crc((uint8_t*)p_out, p_decParams->block_length, p_decParams->crc_type)) {
-            LOG_D(PHY, "Segment CRC OK, exiting LDPC decoder\n");
-            break;
+        if (!p_decParams->check_crc) {
+          NR_LDPC_PROFILER_DETAIL(start_meas(&p_profiler->cnProcPc));
+          if (BG == 1)
+            pcRes = nrLDPC_cnProcPc_BG1(p_lut, cnProcBuf, cnProcBufRes, Z);
+          else
+            pcRes = nrLDPC_cnProcPc_BG2(p_lut, cnProcBuf, cnProcBufRes, Z);
+          NR_LDPC_PROFILER_DETAIL(stop_meas(&p_profiler->cnProcPc));
+        } else {
+          if (numIter > 2) {
+            int8_t llrOut[NR_LDPC_MAX_NUM_LLR] __attribute__((aligned(64))) = {0};
+            int8_t* p_llrOut = outMode == nrLDPC_outMode_LLRINT8 ? p_out : llrOut;
+            nrLDPC_llrRes2llrOut(p_lut, p_llrOut, llrRes, Z, BG);
+            if (outMode == nrLDPC_outMode_BIT)
+              nrLDPC_llr2bitPacked(p_out, p_llrOut, numLLR);
+            else // if (outMode == nrLDPC_outMode_BITINT8)
+              nrLDPC_llr2bit(p_out, p_llrOut, numLLR);
+            if (p_decParams->check_crc((uint8_t*)p_out, p_decParams->E, p_decParams->crc_type)) {
+              LOG_D(PHY, "Segment CRC OK, exiting LDPC decoder\n");
+              break;
+            }
           }
         }
-#endif
     }
-#ifdef NR_LDPC_ENABLE_PARITY_CHECK
-    {
+    if (!p_decParams->check_crc) {
       int8_t llrOut[NR_LDPC_MAX_NUM_LLR] __attribute__((aligned(64))) = {0};
       int8_t* p_llrOut = outMode == nrLDPC_outMode_LLRINT8 ? p_out : llrOut;
       // Assign results from processing buffer to output
@@ -856,7 +877,6 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr,
         nrLDPC_llr2bit(p_out, p_llrOut, numLLR);
       NR_LDPC_PROFILER_DETAIL(stop_meas(&p_profiler->llr2bit));
     }
-#endif
     return numIter;
 }
 

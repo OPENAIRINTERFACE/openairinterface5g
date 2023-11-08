@@ -38,44 +38,29 @@
 #include "defs.h"
 #include "assertions.h"
 #include "openair1/PHY/CODING/nrLDPC_defs.h"
+#include "openair1/PHY/CODING/nrLDPC_extern.h"
 #include "ldpc_generate_coefficient.c"
 
-
-int ldpc_encoder_orig(uint8_t *test_input,uint8_t *channel_input,int Zc,int Kb,short block_length, short BG,uint8_t gen_code)
+int LDPCencoder(unsigned char **inputArray, unsigned char **outputArray, encoder_implemparams_t *impp)
 {
+  const unsigned char *input = inputArray[0];
+  // channel input is the output of this function!
+  unsigned char *output = outputArray[0];
+  const int Zc = impp->Zc;
+  const int Kb = impp->Kb;
+  const short block_length = impp->K;
+  const short BG = impp->BG;
+  const uint8_t gen_code = impp->gen_code;
   uint8_t c[22*384]; //padded input, unpacked, max size
-  uint8_t d[68*384]; //coded output, unpacked, max size
-  uint8_t channel_temp,temp;
-  short *Gen_shift_values, *no_shift_values, *pointer_shift_values;
-
-  short nrows = 46;//parity check bits
-  short ncols = 22;//info bits
-
+  uint8_t d[68 * 384]; // coded output, unpacked, max size
 
   int i,i1,i2,i3,i4,i5,temp_prime,var;
-  int no_punctured_columns,removed_bit,rate=3;
+  int no_punctured_columns, removed_bit;
   int nind=0;
   int indlist[1000];
   int indlist2[1000];
 
-  //determine number of bits in codeword
-  //if (block_length>3840)
-     if (BG==1)
-       {
-         nrows=46; //parity check bits
-         ncols=22; //info bits
-         rate=3;
-       }
-       //else if (block_length<=3840)
-      else if	(BG==2)
-       {
-         //BG=2;
-         nrows=42; //parity check bits
-         ncols=10; // info bits
-         rate=5;
-         }
-
-  Gen_shift_values=choose_generator_matrix(BG,Zc);
+  const short *Gen_shift_values = choose_generator_matrix(BG, Zc);
   if (Gen_shift_values==NULL) {
     printf("ldpc_encoder_orig: could not find generator matrix\n");
     return(-1);
@@ -83,21 +68,14 @@ int ldpc_encoder_orig(uint8_t *test_input,uint8_t *channel_input,int Zc,int Kb,s
 
   //printf("ldpc_encoder_orig: BG %d, Zc %d, Kb %d\n",BG, Zc, Kb);
 
+  AssertFatal(BG <= 2, "BG %d is not supported yet\n", BG);
   // load base graph of generator matrix
-  if (BG==1)
-  {
-    no_shift_values=(short *) no_shift_values_BG1;
-    pointer_shift_values=(short *) pointer_shift_values_BG1;
-  }
-  else if (BG==2)
-  {
-    no_shift_values=(short *) no_shift_values_BG2;
-    pointer_shift_values=(short *) pointer_shift_values_BG2;
-  }
-  else {
-    AssertFatal(0,"BG %d is not supported yet\n",BG);
-  }
-  
+  const short nrows = BG == 1 ? 46 : 42;
+  const short ncols = BG == 1 ? 22 : 10;
+  const short rate = BG == 1 ? 3 : 5;
+  const short *no_shift_values = BG == 1 ? no_shift_values_BG1 : no_shift_values_BG2;
+  const short *pointer_shift_values = BG == 1 ? pointer_shift_values_BG1 : pointer_shift_values_BG2;
+
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(block_length*rate);
   //printf("%d\n",no_punctured_columns);
@@ -108,9 +86,9 @@ int ldpc_encoder_orig(uint8_t *test_input,uint8_t *channel_input,int Zc,int Kb,s
 
   for (i=0; i<block_length; i++)
   {
-    //c[i] = test_input[i/8]<<(i%8);
-    //c[i]=c[i]>>7&1;
-    c[i]=(test_input[i/8]&(128>>(i&7)))>>(7-(i&7));
+    // c[i] = input[i/8]<<(i%8);
+    // c[i]=c[i]>>7&1;
+    c[i] = (input[i / 8] & (128 >> (i & 7))) >> (7 - (i & 7));
   }
 
   // parity check part
@@ -188,10 +166,9 @@ int ldpc_encoder_orig(uint8_t *test_input,uint8_t *channel_input,int Zc,int Kb,s
       fprintf(fd2,"     c2=&csimd[i2];\n");
       fprintf(fd2,"     d2=&dsimd[i2];\n");
 
-      for (i1=0; i1 < nrows; i1++)
+      for (i1 = 0; i1 < nrows; i1++)
 
       {
-        channel_temp=0;
         fprintf(fd,"\n//row: %d\n",i1);
         fprintf(fd2,"\n//row: %d\n",i1);
 	fprintf(fd,"     d2[%d]=",(Zc*i1)>>shift);
@@ -225,8 +202,7 @@ int ldpc_encoder_orig(uint8_t *test_input,uint8_t *channel_input,int Zc,int Kb,s
 	fprintf(fd2,"c2[%d]",indlist2[i4]);
 	for (i4=0;i4<nind-1;i4++) { fprintf(fd,")"); fprintf(fd2,")"); }
 	fprintf(fd,";\n");
-	fprintf(fd2,";\n");
-
+  fprintf(fd2, ";\n");
       }
       fprintf(fd,"  }\n}\n");
       fprintf(fd2,"  }\n}\n");
@@ -243,40 +219,33 @@ int ldpc_encoder_orig(uint8_t *test_input,uint8_t *channel_input,int Zc,int Kb,s
       //rotate matrix here
       for (i5=0; i5 < Kb; i5++)
       {
-        temp = c[i5*Zc];
-        memmove(&c[i5*Zc], &c[i5*Zc+1], (Zc-1)*sizeof(uint8_t));
-        c[i5*Zc+Zc-1] = temp;
+        const int temp = c[i5 * Zc];
+        memmove(&c[i5 * Zc], &c[i5 * Zc + 1], Zc - 1);
+        c[i5 * Zc + Zc - 1] = temp;
       }
 
       // calculate each row in base graph
       for (i1=0; i1 < nrows-no_punctured_columns; i1++)
       {
-        channel_temp=0;
+        unsigned char channel_temp = 0;
 
-        for (i3=0; i3 < Kb; i3++)
-        {
-          temp_prime=i1 * ncols + i3;
+        for (i3 = 0; i3 < Kb; i3++) {
+          temp_prime = i1 * ncols + i3;
 
-          for (i4=0; i4 < no_shift_values[temp_prime]; i4++)
-          {
-            channel_temp = channel_temp ^ c[ i3*Zc + Gen_shift_values[ pointer_shift_values[temp_prime]+i4 ] ];
+          for (i4 = 0; i4 < no_shift_values[temp_prime]; i4++) {
+            channel_temp = channel_temp ^ c[i3 * Zc + Gen_shift_values[pointer_shift_values[temp_prime] + i4]];
           }
         }
 
         d[i2+i1*Zc]=channel_temp;
-        //channel_input[t+i1*Zc]=channel_temp;
+        // output[t+i1*Zc]=channel_temp;
       }
     }
   }
 
   // information part and puncture columns
-  memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(uint8_t));
-  memcpy(&channel_input[block_length-2*Zc], &d[0], ((nrows-no_punctured_columns) * Zc-removed_bit)*sizeof(uint8_t));
-  //memcpy(channel_input,c,Kb*Zc*sizeof(uint8_t));
-  return 0;
-}
-
-
-int nrLDPC_encod(uint8_t **test_input,uint8_t **channel_input,int Zc,int Kb,short block_length, short BG, encoder_implemparams_t *impp) {
-  return ldpc_encoder_orig(test_input[0],channel_input[0],Zc,Kb,block_length,BG,impp->gen_code);
+  memcpy(&output[0], &c[2 * Zc], block_length - 2 * Zc);
+  memcpy(&output[block_length - 2 * Zc], &d[0], (nrows - no_punctured_columns) * Zc - removed_bit);
+  // memcpy(output,c,Kb*Zc*sizeof(unsigned char));
+  return block_length - 2 * Zc + (nrows - no_punctured_columns) * Zc - removed_bit;
 }

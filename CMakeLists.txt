@@ -827,21 +827,13 @@ add_custom_target( nrLDPC_decoder_kernels_CL
                    COMMAND gcc ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c -dD -DNRLDPC_KERNEL_SOURCE -E -o ${CMAKE_CURRENT_BINARY_DIR}/nrLDPC_decoder_kernels_CL.clc
                    SOURCES ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c
 )
-
-set(PHY_NR_CODINGIF
-  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c;
-)
-
-add_library(ldpc_orig MODULE ${PHY_LDPC_ORIG_SRC} )
-target_link_libraries(ldpc_orig PRIVATE ldpc_gen_HEADERS)
-add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
-target_link_libraries(ldpc_optim PRIVATE ldpc_gen_HEADERS)
-add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
-target_link_libraries(ldpc_optim8seg PRIVATE ldpc_gen_HEADERS)
 add_library(ldpc_cl MODULE ${PHY_LDPC_CL_SRC} )
 target_link_libraries(ldpc_cl OpenCL)
 add_dependencies(ldpc_cl nrLDPC_decoder_kernels_CL)
 
+set(PHY_NR_CODINGIF
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c
+)
 
 ##############################################
 # Base CUDA setting
@@ -858,13 +850,6 @@ if (ENABLE_LDPC_CUDA)
     message(FATAL_ERROR "no CUDA found")
   endif()
 endif()
-
-add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
-target_link_libraries(ldpc PRIVATE ldpc_gen_HEADERS)
-
-add_library(ldpc_parityCheck MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
-target_compile_definitions(ldpc_parityCheck PUBLIC NR_LDPC_ENABLE_PARITY_CHECK)
-target_link_libraries(ldpc_parityCheck  PRIVATE ldpc_gen_HEADERS)
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 
@@ -2190,12 +2175,12 @@ add_executable(ldpctest
    ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
    )
 
-add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ldpc_parityCheck)
+add_dependencies(ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
 if (ENABLE_LDPC_CUDA)
   add_dependencies(ldpctest ldpc_cuda)
 endif()
 target_link_libraries(ldpctest PRIVATE
-  -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON -Wl,--end-group
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON -Wl,--end-group
   m pthread dl shlib_loader ${T_LIB}
   )
 
