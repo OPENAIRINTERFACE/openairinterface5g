@@ -530,9 +530,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
 
   load_nrLDPClib(NULL);
 
-  if (gNB->ldpc_offload_flag)
-    load_nrLDPClib_offload();
-
   gNB->max_nb_pdsch = MAX_MOBILES_PER_GNB;
 
   init_codebook_gNB(gNB);

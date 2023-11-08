@@ -47,7 +47,6 @@ char *parallel_config=NULL;
 char *worker_config=NULL;
 int usrp_tx_thread = 0;
 char *nfapi_str=NULL;
-int ldpc_offload_flag=0;
 uint8_t nfapi_mode=0;
 
 static mapping softmodem_funcs[] = MAPPING_SOFTMODEM_FUNCTIONS;

@@ -494,24 +494,6 @@ target_link_libraries(shlib_loader PRIVATE CONFIG_LIB)
 
 ##########################################################
 
-# LDPC offload library
-##########################################################
-
-add_boolean_option(ENABLE_LDPC_T1 OFF "Build support for LDPC Offload to T1 library" OFF)
-if (ENABLE_LDPC_T1)
-  pkg_check_modules(LIBDPDK_T1 REQUIRED libdpdk=20.05.0)
-  find_library(T1 NAMES rte_pmd_hpac_sdfec_pmd REQUIRED)
-  if (NOT T1)
-    message(FATAL_ERROR "Library rte_pmd_hpac_sdfec_pmd for T1 offload not found")
-  endif()
-  add_library(ldpc_t1 MODULE ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c)
-  set_target_properties(ldpc_t1 PROPERTIES COMPILE_FLAGS "-DALLOW_EXPERIMENTAL_API")
-  target_compile_options(ldpc_t1 PRIVATE ${LIBDPDK_T1_CFLAGS})
-  target_link_libraries(ldpc_t1 ${LIBDPDK_T1_LDFLAGS} ${T1})
-endif()
-
-##########################################################
-
 include_directories ("${OPENAIR_DIR}/radio/COMMON")
 
 ##############################################################
@@ -2090,10 +2072,6 @@ endif()
 
 add_dependencies(nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
 
-if (ENABLE_LDPC_T1)
-  add_dependencies(nr-softmodem ldpc_t1)
-endif()
-
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(nr-softmodem PRIVATE
   asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
@@ -2306,10 +2284,6 @@ add_executable(nr_ulsim
   ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   )
-
-if (ENABLE_LDPC_T1)
-  add_dependencies(nr_ulsim ldpc_t1)
-endif()
 
 target_link_libraries(nr_ulsim PRIVATE
   -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECURITY ngap -lz -Wl,--end-group
