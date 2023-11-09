@@ -4765,7 +4765,6 @@ static uint8_t unpack_ul_tti_request_prach_pdu(void *tlv, uint8_t **ppReadPacked
         && pull8(ppReadPackedMsg, &prach_pdu->beamforming.dig_bf_interface, end))) {
     return 0;
   }
-  // TODO: ignoring beamforming tlv for now
   if (prach_pdu->beamforming.num_prgs > 0) {
     prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs, sizeof(*prach_pdu->beamforming.prgs_list));
     if (prach_pdu->beamforming.dig_bf_interface > 0) {
