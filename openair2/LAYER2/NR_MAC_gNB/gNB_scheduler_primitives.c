@@ -2905,7 +2905,15 @@ void nr_mac_update_timers(module_id_t module_id,
       UE->ra_timer--;
       if (UE->ra_timer == 0) {
         LOG_W(NR_MAC, "Removing UE %04x because RA timer expired\n", UE->rnti);
+        const rnti_t rnti = UE->rnti;
         mac_remove_nr_ue(mac, UE->rnti);
+        NR_COMMON_channels_t *cc = &mac->common_channels[0];
+        for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+          if (cc->ra[i].rnti == rnti) {
+            LOG_E(NR_MAC, "free RA process %d for rnti %04x\n", i, rnti);
+            nr_clear_ra_proc(module_id, 0, frame, &cc->ra[i]);
+          }
+        }
       }
     }
   }
