@@ -494,6 +494,25 @@ target_link_libraries(shlib_loader PRIVATE CONFIG_LIB)
 
 ##########################################################
 
+# LDPC offload library - AMD T2 Accelerator Card
+##########################################################
+
+add_boolean_option(ENABLE_LDPC_T2 OFF "Build support for LDPC Offload to T2 library" OFF)
+set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/lib/x86_64-linux-gnu/pkgconfig")
+if (ENABLE_LDPC_T2)
+  pkg_check_modules(LIBDPDK_T2 REQUIRED libdpdk=20.11.7)
+  find_library(PMD_T2 NAMES rte_baseband_accl_ldpc HINTS "/opt/dpdk-t2/lib/x86_64-linux-gnu/")
+  if (NOT PMD_T2)
+    message(FATAL_ERROR "could not find PMD T2")
+  endif()
+  message(STATUS "T2 build: use ${PMD_T2}")
+  add_library(ldpc_t2 MODULE ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c)
+  set_target_properties(ldpc_t2 PROPERTIES COMPILE_FLAGS "-DALLOW_EXPERIMENTAL_API")
+  target_link_libraries(ldpc_t2 ${LIBDPDK_T2_LDFLAGS} ${PMD_T2})
+endif()
+
+##########################################################
+
 include_directories ("${OPENAIR_DIR}/radio/COMMON")
 
 ##############################################################
@@ -801,19 +820,30 @@ set(PHY_LDPC_ORIG_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
 )
+add_library(ldpc_orig MODULE ${PHY_LDPC_ORIG_SRC} )
+target_link_libraries(ldpc_orig PRIVATE ldpc_gen_HEADERS)
 
 set(PHY_LDPC_OPTIM_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim.c
-)
+  )
+add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
+target_link_libraries(ldpc_optim PRIVATE ldpc_gen_HEADERS)
+
 set(PHY_LDPC_OPTIM8SEG_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8seg.c
 )
+add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
+target_link_libraries(ldpc_optim8seg PRIVATE ldpc_gen_HEADERS)
+
 set(PHY_LDPC_OPTIM8SEGMULTI_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
-)
+  )
+add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
+target_link_libraries(ldpc PRIVATE ldpc_gen_HEADERS)
+
 set(PHY_LDPC_CUDA_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.cu
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
@@ -2057,6 +2087,10 @@ endif()
 
 add_dependencies(nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
 
+if (ENABLE_LDPC_T2)
+  add_dependencies(nr-softmodem ldpc_t2)
+endif()
+
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(nr-softmodem PRIVATE
   asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
@@ -2269,6 +2303,10 @@ add_executable(nr_ulsim
   ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   )
+
+if (ENABLE_LDPC_T2)
+  add_dependencies(nr_ulsim ldpc_t2)
+endif()
 
 target_link_libraries(nr_ulsim PRIVATE
   -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECURITY ngap -lz -Wl,--end-group

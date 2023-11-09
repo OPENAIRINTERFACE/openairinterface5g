@@ -96,6 +96,17 @@ typedef struct nrLDPC_dec_params {
     int (*check_crc)(uint8_t* decoded_bytes, uint32_t n, uint8_t crc_type);
 } t_nrLDPC_dec_params;
 
+typedef struct nrLDPCoffload_params {
+    uint8_t BG; /**< Base graph */
+    uint16_t Z;
+    uint16_t Kr;
+    uint8_t rv;
+    uint32_t E;
+    uint16_t n_cb;
+    uint16_t F; /**< Filler bits */
+    uint8_t Qm; /**< Modulation */
+} t_nrLDPCoffload_params;
+
 /**
    Structure containing LDPC decoder processing time statistics.
  */

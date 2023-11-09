@@ -642,6 +642,8 @@ typedef struct PHY_VARS_gNB_s {
   /// OFDM symbol offset divisor for UL
   uint32_t ofdm_offset_divisor;
 
+  int ldpc_offload_flag;
+
   int reorder_thread_disable;
 
   int max_ldpc_iterations;

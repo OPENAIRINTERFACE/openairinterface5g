@@ -202,12 +202,20 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_IN);
 
     start_meas(&ue->ulsch_ldpc_encoding_stats);
-    for (int j = 0; j < (harq_process->C / 8 + 1); j++) {
-      impp.macro_num = j;
-      impp.E = nr_get_E(G, harq_process->C, mod_order, ulsch->pusch_pdu.nrOfLayers, j);
-      impp.Kr = Kr;
-      ldpc_interface.LDPCencoder(harq_process->c, harq_process->d, &impp);
-    }
+    if (ldpc_interface_offload.LDPCencoder)
+      for (int j = 0; j < harq_process->C; j++) {
+        impp.macro_num = j;
+        impp.E = nr_get_E(G, harq_process->C, mod_order, ulsch->pusch_pdu.nrOfLayers, j);
+        impp.Kr = Kr;
+        ldpc_interface_offload.LDPCencoder(&harq_process->c[j], &harq_process->d[j], &impp);
+      }
+    else
+      for (int j = 0; j < (harq_process->C / 8 + 1); j++) {
+        impp.macro_num = j;
+        impp.E = nr_get_E(G, harq_process->C, mod_order, ulsch->pusch_pdu.nrOfLayers, j);
+        impp.Kr = Kr;
+        ldpc_interface.LDPCencoder(harq_process->c, harq_process->d, &impp);
+      }
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_OUT);
 
     //stop_meas(te_stats);

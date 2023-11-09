@@ -380,25 +380,60 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.tparity = tparity;
   impp.toutput = toutput;
   impp.harq = harq;
-  notifiedFIFO_t nf;
-  initNotifiedFIFO(&nf);
-  int nbJobs = 0;
-  for (int j = 0; j < (impp.n_segments / 8 + ((impp.n_segments & 7) == 0 ? 0 : 1)); j++) {
-    notifiedFIFO_elt_t *req = newNotifiedFIFO_elt(sizeof(impp), j, &nf, ldpc8blocks);
-    encoder_implemparams_t *perJobImpp = (encoder_implemparams_t *)NotifiedFifoData(req);
-    *perJobImpp = impp;
-    perJobImpp->macro_num = j;
-    pushTpool(&gNB->threadPool, req);
-    nbJobs++;
+  if (gNB->ldpc_offload_flag && *rel15->mcsIndex > 2) {
+    impp.Qm = rel15->qamModOrder[0];
+    impp.rv = rel15->rvIndex[0];
+    int nb_re_dmrs =
+        (rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) ? (6 * rel15->numDmrsCdmGrpsNoData) : (4 * rel15->numDmrsCdmGrpsNoData);
+    impp.G = nr_get_G(rel15->rbSize,
+                      rel15->NrOfSymbols,
+                      nb_re_dmrs,
+                      get_num_dmrs(rel15->dlDmrsSymbPos),
+                      harq->unav_res,
+                      rel15->qamModOrder[0],
+                      rel15->nrOfLayers);
+    uint8_t tmp[68 * 384] __attribute__((aligned(32)));
+    uint8_t *d = tmp;
+    int r_offset = 0;
+    for (int r = 0; r < impp.n_segments; r++) {
+      impp.E = nr_get_E(impp.G, impp.n_segments, impp.Qm, rel15->nrOfLayers, r);
+      impp.Kr = impp.K;
+      ldpc_interface_offload.LDPCencoder(&harq->c[r], &d, &impp);
+      uint8_t e[impp.E];
+      bzero(e, impp.E);
+      nr_rate_matching_ldpc(rel15->maintenance_parms_v3.tbSizeLbrmBytes,
+                            impp.BG,
+                            impp.Zc,
+                            tmp,
+                            e,
+                            impp.n_segments,
+                            impp.F,
+                            impp.K - impp.F - 2 * impp.Zc,
+                            impp.rv,
+                            impp.E);
+      nr_interleaving_ldpc(impp.E, impp.Qm, e, impp.output + r_offset);
+      r_offset += impp.E;
+    }
+  } else {
+    notifiedFIFO_t nf;
+    initNotifiedFIFO(&nf);
+    int nbJobs = 0;
+    for (int j = 0; j < (impp.n_segments / 8 + ((impp.n_segments & 7) == 0 ? 0 : 1)); j++) {
+      notifiedFIFO_elt_t *req = newNotifiedFIFO_elt(sizeof(impp), j, &nf, ldpc8blocks);
+      encoder_implemparams_t *perJobImpp = (encoder_implemparams_t *)NotifiedFifoData(req);
+      *perJobImpp = impp;
+      perJobImpp->macro_num = j;
+      pushTpool(&gNB->threadPool, req);
+      nbJobs++;
+    }
+    while (nbJobs) {
+      notifiedFIFO_elt_t *req = pullTpool(&nf, &gNB->threadPool);
+      if (req == NULL)
+        break; // Tpool has been stopped
+      delNotifiedFIFO_elt(req);
+      nbJobs--;
+    }
   }
-  while (nbJobs) {
-    notifiedFIFO_elt_t *req = pullTpool(&nf, &gNB->threadPool);
-    if (req == NULL)
-      break; // Tpool has been stopped
-    delNotifiedFIFO_elt(req);
-    nbJobs--;
-  }
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return 0;
 }

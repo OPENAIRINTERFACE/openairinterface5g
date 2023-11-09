@@ -186,6 +186,7 @@ int main(int argc, char *argv[])
   double effRate;
   double effTP;
   float eff_tp_check = 100;
+  int ldpc_offload_flag = 0;
   uint8_t max_rounds = 4;
   int chest_type[2] = {0};
   int enable_ptrs = 0;
@@ -327,6 +328,10 @@ int main(int argc, char *argv[])
 
     case 'n':
       n_trials = atoi(optarg);
+      break;
+
+    case 'o':
+      ldpc_offload_flag = 1;
       break;
 
     case 'p':
@@ -488,6 +493,7 @@ int main(int argc, char *argv[])
       printf("-k 3/4 sampling\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
+      printf("-o ldpc offload flag\n");
       printf("-p Use extended prefix mode\n");
       printf("-q MCS table\n");
       printf("-r Number of allocated resource blocks for PUSCH\n");
@@ -623,6 +629,7 @@ int main(int argc, char *argv[])
   cfg->carrier_config.num_rx_ant.value = n_rx;
 
 //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
+  gNB->ldpc_offload_flag = ldpc_offload_flag;
   gNB->chest_freq = chest_type[0];
   gNB->chest_time = chest_type[1];
 
@@ -1604,6 +1611,8 @@ int main(int argc, char *argv[])
           num_dmrs_cdm_grps_no_data);
 
   free_MIB_NR(mib);
+  if (gNB->ldpc_offload_flag)
+    free_LDPClib(&ldpc_interface_offload);
 
   if (output_fd)
     fclose(output_fd);
