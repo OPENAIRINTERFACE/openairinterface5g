@@ -493,27 +493,24 @@ void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
 {
   /* mark UE as to be deleted after PUSCH failure */
   gNB_MAC_INST *mac = RC.nrmac[0];
-  pthread_mutex_lock(&mac->sched_lock);
+  NR_SCHED_LOCK(&mac->sched_lock);
   NR_UE_info_t *UE = find_nr_UE(&mac->UE_info, cmd->gNB_DU_ue_id);
+  if (UE == NULL) {
+    LOG_E(MAC, "ERROR: unknown UE with RNTI %04x, ignoring UE Context Release Command\n", cmd->gNB_DU_ue_id);
+    NR_SCHED_UNLOCK(&mac->sched_lock);
+    return;
+  }
+
   if (UE->UE_sched_ctrl.ul_failure || cmd->rrc_container_length == 0) {
     /* The UE is already not connected anymore or we have nothing to forward*/
-    nr_rlc_remove_ue(cmd->gNB_DU_ue_id);
-    mac_remove_nr_ue(mac, cmd->gNB_DU_ue_id);
+    nr_mac_release_ue(mac, cmd->gNB_DU_ue_id);
   } else {
     /* UE is in sync: forward release message and mark to be deleted
      * after UL failure */
     nr_rlc_srb_recv_sdu(cmd->gNB_DU_ue_id, cmd->srb_id, cmd->rrc_container, cmd->rrc_container_length);
     nr_mac_trigger_release_timer(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
   }
-  pthread_mutex_unlock(&mac->sched_lock);
-
-  f1ap_ue_context_release_complete_t complete = {
-    .gNB_CU_ue_id = cmd->gNB_CU_ue_id,
-    .gNB_DU_ue_id = cmd->gNB_DU_ue_id,
-  };
-  mac->mac_rrc.ue_context_release_complete(&complete);
-
-  du_remove_f1_ue_data(cmd->gNB_DU_ue_id);
+  NR_SCHED_UNLOCK(&mac->sched_lock);
 }
 
 void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)

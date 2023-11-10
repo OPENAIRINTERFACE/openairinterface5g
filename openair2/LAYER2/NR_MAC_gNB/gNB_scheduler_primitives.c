@@ -2809,6 +2809,34 @@ int nr_mac_enable_ue_rrc_processing_timer(gNB_MAC_INST *mac, NR_UE_info_t *UE, b
   return 0;
 }
 
+void nr_mac_release_ue(gNB_MAC_INST *mac, int rnti)
+{
+  NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
+
+  nr_rlc_remove_ue(rnti);
+  mac_remove_nr_ue(mac, rnti);
+
+  // the CU might not know such UE, e.g., because we never sent a message to
+  // it, so there might not be a corresponding entry for such UE in the look up
+  // table. This can happen, e.g., on Msg.3 with C-RNTI, where we create a UE
+  // MAC context, decode the PDU, find the C-RNTI MAC CE, and then throw the
+  // newly created context away. See also in _nr_rx_sdu() and commit 93f59a3c6e56f
+  if (du_exists_f1_ue_data(rnti)) {
+    // unlock the scheduler temporarily to prevent possible deadlocks with
+    // du_remove_f1_ue_data() (and also while sending the message to RRC)
+    NR_SCHED_UNLOCK(&mac->sched_lock);
+    f1_ue_data_t ue_data = du_get_f1_ue_data(rnti);
+    f1ap_ue_context_release_complete_t complete = {
+      .gNB_CU_ue_id = ue_data.secondary_ue,
+      .gNB_DU_ue_id = rnti,
+    };
+    mac->mac_rrc.ue_context_release_complete(&complete);
+
+    du_remove_f1_ue_data(rnti);
+    NR_SCHED_LOCK(&mac->sched_lock);
+  }
+}
+
 void nr_mac_update_timers(module_id_t module_id,
                           frame_t frame,
                           sub_frame_t slot)
@@ -2823,8 +2851,7 @@ void nr_mac_update_timers(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
     if (nr_mac_check_release(sched_ctrl, UE->rnti)) {
-      nr_rlc_remove_ue(UE->rnti);
-      mac_remove_nr_ue(mac, UE->rnti);
+      nr_mac_release_ue(mac, UE->rnti);
       // go back to examine the next UE, which is at the position the
       // current UE was
       UE--;
@@ -2963,7 +2990,7 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
 void nr_mac_trigger_release_timer(NR_UE_sched_ctrl_t *sched_ctrl, NR_SubcarrierSpacing_t subcarrier_spacing)
 {
   // trigger 60ms
-  sched_ctrl->release_timer = 60 << subcarrier_spacing;
+  sched_ctrl->release_timer = 100 << subcarrier_spacing;
 }
 
 bool nr_mac_check_release(NR_UE_sched_ctrl_t *sched_ctrl, int rnti)
