@@ -59,7 +59,6 @@ uint32_t  registration_request_len;
 extern char *baseNetAddress;
 extern uint16_t NB_UE_INST;
 static nr_ue_nas_t nr_ue_nas = {0};
-static nr_ue_nas_t nr_ue_nas;
 nr_nas_msg_snssai_t nas_allowed_nssai[8];
 
 static int nas_protected_security_header_encode(
