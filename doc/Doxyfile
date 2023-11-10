@@ -1901,7 +1901,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/RRC/NR/nr_rrc_config.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/RRC/NR/rrc_gNB_radio_bearers.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/RRC/NR/nr_rrc_extern.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/RRC/NR/L2_nr_interface.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/RRC/NR/rrc_gNB_reconfig.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/RRC/NR/rrc_gNB_NGAP.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/RRC/NR/mac_rrc_dl_f1ap.c \

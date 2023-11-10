@@ -201,8 +201,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frame, sub_frame_
 
   nr_mac_update_timers(module_idP, frame, slot);
 
-  schedule_nr_bwp_switch(module_idP, frame, slot);
-
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot, &sched_info->DL_req);
 
