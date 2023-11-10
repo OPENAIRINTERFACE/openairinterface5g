@@ -841,11 +841,8 @@ static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *
   // this kind of error seems in many places in 5G NAS
   mm_msg->uplink_nas_transport.snssai.value = calloc(1, nssai_len);
   mm_msg->uplink_nas_transport.snssai.value[0] = pdu_req->sst;
-  if (has_nssai_sd) {
-    mm_msg->uplink_nas_transport.snssai.value[1] = (pdu_req->sd >> 16) & 0xFF;
-    mm_msg->uplink_nas_transport.snssai.value[2] = (pdu_req->sd >> 8) & 0xFF;
-    mm_msg->uplink_nas_transport.snssai.value[3] = (pdu_req->sd) & 0xFF;
-  }
+  if (has_nssai_sd)
+    INT24_TO_BUFFER(pdu_req->sd, &mm_msg->uplink_nas_transport.snssai.value[1]);
   size += 1 + 1 + nssai_len;
   int dnnSize=strlen(nas->uicc->dnnStr);
   mm_msg->uplink_nas_transport.dnn.value=calloc(1,dnnSize+1);
