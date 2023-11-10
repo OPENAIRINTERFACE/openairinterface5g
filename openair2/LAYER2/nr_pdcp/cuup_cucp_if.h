@@ -38,6 +38,7 @@ typedef struct e1_if_t {
 } e1_if_t;
 
 e1_if_t *get_e1_if(void);
+bool e1_used(void);
 void nr_pdcp_e1_if_init(bool uses_e1);
 
 void cuup_cucp_init_direct(e1_if_t *iface);
