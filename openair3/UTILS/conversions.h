@@ -34,18 +34,18 @@
     (((x & 0x00FF) << 8) | ((x & 0xFF00) >> 8)
 
 # define ntoh_int32_buf(bUF)        \
-    ((*(bUF)) << 24) | ((*((bUF) + 1)) << 16) | ((*((bUF) + 2)) << 8)   \
-  | (*((bUF) + 3))
+    ((*((uint8_t*)bUF)) << 24) | ((*((uint8_t*)bUF + 1)) << 16) | ((*((uint8_t*)bUF + 2)) << 8)   \
+  | (*((uint8_t*)bUF + 3))
 #else
 # define hton_int32(x) (x)
 # define hton_int16(x) (x)
 #endif
 
 #define ntoh_int24_buf(bUF) \
-  ((*bUF << 16) | ((*(bUF + 1)) << 8) | (*(bUF + 2)))
+  ((*(uint8_t*)bUF << 16) | ((*((uint8_t*)bUF + 1)) << 8) | (*((uint8_t*)bUF + 2)))
 
 #define ntoh_int16_buf(bUF) \
-  ((*(bUF) << 8) | (*(bUF + 1)))
+  ((*((uint8_t*)bUF) << 8) | (*((uint8_t*)bUF + 1)))
 
 #define IN_ADDR_TO_BUFFER(X,bUFF) INT32_TO_BUFFER((X).s_addr,(char*)bUFF)
 
