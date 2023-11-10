@@ -30,7 +30,6 @@
 
  */
 
-#include "GNB_APP/RRC_nr_paramsvalues.h"
 #include "assertions.h"
 #include "NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_MAC_gNB/mac_proto.h"
@@ -38,7 +37,6 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "RRC/NR/nr_rrc_config.h"
 #include "common/utils/nr/nr_common.h"
 #include "openair1/PHY/defs_nr_common.h"
 

@@ -44,8 +44,6 @@
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "F1AP_CauseRadioNetwork.h"
 
-#include "RRC/NR/MESSAGES/asn1_msg.h"
-
 #include "intertask_interface.h"
 #include "openair2/F1AP/f1ap_ids.h"
 #include "F1AP_CauseRadioNetwork.h"
