@@ -258,7 +258,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
                                       const uint8_t n_antenna_ports,
                                       c16_t **txdataF);
 
-int8_t clean_UE_ulsch(PHY_VARS_NR_UE *UE, uint8_t gNB_id);
+void clean_UE_harq(PHY_VARS_NR_UE *UE);
 
 void nr_dlsch_unscrambling(int16_t* llr,
 			   uint32_t size,
