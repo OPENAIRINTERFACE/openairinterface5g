@@ -30,6 +30,16 @@
 #include "uper_decoder.h"
 #include "uper_encoder.h"
 
+static long get_lcid_from_drbid(int drb_id)
+{
+  return drb_id + 3; /* LCID is DRB + 3 */
+}
+
+static long get_lcid_from_srbid(int srb_id)
+{
+  return srb_id;
+}
+
 static bool check_plmn_identity(const f1ap_plmn_t *check_plmn, const f1ap_plmn_t *plmn)
 {
   return plmn->mcc == check_plmn->mcc && plmn->mnc_digit_length == check_plmn->mnc_digit_length && plmn->mnc == check_plmn->mnc;
@@ -78,7 +88,7 @@ static NR_RLC_BearerConfig_t *get_bearerconfig_from_srb(const f1ap_srb_to_be_set
   long priority = srb->srb_id; // high priority for SRB
   e_NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration bucket =
       NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms5;
-  return get_SRB_RLC_BearerConfig(srb->srb_id, priority, bucket);
+  return get_SRB_RLC_BearerConfig(get_lcid_from_srbid(srb->srb_id), priority, bucket);
 }
 
 static int handle_ue_context_srbs_setup(int rnti,
@@ -108,7 +118,7 @@ static NR_RLC_BearerConfig_t *get_bearerconfig_from_drb(const f1ap_drb_to_be_set
 {
   const NR_RLC_Config_PR rlc_conf = drb->rlc_mode == RLC_MODE_UM ? NR_RLC_Config_PR_um_Bi_Directional : NR_RLC_Config_PR_am;
   long priority = 13; // hardcoded for the moment
-  return get_DRB_RLC_BearerConfig(3 + drb->drb_id, drb->drb_id, rlc_conf, priority);
+  return get_DRB_RLC_BearerConfig(get_lcid_from_drbid(drb->drb_id), drb->drb_id, rlc_conf, priority);
 }
 
 static int handle_ue_context_drbs_setup(int rnti,
@@ -153,7 +163,7 @@ static int handle_ue_context_drbs_release(int rnti,
   for (int i = 0; i < drbs_len; i++) {
     const f1ap_drb_to_be_released_t *drb = &req_drbs[i];
 
-    long lcid = drb->rb_id + 3; /* LCID is DRB + 3 */
+    long lcid = get_lcid_from_drbid(drb->rb_id);
     int idx = 0;
     while (idx < cellGroupConfig->rlc_BearerToAddModList->list.count) {
       const NR_RLC_BearerConfig_t *bc = cellGroupConfig->rlc_BearerToAddModList->list.array[idx];
@@ -222,6 +232,17 @@ static NR_CellGroupConfig_t *clone_CellGroupConfig(const NR_CellGroupConfig_t *o
   return cloned;
 }
 
+static void set_nssaiConfig(const int drb_len, const f1ap_drb_to_be_setup_t *req_drbs, NR_UE_sched_ctrl_t *sched_ctrl)
+{
+  for (int i = 0; i < drb_len; i++) {
+    const f1ap_drb_to_be_setup_t *drb = &req_drbs[i];
+
+    long lcid = get_lcid_from_drbid(drb->drb_id);
+    sched_ctrl->dl_lc_nssai[lcid] = drb->nssai;
+    LOG_I(NR_MAC, "Setting NSSAI sst: %d, sd: %d for DRB: %ld\n", drb->nssai.sst, drb->nssai.sd, drb->drb_id);
+  }
+}
+
 void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
 {
   gNB_MAC_INST *mac = RC.nrmac[0];
@@ -287,6 +308,9 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
 
   /* TODO: need to apply after UE context reconfiguration confirmed? */
   nr_mac_prepare_cellgroup_update(mac, UE, new_CellGroup);
+
+  /* Set NSSAI config in MAC for each active DRB */
+  set_nssaiConfig(req->drbs_to_be_setup_length, req->drbs_to_be_setup, &UE->UE_sched_ctrl);
 
   NR_SCHED_UNLOCK(&mac->sched_lock);
 
@@ -384,6 +408,9 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
     resp.du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded + 7) >> 3;
 
     nr_mac_prepare_cellgroup_update(mac, UE, new_CellGroup);
+
+    /* Set NSSAI config in MAC for each active DRB */
+    set_nssaiConfig(req->drbs_to_be_setup_length, req->drbs_to_be_setup, &UE->UE_sched_ctrl);
   } else {
     ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, new_CellGroup); // we actually don't need it
   }

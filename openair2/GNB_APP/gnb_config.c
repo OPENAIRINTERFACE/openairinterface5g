@@ -1750,27 +1750,23 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
               sprintf(snssaistr, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, k, GNB_CONFIG_STRING_PLMN_LIST, l);
               config_getlist(&SNSSAIParamList, SNSSAIParams, sizeof(SNSSAIParams)/sizeof(paramdef_t), snssaistr);
 
-              NGAP_REGISTER_GNB_REQ (msg_p).mcc[l]              = *PLMNParamList.paramarray[l][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-              NGAP_REGISTER_GNB_REQ (msg_p).mnc[l]              = *PLMNParamList.paramarray[l][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-              NGAP_REGISTER_GNB_REQ (msg_p).mnc_digit_length[l] = *PLMNParamList.paramarray[l][GNB_MNC_DIGIT_LENGTH].u8ptr;
+              NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].mcc = *PLMNParamList.paramarray[l][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+              NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].mnc = *PLMNParamList.paramarray[l][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+              NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].mnc_digit_length = *PLMNParamList.paramarray[l][GNB_MNC_DIGIT_LENGTH].u8ptr;
               NGAP_REGISTER_GNB_REQ (msg_p).default_drx      = 0;
-              AssertFatal((NGAP_REGISTER_GNB_REQ (msg_p).mnc_digit_length[l] == 2) ||
-                          (NGAP_REGISTER_GNB_REQ (msg_p).mnc_digit_length[l] == 3),
+              AssertFatal((NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].mnc_digit_length == 2)
+                              || (NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].mnc_digit_length == 3),
                           "BAD MNC DIGIT LENGTH %d",
-                          NGAP_REGISTER_GNB_REQ (msg_p).mnc_digit_length[l]);
-              
-              NGAP_REGISTER_GNB_REQ (msg_p).num_nssai[l] = SNSSAIParamList.numelt;
+                          NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].mnc_digit_length);
+
+              NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].num_nssai = SNSSAIParamList.numelt;
               for (int s = 0; s < SNSSAIParamList.numelt; ++s) {
-              
-                NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sST = *SNSSAIParamList.paramarray[s][GNB_SLICE_SERVICE_TYPE_IDX].uptr;
-                NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sD_flag = 0;
-                if(SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr != 0               // SD is optional
-                   && *SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr != 0xffffff) { // 0xffffff is "no SD", see 23.003 Sec 28.4.2
-                  NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sD_flag = 1;
-                  NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sD[0] = (*SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr & 0xFF0000) >> 16;
-                  NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sD[1] = (*SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr & 0x00FF00) >> 8;
-                  NGAP_REGISTER_GNB_REQ (msg_p).s_nssai[l][s].sD[2] = (*SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr & 0x0000FF);
-                }
+                NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].s_nssai[s].sst =
+                    *SNSSAIParamList.paramarray[s][GNB_SLICE_SERVICE_TYPE_IDX].uptr;
+                // SD is optional
+                // 0xffffff is "no SD", see 23.003 Sec 28.4.2
+                NGAP_REGISTER_GNB_REQ(msg_p).plmn[l].s_nssai[s].sd =
+                    (*SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr & 0xffffff);
               }
             }
             sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
