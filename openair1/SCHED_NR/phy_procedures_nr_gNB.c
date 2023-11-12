@@ -374,6 +374,7 @@ static int nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int
                         number_symbols,
                         nb_re_dmrs,
                         number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
+                        gNB->ulsch[ULSCH_id].unav_res,
                         pusch_pdu->qam_mod_order,
                         pusch_pdu->nrOfLayers);
 

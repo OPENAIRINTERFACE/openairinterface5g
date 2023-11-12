@@ -506,7 +506,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
   uint16_t *dmrsSymbPos     = &rel15_ul->ul_dmrs_symb_pos;
   uint16_t *ptrsSymbPos = &pusch_vars->ptrs_symbols;
   uint8_t *ptrsSymbIdx = &pusch_vars->ptrs_symbol_index;
-  uint8_t  *dmrsConfigType  = &rel15_ul->dmrs_config_type;
   uint16_t *nb_rb           = &rel15_ul->rb_size;
   uint8_t  *ptrsReOffset    = &rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset;
 
@@ -548,7 +547,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
       /*------------------------------------------------------------------------------------------------------- */
       nr_ptrs_cpe_estimation(*K_ptrs,
                              *ptrsReOffset,
-                             *dmrsConfigType,
                              *nb_rb,
                              rel15_ul->rnti,
                              nr_tti_rx,

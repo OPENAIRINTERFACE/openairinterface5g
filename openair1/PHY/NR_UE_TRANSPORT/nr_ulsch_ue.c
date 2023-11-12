@@ -162,12 +162,43 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
   harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb;
 
+  /////////////////////////PTRS parameters' initialization/////////////////////////
+  ///////////
+
+  uint8_t L_ptrs, K_ptrs = 0;
+  uint32_t unav_res = 0;
+  if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+    K_ptrs = pusch_pdu->pusch_ptrs.ptrs_freq_density;
+    L_ptrs = 1 << pusch_pdu->pusch_ptrs.ptrs_time_density;
+
+    ulsch_ue->ptrs_symbols = 0;
+
+    set_ptrs_symb_idx(&ulsch_ue->ptrs_symbols,
+                      number_of_symbols,
+                      start_symbol,
+                      L_ptrs,
+                      ul_dmrs_symb_pos);
+    int n_ptrs = (nb_rb + K_ptrs - 1) / K_ptrs;
+    int ptrsSymbPerSlot = get_ptrs_symbols_in_slot(ulsch_ue->ptrs_symbols,
+                                                   start_symbol,
+                                                   number_of_symbols);
+    unav_res = n_ptrs * ptrsSymbPerSlot;
+  }
+
+  ///////////
+  ////////////////////////////////////////////////////////////////////
+
+
   /////////////////////////ULSCH coding/////////////////////////
   ///////////
 
-  unsigned int G = nr_get_G(nb_rb, number_of_symbols,
-                            nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
-    
+  unsigned int G = nr_get_G(nb_rb,
+                            number_of_symbols,
+                            nb_dmrs_re_per_rb,
+                            number_dmrs_symbols,
+                            unav_res,
+                            mod_order,
+                            Nl);
 
   trace_NRpdu(DIRECTION_UPLINK,
               harq_process_ul_ue->a,
@@ -176,7 +207,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   if (nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, tb_size, G) == -1)
     return;
-
 
   ///////////
   ////////////////////////////////////////////////////////////////////
@@ -229,32 +259,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
-
-  /////////////////////////PTRS parameters' initialization/////////////////////////
-  ///////////
-
-  int16_t mod_ptrs[nb_rb] __attribute((aligned(16))); // assume maximum number of PTRS per pusch allocation
-  uint8_t L_ptrs, K_ptrs = 0;
-  uint16_t beta_ptrs = 1; // temp value until power control is implemented
-
-  if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
-
-    K_ptrs = pusch_pdu->pusch_ptrs.ptrs_freq_density;
-    L_ptrs = 1<<pusch_pdu->pusch_ptrs.ptrs_time_density;
-
-    beta_ptrs = 1; // temp value until power control is implemented
-
-    ulsch_ue->ptrs_symbols = 0;
-
-    set_ptrs_symb_idx(&ulsch_ue->ptrs_symbols,
-                      number_of_symbols,
-                      start_symbol,
-                      L_ptrs,
-                      ul_dmrs_symb_pos);
-  }
-
-  ///////////
-  ////////////////////////////////////////////////////////////////////////////////
 
   /////////////////////////ULSCH layer mapping/////////////////////////
   ///////////
@@ -377,6 +381,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       uint8_t is_ptrs_sym = 0;
       uint16_t dmrs_idx = 0, ptrs_idx = 0;
 
+      int16_t mod_ptrs[nb_rb] __attribute((aligned(16))); // assume maximum number of PTRS per pusch allocation
+
       if ((ul_dmrs_symb_pos >> l) & 0x01) {
         is_dmrs_sym = 1;
 
@@ -416,8 +422,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         } else if (is_ptrs_sym) {
           is_ptrs = is_ptrs_subcarrier(k,
                                        rnti,
-                                       nl,
-                                       dmrs_type,
                                        K_ptrs,
                                        nb_rb,
                                        pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset,
@@ -447,6 +451,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
           n+=(k_prime)?0:1;
       
         }  else if (is_ptrs == 1) {
+          uint16_t beta_ptrs = 1; // temp value until power control is implemented
           ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1] = (beta_ptrs*AMP*mod_ptrs[ptrs_idx<<1]) >> 15;
           ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = (beta_ptrs*AMP*mod_ptrs[(ptrs_idx<<1) + 1]) >> 15;
           ptrs_idx++;

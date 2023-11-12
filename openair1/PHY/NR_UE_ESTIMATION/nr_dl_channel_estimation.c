@@ -1777,7 +1777,6 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
   uint16_t *ptrsSymbPos     = NULL;
   uint8_t  *ptrsSymbIdx     = NULL;
   uint8_t  *ptrsReOffset    = NULL;
-  uint8_t  *dmrsConfigType  = NULL;
   uint16_t *nb_rb           = NULL;
   int nscid = 0;
 
@@ -1789,7 +1788,6 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
     K_ptrs          = &dlsch[0].dlsch_config.PTRSFreqDensity;
     dmrsSymbPos     = &dlsch[0].dlsch_config.dlDmrsSymbPos;
     ptrsReOffset    = &dlsch[0].dlsch_config.PTRSReOffset;
-    dmrsConfigType  = &dlsch[0].dlsch_config.dmrsConfigType;
     nb_rb           = &dlsch[0].dlsch_config.number_rbs;
     ptrsSymbPos     = &dlsch[0].ptrs_symbols;
     ptrsSymbIdx     = &dlsch[0].ptrs_symbol_index;
@@ -1803,7 +1801,6 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
     K_ptrs          = &dlsch[1].dlsch_config.PTRSFreqDensity;
     dmrsSymbPos     = &dlsch[1].dlsch_config.dlDmrsSymbPos;
     ptrsReOffset    = &dlsch[1].dlsch_config.PTRSReOffset;
-    dmrsConfigType  = &dlsch[1].dlsch_config.dmrsConfigType;
     nb_rb           = &dlsch[1].dlsch_config.number_rbs;
     ptrsSymbPos     = &dlsch[1].ptrs_symbols;
     ptrsSymbIdx     = &dlsch[1].ptrs_symbol_index;
@@ -1844,7 +1841,9 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
         /*------------------------------------------------------------------------------------------------------- */
         /* 1) Estimate common phase error per PTRS symbol                                                                */
         /*------------------------------------------------------------------------------------------------------- */
-        nr_ptrs_cpe_estimation(*K_ptrs,*ptrsReOffset,*dmrsConfigType,*nb_rb,
+        nr_ptrs_cpe_estimation(*K_ptrs,
+                               *ptrsReOffset,
+                               *nb_rb,
                                rnti,
                                nr_slot_rx,
                                symbol,
