@@ -92,11 +92,11 @@ typedef struct ru_config_s {
 } ru_config_t;
 */
 
-void RCconfig_verify(ngran_node_t node_type);
+void RCconfig_verify(configmodule_interface_t *cfg, ngran_node_t node_type);
 extern void NRRCconfig_RU(void);
 extern void RCconfig_nr_prs(void);
 extern void RCconfig_NR_L1(void);
-extern void RCconfig_nr_macrlc(void);
+extern void RCconfig_nr_macrlc(configmodule_interface_t *cfg);
 extern void NRRCConfig(void);
 
 //void                          enb_config_display(void);

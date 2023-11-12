@@ -5,7 +5,7 @@
 
 //#define DEBUG_SMALLBLOCKTEST
 
-
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char *argv[])
 {
 	time_stats_t timeEncoder,timeDecoder;

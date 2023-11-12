@@ -52,7 +52,7 @@ extern void stop_gNB(int);
 extern void kill_gNB_proc(int inst);
 
 // In nr-ru.c
-extern void init_NR_RU(char *);
+extern void init_NR_RU(configmodule_interface_t *cfg, char *);
 extern void init_RU_proc(RU_t *ru);
 extern void start_NR_RU(void);
 extern void stop_RU(int nb_ru);

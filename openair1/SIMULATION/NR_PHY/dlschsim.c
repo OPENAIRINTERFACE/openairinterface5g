@@ -97,6 +97,7 @@ nrUE_params_t nrUE_params={0};
 nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
+configmodule_interface_t *uniqCfg = NULL;
 
 int main(int argc, char **argv)
 {
@@ -138,15 +139,15 @@ int main(int argc, char **argv)
   char gNBthreads[128]="n";
   int Tbslbrm = 950984;
 
-	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
-		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
-	}
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
+    exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
+  }
 
-	//logInit();
-	randominit(0);
+  // logInit();
+  randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:X:")) != -1) {
-		switch (c) {
+  while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:X:")) != -1) {
+    switch (c) {
 		/*case 'f':
 			write_output_file = 1;
 			output_fd = fopen(optarg, "w");
@@ -338,9 +339,9 @@ int main(int argc, char **argv)
 			exit(-1);
 			break;
 		}
-	}
+  }
 
-	logInit();
+  logInit();
 	set_glog(loglvl);
 
 	if (snr1set == 0)
@@ -672,10 +673,10 @@ int main(int argc, char **argv)
 
 	if (ouput_vcd)
         vcd_signal_dumper_close();
-    end_configmodule();
-    loader_reset();
-    logTerm();
+  end_configmodule(uniqCfg);
+  loader_reset();
+  logTerm();
 
-    return (n_errors);
+  return (n_errors);
 }
 

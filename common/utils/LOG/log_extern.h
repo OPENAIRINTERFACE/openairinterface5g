@@ -25,7 +25,7 @@ extern log_t *g_log;
 
 extern const mapping log_level_names[];
 extern const mapping log_options[];
-extern mapping log_maskmap[];
+extern const mapping log_maskmap[];
 extern int log_mem_flag;
 extern char * log_mem_filename;
 extern char logmem_filename[1024];

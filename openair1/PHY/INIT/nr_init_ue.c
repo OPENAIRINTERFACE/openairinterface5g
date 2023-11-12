@@ -46,7 +46,7 @@ void RCconfig_nrUE_prs(void *cfg)
 
   paramlist_def_t gParamList = {CONFIG_STRING_PRS_LIST,NULL,0};
   paramdef_t gParams[] = PRS_GLOBAL_PARAMS_DESC;
-  config_getlist( &gParamList,gParams,sizeof(gParams)/sizeof(paramdef_t), NULL);
+  config_getlist(config_get_if(), &gParamList, gParams, sizeofArray(gParams), NULL);
   if (gParamList.numelt > 0)
   {
     ue->prs_active_gNBs = *(gParamList.paramarray[j][PRS_ACTIVE_GNBS_IDX].uptr);
@@ -61,7 +61,7 @@ void RCconfig_nrUE_prs(void *cfg)
     sprintf(PRS_ParamList.listname, "%s%i", CONFIG_STRING_PRS_CONFIG, i);
 
     sprintf(aprefix, "%s.[%i]", CONFIG_STRING_PRS_LIST, 0);
-    config_getlist( &PRS_ParamList,PRS_Params,sizeof(PRS_Params)/sizeof(paramdef_t), aprefix);
+    config_getlist(config_get_if(), &PRS_ParamList, PRS_Params, sizeofArray(PRS_Params), aprefix);
 
     if (PRS_ParamList.numelt > 0) {
       for (j = 0; j < PRS_ParamList.numelt; j++) {

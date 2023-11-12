@@ -289,10 +289,10 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 }
 
-
-static void get_options(void) {
+static void get_options(configmodule_interface_t *cfg)
+{
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
-  get_common_options(SOFTMODEM_ENB_BIT );
+  get_common_options(cfg, SOFTMODEM_ENB_BIT);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
@@ -312,10 +312,6 @@ static void get_options(void) {
     }
   }
 }
-
-
-
-
 
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
   int CC_id;
@@ -438,7 +434,7 @@ static  void wait_nfapi_init(char *thread_name) {
   pthread_mutex_unlock(&nfapi_sync_mutex);
   printf( "NFAPI: got sync (%s)\n", thread_name);
 }
-
+configmodule_interface_t *uniqCfg = NULL;
 int main ( int argc, char **argv )
 {
   int CC_id = 0;
@@ -446,7 +442,7 @@ int main ( int argc, char **argv )
 
   start_background_system();
 
-  if ( load_configmodule(argc,argv,0) == NULL) {
+  if ((uniqCfg = load_configmodule(argc, argv, 0)) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
@@ -454,7 +450,7 @@ int main ( int argc, char **argv )
   logInit();
   set_latency_target();
   printf("Reading in command-line options\n");
-  get_options ();
+  get_options(uniqCfg);
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
 
@@ -617,7 +613,7 @@ int main ( int argc, char **argv )
 
   create_tasks_mbms(1);
   sleep(1);
-  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
+  config_check_unknown_cmdlineopt(uniqCfg, CONFIG_CHECKALLSECTIONS);
 
   // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");

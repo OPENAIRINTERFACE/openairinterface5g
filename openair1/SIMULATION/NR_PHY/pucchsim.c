@@ -94,7 +94,7 @@ nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
 
-
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv)
 {
   char c;
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
   int pucch_DTX_thres = 50;
   cpuf = get_cpu_freq_GHz();
 
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_PUCCHSIM] Error, configuration module init failed\n");
   }
 

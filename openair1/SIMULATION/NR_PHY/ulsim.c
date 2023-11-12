@@ -144,6 +144,7 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
 int NB_UE_INST = 1;
 
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char *argv[])
 {
   FILE *csv_file = NULL;
@@ -217,7 +218,7 @@ int main(int argc, char *argv[])
   int params_from_file = 0;
   int threadCnt=0;
   int max_ldpc_iterations = 5;
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
   int ul_proc_error = 0; // uplink processing checking status flag

@@ -2270,8 +2270,8 @@ double channelmod_get_sinr_dB(void) {
 
 void init_channelmod(void) {
   paramdef_t channelmod_params[] = CHANNELMOD_PARAMS_DESC;
-  int numparams=sizeof(channelmod_params)/sizeof(paramdef_t);
-  int ret = config_get( channelmod_params,numparams,CHANNELMOD_SECTION);
+  int numparams = sizeofArray(channelmod_params);
+  int ret = config_get(config_get_if(), channelmod_params, numparams, CHANNELMOD_SECTION);
   AssertFatal(ret >= 0, "configuration couldn't be performed");
   defined_channels=calloc(max_chan,sizeof( channel_desc_t *));
   AssertFatal(defined_channels!=NULL, "couldn't allocate %u channel descriptors\n",max_chan);
@@ -2289,8 +2289,8 @@ int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double 
   paramlist_def_t channel_list;
   memset(&channel_list,0,sizeof(paramlist_def_t));
   memcpy(channel_list.listname,modellist_name,sizeof(channel_list.listname)-1);
-  int numparams = sizeof(achannel_params)/sizeof(paramdef_t);
-  config_getlist( &channel_list,achannel_params,numparams, CHANNELMOD_SECTION);
+  int numparams = sizeofArray(achannel_params);
+  config_getlist(config_get_if(), &channel_list, achannel_params, numparams, CHANNELMOD_SECTION);
   AssertFatal(channel_list.numelt>0, "List %s.%s not found in config file\n",CHANNELMOD_SECTION,channel_list.listname);
   int pindex_NAME = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_NAME_PNAME);
   int pindex_DT = config_paramidx_fromname(achannel_params,numparams, CHANNELMOD_MODEL_DT_PNAME );

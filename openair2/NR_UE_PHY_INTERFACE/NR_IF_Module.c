@@ -1296,7 +1296,7 @@ void RCconfig_nr_ue_macrlc(void) {
   paramdef_t MACRLC_Params[] = MACRLCPARAMS_DESC;
   paramlist_def_t MACRLC_ParamList = {CONFIG_STRING_MACRLC_LIST, NULL, 0};
 
-  config_getlist(&MACRLC_ParamList, MACRLC_Params, sizeof(MACRLC_Params) / sizeof(paramdef_t), NULL);
+  config_getlist(config_get_if(), &MACRLC_ParamList, MACRLC_Params, sizeofArray(MACRLC_Params), NULL);
   if (MACRLC_ParamList.numelt > 0) {
     for (j = 0; j < MACRLC_ParamList.numelt; j++) {
       if (strcmp(*(MACRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {

@@ -105,7 +105,7 @@ character string, used as a prefix for the section name. It has to be specified 
 list to be read is under another section.
 */
   config_getlist( &NbIoT_MacRLC_ParamList,NbIoT_MacRLC_Params,
-                  sizeof(NbIoT_MacRLC_Params)/sizeof(paramdef_t),
+                  sizeofArray(NbIoT_MacRLC_Params),
                   NULL);
 
 /*

@@ -306,7 +306,7 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,
 
 enum eTypes { eBool, eInt, eFloat, eText };
 static int verbose,help,disable_bundling=0,cqi_flag=0, extended_prefix_flag=0, test_perf=0, subframe=3, transmission_m=1,n_rx=1;
-
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv) {
   int i,j,aa,u;
   PHY_VARS_eNB *eNB;
@@ -395,7 +395,8 @@ int main(int argc, char **argv) {
   cpuf = cpu_freq_GHz;
   set_parallel_conf("PARALLEL_SINGLE_THREAD");
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
-  AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL, "Cannot load configuration module, exiting\n");
+  AssertFatal((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) != NULL,
+              "Cannot load configuration module, exiting\n");
   logInit();
   set_glog(OAILOG_INFO);
   // enable these lines if you need debug info

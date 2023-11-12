@@ -115,19 +115,14 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 }
 
-
-static void get_options(void) {
+static void get_options(configmodule_interface_t *cfg)
+{
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
-  get_common_options(SOFTMODEM_ENB_BIT );
+  get_common_options(cfg, SOFTMODEM_ENB_BIT);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 
-  //RCConfig();
-  
+  // RCConfig();
 }
-
-
-
-
 
 extern void  phy_free_RU(RU_t *);
 
@@ -144,17 +139,17 @@ void wait_eNBs(void){ return; }
 
 uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 
+configmodule_interface_t *uniqCfg = NULL;
 
 int main ( int argc, char **argv )
 {
-
-  if ( load_configmodule(argc,argv,0) == NULL) {
+  if ((uniqCfg = load_configmodule(argc, argv, 0)) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
   logInit();
   printf("Reading in command-line options\n");
-  get_options ();
+  get_options(uniqCfg);
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -180,7 +175,7 @@ int main ( int argc, char **argv )
 
   paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
-  config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);
+  config_getlist(config_get_if(), &RUParamList, RUParams, sizeofArray(RUParams), NULL);
 
   int j=0;
   uint64_t ru_mask=1;
@@ -366,8 +361,8 @@ int main ( int argc, char **argv )
   phy_free_RU(ru);
       
   free_lte_top();
-  end_configmodule();
-      
+  end_configmodule(uniqCfg);
+
   if (ru->rfdevice.trx_end_func) {
     ru->rfdevice.trx_end_func(&ru->rfdevice);
     ru->rfdevice.trx_end_func = NULL;
