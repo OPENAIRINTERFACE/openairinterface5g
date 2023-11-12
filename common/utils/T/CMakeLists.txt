@@ -8,11 +8,12 @@ else()
 endif()
 add_custom_command(OUTPUT T_IDs.h
                    COMMAND genids ${CMAKE_CURRENT_SOURCE_DIR}/T_messages.txt T_IDs.h
-                   DEPENDS genids
+                   DEPENDS genids T_messages.txt
                    COMMENT "Generating T_IDs.h from T_messages.txt"
 )
 add_custom_command(OUTPUT T_messages.txt.h
                    COMMAND xxd -i T_messages.txt ${CMAKE_CURRENT_BINARY_DIR}/T_messages.txt.h
+                   DEPENDS T_messages.txt
                    COMMENT "Generating T_messages.txt.h from T_messages.txt"
                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
