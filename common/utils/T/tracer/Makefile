@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -pthread -DT_TRACER -I.
+CFLAGS=-Wall -g -pthread -DT_TRACER -I. -I../incgen
 
 #CFLAGS += -O3 -ffast-math -fomit-frame-pointer
 
@@ -66,9 +66,9 @@ gnb: utils.o gnb.o database.o event.o handler.o configuration.o \
          filter/filter.a
 	$(CC) $(CFLAGS) -o gnb $^ $(LIBS) $(XLIBS)
 
-multi.o: ../T_IDs.h
+multi.o: ../incgen/T_IDs.h
 
-../T_IDs.h:
+../incgen/T_IDs.h: ../T_messages.txt
 	cd .. && $(MAKE)
 
 .PHONY: all gui/gui.a view/view.a logger/logger.a filter/filter.a

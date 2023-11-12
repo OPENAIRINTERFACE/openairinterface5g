@@ -1,7 +1,5 @@
 *.o
 *.a
-T_IDs.h
-T_messages.txt.h
 genids
 tracer/enb
 tracer/gnb
@@ -18,3 +16,4 @@ tracer/extract_output_subframe
 tracer/extract
 tracer/multi
 tracee/tracee
+incgen
