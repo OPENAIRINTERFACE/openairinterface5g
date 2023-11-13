@@ -44,8 +44,6 @@
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "F1AP_CauseRadioNetwork.h"
 
-#include "RRC/NR/MESSAGES/asn1_msg.h"
-
 #include "intertask_interface.h"
 #include "openair2/F1AP/f1ap_ids.h"
 #include "F1AP_CauseRadioNetwork.h"
@@ -2012,8 +2010,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   else {
     DL_BWP = &UE->current_DL_BWP;
     UL_BWP = &UE->current_UL_BWP;
-    sched_ctrl->next_dl_bwp_id = -1;
-    sched_ctrl->next_ul_bwp_id = -1;
     CellGroup = UE->CellGroup;
   }
   NR_BWP_Downlink_t *dl_bwp = NULL;
@@ -2302,8 +2298,6 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   sched_ctrl->sched_pusch.time_domain_allocation = -1;
 
   /* Set default BWPs */
-  sched_ctrl->next_dl_bwp_id = -1;
-  sched_ctrl->next_ul_bwp_id = -1;
   AssertFatal(ul_bwp->n_ul_bwp <= NR_MAX_NUM_BWP,
               "uplinkBWP_ToAddModList has %d BWP!\n",
               ul_bwp->n_ul_bwp);
@@ -2874,39 +2868,6 @@ void nr_mac_update_timers(module_id_t module_id,
         LOG_W(NR_MAC, "Removing UE %04x because RA timer expired\n", UE->rnti);
         mac_remove_nr_ue(mac, UE->rnti);
       }
-    }
-  }
-}
-
-void schedule_nr_bwp_switch(module_id_t module_id,
-                            frame_t frame,
-                            sub_frame_t slot)
-{
-  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
-  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[module_id]->sched_lock);
-
-  NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
-
-  // TODO: Implementation of a algorithm to perform:
-  //  - DL BWP selection:     sched_ctrl->next_dl_bwp_id = dl_bwp_id
-  //  - UL BWP selection:     sched_ctrl->next_ul_bwp_id = ul_bwp_id
-
-  UE_iterator(UE_info->list, UE) {
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
-    NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
-    if (sched_ctrl->rrc_processing_timer == 0 && UE->Msg4_ACKed && sched_ctrl->next_dl_bwp_id >= 0) {
-      LOG_W(NR_MAC,
-            "%4d.%2d UE %04x Scheduling BWP switch from DL_BWP %ld to %ld and from UL_BWP %ld to %ld\n",
-            frame,
-            slot,
-            UE->rnti,
-            dl_bwp->bwp_id,
-            sched_ctrl->next_dl_bwp_id,
-            ul_bwp->bwp_id,
-            sched_ctrl->next_ul_bwp_id);
-
-      nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
     }
   }
 }

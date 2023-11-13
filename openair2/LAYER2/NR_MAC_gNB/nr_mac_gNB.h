@@ -539,11 +539,6 @@ typedef struct NR_UE_ul_harq {
 /*! \brief scheduling control information set through an API */
 #define MAX_CSI_REPORTS 48
 typedef struct {
-  /// the next active BWP ID in DL
-  NR_BWP_Id_t next_dl_bwp_id;
-  /// the next active BWP ID in UL
-  NR_BWP_Id_t next_ul_bwp_id;
-
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
   NR_ControlResourceSet_t *coreset;
