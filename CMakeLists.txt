@@ -2373,7 +2373,7 @@ if (${T_TRACER})
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX
         L2 L2_LTE L2_NR L2_LTE_NR L2_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON MAC_UE_NR ngap
         CN_UTILS GTPV1U SCTP_CLIENT MME_APP LIB_NAS_UE NB_IoT SIMU SIMU_ETH OPENAIR0_LIB
-        ldpc_orig ldpc_optim ldpc_optim8seg ldpc dfts config_internals)
+        ldpc_orig ldpc_optim ldpc_optim8seg ldpc_t2 ldpc_cl ldpc_cuda ldpc dfts config_internals)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()
