@@ -510,27 +510,6 @@ static  int udpServerSocket(openAddr_s addr) {
 
   freeaddrinfo(servinfo); // all done with this structure
 
-  if (false) {
-    struct addrinfo hints;
-    memset(&hints,0,sizeof(hints));
-    hints.ai_family=AF_UNSPEC;
-    hints.ai_socktype=SOCK_DGRAM;
-    hints.ai_protocol=0;
-    hints.ai_flags=AI_PASSIVE|AI_ADDRCONFIG;
-    struct addrinfo *res=0;
-    int err=getaddrinfo(addr.destinationHost,addr.destinationService,&hints,&res);
-
-    if (err==0) {
-      for(p = res; p != NULL; p = p->ai_next) {
-        if ((err=connect(sockfd,  p->ai_addr, p->ai_addrlen))==0)
-          break;
-      }
-    }
-
-    if (err)
-      LOG_E(GTPU,"Can't filter remote host: %s, %s\n", addr.destinationHost,addr.destinationService);
-  }
-
   int sendbuff = 1000*1000*10;
   AssertFatal(0==setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &sendbuff, sizeof(sendbuff)),"");
   LOG_D(GTPU,"[%d] Created listener for paquets to: %s:%s, send buffer size: %d\n", sockfd, addr.originHost, addr.originService,sendbuff);

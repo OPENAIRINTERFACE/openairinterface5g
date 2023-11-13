@@ -19,18 +19,25 @@
  *      contact@openairinterface.org
  */
 
-/*! \file f1ap_cu_paging.h
- * \brief f1ap interface paging for CU
- * \author EURECOM/NTUST
- * \date 2018
- * \version 0.1
- * \company Eurecom
- * \email: navid.nikaein@eurecom.fr, bing-kai.hong@eurecom.fr
- * \note
- * \warning
- */
+#ifndef RRC_GNB_DU_H_
+#define RRC_GNB_DU_H_
 
-#ifndef F1AP_CU_PAGING_H_
-#define F1AP_CU_PAGING_H_
-int CU_send_Paging(sctp_assoc_t assoc_id, f1ap_paging_ind_t *paging);
-#endif /* F1AP_DU_PAGING_H_ */
+#include <netinet/in.h>
+#include <netinet/sctp.h>
+#include <stdint.h>
+#include <stdio.h>
+
+struct f1ap_setup_req_s;
+struct f1ap_lost_connection_t;
+struct gNB_RRC_INST_s;
+struct nr_rrc_du_container_t;
+
+void rrc_gNB_process_f1_setup_req(struct f1ap_setup_req_s *req, sctp_assoc_t assoc_id);
+void rrc_CU_process_f1_lost_connection(struct gNB_RRC_INST_s *rrc, struct f1ap_lost_connection_t *lc, sctp_assoc_t assoc_id);
+
+struct nr_rrc_du_container_t *get_du_for_ue(struct gNB_RRC_INST_s *rrc, uint32_t ue_id);
+struct nr_rrc_du_container_t *get_du_by_assoc_id(struct gNB_RRC_INST_s *rrc, sctp_assoc_t assoc_id);
+
+void dump_du_info(const struct gNB_RRC_INST_s *rrc, FILE *f);
+
+#endif /* RRC_GNB_DU_H_ */

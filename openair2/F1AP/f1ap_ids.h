@@ -34,6 +34,7 @@
 typedef struct f1_ue_data_t {
   uint32_t secondary_ue;
   sctp_assoc_t e1_assoc_id;
+  sctp_assoc_t du_assoc_id; // only used at the CU
 } f1_ue_data_t;
 
 void cu_init_f1_ue_data(void);

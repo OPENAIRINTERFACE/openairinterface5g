@@ -37,7 +37,8 @@
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 
-int CU_send_Paging(instance_t instance, f1ap_paging_ind_t *paging) {
+int CU_send_Paging(sctp_assoc_t assoc_id, f1ap_paging_ind_t *paging)
+{
   F1AP_F1AP_PDU_t pdu = {0};
 
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
@@ -114,6 +115,6 @@ int CU_send_Paging(instance_t instance, f1ap_paging_ind_t *paging) {
     return -1;
   }
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
