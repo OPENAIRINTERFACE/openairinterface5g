@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdint.h>
+#include "assertions.h"
 
 #include <nfapi_interface.h>
 #include <nfapi.h>
@@ -934,20 +935,9 @@ static uint8_t pack_ul_tti_request_prach_pdu(nfapi_nr_prach_pdu_t *prach_pdu, ui
     return 0;
   }
 
-  // TODO: put these hardoded values elsewhere
-  //  Beamforming
-  prach_pdu->beamforming.num_prgs = 0;
-  prach_pdu->beamforming.prg_size = 0;
-  prach_pdu->beamforming.dig_bf_interface = 0;
-
-  if (prach_pdu->beamforming.prgs_list == NULL) {
-    prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs, sizeof(*prach_pdu->beamforming.prgs_list));
+  if (prach_pdu->beamforming.num_prgs > 0 || prach_pdu->beamforming.prg_size > 0 || prach_pdu->beamforming.dig_bf_interface > 0) {
+    AssertFatal(1 == 0, "PRACH PDU Beamforming not supported yet");
   }
-  if (prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list == NULL) {
-    prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list =
-        calloc(prach_pdu->beamforming.dig_bf_interface, sizeof(*prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
-  }
-  prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = 0;
 
   // Pack RX Beamforming PDU
   if (!(push16(prach_pdu->beamforming.num_prgs, ppWritePackedMsg, end)
@@ -4769,19 +4759,20 @@ static uint8_t unpack_ul_tti_request_prach_pdu(void *tlv, uint8_t **ppReadPacked
         && pull8(ppReadPackedMsg, &prach_pdu->prach_start_symbol, end) && pull16(ppReadPackedMsg, &prach_pdu->num_cs, end))) {
     return 0;
   }
-  // TODO: ignoring beamforming tlv for now
-  if (prach_pdu->beamforming.prgs_list == NULL) {
-    prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs, sizeof(*prach_pdu->beamforming.prgs_list));
-  }
-  if (prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list == NULL) {
-    prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list =
-        calloc(prach_pdu->beamforming.dig_bf_interface, sizeof(*prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
-  }
-  // Pack RX Beamforming PDU
+  // Unpack RX Beamforming PDU
   if (!(pull16(ppReadPackedMsg, &prach_pdu->beamforming.num_prgs, end)
         && pull16(ppReadPackedMsg, &prach_pdu->beamforming.prg_size, end)
         && pull8(ppReadPackedMsg, &prach_pdu->beamforming.dig_bf_interface, end))) {
     return 0;
+  }
+  if (prach_pdu->beamforming.num_prgs > 0) {
+    prach_pdu->beamforming.prgs_list = calloc(prach_pdu->beamforming.num_prgs, sizeof(*prach_pdu->beamforming.prgs_list));
+    if (prach_pdu->beamforming.dig_bf_interface > 0) {
+      for(int prg_idx = 0; prg_idx < prach_pdu->beamforming.num_prgs;prg_idx++){
+        prach_pdu->beamforming.prgs_list[prg_idx].dig_bf_interface_list =
+            calloc(prach_pdu->beamforming.dig_bf_interface, sizeof(*prach_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
+      }
+    }
   }
   for (int prg = 0; prg < prach_pdu->beamforming.num_prgs; prg++) {
     for (int digBFInterface = 0; digBFInterface < prach_pdu->beamforming.dig_bf_interface; digBFInterface++) {
