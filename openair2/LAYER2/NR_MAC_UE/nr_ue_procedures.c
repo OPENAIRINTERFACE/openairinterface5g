@@ -197,7 +197,7 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
     mac->scheduling_info.lc_sched_info[i].LCID_status = LCID_EMPTY;
     mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
     for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
-      mac->first_ul_tx[k] = 1;
+      mac->UL_ndi[k] = -1; // initialize to invalid value
   }
 
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
