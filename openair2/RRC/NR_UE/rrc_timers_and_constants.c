@@ -374,7 +374,7 @@ void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
   switch(rlf_TimersAndConstants->present){
     case NR_SetupRelease_RLF_TimersAndConstants_PR_release :
       // use values for timers T301, T310, T311 and constants N310, N311, as included in ue-TimersAndConstants received in SIB1
-      set_rlf_sib1_timers_and_constants(tac, rrc->SInfo[0].sib1);
+      set_rlf_sib1_timers_and_constants(tac, rrc->perNB[0].SInfo.sib1);
       break;
     case NR_SetupRelease_RLF_TimersAndConstants_PR_setup :
       rlf_tac = rlf_TimersAndConstants->choice.setup;

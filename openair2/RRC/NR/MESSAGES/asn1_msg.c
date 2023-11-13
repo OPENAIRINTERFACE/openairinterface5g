@@ -771,41 +771,37 @@ int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
     return((enc_rval.encoded+7)/8);
 }
 
-
-int do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv)
+int do_RRCSetupRequest(uint8_t *buffer, size_t buffer_size, uint8_t *rv)
 {
-  asn_enc_rval_t enc_rval;
-  uint8_t buf[5],buf2=0;
-  NR_UL_CCCH_Message_t ul_ccch_msg;
-  NR_RRCSetupRequest_t *rrcSetupRequest;
-  memset((void *)&ul_ccch_msg,0,sizeof(NR_UL_CCCH_Message_t));
+  NR_UL_CCCH_Message_t ul_ccch_msg = {0};
   ul_ccch_msg.message.present           = NR_UL_CCCH_MessageType_PR_c1;
-  ul_ccch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_UL_CCCH_MessageType__c1));
-  ul_ccch_msg.message.choice.c1->present = NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest;
-  ul_ccch_msg.message.choice.c1->choice.rrcSetupRequest = CALLOC(1, sizeof(NR_RRCSetupRequest_t));
-  rrcSetupRequest          = ul_ccch_msg.message.choice.c1->choice.rrcSetupRequest;
-
+  asn1cCalloc(ul_ccch_msg.message.choice.c1, c1);
+  c1->present = NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest;
+  asn1cCalloc(c1->choice.rrcSetupRequest, rrcSetupRequest);
 
   if (1) {
     rrcSetupRequest->rrcSetupRequest.ue_Identity.present = NR_InitialUE_Identity_PR_randomValue;
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.size = 5;
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.bits_unused = 1;
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf = buf;
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[0] = rv[0];
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[1] = rv[1];
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[2] = rv[2];
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[3] = rv[3];
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue.buf[4] = rv[4]&0xfe;
+    BIT_STRING_t *str = &rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.randomValue;
+    str->size = 5;
+    str->bits_unused = 1;
+    str->buf = CALLOC(1, str->size);
+    str->buf[0] = rv[0];
+    str->buf[1] = rv[1];
+    str->buf[2] = rv[2];
+    str->buf[3] = rv[3];
+    str->buf[4] = rv[4] & 0xfe;
   } else {
     rrcSetupRequest->rrcSetupRequest.ue_Identity.present = NR_InitialUE_Identity_PR_ng_5G_S_TMSI_Part1;
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.size = 1;
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.bits_unused = 0;
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.buf = buf;
-    rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1.buf[0] = 0x12;
+    BIT_STRING_t *str = &rrcSetupRequest->rrcSetupRequest.ue_Identity.choice.ng_5G_S_TMSI_Part1;
+    str->size = 1;
+    str->bits_unused = 0;
+    str->buf = CALLOC(1, str->size);
+    str->buf[0] = 0x12;
   }
 
   rrcSetupRequest->rrcSetupRequest.establishmentCause = NR_EstablishmentCause_mo_Signalling; //EstablishmentCause_mo_Data;
-  rrcSetupRequest->rrcSetupRequest.spare.buf = &buf2;
+  rrcSetupRequest->rrcSetupRequest.spare.buf = CALLOC(1, 1);
+  rrcSetupRequest->rrcSetupRequest.spare.buf[0] = 0; // spare not used
   rrcSetupRequest->rrcSetupRequest.spare.size=1;
   rrcSetupRequest->rrcSetupRequest.spare.bits_unused = 7;
 
@@ -813,13 +809,10 @@ int do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint
     xer_fprint(stdout, &asn_DEF_NR_UL_CCCH_Message, (void *)&ul_ccch_msg);
   }
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_CCCH_Message,
-                                   NULL,
-                                   (void *)&ul_ccch_msg,
-                                   buffer,
-                                   buffer_size);
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_CCCH_Message, NULL, (void *)&ul_ccch_msg, buffer, buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   LOG_D(NR_RRC,"[UE] RRCSetupRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_UL_CCCH_Message, &ul_ccch_msg);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -857,42 +850,28 @@ do_NR_RRCReconfigurationComplete_for_nsa(
 }
 
 //------------------------------------------------------------------------------
-uint8_t
-do_NR_RRCReconfigurationComplete(
-  const protocol_ctxt_t *const ctxt_pP,
-  uint8_t *buffer,
-  size_t buffer_size,
-  const uint8_t Transaction_id
-)
+uint8_t do_NR_RRCReconfigurationComplete(uint8_t *buffer, size_t buffer_size, const uint8_t Transaction_id)
 //------------------------------------------------------------------------------
 {
-  asn_enc_rval_t enc_rval;
-  NR_UL_DCCH_Message_t ul_dcch_msg;
-  NR_RRCReconfigurationComplete_t *rrcReconfigurationComplete;
-  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  NR_UL_DCCH_Message_t ul_dcch_msg = {0};
   ul_dcch_msg.message.present                     = NR_UL_DCCH_MessageType_PR_c1;
-  ul_dcch_msg.message.choice.c1                   = CALLOC(1, sizeof(struct NR_UL_DCCH_MessageType__c1));
-  ul_dcch_msg.message.choice.c1->present           = NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete;
-  ul_dcch_msg.message.choice.c1->choice.rrcReconfigurationComplete = CALLOC(1, sizeof(NR_RRCReconfigurationComplete_t));
-  rrcReconfigurationComplete            = ul_dcch_msg.message.choice.c1->choice.rrcReconfigurationComplete;
-  rrcReconfigurationComplete->rrc_TransactionIdentifier = Transaction_id;
-  rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete = CALLOC(1, sizeof(NR_RRCReconfigurationComplete_IEs_t));
-  rrcReconfigurationComplete->criticalExtensions.present =
-		  NR_RRCReconfigurationComplete__criticalExtensions_PR_rrcReconfigurationComplete;
-  rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->nonCriticalExtension = NULL;
-  rrcReconfigurationComplete->criticalExtensions.choice.rrcReconfigurationComplete->lateNonCriticalExtension = NULL;
+  asn1cCalloc(ul_dcch_msg.message.choice.c1, c1);
+  c1->present = NR_UL_DCCH_MessageType__c1_PR_rrcReconfigurationComplete;
+  asn1cCalloc(c1->choice.rrcReconfigurationComplete, reconfComplete);
+  reconfComplete->rrc_TransactionIdentifier = Transaction_id;
+  reconfComplete->criticalExtensions.present = NR_RRCReconfigurationComplete__criticalExtensions_PR_rrcReconfigurationComplete;
+  asn1cCalloc(reconfComplete->criticalExtensions.choice.rrcReconfigurationComplete, extension);
+  extension->nonCriticalExtension = NULL;
+  extension->lateNonCriticalExtension = NULL;
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
   }
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
-                                   NULL,
-                                   (void *)&ul_dcch_msg,
-                                   buffer,
-                                   buffer_size);
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message, NULL, (void *)&ul_dcch_msg, buffer, buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   LOG_I(NR_RRC,"rrcReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_UL_DCCH_Message, &ul_dcch_msg);
   return((enc_rval.encoded+7)/8);
 }
 

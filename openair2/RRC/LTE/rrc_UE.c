@@ -5380,8 +5380,6 @@ openair_rrc_top_init_ue(
 
     for (module_id = 0; module_id < NB_UE_INST; module_id++) {
       UE_rrc_inst[module_id].UECap = UECap;
-      UE_rrc_inst[module_id].UECapability = UECap->sdu;
-      UE_rrc_inst[module_id].UECapability_size = UECap->sdu_size;
     }
 
     LOG_I(RRC,"[UE] eMBMS active state is %d \n", eMBMS_active);
@@ -6596,9 +6594,6 @@ void process_nr_nsa_msg(nsa_msg_t *msg, int msg_len)
         {
             fill_ue_capability(NULL, received_nr_msg);
             UE_rrc_inst[module_id].UECap = UE_rrc_inst->UECap;
-            UE_rrc_inst[module_id].UECapability = UE_rrc_inst->UECap->sdu;
-            UE_rrc_inst[module_id].UECapability_size = UE_rrc_inst->UECap->sdu_size;
-
             if (!is_en_dc_supported(UE_rrc_inst->UECap->UE_EUTRA_Capability))
             {
               LOG_E(RRC, "en_dc is NOT supported! Not sending RRC_DCCH_DATA_COPY_IND to update UE_Capability_INFO\n");
