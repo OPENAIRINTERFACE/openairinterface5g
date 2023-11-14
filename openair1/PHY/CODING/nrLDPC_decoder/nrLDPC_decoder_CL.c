@@ -339,9 +339,11 @@ int32_t LDPCinit()
 }
 
 int32_t LDPCdecoder(t_nrLDPC_dec_params *p_decParams,
+                    uint8_t harq_pid,
+                    uint8_t ulsch_id,
+                    uint8_t C,
                     int8_t *p_llr,
                     int8_t *p_out,
-                    t_nrLDPC_procBuf *p_procBuf,
                     t_nrLDPC_time_stats *time_decoder,
                     decode_abort_t *ab)
 {

@@ -518,7 +518,7 @@ extern "C"  int32_t LDPCdecoder(t_nrLDPC_dec_params *p_decParams,
   init_LLR_DMA(p_decParams, p_llr, p_out);
   uint16_t Zc = p_decParams->Z;
   uint8_t BG = p_decParams->BG;
-  int block_length = p_decParams->block_length;
+  int block_length = p_decParams->E;
   uint8_t row, col;
   if (BG == 1) {
     row = 46;

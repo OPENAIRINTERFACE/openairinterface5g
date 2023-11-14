@@ -252,7 +252,7 @@ static void nr_processDLSegment(void *arg)
     }
 
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_IN);
-    p_decoderParms->E = p_decoderParms->block_length = lenWithCrc(harq_process->C, A);
+    p_decoderParms->E = lenWithCrc(harq_process->C, A);
     p_decoderParms->crc_type = crcType(harq_process->C, A);
     rdata->decodeIterations =
         ldpc_interface.LDPCdecoder(p_decoderParms, 0, 0, 0, l, LDPCoutput, &procTime, &harq_process->abort_decode);
