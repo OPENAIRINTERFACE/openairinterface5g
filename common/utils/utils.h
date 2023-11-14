@@ -25,7 +25,7 @@ extern "C" {
                      _a > _b ? _a : _b; })
 
 
-#define cmax3(a,b,c) ( cmax(cmax(a,b), cmax(b,c)) )  
+#define cmax3(a,b,c) ( cmax(cmax(a,b), c) )  
 
 // Prevent double evaluation in min macro
 #define cmin(a,b) ({ __typeof__ (a) _a = (a); \
