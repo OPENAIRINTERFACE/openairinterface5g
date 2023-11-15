@@ -78,6 +78,7 @@
 #include "openair3/SECU/secu_defs.h"
 
 #include "rrc_gNB_NGAP.h"
+#include "rrc_gNB_du.h"
 
 #include "rrc_gNB_GTPV1U.h"
 
@@ -105,9 +106,19 @@
 
 extern RAN_CONTEXT_t RC;
 
-static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn);
+static inline uint64_t bitStr_to_uint64(const BIT_STRING_t *asn);
 
 mui_t rrc_gNB_mui = 0;
+
+// the assoc_id might be 0 (if the DU goes offline). Below helper macro to
+// print an error and return from the function in that case
+#define RETURN_IF_INVALID_ASSOC_ID(ue_data)                                \
+  {                                                                        \
+    if (ue_data.du_assoc_id == 0) {                                        \
+      LOG_E(NR_RRC, "cannot send data: invalid assoc_id 0, DU offline\n"); \
+      return;                                                              \
+    }                                                                      \
+  }
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
@@ -188,6 +199,7 @@ static void freeDRBlist(NR_DRB_ToAddModList_t *list)
 typedef struct deliver_dl_rrc_message_data_s {
   const gNB_RRC_INST *rrc;
   f1ap_dl_rrc_message_t *dl_rrc;
+  sctp_assoc_t assoc_id;
 } deliver_dl_rrc_message_data_t;
 static void rrc_deliver_dl_rrc_message(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
 {
@@ -196,7 +208,7 @@ static void rrc_deliver_dl_rrc_message(void *deliver_pdu_data, ue_id_t ue_id, in
   data->dl_rrc->rrc_container = (uint8_t *)buf;
   data->dl_rrc->rrc_container_length = size;
   DevAssert(data->dl_rrc->srb_id == srb_id);
-  data->rrc->mac_rrc.dl_rrc_message_transfer(data->dl_rrc);
+  data->rrc->mac_rrc.dl_rrc_message_transfer(data->assoc_id, data->dl_rrc);
 }
 
 
@@ -204,19 +216,15 @@ void nr_rrc_transfer_protected_rrc_message(const gNB_RRC_INST *rrc, const gNB_RR
 {
   DevAssert(size > 0);
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_dl_rrc_message_t dl_rrc = {.gNB_CU_ue_id = ue_p->rrc_ue_id, .gNB_DU_ue_id = ue_data.secondary_ue, .srb_id = srb_id};
-  deliver_dl_rrc_message_data_t data = {.rrc = rrc, .dl_rrc = &dl_rrc};
+  deliver_dl_rrc_message_data_t data = {.rrc = rrc, .dl_rrc = &dl_rrc, .assoc_id = ue_data.du_assoc_id };
   nr_pdcp_data_req_srb(ue_p->rrc_ue_id, srb_id, rrc_gNB_mui++, size, (unsigned char *const)buffer, rrc_deliver_dl_rrc_message, &data);
 }
 
 static int get_dl_band(const f1ap_served_cell_info_t *cell_info)
 {
   return cell_info->mode == F1AP_MODE_TDD ? cell_info->tdd.freqinfo.band : cell_info->fdd.dl_freqinfo.band;
-}
-
-static int get_ul_band(const f1ap_served_cell_info_t *cell_info)
-{
-  return cell_info->mode == F1AP_MODE_TDD ? cell_info->tdd.freqinfo.band : cell_info->fdd.ul_freqinfo.band;
 }
 
 static int get_ssb_scs(const f1ap_served_cell_info_t *cell_info)
@@ -337,6 +345,7 @@ void openair_rrc_gNB_configuration(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *c
   uid_linear_allocator_init(&rrc->uid_allocator);
   RB_INIT(&rrc->rrc_ue_head);
   RB_INIT(&rrc->cuups);
+  RB_INIT(&rrc->dus);
   rrc->configuration = *configuration;
    /// System Information INIT
   init_NR_SI(rrc);
@@ -456,6 +465,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
 
   freeSRBlist(SRBs);
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_dl_rrc_message_t dl_rrc = {
     .gNB_CU_ue_id = ue_p->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -463,7 +473,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
     .rrc_container_length = size,
     .srb_id = CCCH
   };
-  rrc->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
+  rrc->mac_rrc.dl_rrc_message_transfer(ue_data.du_assoc_id, &dl_rrc);
 }
 
 static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context_t *const ue_context_pP)
@@ -485,6 +495,7 @@ static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context
   LOG_I(NR_RRC, " [RAPROC] ue %04x Logical Channel DL-CCCH, Generating NR_RRCReject (bytes %d)\n", ue_p->rnti, size);
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_dl_rrc_message_t dl_rrc = {
     .gNB_CU_ue_id = ue_p->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -494,7 +505,7 @@ static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context
     .execute_duplication  = 1,
     .RAT_frequency_priority_information.en_dc = 0
   };
-  rrc->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
+  rrc->mac_rrc.dl_rrc_message_transfer(ue_data.du_assoc_id, &dl_rrc);
 }
 
 //-----------------------------------------------------------------------------
@@ -528,9 +539,6 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   ue_p->xids[xid] = RRC_DEFAULT_RECONF;
 
-  const nr_rrc_du_container_t *du = rrc->du;
-  DevAssert(du != NULL);
-
   struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList = CALLOC(1, sizeof(*dedicatedNAS_MessageList));
 
   /* Add all NAS PDUs to the list */
@@ -555,7 +563,8 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     dedicatedNAS_MessageList = NULL;
   }
 
-  AssertFatal(du->setup_req->num_cells_available == 1, "cannot handle more than one cell, but have %d\n", du->setup_req->num_cells_available);
+  const nr_rrc_du_container_t *du = get_du_for_ue(rrc, ue_p->rrc_ue_id);
+  DevAssert(du != NULL);
   f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
   int scs = get_ssb_scs(cell_info);
   int band = get_dl_band(cell_info);
@@ -1044,12 +1053,13 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   nr_pdcp_reestablishment(ue_p->rrc_ue_id);
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   uint32_t old_gNB_DU_ue_id = old_rnti;
   f1ap_dl_rrc_message_t dl_rrc = {.gNB_CU_ue_id = ue_p->rrc_ue_id,
                                   .gNB_DU_ue_id = ue_data.secondary_ue,
                                   .srb_id = DCCH,
                                   .old_gNB_DU_ue_id = &old_gNB_DU_ue_id};
-  deliver_dl_rrc_message_data_t data = {.rrc = rrc, .dl_rrc = &dl_rrc};
+  deliver_dl_rrc_message_data_t data = {.rrc = rrc, .dl_rrc = &dl_rrc, .assoc_id = ue_data.du_assoc_id};
   nr_pdcp_data_req_srb(ue_p->rrc_ue_id, DCCH, rrc_gNB_mui++, size, (unsigned char *const)buffer, rrc_deliver_dl_rrc_message, &data);
 }
 
@@ -1157,211 +1167,153 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
   return 0;
 }
 
-/*------------------------------------------------------------------------------*/
-static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_rrc_message_t *msg)
+static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id, const NR_RRCSetupRequest_IEs_t *rrcSetupRequest, const f1ap_initial_ul_rrc_message_t *msg)
 {
-  asn_dec_rval_t                                    dec_rval;
-  NR_UL_CCCH_Message_t *ul_ccch_msg = NULL;
-  gNB_RRC_INST *gnb_rrc_inst = RC.nrrrc[module_id];
-  NR_RRCSetupRequest_IEs_t                         *rrcSetupRequest = NULL;
-  NR_RRCReestablishmentRequest_IEs_t rrcReestablishmentRequest;
-  rnti_t rnti = msg->crnti;
-
-  /* look up corresponding DU. For the moment, there is only one */
-  const nr_rrc_du_container_t *du = gnb_rrc_inst->du;
-  AssertFatal(du != NULL, "received CCCH message, but no corresponding DU found\n");
-
-  LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, payload_size %d\n", rnti, msg->rrc_container_length);
-  dec_rval =
-      uper_decode(NULL, &asn_DEF_NR_UL_CCCH_Message, (void **)&ul_ccch_msg, msg->rrc_container, msg->rrc_container_length, 0, 0);
-
-  if (dec_rval.code != RC_OK || dec_rval.consumed == 0) {
-    LOG_E(NR_RRC, " FATAL Error in receiving CCCH\n");
-    return -1;
-  }
-
-  if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
-    switch (ul_ccch_msg->message.choice.c1->present) {
-      case NR_UL_CCCH_MessageType__c1_PR_NOTHING:
-        /* TODO */
-        LOG_I(NR_RRC, "Received PR_NOTHING on UL-CCCH-Message\n");
-        break;
-
-      case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
-        LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %04x)\n", rnti);
-        {
-          rrcSetupRequest = &ul_ccch_msg->message.choice.c1->choice.rrcSetupRequest->rrcSetupRequest;
-          rrc_gNB_ue_context_t *ue_context_p = NULL;
-          if (NR_InitialUE_Identity_PR_randomValue == rrcSetupRequest->ue_Identity.present) {
-            /* randomValue                         BIT STRING (SIZE (39)) */
-            if (rrcSetupRequest->ue_Identity.choice.randomValue.size != 5) { // 39-bit random value
-              LOG_E(NR_RRC, "wrong InitialUE-Identity randomValue size, expected 5, provided %lu", (long unsigned int)rrcSetupRequest->ue_Identity.choice.randomValue.size);
-              ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
-              return -1;
-            }
-            uint64_t random_value = 0;
-            memcpy(((uint8_t *)&random_value) + 3, rrcSetupRequest->ue_Identity.choice.randomValue.buf, rrcSetupRequest->ue_Identity.choice.randomValue.size);
-
-            /* if there is already a registered UE (with another RNTI) with this random_value,
-             * the current one must be removed from MAC/PHY (zombie UE)
-             */
-            if ((ue_context_p = rrc_gNB_ue_context_random_exist(gnb_rrc_inst, random_value))) {
-              LOG_W(NR_RRC, "new UE rnti (coming with random value) is already there, removing UE %x from MAC/PHY\n", rnti);
-              AssertFatal(false, "not implemented\n");
-            }
-
-            ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value, msg->gNB_DU_ue_id);
-          } else if (NR_InitialUE_Identity_PR_ng_5G_S_TMSI_Part1 == rrcSetupRequest->ue_Identity.present) {
-            /* TODO */
-            /* <5G-S-TMSI> = <AMF Set ID><AMF Pointer><5G-TMSI> 48-bit */
-            /* ng-5G-S-TMSI-Part1                  BIT STRING (SIZE (39)) */
-            if (rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size != 5) {
-              LOG_E(NR_RRC, "wrong ng_5G_S_TMSI_Part1 size, expected 5, provided %lu \n", (long unsigned int)rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size);
-              ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
-              return -1;
-            }
-
-            uint64_t s_tmsi_part1 = bitStr_to_uint64(&rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1);
-
-            // memcpy(((uint8_t *) & random_value) + 3,
-            //         rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.buf,
-            //         rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size);
-
-            if ((ue_context_p = rrc_gNB_ue_context_5g_s_tmsi_exist(gnb_rrc_inst, s_tmsi_part1))) {
-              gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-              LOG_I(NR_RRC, " 5G-S-TMSI-Part1 exists, old rnti %04x => %04x\n", UE->rnti, rnti);
-              AssertFatal(false, "not implemented\n");
-
-              /* replace rnti in the context */
-              UE->rnti = rnti;
-            } else {
-              LOG_I(NR_RRC, "UE %04x 5G-S-TMSI-Part1 doesn't exist, setting ng_5G_S_TMSI_Part1 => %ld\n", rnti, s_tmsi_part1);
-
-              ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, s_tmsi_part1, msg->gNB_DU_ue_id);
-              AssertFatal(ue_context_p != NULL, "out of memory\n");
-              gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-              UE->Initialue_identity_5g_s_TMSI.presence = true;
-              UE->ng_5G_S_TMSI_Part1 = s_tmsi_part1;
-            }
-          } else {
-            /* TODO */
-            uint64_t random_value = 0;
-            memcpy(((uint8_t *)&random_value) + 3, rrcSetupRequest->ue_Identity.choice.randomValue.buf, rrcSetupRequest->ue_Identity.choice.randomValue.size);
-
-            ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value, msg->gNB_DU_ue_id);
-            LOG_E(NR_RRC, "RRCSetupRequest without random UE identity or S-TMSI not supported, let's reject the UE %04x\n", rnti);
-            rrc_gNB_generate_RRCReject(module_id, ue_context_p);
-            break;
-          }
-          gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-          UE = &ue_context_p->ue_context;
-          UE->establishment_cause = rrcSetupRequest->establishmentCause;
-          UE->Srb[1].Active = 1;
-          rrc_gNB_generate_RRCSetup(module_id,
-                                    rnti,
-                                    ue_context_p,
-                                    msg->du2cu_rrc_container,
-                                    msg->du2cu_rrc_container_length);
-        }
-        break;
-
-      case NR_UL_CCCH_MessageType__c1_PR_rrcResumeRequest:
-        LOG_I(NR_RRC, "receive rrcResumeRequest message \n");
-        break;
-
-      case NR_UL_CCCH_MessageType__c1_PR_rrcReestablishmentRequest: {
-        LOG_DUMPMSG(NR_RRC,
-                    DEBUG_RRC,
-                    (char *)(msg->rrc_container),
-                    msg->rrc_container_length,
-                    "[MSG] RRC Reestablishment Request\n");
-        rrcReestablishmentRequest = ul_ccch_msg->message.choice.c1->choice.rrcReestablishmentRequest->rrcReestablishmentRequest;
-        const NR_ReestablishmentCause_t cause = rrcReestablishmentRequest.reestablishmentCause;
-        const long physCellId = rrcReestablishmentRequest.ue_Identity.physCellId;
-        LOG_I(NR_RRC,
-              "UE %04x physCellId %ld NR_RRCReestablishmentRequest cause %s\n",
-              rnti,
-              physCellId,
-              cause == NR_ReestablishmentCause_otherFailure
-                  ? "Other Failure"
-                  : (cause == NR_ReestablishmentCause_handoverFailure ? "Handover Failure" : "reconfigurationFailure"));
-
-        AssertFatal(du->setup_req->num_cells_available == 1, "cannot handle more than one cell\n");
-        const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
-        if (physCellId != cell_info->nr_pci) {
-          /* UE was moving from previous cell so quickly that RRCReestablishment for previous cell was received in this cell */
-          LOG_E(NR_RRC,
-                " NR_RRCReestablishmentRequest ue_Identity.physCellId(%ld) is not equal to current physCellId(%d), fallback to RRC establishment\n",
-                physCellId,
-                cell_info->nr_pci);
-          /* 38.401 8.7: "If the UE accessed from a gNB-DU other than the
-           * original one, the gNB-CU should trigger the UE Context Setup
-           * procedure" we did not implement this yet; TBD for Multi-DU */
-          AssertFatal(false, "not implemented\n");
-          break;
-        }
-
-        for (int i = 0; i < rrcReestablishmentRequest.ue_Identity.shortMAC_I.size; i++) {
-          LOG_D(NR_RRC, "rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[%d] = %x\n", i, rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[i]);
-        }
-
-        rnti_t old_rnti = rrcReestablishmentRequest.ue_Identity.c_RNTI;
-        // TODO: we need to check within a specific DU!
-        rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(gnb_rrc_inst, old_rnti);
-        gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-        /* in case we need to do RRC Setup, give the UE a new random identity */
-        uint64_t random_value;
-        fill_random(&random_value, sizeof(random_value));
-        random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
-        if (ue_context_p == NULL) {
-          LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC setup\n");
-          ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value, msg->gNB_DU_ue_id);
-          ue_context_p->ue_context.Srb[1].Active = 1;
-          rrc_gNB_generate_RRCSetup(module_id, rnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
-          break;
-        }
-
-        // 3GPP TS 38.321 version 15.13.0 Section 7.1 Table 7.1-1: RNTI values
-        if (rrcReestablishmentRequest.ue_Identity.c_RNTI < 0x1 || rrcReestablishmentRequest.ue_Identity.c_RNTI > 0xffef) {
-          /* c_RNTI range error should not happen */
-          LOG_E(NR_RRC,
-                "NR_RRCReestablishmentRequest c_RNTI %04lx range error, fallback to RRC setup\n",
-                rrcReestablishmentRequest.ue_Identity.c_RNTI);
-          ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value, msg->gNB_DU_ue_id);
-          ue_context_p->ue_context.Srb[1].Active = 1;
-          rrc_gNB_generate_RRCSetup(module_id, rnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
-          break;
-        }
-
-        /* TODO: start timer in ITTI and drop UE if it does not come back */
-
-        // update with new RNTI, and update secondary UE association
-        UE->rnti = rnti;
-        cu_remove_f1_ue_data(UE->rrc_ue_id);
-        f1_ue_data_t ue_data = {.secondary_ue = rnti};
-        cu_add_f1_ue_data(UE->rrc_ue_id, &ue_data);
-
-        UE->reestablishment_cause = cause;
-        LOG_D(NR_RRC, "Accept RRCReestablishmentRequest from UE physCellId %ld cause %ld\n", physCellId, cause);
-
-        rrc_gNB_generate_RRCReestablishment(ue_context_p,
-                                            msg->du2cu_rrc_container,
-                                            old_rnti,
-                                            du);
-      } break;
-
-      case NR_UL_CCCH_MessageType__c1_PR_rrcSystemInfoRequest:
-        LOG_I(NR_RRC, "UE %04x receive rrcSystemInfoRequest message \n", rnti);
-        /* TODO */
-        break;
-
-      default:
-        LOG_E(NR_RRC, "UE %04x Unknown message\n", rnti);
-        break;
+  rrc_gNB_ue_context_t *ue_context_p = NULL;
+  if (NR_InitialUE_Identity_PR_randomValue == rrcSetupRequest->ue_Identity.present) {
+    /* randomValue                         BIT STRING (SIZE (39)) */
+    if (rrcSetupRequest->ue_Identity.choice.randomValue.size != 5) { // 39-bit random value
+      LOG_E(NR_RRC,
+            "wrong InitialUE-Identity randomValue size, expected 5, provided %lu",
+            (long unsigned int)rrcSetupRequest->ue_Identity.choice.randomValue.size);
+      return;
     }
+    uint64_t random_value = 0;
+    memcpy(((uint8_t *)&random_value) + 3,
+           rrcSetupRequest->ue_Identity.choice.randomValue.buf,
+           rrcSetupRequest->ue_Identity.choice.randomValue.size);
+
+    /* if there is already a registered UE (with another RNTI) with this random_value,
+     * the current one must be removed from MAC/PHY (zombie UE)
+     */
+    if ((ue_context_p = rrc_gNB_ue_context_random_exist(rrc, random_value))) {
+      LOG_W(NR_RRC, "new UE rnti (coming with random value) is already there, removing UE %x from MAC/PHY\n", msg->crnti);
+      AssertFatal(false, "not implemented\n");
+    }
+
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+  } else if (NR_InitialUE_Identity_PR_ng_5G_S_TMSI_Part1 == rrcSetupRequest->ue_Identity.present) {
+    /* <5G-S-TMSI> = <AMF Set ID><AMF Pointer><5G-TMSI> 48-bit */
+    /* ng-5G-S-TMSI-Part1                  BIT STRING (SIZE (39)) */
+    if (rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size != 5) {
+      LOG_E(NR_RRC,
+            "wrong ng_5G_S_TMSI_Part1 size, expected 5, provided %lu \n",
+            (long unsigned int)rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size);
+      return;
+    }
+
+    uint64_t s_tmsi_part1 = bitStr_to_uint64(&rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1);
+
+    // memcpy(((uint8_t *) & random_value) + 3,
+    //         rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.buf,
+    //         rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size);
+
+    if ((ue_context_p = rrc_gNB_ue_context_5g_s_tmsi_exist(rrc, s_tmsi_part1))) {
+      gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+      LOG_I(NR_RRC, " 5G-S-TMSI-Part1 exists, old rnti %04x => %04x\n", UE->rnti, msg->crnti);
+      AssertFatal(false, "not implemented\n");
+
+      /* replace rnti in the context */
+      UE->rnti = msg->crnti;
+    } else {
+      LOG_I(NR_RRC, "UE %04x 5G-S-TMSI-Part1 doesn't exist, setting ng_5G_S_TMSI_Part1 => %ld\n", msg->crnti, s_tmsi_part1);
+
+      ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, s_tmsi_part1, msg->gNB_DU_ue_id);
+      AssertFatal(ue_context_p != NULL, "out of memory\n");
+      gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+      UE->Initialue_identity_5g_s_TMSI.presence = true;
+      UE->ng_5G_S_TMSI_Part1 = s_tmsi_part1;
+    }
+  } else {
+    uint64_t random_value = 0;
+    memcpy(((uint8_t *)&random_value) + 3,
+           rrcSetupRequest->ue_Identity.choice.randomValue.buf,
+           rrcSetupRequest->ue_Identity.choice.randomValue.size);
+
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    LOG_E(NR_RRC, "RRCSetupRequest without random UE identity or S-TMSI not supported, let's reject the UE %04x\n", msg->crnti);
+    rrc_gNB_generate_RRCReject(0, ue_context_p);
+    return;
   }
-  ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
-  return 0;
+
+  gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+  UE = &ue_context_p->ue_context;
+  UE->establishment_cause = rrcSetupRequest->establishmentCause;
+  UE->Srb[1].Active = 1;
+  rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+}
+
+static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id, const NR_RRCReestablishmentRequest_IEs_t *req, const f1ap_initial_ul_rrc_message_t *msg)
+{
+  const NR_ReestablishmentCause_t cause = req->reestablishmentCause;
+  const long physCellId = req->ue_Identity.physCellId;
+  LOG_I(NR_RRC,
+        "UE %04x physCellId %ld NR_RRCReestablishmentRequest cause %s\n",
+        msg->crnti,
+        physCellId,
+        cause == NR_ReestablishmentCause_otherFailure
+            ? "Other Failure"
+            : (cause == NR_ReestablishmentCause_handoverFailure ? "Handover Failure" : "reconfigurationFailure"));
+
+  const nr_rrc_du_container_t *du = get_du_by_assoc_id(rrc, assoc_id);
+  if (du == NULL) {
+    LOG_E(RRC, "received CCCH message, but no corresponding DU found\n");
+    return;
+  }
+  const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
+  if (physCellId != cell_info->nr_pci) {
+    /* UE was moving from previous cell so quickly that RRCReestablishment for previous cell was received in this cell */
+    LOG_E(NR_RRC,
+          " NR_RRCReestablishmentRequest ue_Identity.physCellId(%ld) is not equal to current physCellId(%d), fallback to RRC "
+          "establishment\n",
+          physCellId,
+          cell_info->nr_pci);
+    /* 38.401 8.7: "If the UE accessed from a gNB-DU other than the
+     * original one, the gNB-CU should trigger the UE Context Setup
+     * procedure" we did not implement this yet; TBD for Multi-DU */
+    AssertFatal(false, "not implemented\n");
+    return;
+  }
+
+  rnti_t old_rnti = req->ue_Identity.c_RNTI;
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, assoc_id, old_rnti);
+  /* in case we need to do RRC Setup, give the UE a new random identity */
+  uint64_t random_value;
+  fill_random(&random_value, sizeof(random_value));
+  random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
+  if (ue_context_p == NULL) {
+    LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC setup\n");
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    ue_context_p->ue_context.Srb[1].Active = 1;
+    rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+    return;
+  }
+
+  gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+  // 3GPP TS 38.321 version 15.13.0 Section 7.1 Table 7.1-1: RNTI values
+  if (req->ue_Identity.c_RNTI < 0x1 || req->ue_Identity.c_RNTI > 0xffef) {
+    /* c_RNTI range error should not happen */
+    LOG_E(NR_RRC,
+          "NR_RRCReestablishmentRequest c_RNTI %04lx range error, fallback to RRC setup\n",
+          req->ue_Identity.c_RNTI);
+    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    ue_context_p->ue_context.Srb[1].Active = 1;
+    rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+    return;
+  }
+
+  /* TODO: start timer in ITTI and drop UE if it does not come back */
+
+  // update with new RNTI, and update secondary UE association
+  UE->rnti = msg->crnti;
+  cu_remove_f1_ue_data(UE->rrc_ue_id);
+  f1_ue_data_t ue_data = {.secondary_ue = msg->gNB_DU_ue_id, .du_assoc_id = assoc_id};
+  cu_add_f1_ue_data(UE->rrc_ue_id, &ue_data);
+
+  UE->reestablishment_cause = cause;
+  LOG_D(NR_RRC, "Accept req-> UE physCellId %ld cause %ld\n", physCellId, cause);
+
+  rrc_gNB_generate_RRCReestablishment(ue_context_p, msg->du2cu_rrc_container, old_rnti, du);
 }
 
 /*! \fn uint64_t bitStr_to_uint64(BIT_STRING_t *)
@@ -1369,7 +1321,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
  *\param[in] pointer to the BIT_STRING_t object.
  *\return the extracted value.
  */
-static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn) {
+static inline uint64_t bitStr_to_uint64(const BIT_STRING_t *asn) {
   uint64_t result = 0;
   int index;
   int shift;
@@ -1636,6 +1588,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
 
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
     .gNB_CU_ue_id = UE->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -1646,7 +1599,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
     .servCellId = 0, /* TODO: correct value? */
     .ReconfigComplOutcome = successful_reconfig ? RRCreconf_success : RRCreconf_failure,
   };
-  rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
+  rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
 }
 //-----------------------------------------------------------------------------
 int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
@@ -1795,155 +1748,60 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
   return 0;
 }
 
-static bool rrc_gNB_plmn_matches(const gNB_RRC_INST *rrc, const f1ap_served_cell_info_t *info)
+void rrc_gNB_process_initial_ul_rrc_message(sctp_assoc_t assoc_id, const f1ap_initial_ul_rrc_message_t *ul_rrc)
 {
-  const gNB_RrcConfigurationReq *conf = &rrc->configuration;
-  return conf->num_plmn == 1 // F1 supports only one
-    && conf->mcc[0] == info->plmn.mcc
-    && conf->mnc[0] == info->plmn.mnc
-    && rrc->nr_cellid == info->nr_cellid;
-}
+  AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
 
-static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
-{
   gNB_RRC_INST *rrc = RC.nrrrc[0];
-  DevAssert(rrc);
-
-  LOG_I(NR_RRC, "Received F1 Setup Request from gNB_DU %lu (%s) on assoc_id %d\n", req->gNB_DU_id, req->gNB_DU_name, assoc_id);
-
-  // check:
-  // - it is the first DU
-  // - it is one cell
-  // - PLMN and Cell ID matches
-  // else reject
-  f1ap_setup_failure_t fail = {.cause = F1AP_CauseRadioNetwork_gNB_CU_Cell_Capacity_Exceeded};
-  if (rrc->du != NULL) {
-    const f1ap_setup_req_t *other = rrc->du->setup_req;
-    LOG_E(NR_RRC, "can only handle one DU, but already serving DU %ld (%s)\n", other->gNB_DU_id, other->gNB_DU_name);
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    return;
-  }
-  if (req->num_cells_available != 1) {
-    LOG_E(NR_RRC, "can only handle on DU cell, but gNB_DU %ld has %d\n", req->gNB_DU_id, req->num_cells_available);
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    return;
-  }
-  f1ap_served_cell_info_t *cell_info = &req->cell[0].info;
-  if (!rrc_gNB_plmn_matches(rrc, cell_info)) {
-    LOG_E(NR_RRC,
-          "PLMN mismatch: CU %d%d cellID %ld, DU %d%d cellID %ld\n",
-          rrc->configuration.mcc[0],
-          rrc->configuration.mnc[0],
-          rrc->nr_cellid,
-          cell_info->plmn.mcc,
-          cell_info->plmn.mnc,
-          cell_info->nr_cellid);
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    return;
-  }
-  // if there is no system info or no SIB1 and we run in SA mode, we cannot handle it
-  const f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
-  if (sys_info == NULL || sys_info->mib == NULL || (sys_info->sib1 == NULL && get_softmodem_params()->sa)) {
-    LOG_E(NR_RRC, "no system information provided by DU, rejecting\n");
-    rrc->mac_rrc.f1_setup_failure(&fail);
+  LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, payload_size %d\n", ul_rrc->crnti, ul_rrc->rrc_container_length);
+  NR_UL_CCCH_Message_t *ul_ccch_msg = NULL;
+  asn_dec_rval_t dec_rval = uper_decode(NULL,
+                                        &asn_DEF_NR_UL_CCCH_Message,
+                                        (void **)&ul_ccch_msg,
+                                        ul_rrc->rrc_container,
+                                        ul_rrc->rrc_container_length,
+                                        0,
+                                        0);
+  if (dec_rval.code != RC_OK || dec_rval.consumed == 0) {
+    LOG_E(NR_RRC, " FATAL Error in receiving CCCH\n");
     return;
   }
 
-  /* do we need the MIB? for the moment, just check it is valid, then drop it */
-  NR_BCCH_BCH_Message_t *mib = NULL;
-  asn_dec_rval_t dec_rval =
-      uper_decode_complete(NULL, &asn_DEF_NR_BCCH_BCH_Message, (void **)&mib, sys_info->mib, sys_info->mib_length);
-  if (dec_rval.code != RC_OK || mib->message.present != NR_BCCH_BCH_MessageType_PR_mib
-      || mib->message.choice.messageClassExtension == NULL) {
-    LOG_E(RRC, "Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
-    rrc->mac_rrc.f1_setup_failure(&fail);
-    ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, mib);
-    return;
-  }
+  if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
+    switch (ul_ccch_msg->message.choice.c1->present) {
+      case NR_UL_CCCH_MessageType__c1_PR_NOTHING:
+        LOG_W(NR_RRC, "Received PR_NOTHING on UL-CCCH-Message, ignoring message\n");
+        break;
 
-  NR_SIB1_t *sib1 = NULL;
-  if (sys_info->sib1) {
-    dec_rval = uper_decode_complete(NULL, &asn_DEF_NR_SIB1, (void **)&sib1, sys_info->sib1, sys_info->sib1_length);
-    if (dec_rval.code != RC_OK) {
-      LOG_E(RRC, "Failed to decode NR_SIB1 (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
-      rrc->mac_rrc.f1_setup_failure(&fail);
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB1, sib1);
-      return;
+      case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
+        LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %04x)\n", ul_rrc->crnti);
+        rrc_handle_RRCSetupRequest(rrc, assoc_id, &ul_ccch_msg->message.choice.c1->choice.rrcSetupRequest->rrcSetupRequest, ul_rrc);
+        break;
+
+      case NR_UL_CCCH_MessageType__c1_PR_rrcResumeRequest:
+        LOG_E(NR_RRC, "Received rrcResumeRequest message, but handling is not implemented\n");
+        break;
+
+      case NR_UL_CCCH_MessageType__c1_PR_rrcReestablishmentRequest: {
+        LOG_D(NR_RRC, "Received RRCReestablishmentRequest on UL-CCCH-Message (UE RNTI %04x)\n", ul_rrc->crnti);
+        rrc_handle_RRCReestablishmentRequest(
+            rrc,
+            assoc_id,
+            &ul_ccch_msg->message.choice.c1->choice.rrcReestablishmentRequest->rrcReestablishmentRequest,
+            ul_rrc);
+      } break;
+
+      case NR_UL_CCCH_MessageType__c1_PR_rrcSystemInfoRequest:
+        LOG_I(NR_RRC, "UE %04x receive rrcSystemInfoRequest message \n", ul_rrc->crnti);
+        /* TODO */
+        break;
+
+      default:
+        LOG_E(NR_RRC, "UE %04x Unknown message\n", ul_rrc->crnti);
+        break;
     }
-    if (LOG_DEBUGFLAG(DEBUG_ASN1))
-      xer_fprint(stdout, &asn_DEF_NR_SIB1, sib1);
   }
-
-  LOG_I(RRC, "Accepting DU %ld (%s), sending F1 Setup Response\n", req->gNB_DU_id, req->gNB_DU_name);
-
-  // we accept the DU
-  rrc->du = calloc(1, sizeof(*rrc->du));
-  AssertFatal(rrc->du != NULL, "out of memory\n");
-  rrc->du->assoc_id = assoc_id;
-
-  /* ITTI will free the setup request message via free(). So the memory
-   * "inside" of the message will remain, but the "outside" container no, so
-   * allocate memory and copy it in */
-  rrc->du->setup_req = malloc(sizeof(*rrc->du->setup_req));
-  AssertFatal(rrc->du->setup_req != NULL, "out of memory\n");
-  *rrc->du->setup_req = *req;
-  rrc->du->mib = mib->message.choice.mib;
-  mib->message.choice.mib = NULL;
-  ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_MessageType, mib);
-  rrc->du->sib1 = sib1;
-
-  served_cells_to_activate_t cell = {
-      .plmn = cell_info->plmn,
-      .nr_cellid = cell_info->nr_cellid,
-      .nrpci = cell_info->nr_pci,
-      .num_SI = 0,
-  };
-  f1ap_setup_resp_t resp = {.num_cells_to_activate = 1, .cells_to_activate[0] = cell};
-  if (rrc->node_name != NULL)
-    resp.gNB_CU_name = strdup(rrc->node_name);
-  rrc->mac_rrc.f1_setup_response(&resp);
-
-  /*
-  MessageDef *msg_p2 = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).gNB_CU_name = rrc->node_name;
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].plmn.mcc = rrc->configuration.mcc[0];
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].plmn.mnc = rrc->configuration.mnc[0];
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0];
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].nr_cellid = rrc->nr_cellid;
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].nrpci = req->cell[0].info.nr_pci;
-  int num_SI = 0;
-
-  if (rrc->carrier.SIB23) {
-    F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].SI_container[2] = rrc->carrier.SIB23;
-    F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].SI_container_length[2] = rrc->carrier.sizeof_SIB23;
-    num_SI++;
-  }
-
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[0].num_SI = num_SI;
-  F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).num_cells_to_activate = 1;
-  // send
-  itti_send_msg_to_task(TASK_CU_F1, 0, msg_p2);
-  */
-}
-
-void rrc_gNB_process_initial_ul_rrc_message(const f1ap_initial_ul_rrc_message_t *ul_rrc)
-{
-  // first get RRC instance (note, no the ITTI instance)
-  module_id_t i = 0;
-  for (i=0; i < RC.nb_nr_inst; i++) {
-    gNB_RRC_INST *rrc = RC.nrrrc[i];
-    if (rrc->nr_cellid == ul_rrc->nr_cellid)
-      break;
-  }
-  //AssertFatal(i != RC.nb_nr_inst, "Cell_id not found\n");
-  // TODO REMOVE_DU_RRC in monolithic mode, the MAC does not have the
-  // nr_cellid. Thus, the above check would fail. For the time being, just put
-  // a warning, as we handle one DU only anyway
-  if (i == RC.nb_nr_inst) {
-    i = 0;
-    LOG_W(RRC, "initial UL RRC message nr_cellid %ld does not match RRC's %ld\n", ul_rrc->nr_cellid, RC.nrrrc[0]->nr_cellid);
-  }
-  nr_rrc_gNB_decode_ccch(i, ul_rrc);
+  ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
 
   if (ul_rrc->rrc_container)
     free(ul_rrc->rrc_container);
@@ -2111,7 +1969,7 @@ static void rrc_CU_process_ue_modification_required(MessageDef *msg_p)
       .cause = F1AP_CAUSE_RADIO_NETWORK,
       .cause_value = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_cu_ue_f1ap_id,
     };
-    rrc->mac_rrc.ue_context_modification_refuse(&refuse);
+    rrc->mac_rrc.ue_context_modification_refuse(msg_p->ittiMsgHeader.originInstance, &refuse);
     return;
   }
 
@@ -2136,7 +1994,7 @@ static void rrc_CU_process_ue_modification_required(MessageDef *msg_p)
         .cause = F1AP_CAUSE_PROTOCOL,
         .cause_value = F1AP_CauseProtocol_transfer_syntax_error,
       };
-      rrc->mac_rrc.ue_context_modification_refuse(&refuse);
+      rrc->mac_rrc.ue_context_modification_refuse(msg_p->ittiMsgHeader.originInstance, &refuse);
       return;
     }
 
@@ -2162,158 +2020,6 @@ static void rrc_CU_process_ue_modification_required(MessageDef *msg_p)
 
 unsigned int mask_flip(unsigned int x) {
   return((((x>>8) + (x<<8))&0xffff)>>6);
-}
-
-static unsigned int get_dl_bw_mask(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_band = get_dl_band(cell_info);
-  int common_scs  = get_ssb_scs(cell_info);
-  for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
-     NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
-     if (bandNRinfo->bandNR == common_band) {
-       if (common_band < 257) { // FR1
-          switch (common_scs) {
-            case NR_SubcarrierSpacing_kHz15 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr1 &&
-                   bandNRinfo->channelBWs_DL->choice.fr1->scs_15kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_15kHz->buf));
- 	      break;
-            case NR_SubcarrierSpacing_kHz30 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr1 &&
-                   bandNRinfo->channelBWs_DL->choice.fr1->scs_30kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_30kHz->buf));
-              break;
-            case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr1 &&
-                   bandNRinfo->channelBWs_DL->choice.fr1->scs_60kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr1->scs_60kHz->buf));
-              break;
-          }
-       }
-       else {
-          switch (common_scs) {
-            case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr2 &&
-                   bandNRinfo->channelBWs_DL->choice.fr2->scs_60kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr2->scs_60kHz->buf));
-              break;
-            case NR_SubcarrierSpacing_kHz120 :
-               if (bandNRinfo->channelBWs_DL &&
-                   bandNRinfo->channelBWs_DL->choice.fr2 &&
-                   bandNRinfo->channelBWs_DL->choice.fr2->scs_120kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_DL->choice.fr2->scs_120kHz->buf));
-              break;
-       }
-     }
-   }
-  }
-  return(0);
-}
-
-static unsigned int get_ul_bw_mask(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_band = get_ul_band(cell_info);
-  int common_scs  = get_ssb_scs(cell_info);
-  for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
-     NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
-     if (bandNRinfo->bandNR == common_band) {
-       if (common_band < 257) { // FR1
-          switch (common_scs) {
-            case NR_SubcarrierSpacing_kHz15 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr1 &&
-                   bandNRinfo->channelBWs_UL->choice.fr1->scs_15kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_15kHz->buf));
- 	      break;
-            case NR_SubcarrierSpacing_kHz30 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr1 &&
-                   bandNRinfo->channelBWs_UL->choice.fr1->scs_30kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_30kHz->buf));
-              break;
-            case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr1 &&
-                   bandNRinfo->channelBWs_UL->choice.fr1->scs_60kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr1->scs_60kHz->buf));
-              break;
-          }
-       }
-       else {
-          switch (common_scs) {
-            case NR_SubcarrierSpacing_kHz60 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr2 &&
-                   bandNRinfo->channelBWs_UL->choice.fr2->scs_60kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr2->scs_60kHz->buf));
-              break;
-            case NR_SubcarrierSpacing_kHz120 :
-               if (bandNRinfo->channelBWs_UL &&
-                   bandNRinfo->channelBWs_UL->choice.fr2 &&
-                   bandNRinfo->channelBWs_UL->choice.fr2->scs_120kHz)
-                     return(mask_flip((unsigned int)*(uint16_t*)bandNRinfo->channelBWs_UL->choice.fr2->scs_120kHz->buf));
-              break;
-       }
-     }
-   }
-  }
-  return(0);
-}
-
-static int get_ul_mimo_layersCB(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_scs  = get_ssb_scs(cell_info);
-
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  if (fs) {
-    // go through UL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsUplinkPerCC->list.count;i++) {
-       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
-           fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH &&
-           fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH)
-           return(1<<*fs->featureSetsUplinkPerCC->list.array[i]->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH);
-    }
-  }
-  return(1);
-}
-
-static int get_ul_mimo_layers(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_scs  = get_ssb_scs(cell_info);
-
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  if (fs) {
-    // go through UL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsUplinkPerCC->list.count;i++) {
-       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
-           fs->featureSetsUplinkPerCC->list.array[i]->maxNumberMIMO_LayersNonCB_PUSCH)
-           return(1<<*fs->featureSetsUplinkPerCC->list.array[i]->maxNumberMIMO_LayersNonCB_PUSCH);
-    }
-  }
-  return(1);
-}
-
-static int get_dl_mimo_layers(const f1ap_served_cell_info_t *cell_info, const NR_UE_NR_Capability_t *cap)
-{
-  int common_scs  = get_ssb_scs(cell_info);
-
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  if (fs) {
-    // go through UL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsDownlinkPerCC->list.count;i++) {
-       if (fs->featureSetsUplinkPerCC->list.array[i]->supportedSubcarrierSpacingUL == common_scs &&
-           fs->featureSetsDownlinkPerCC->list.array[i]->maxNumberMIMO_LayersPDSCH)
-           return(2<<*fs->featureSetsDownlinkPerCC->list.array[i]->maxNumberMIMO_LayersPDSCH);
-    }
-  }
-  return(1);
 }
 
 void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp, instance_t instance)
@@ -2346,6 +2052,8 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   /* Instruction towards the DU for DRB configuration and tunnel creation */
   int nb_drb = resp->pduSession[0].numDRBSetup;
   f1ap_drb_to_be_setup_t drbs[nb_drb];
+  rrc_pdu_session_param_t *RRC_pduSession = find_pduSession(UE, resp->pduSession[0].id, false);
+  DevAssert(RRC_pduSession);
   for (int i = 0; i < nb_drb; i++) {
     drbs[i].drb_id = resp->pduSession[0].DRBnGRanList[i].id;
     drbs[i].rlc_mode = rrc->configuration.um_on_default_drb ? RLC_MODE_UM : RLC_MODE_AM;
@@ -2353,6 +2061,8 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
     drbs[i].up_ul_tnl[0].port = rrc->eth_params_s.my_portd;
     drbs[i].up_ul_tnl[0].teid = resp->pduSession[0].DRBnGRanList[i].UpParamList[0].teId;
     drbs[i].up_ul_tnl_length = 1;
+    /* pass NSSAI info to MAC */
+    drbs[i].nssai = RRC_pduSession->param.nssai;
   }
 
   /* Instruction towards the DU for SRB2 configuration */
@@ -2375,6 +2085,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   }
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
       .gNB_CU_ue_id = UE->rrc_ue_id,
       .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -2389,7 +2100,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
       .drbs_to_be_setup = drbs,
       .cu_to_du_rrc_information = cu2du_p,
   };
-  rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
+  rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
 }
 
 void rrc_gNB_process_e1_bearer_context_modif_resp(const e1ap_bearer_modif_resp_t *resp)
@@ -2415,21 +2126,6 @@ void rrc_gNB_process_e1_bearer_context_release_cplt(const e1ap_bearer_release_cp
   // UE context release complete arrived from the DU first, after which we free
   // the UE context
   LOG_I(RRC, "UE %d: received bearer release complete\n", cplt->gNB_cu_cp_ue_id);
-}
-
-static void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
-{
-  AssertFatal(rrc->du != NULL, "no DU connected, cannot received F1 lost connection\n");
-  AssertFatal(rrc->du->assoc_id == assoc_id,
-              "previously connected DU (%d) does not match DU for which connection has been lost (%d)\n",
-              rrc->du->assoc_id,
-              assoc_id);
-  (void) lc; // unused for the moment
-  ASN_STRUCT_FREE(asn_DEF_NR_MIB, rrc->du->mib);
-  ASN_STRUCT_FREE(asn_DEF_NR_SIB1, rrc->du->sib1);
-  free(rrc->du);
-  rrc->du = NULL;
-  LOG_I(RRC, "dropping DU with assoc_id %d (UE connections remain, if any)\n", assoc_id);
 }
 
 static void print_rrc_meas(FILE *f, const NR_MeasResults_t *measresults)
@@ -2499,10 +2195,6 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
   {
     const gNB_RRC_UE_t *ue_ctxt = &ue_context_p->ue_context;
     f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_ctxt->rrc_ue_id);
-    /* currently, we support only one DU. If we support multiple, need to
-     * search for the DU corresponding to this UE here */
-    const nr_rrc_du_container_t *du = rrc->du;
-    DevAssert(du != NULL);
 
     fprintf(f,
             "UE %d CU UE ID %d DU UE ID %d RNTI %04x random identity %016lx",
@@ -2524,22 +2216,22 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
       fprintf(f, "    PDU session %d ID %d status %s\n", nb_pdu, pdu->param.pdusession_id, get_pdusession_status_text(pdu->status));
     }
 
-    if (ue_ctxt->UE_Capability_nr) {
-      AssertFatal(du->setup_req->num_cells_available == 1, "only one cell supported at the moment\n");
-      const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
-      fprintf(f,
-              "    UE cap: BW DL %x. BW UL %x, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
-              get_dl_bw_mask(cell_info, ue_ctxt->UE_Capability_nr),
-              get_ul_bw_mask(cell_info, ue_ctxt->UE_Capability_nr),
-              get_dl_mimo_layers(cell_info, ue_ctxt->UE_Capability_nr),
-              get_ul_mimo_layersCB(cell_info, ue_ctxt->UE_Capability_nr),
-              get_ul_mimo_layers(cell_info, ue_ctxt->UE_Capability_nr));
-    }
+    fprintf(f, "    associated DU: ");
+    if (ue_data.du_assoc_id == -1)
+      fprintf(f, " (local/integrated CU-DU)");
+    else if (ue_data.du_assoc_id == 0)
+      fprintf(f, " DU offline/unavailable");
+    else
+      fprintf(f, " DU assoc ID %d", ue_data.du_assoc_id);
+    fprintf(f, "\n");
 
     if (ue_ctxt->measResults)
       print_rrc_meas(f, ue_ctxt->measResults);
     ++i;
   }
+
+  fprintf(f, "\n");
+  dump_du_info(rrc, f);
 
   fclose(f);
 }
@@ -2584,7 +2276,7 @@ void *rrc_gnb_task(void *args_p) {
       case F1AP_INITIAL_UL_RRC_MESSAGE:
         AssertFatal(NODE_IS_CU(RC.nrrrc[instance]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[instance]->node_type),
                     "should not receive F1AP_INITIAL_UL_RRC_MESSAGE, need call by CU!\n");
-        rrc_gNB_process_initial_ul_rrc_message(&F1AP_INITIAL_UL_RRC_MESSAGE(msg_p));
+        rrc_gNB_process_initial_ul_rrc_message(msg_p->ittiMsgHeader.originInstance, &F1AP_INITIAL_UL_RRC_MESSAGE(msg_p));
         break;
 
       /* Messages from PDCP */
@@ -2720,6 +2412,7 @@ void *rrc_gnb_task(void *args_p) {
 typedef struct deliver_ue_ctxt_setup_data_t {
   gNB_RRC_INST *rrc;
   f1ap_ue_context_setup_t *setup_req;
+  sctp_assoc_t assoc_id;
 } deliver_ue_ctxt_setup_data_t;
 static void rrc_deliver_ue_ctxt_setup_req(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
 {
@@ -2727,7 +2420,7 @@ static void rrc_deliver_ue_ctxt_setup_req(void *deliver_pdu_data, ue_id_t ue_id,
   deliver_ue_ctxt_setup_data_t *data = deliver_pdu_data;
   data->setup_req->rrc_container = (uint8_t*)buf;
   data->setup_req->rrc_container_length = size;
-  data->rrc->mac_rrc.ue_context_setup_request(data->setup_req);
+  data->rrc->mac_rrc.ue_context_setup_request(data->assoc_id, data->setup_req);
 }
 
 //-----------------------------------------------------------------------------
@@ -2759,11 +2452,9 @@ rrc_gNB_generate_SecurityModeCommand(
     cu2du.uE_CapabilityRAT_ContainerList_length = ue_p->ue_cap_buffer.len;
   }
 
-  const nr_rrc_du_container_t *du = rrc->du;
-  DevAssert(du != NULL);
-
   /* the callback will fill the UE context setup request and forward it */
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_setup_t ue_context_setup_req = {
       .gNB_CU_ue_id = ue_p->rrc_ue_id,
       .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -2776,7 +2467,7 @@ rrc_gNB_generate_SecurityModeCommand(
       .drbs_to_be_setup = 0, /* no new DRBs */
       .cu_to_du_rrc_information = cu2du_p,
   };
-  deliver_ue_ctxt_setup_data_t data = {.rrc = rrc, .setup_req = &ue_context_setup_req};
+  deliver_ue_ctxt_setup_data_t data = {.rrc = rrc, .setup_req = &ue_context_setup_req, .assoc_id = ue_data.du_assoc_id };
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_setup_req, &data);
 }
 
@@ -2810,6 +2501,7 @@ rrc_gNB_generate_UECapabilityEnquiry(
 typedef struct deliver_ue_ctxt_release_data_t {
   gNB_RRC_INST *rrc;
   f1ap_ue_context_release_cmd_t *release_cmd;
+  sctp_assoc_t assoc_id;
 } deliver_ue_ctxt_release_data_t;
 static void rrc_deliver_ue_ctxt_release_cmd(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
 {
@@ -2817,7 +2509,7 @@ static void rrc_deliver_ue_ctxt_release_cmd(void *deliver_pdu_data, ue_id_t ue_i
   deliver_ue_ctxt_release_data_t *data = deliver_pdu_data;
   data->release_cmd->rrc_container = (uint8_t*) buf;
   data->release_cmd->rrc_container_length = size;
-  data->rrc->mac_rrc.ue_context_release_command(data->release_cmd);
+  data->rrc->mac_rrc.ue_context_release_command(data->assoc_id, data->release_cmd);
 }
 
 //-----------------------------------------------------------------------------
@@ -2843,6 +2535,7 @@ rrc_gNB_generate_RRCRelease(
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   const gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_release_cmd_t ue_context_release_cmd = {
     .gNB_CU_ue_id = UE->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -2850,7 +2543,7 @@ rrc_gNB_generate_RRCRelease(
     .cause_value = 10, // 10 = F1AP_CauseRadioNetwork_normal_release
     .srb_id = DCCH,
   };
-  deliver_ue_ctxt_release_data_t data = {.rrc = rrc, .release_cmd = &ue_context_release_cmd};
+  deliver_ue_ctxt_release_data_t data = {.rrc = rrc, .release_cmd = &ue_context_release_cmd, .assoc_id = ue_data.du_assoc_id};
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_release_cmd, &data);
 
   sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, UE);
@@ -2867,7 +2560,7 @@ void rrc_gNB_trigger_new_bearer(int rnti)
 {
   /* get RRC and UE */
   gNB_RRC_INST *rrc = RC.nrrrc[0];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti_any_du(rrc, rnti);
   if (ue_context_p == NULL) {
     LOG_E(RRC, "unknown UE RNTI %04x\n", rnti);
     return;
@@ -2949,7 +2642,7 @@ void rrc_gNB_trigger_release_bearer(int rnti)
 {
   /* get RRC and UE */
   gNB_RRC_INST *rrc = RC.nrrrc[0];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti_any_du(rrc, rnti);
   if (ue_context_p == NULL) {
     LOG_E(RRC, "unknown UE RNTI %04x\n", rnti);
     return;
@@ -2987,6 +2680,7 @@ void rrc_gNB_trigger_release_bearer(int rnti)
 
   f1ap_drb_to_be_released_t drbs_to_be_released[1] = {{.rb_id = drb_id}};
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue->rrc_ue_id);
+  RETURN_IF_INVALID_ASSOC_ID(ue_data);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
     .gNB_CU_ue_id = ue->rrc_ue_id,
     .gNB_DU_ue_id = ue_data.secondary_ue,
@@ -3002,10 +2696,13 @@ void rrc_gNB_trigger_release_bearer(int rnti)
     .drbs_to_be_released_length = 1,
     .drbs_to_be_released = drbs_to_be_released,
   };
-  rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
+  rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
 }
 
-int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t instance, uint8_t CC_id){
+int rrc_gNB_generate_pcch_msg(sctp_assoc_t assoc_id, const NR_SIB1_t *sib1, uint32_t tmsi, uint8_t paging_drx)
+{
+  instance_t instance = 0;
+  uint8_t CC_id = 0;
   const unsigned int Ttab[4] = {32,64,128,256};
   uint8_t Tc;
   uint8_t Tue;
@@ -3016,9 +2713,6 @@ int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t inst
   uint32_t T;  /* DRX cycle */
   uint32_t length;
   uint8_t buffer[RRC_BUF_SIZE];
-  const nr_rrc_du_container_t *du = RC.nrrrc[0]->du;
-  DevAssert(du != NULL);
-  struct NR_SIB1 *sib1 = du->sib1;
 
   /* get default DRX cycle from configuration */
   Tc = sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.defaultPagingCycle;
@@ -3126,6 +2820,7 @@ int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t inst
     return -1;
   }
   // TODO, send message to pdcp
+  (void) assoc_id;
 
   return 0;
 }

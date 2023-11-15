@@ -118,6 +118,7 @@ nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
 
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv)
 {
   char c;
@@ -157,7 +158,7 @@ int main(int argc, char **argv)
 
   cpuf = get_cpu_freq_GHz();
 
-  if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_ULSCHSIM] Error, configuration module init failed\n");
   }
 
@@ -464,7 +465,7 @@ int main(int argc, char **argv)
 
   mod_order = nr_get_Qm_ul(Imcs, mcs_table);
   code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
-  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
+  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, 0, mod_order, Nl);
   TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 
   printf("\nAvailable bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
@@ -519,7 +520,7 @@ int main(int argc, char **argv)
 
   /////////////////////////ULSCH coding/////////////////////////
   ///////////
-  unsigned int G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
+  unsigned int G = available_bits;
 
   if (input_fd == NULL) {
     nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, TBS>>3, G);
@@ -585,13 +586,6 @@ int main(int argc, char **argv)
       printf("\n");
       exit(-1);
 #endif
-
-     uint32_t G = nr_get_G(rel15_ul->rb_size,
-                           rel15_ul->nr_of_symbols,
-                           nb_re_dmrs,
-                           1, // FIXME only single dmrs is implemented 
-                           rel15_ul->qam_mod_order,
-                           rel15_ul->nrOfLayers);
 
      int nbDecode = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul, frame, subframe, harq_pid, G);
      int nb_ok = 0;

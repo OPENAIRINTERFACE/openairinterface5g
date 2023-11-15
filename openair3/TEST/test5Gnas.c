@@ -2,9 +2,10 @@
 #include <openair3/NAS/COMMON/NR_NAS_defs.h>
 
 volatile int oai_exit;
+configmodule_interface_t *uniqCfg = NULL;
 
 int main(int argc, char **argv) {
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 

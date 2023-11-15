@@ -59,10 +59,7 @@ typedef struct PLMN_ID_s {
   int mnc_digit_length;
 } PLMN_ID_t;
 
-typedef struct e1ap_nssai_t {
-  uint8_t sst;
-  uint32_t sd; // optional: "No SD" is 0xffffff, see 23.003 Sec 28.4.2
-} e1ap_nssai_t;
+typedef nssai_t e1ap_nssai_t;
 
 typedef struct e1ap_net_config_t {
   net_ip_address_t CUUP_e1_ip_address;

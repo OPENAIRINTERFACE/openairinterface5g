@@ -141,7 +141,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id
 }
 
 /*  UL RRC Message Transfer */
-int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_initial_ul_rrc_message_t *msg)
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(sctp_assoc_t assoc_id, const f1ap_initial_ul_rrc_message_t *msg)
 {
   F1AP_F1AP_PDU_t                       pdu= {0};
   F1AP_InitialULRRCMessageTransfer_t    *out;
@@ -170,7 +170,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_ini
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_NRCGI;
   //Fixme: takes always the first cell
-  addnRCGI(ie2->value.choice.NRCGI, &getCxt(instanceP)->setupReq.cell[0].info);
+  addnRCGI(ie2->value.choice.NRCGI, &getCxt(0)->setupReq.cell[0].info);
   /* mandatory */
   /* c3. C_RNTI */  // 16
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie3);
@@ -211,20 +211,18 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_ini
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(instanceP, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
-int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg)
+int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(sctp_assoc_t assoc_id, const f1ap_ul_rrc_message_t *msg)
 {
   F1AP_F1AP_PDU_t                pdu= {0};
   F1AP_ULRRCMessageTransfer_t    *out;
   uint8_t *buffer = NULL;
   uint32_t len;
   LOG_D(F1AP,
-        "[DU %ld] %s: size %d UE RNTI %x in SRB %d\n",
-        instance,
-        __func__,
+        "size %d UE RNTI %x in SRB %d\n",
         msg->rrc_container_length,
         msg->gNB_DU_ue_id,
         msg->srb_id);
@@ -277,6 +275,6 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_me
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }

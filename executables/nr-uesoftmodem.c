@@ -258,12 +258,11 @@ uint64_t set_nrUE_optmask(uint64_t bitmask) {
 nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
-
-static void get_options(void) {
-
+static void get_options(configmodule_interface_t *cfg)
+{
   paramdef_t cmdline_params[] =CMDLINE_NRUEPARAMS_DESC ;
-  int numparams = sizeof(cmdline_params)/sizeof(paramdef_t);
-  config_get(cmdline_params,numparams,NULL);
+  int numparams = sizeofArray(cmdline_params);
+  config_get(cfg, cmdline_params, numparams, NULL);
 
   AssertFatal(rrc_config_path == NULL, "the option \"rrc_config_path\" is deprecated. Please use --reconfig-file and --rbconfig-file separately to point to files reconfig.raw and rbconfig.raw\n");
 
@@ -414,9 +413,10 @@ static void trigger_deregistration(int sig)
   }
 }
 
-static void get_channel_model_mode() {
+static void get_channel_model_mode(configmodule_interface_t *cfg)
+{
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
-  config_get(GNBParams, sizeof(GNBParams)/sizeof(paramdef_t), NULL);
+  config_get(cfg, GNBParams, sizeofArray(GNBParams), NULL);
   int num_xp_antennas = *GNBParams[GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr;
 
   if (num_xp_antennas == 2)
@@ -426,6 +426,7 @@ static void get_channel_model_mode() {
 }
 
 int NB_UE_INST = 1;
+configmodule_interface_t *uniqCfg = NULL;
 
 int main( int argc, char **argv ) {
   int set_exe_prio = 1;
@@ -440,7 +441,7 @@ int main( int argc, char **argv ) {
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
   start_background_system();
 
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
   //set_softmodem_sighandler();
@@ -451,9 +452,9 @@ int main( int argc, char **argv ) {
   logInit();
   // get options and fill parameters from configuration file
 
-  get_options (); //Command-line options specific for NRUE
+  get_options(uniqCfg); // Command-line options specific for NRUE
 
-  get_common_options(SOFTMODEM_5GUE_BIT);
+  get_common_options(uniqCfg, SOFTMODEM_5GUE_BIT);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 #if T_TRACER
   T_Config_Init();
@@ -496,7 +497,7 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
   if (get_softmodem_params()->emulate_l1) {
     RCconfig_nr_ue_macrlc();
-    get_channel_model_mode();
+    get_channel_model_mode(uniqCfg);
   }
 
   if (get_softmodem_params()->do_ra)
@@ -568,7 +569,7 @@ int main( int argc, char **argv ) {
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously
   sleep(2);
-  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
+  config_check_unknown_cmdlineopt(uniqCfg, CONFIG_CHECKALLSECTIONS);
 
   // wait for end of program
   printf("Entering ITTI signals handler\n");

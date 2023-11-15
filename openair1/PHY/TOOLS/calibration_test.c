@@ -30,10 +30,10 @@ char *uecap_file;
 int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_state) {return 0;}
 void nfapi_setmode(nfapi_mode_t nfapi_mode) {}
 void set_taus_seed(unsigned int seed_init){};
-
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv) {
   ///static configuration for NR at the moment
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
   set_softmodem_sighandler();
@@ -43,8 +43,8 @@ int main(int argc, char **argv) {
    paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
 
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
-  get_common_options(SOFTMODEM_GNB_BIT );
-  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+  get_common_options(uniqCfg, SOFTMODEM_GNB_BIT);
+  config_process_cmdline(uniqCfg, cmdline_params, sizeofArray(cmdline_params), NULL);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
   set_latency_target();
 

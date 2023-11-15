@@ -44,19 +44,21 @@ static void get_NGU_S1U_addr(char **addr, uint16_t *port)
   LOG_I(GTPU, "Configuring GTPu\n");
 
   /* get number of active eNodeBs */
-  config_get(GNBSParams, sizeof(GNBSParams) / sizeof(paramdef_t), NULL);
+  config_get(config_get_if(), GNBSParams, sizeofArray(GNBSParams), NULL);
   num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal(num_gnbs > 0, "Failed to parse config file no active gNodeBs in %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
 
   sprintf(gtpupath, "%s.[%i].%s", GNB_CONFIG_STRING_GNB_LIST, 0, GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-  config_get(NETParams, sizeof(NETParams) / sizeof(paramdef_t), gtpupath);
+  config_get(config_get_if(), NETParams, sizeofArray(NETParams), gtpupath);
   char *address;
   if (NETParams[1].strptr != NULL) {
     LOG_I(GTPU, "SA mode \n");
+    AssertFatal(gnb_ipv4_address_for_NGU != NULL, "NG-U IPv4 address is NULL: could not read IPv4 address\n");
     address = strdup(gnb_ipv4_address_for_NGU);
     *port = gnb_port_for_NGU;
   } else {
     LOG_I(GTPU, "NSA mode \n");
+    AssertFatal(gnb_ipv4_address_for_S1U != NULL, "S1U IPv4 address is NULL: could not read IPv4 address\n");
     address = strdup(gnb_ipv4_address_for_S1U);
     *port = gnb_port_for_S1U;
   }
@@ -75,14 +77,14 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t GNBParams[] = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST, NULL, 0};
-  config_get(GNBSParams, sizeofArray(GNBSParams), NULL);
+  config_get(config_get_if(), GNBSParams, sizeofArray(GNBSParams), NULL);
   char aprefix[MAX_OPTNAME_SIZE * 2 + 8];
   sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
   int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal(num_gnbs == 1, "Support only one gNB per process\n");
 
   if (num_gnbs > 0) {
-    config_getlist(&GNBParamList, GNBParams, sizeofArray(GNBParams), NULL);
+    config_getlist(config_get_if(), &GNBParamList, GNBParams, sizeofArray(GNBParams), NULL);
     paramdef_t *gnbParms = GNBParamList.paramarray[0];
     AssertFatal(gnbParms[GNB_GNB_ID_IDX].uptr != NULL, "gNB id %d is not defined in configuration file\n", 0);
     e1ap_setup_req_t *e1Setup = &E1AP_REGISTER_REQ(msgConfig).setup_req;
@@ -99,7 +101,7 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     for (int I = 0; I < sizeofArray(PLMNParams); ++I)
       PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
-    config_getlist(&PLMNParamList, PLMNParams, sizeofArray(PLMNParams), aprefix);
+    config_getlist(config_get_if(), &PLMNParamList, PLMNParams, sizeofArray(PLMNParams), aprefix);
     int numPLMNs = PLMNParamList.numelt;
     e1Setup->supported_plmns = numPLMNs;
 
@@ -112,7 +114,7 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
       sprintf(snssaistr, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0, GNB_CONFIG_STRING_PLMN_LIST, I);
       paramlist_def_t SNSSAIParamList = {GNB_CONFIG_STRING_SNSSAI_LIST, NULL, 0};
       paramdef_t SNSSAIParams[] = GNBSNSSAIPARAMS_DESC;
-      config_getlist(&SNSSAIParamList, SNSSAIParams, sizeof(SNSSAIParams)/sizeof(paramdef_t), snssaistr);
+      config_getlist(config_get_if(), &SNSSAIParamList, SNSSAIParams, sizeof(SNSSAIParams) / sizeof(paramdef_t), snssaistr);
       e1Setup->plmn[I].supported_slices = SNSSAIParamList.numelt;
       e1Setup->plmn[I].slice = calloc(SNSSAIParamList.numelt, sizeof(*e1Setup->plmn[I].slice));
       AssertFatal(e1Setup->plmn[I].slice != NULL, "out of memory\n");
@@ -133,7 +135,7 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     if (separate_CUUP_process) {
       paramlist_def_t GNBE1ParamList = {GNB_CONFIG_STRING_E1_PARAMETERS, NULL, 0};
       paramdef_t GNBE1Params[] = GNBE1PARAMS_DESC;
-      config_getlist(&GNBE1ParamList, GNBE1Params, sizeofArray(GNBE1Params), aprefix);
+      config_getlist(config_get_if(), &GNBE1ParamList, GNBE1Params, sizeofArray(GNBE1Params), aprefix);
       paramdef_t *e1Parms = GNBE1ParamList.paramarray[0];
       strcpy(e1ap_nc->CUCP_e1_ip_address.ipv4_address, *(e1Parms[GNB_CONFIG_E1_IPV4_ADDRESS_CUCP].strptr));
       e1ap_nc->CUCP_e1_ip_address.ipv4 = 1;

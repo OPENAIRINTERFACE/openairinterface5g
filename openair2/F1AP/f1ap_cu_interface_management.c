@@ -35,7 +35,8 @@
 #include "f1ap_itti_messaging.h"
 #include "f1ap_cu_interface_management.h"
 
-int CU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
+int CU_send_RESET(sctp_assoc_t assoc_id, F1AP_Reset_t *Reset)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -49,10 +50,10 @@ int CU_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream,
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int CU_send_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int CU_send_RESET_ACKNOWLEDGE(sctp_assoc_t assoc_id, F1AP_ResetAcknowledge_t *ResetAcknowledge)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
-
 
 /*
     Error Indication
@@ -62,7 +63,7 @@ int CU_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint3
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int CU_send_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication) {
+int CU_send_ERROR_INDICATION(sctp_assoc_t assoc_id, F1AP_ErrorIndication_t *ErrorIndication) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -194,54 +195,13 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint3
     memcpy(sys_info->sib1, DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
     sys_info->sib1_length = DUsi->sIB1_message.size;
   }
-  
-  // char *measurement_timing_information[F1AP_MAX_NB_CELLS];
-  // uint8_t ranac[F1AP_MAX_NB_CELLS];
-  // int fdd_flag = f1ap_setup_req->fdd_flag;
-  // union {
-  //   struct {
-  //     uint32_t ul_nr_arfcn;
-  //     uint8_t ul_scs;
-  //     uint8_t ul_nrb;
-  //     uint32_t dl_nr_arfcn;
-  //     uint8_t dl_scs;
-  //     uint8_t dl_nrb;
-  //     uint32_t sul_active;
-  //     uint32_t sul_nr_arfcn;
-  //     uint8_t sul_scs;
-  //     uint8_t sul_nrb;
-  //     uint8_t num_frequency_bands;
-  //     uint16_t nr_band[32];
-  //     uint8_t num_sul_frequency_bands;
-  //     uint16_t nr_sul_band[32];
-  //   } fdd;
-  //   struct {
-  //     uint32_t nr_arfcn;
-  //     uint8_t scs;
-  //     uint8_t nrb;
-  //     uint32_t sul_active;
-  //     uint32_t sul_nr_arfcn;
-  //     uint8_t sul_scs;
-  //     uint8_t sul_nrb;
-  //     uint8_t num_frequency_bands;
-  //     uint16_t nr_band[32];
-  //     uint8_t num_sul_frequency_bands;
-  //     uint16_t nr_sul_band[32];
-  //   } tdd;
-  // } nr_mode_info[F1AP_MAX_NB_CELLS];
-  
-  if (req->num_cells_available > 0) {
-      itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
-  } else {
-    CU_send_F1_SETUP_FAILURE(instance);
-    itti_free(TASK_CU_F1,message_p);
-    return -1;
-  }
+
+  itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
   
   return 0;
 }
 
-int CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup_resp)
+int CU_send_F1_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_setup_resp_t *f1ap_setup_resp)
 {
   F1AP_F1AP_PDU_t           pdu= {0};
   uint8_t  *buffer=NULL;
@@ -339,11 +299,12 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
-int CU_send_F1_SETUP_FAILURE(instance_t instance) {
+int CU_send_F1_SETUP_FAILURE(sctp_assoc_t assoc_id, const f1ap_setup_failure_t *fail)
+{
   LOG_D(F1AP, "CU_send_F1_SETUP_FAILURE\n");
   F1AP_F1AP_PDU_t           pdu= {0};
   uint8_t  *buffer=NULL;
@@ -406,7 +367,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
@@ -419,12 +380,12 @@ int CU_handle_gNB_DU_CONFIGURATION_UPDATE(instance_t instance, sctp_assoc_t asso
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int CU_send_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
+int CU_send_gNB_DU_CONFIGURATION_FAILURE(sctp_assoc_t assoc_id,
     F1AP_GNBDUConfigurationUpdateFailure_t *GNBDUConfigurationUpdateFailure) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+int CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(sctp_assoc_t assoc_id,
     F1AP_GNBDUConfigurationUpdateAcknowledge_t *GNBDUConfigurationUpdateAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
@@ -433,8 +394,8 @@ int CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
     gNB-CU Configuration Update
 */
 
-//void CU_send_gNB_CU_CONFIGURATION_UPDATE(F1AP_GNBCUConfigurationUpdate_t *GNBCUConfigurationUpdate) {
-int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configuration_update_t *f1ap_gnb_cu_configuration_update) {
+int CU_send_gNB_CU_CONFIGURATION_UPDATE(sctp_assoc_t assoc_id, f1ap_gnb_cu_configuration_update_t *f1ap_gnb_cu_configuration_update)
+{
   F1AP_F1AP_PDU_t                    pdu= {0};
   uint8_t  *buffer;
   uint32_t  len;
@@ -520,7 +481,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
   LOG_DUMPMSG(F1AP, LOG_DUMP_CHAR, buffer, len, "F1AP gNB-CU CONFIGURATION UPDATE : ");
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 
@@ -546,7 +507,7 @@ int CU_handle_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
   AssertFatal(0, "Not implemented yet\n");
 }
 
-int CU_send_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
+int CU_send_gNB_DU_RESOURCE_COORDINATION_RESPONSE(sctp_assoc_t assoc_id,
     F1AP_GNBDUResourceCoordinationResponse_t *GNBDUResourceCoordinationResponse) {
   AssertFatal(0, "Not implemented yet\n");
 }

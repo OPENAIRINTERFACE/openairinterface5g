@@ -53,20 +53,12 @@ static void cu_task_handle_sctp_association_ind(instance_t instance,
                                                 sctp_new_association_ind_t *sctp_new_association_ind,
                                                 eth_params_t *IPaddrs)
 {
-  createF1inst(instance, NULL, NULL);
   // save the assoc id
   f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
-  f1ap_cu_data->assoc_id         = sctp_new_association_ind->assoc_id;
+  // we don't need the assoc_id, subsequent messages (the first being F1 Setup
+  // Request), will deliver the assoc_id
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
-  if (RC.nrrrc[instance]->node_type != ngran_gNB_CUCP) {
-    getCxt(instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
-    AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
-  } else
-    LOG_I(F1AP, "In F1AP connection, don't start GTP-U, as we have also E1AP\n");
-  // Fixme: fully inconsistent instances management
-  // dirty global var is a bad fix
-  CUuniqInstance=getCxt(instance)->gtpInst;
 }
 
 static void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
@@ -76,7 +68,6 @@ static void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_a
     f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
     AssertFatal(f1ap_cu_data != NULL, "illegal state: SCTP shutdown for non-existing F1AP endpoint\n");
     LOG_I(F1AP, "Received SCTP shutdown for assoc_id %d, removing endpoint\n", sctp_new_association_resp->assoc_id);
-    destroyF1inst(instance);
     /* inform RRC that the DU is gone */
     MessageDef *message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_LOST_CONNECTION);
     message_p->ittiMsgHeader.originInstance = sctp_new_association_resp->assoc_id;
@@ -139,12 +130,25 @@ void *F1AP_CU_task(void *arg) {
   // Hardcoded instance id!
   IPaddrs = &RC.nrrrc[0]->eth_params_s;
 
-  cu_task_send_sctp_init_req(0, IPaddrs->my_addr);
+  const int instance = 0;
+  createF1inst(instance, NULL, NULL);
+  cu_task_send_sctp_init_req(instance, IPaddrs->my_addr);
+
+  if (RC.nrrrc[instance]->node_type != ngran_gNB_CUCP) {
+    getCxt(instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
+    AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
+  } else {
+    LOG_I(F1AP, "In F1AP connection, don't start GTP-U, as we have also E1AP\n");
+  }
+  // Fixme: fully inconsistent instances management
+  // dirty global var is a bad fix
+  CUuniqInstance=getCxt(instance)->gtpInst;
 
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);
-    LOG_D(F1AP, "CU Task Received %s for instance %ld\n",
-          ITTI_MSG_NAME(received_msg), ITTI_MSG_DESTINATION_INSTANCE(received_msg));
+    sctp_assoc_t assoc_id = ITTI_MSG_ORIGIN_INSTANCE(received_msg);
+    LOG_D(F1AP, "CU Task Received %s for instance %ld: sending SCTP message via assoc_id %d\n",
+          ITTI_MSG_NAME(received_msg), ITTI_MSG_DESTINATION_INSTANCE(received_msg), assoc_id);
     switch (ITTI_MSG_ID(received_msg)) {
       case SCTP_NEW_ASSOCIATION_IND:
         cu_task_handle_sctp_association_ind(ITTI_MSG_ORIGIN_INSTANCE(received_msg),
@@ -163,58 +167,54 @@ void *F1AP_CU_task(void *arg) {
         break;
 
       case F1AP_SETUP_RESP: // from rrc
-        CU_send_F1_SETUP_RESPONSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_F1_SETUP_RESPONSE(assoc_id,
                                   &F1AP_SETUP_RESP(received_msg));
         break;
 
+      case F1AP_SETUP_FAILURE:
+        CU_send_F1_SETUP_FAILURE(assoc_id, &F1AP_SETUP_FAILURE(received_msg));
+        break;
+
       case F1AP_GNB_CU_CONFIGURATION_UPDATE: // from rrc
-        CU_send_gNB_CU_CONFIGURATION_UPDATE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_gNB_CU_CONFIGURATION_UPDATE(assoc_id,
                                             &F1AP_GNB_CU_CONFIGURATION_UPDATE(received_msg));
         break;
 
       case F1AP_DL_RRC_MESSAGE: // from rrc
-        CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_DL_RRC_MESSAGE_TRANSFER(assoc_id,
                                         &F1AP_DL_RRC_MESSAGE(received_msg));
         free(F1AP_DL_RRC_MESSAGE(received_msg).rrc_container);
         break;
 
       case F1AP_UE_CONTEXT_SETUP_REQ: // from rrc
-        CU_send_UE_CONTEXT_SETUP_REQUEST(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_SETUP_REQUEST(assoc_id,
                                          &F1AP_UE_CONTEXT_SETUP_REQ(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_REQ:
-        CU_send_UE_CONTEXT_MODIFICATION_REQUEST(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_MODIFICATION_REQUEST(assoc_id,
                                                 &F1AP_UE_CONTEXT_MODIFICATION_REQ(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_CMD: // from rrc
-        CU_send_UE_CONTEXT_RELEASE_COMMAND(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_RELEASE_COMMAND(assoc_id,
                                            &F1AP_UE_CONTEXT_RELEASE_CMD(received_msg));
         break;
 
       case F1AP_PAGING_IND:
-        CU_send_Paging(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_Paging(assoc_id,
                        &F1AP_PAGING_IND(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_CONFIRM:
-        CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(assoc_id,
                                                 &F1AP_UE_CONTEXT_MODIFICATION_CONFIRM(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_REFUSE:
-        CU_send_UE_CONTEXT_MODIFICATION_REFUSE(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+        CU_send_UE_CONTEXT_MODIFICATION_REFUSE(assoc_id,
                                                &F1AP_UE_CONTEXT_MODIFICATION_REFUSE(received_msg));
         break;
-
-      //    case F1AP_SETUP_RESPONSE: // This is from RRC
-      //    CU_send_F1_SETUP_RESPONSE(instance, *f1ap_setup_ind, &(F1AP_SETUP_RESP) f1ap_setup_resp)
-      //        break;
-
-      //    case F1AP_SETUP_FAILURE: // This is from RRC
-      //    CU_send_F1_SETUP_FAILURE(instance, *f1ap_setup_ind, &(F1AP_SETUP_FAILURE) f1ap_setup_failure)
-      //       break;
 
       case TERMINATE_MESSAGE:
         LOG_W(F1AP, " *** Exiting F1AP thread\n");
@@ -231,6 +231,8 @@ void *F1AP_CU_task(void *arg) {
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
     received_msg = NULL;
   } // while
+
+  destroyF1inst(instance);
 
   return NULL;
 }

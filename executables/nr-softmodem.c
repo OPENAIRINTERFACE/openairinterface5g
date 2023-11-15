@@ -288,7 +288,7 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 }
 
-static int create_gNB_tasks(ngran_node_t node_type)
+static int create_gNB_tasks(ngran_node_t node_type, configmodule_interface_t *cfg)
 {
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
@@ -297,12 +297,13 @@ static int create_gNB_tasks(ngran_node_t node_type)
   itti_wait_ready(1);
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
-  RCconfig_verify(node_type);
+  RCconfig_verify(cfg, node_type);
 
   RCconfig_NR_L1();
   RCconfig_nr_prs();
 
-  if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
+  if (RC.nb_nr_macrlc_inst > 0)
+    RCconfig_nr_macrlc(cfg);
 
   LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
 
@@ -367,8 +368,8 @@ static int create_gNB_tasks(ngran_node_t node_type)
     paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
     char aprefix[MAX_OPTNAME_SIZE*2 + 8];
     sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-    config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
-    
+    config_get(cfg, NETParams, sizeofArray(NETParams), aprefix);
+
     for(int i = GNB_INTERFACE_NAME_FOR_NG_AMF_IDX; i <= GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX; i++) {
       if( NETParams[i].strptr == NULL) {
         LOG_E(NGAP, "No AMF configuration in the file.\n");
@@ -392,10 +393,11 @@ static int create_gNB_tasks(ngran_node_t node_type)
       return -1;
     }
 
-    LOG_I(NR_RRC, "Creating NR RRC gNB Task, that will also create TASKS\n");
-    if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
-      LOG_E(NR_RRC, "Create task for NR RRC gNB failed\n");
-      return -1;
+    if (!NODE_IS_DU(node_type)) {
+      if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
+        LOG_E(NR_RRC, "Create task for NR RRC gNB failed\n");
+        return -1;
+      }
     }
 
     // If CU
@@ -426,12 +428,12 @@ static int create_gNB_tasks(ngran_node_t node_type)
   return 0;
 }
 
-
-static void get_options(void) {
+static void get_options(configmodule_interface_t *cfg)
+{
   paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC_GNB ;
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
-  get_common_options(SOFTMODEM_GNB_BIT );
-  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+  get_common_options(cfg, SOFTMODEM_GNB_BIT);
+  config_process_cmdline(cfg, cmdline_params, sizeofArray(cmdline_params), NULL);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
@@ -447,7 +449,6 @@ static void get_options(void) {
 
   if(worker_config != NULL) set_worker_conf(worker_config);
 }
-
 
 void set_default_frame_parms(nfapi_nr_config_request_scf_t *config[MAX_NUM_CCs],
                              NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
@@ -570,12 +571,13 @@ void init_pdcp(void) {
   }
 }
 
+configmodule_interface_t *uniqCfg = NULL;
 int main( int argc, char **argv ) {
   int ru_id, CC_id = 0;
   start_background_system();
 
   ///static configuration for NR at the moment
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
@@ -590,7 +592,7 @@ int main( int argc, char **argv ) {
   logInit();
   set_latency_target();
   printf("Reading in command-line options\n");
-  get_options ();
+  get_options(uniqCfg);
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
 
@@ -639,7 +641,7 @@ int main( int argc, char **argv ) {
   // don't create if node doesn't connect to RRC/S1/GTP
   const ngran_node_t node_type = get_node_type();
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
-    int ret = create_gNB_tasks(node_type);
+    int ret = create_gNB_tasks(node_type, uniqCfg);
     AssertFatal(ret == 0, "cannot create ITTI tasks\n");
   }
 
@@ -673,7 +675,7 @@ int main( int argc, char **argv ) {
   int sl_ahead=6;
   if (RC.nb_RU >0) {
     printf("Initializing RU threads\n");
-    init_NR_RU(get_softmodem_params()->rf_config_file);
+    init_NR_RU(uniqCfg, get_softmodem_params()->rf_config_file);
 
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;

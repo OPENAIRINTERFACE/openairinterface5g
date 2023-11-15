@@ -99,11 +99,6 @@ void nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
-void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
-{
-  return;
-}
-
 void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req) { abort(); }
 void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req) { abort(); }
 void e1_bearer_release_cmd(const e1ap_bearer_release_cmd_t *cmd) { abort(); }
@@ -144,6 +139,7 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
 int NB_UE_INST = 1;
 
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char *argv[])
 {
   FILE *csv_file = NULL;
@@ -217,7 +213,7 @@ int main(int argc, char *argv[])
   int params_from_file = 0;
   int threadCnt=0;
   int max_ldpc_iterations = 5;
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
   int ul_proc_error = 0; // uplink processing checking status flag
@@ -695,7 +691,6 @@ int main(int argc, char *argv[])
 
   //Configure UE
   NR_UE_RRC_INST_t rrcue = {0};
-  rrcue.mib = mib->message.choice.mib;
   rrcue.scell_group_config = secondaryCellGroup;
   nr_l2_init_ue(&rrcue);
 
@@ -791,18 +786,12 @@ int main(int argc, char *argv[])
   }
 
   nb_re_dmrs = nb_re_dmrs * num_dmrs_cdm_grps_no_data;
-
-  unsigned int available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, precod_nbr_layers);
   unsigned int TBS = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
-
   
   printf("[ULSIM]: length_dmrs: %u, l_prime_mask: %u	number_dmrs_symbols: %u, mapping_type: %u add_pos: %d \n", length_dmrs, l_prime_mask, number_dmrs_symbols, mapping_type, add_pos);
   printf("[ULSIM]: CDM groups: %u, dmrs_config_type: %d, num_rbs: %u, nb_symb_sch: %u\n", num_dmrs_cdm_grps_no_data, dmrs_config_type, nb_rb, nb_symb_sch);
   printf("[ULSIM]: MCS: %d, mod order: %u, code_rate: %u\n", Imcs, mod_order, code_rate);
-  printf("[ULSIM]: VALUE OF G: %u, TBS: %u\n", available_bits, TBS);
-  
 
-  
   uint8_t ulsch_input_buffer[TBS/8];
 
   ulsch_input_buffer[0] = 0x31;
@@ -812,7 +801,6 @@ int main(int argc, char *argv[])
 
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
-  int ptrs_symbols = 0; // to calculate total PTRS RE's in a slot
 
   double ts = 1.0/(frame_parms->subcarrier_spacing * frame_parms->ofdm_symbol_size);
 
@@ -833,6 +821,18 @@ int main(int argc, char *argv[])
     pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
 
   printf("\n");
+
+  uint32_t unav_res = 0;
+  if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+    set_ptrs_symb_idx(&ptrsSymPos, nb_symb_sch, start_symbol, 1 << ptrs_time_density, l_prime_mask);
+    ptrsSymbPerSlot = get_ptrs_symbols_in_slot(ptrsSymPos, start_symbol, nb_symb_sch);
+    ptrsRePerSymb = ((nb_rb + ptrs_freq_density - 1) / ptrs_freq_density);
+    unav_res = ptrsSymbPerSlot * ptrsRePerSymb;
+    LOG_D(PHY, "[ULSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot, ptrsRePerSymb, unav_res);
+  }
+
+  unsigned int available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, unav_res, mod_order, precod_nbr_layers);
+  printf("[ULSIM]: VALUE OF G: %u, TBS: %u\n", available_bits, TBS);
 
   int frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
   for (int aatx=0; aatx<n_tx; aatx++) {
@@ -1210,13 +1210,6 @@ int main(int argc, char *argv[])
 
         } /*End input_fd */
 
-        if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
-          set_ptrs_symb_idx(&ptrsSymPos, pusch_pdu->nr_of_symbols, pusch_pdu->start_symbol_index, 1 << ptrs_time_density, pusch_pdu->ul_dmrs_symb_pos);
-          ptrsSymbPerSlot = get_ptrs_symbols_in_slot(ptrsSymPos, pusch_pdu->start_symbol_index, pusch_pdu->nr_of_symbols);
-          ptrsRePerSymb = ((pusch_pdu->rb_size + ptrs_freq_density - 1) / ptrs_freq_density);
-          LOG_D(PHY, "[ULSIM] PTRS Symbols in a slot: %2u, RE per Symbol: %3u, RE in a slot %4d\n", ptrsSymbPerSlot, ptrsRePerSymb, ptrsSymbPerSlot * ptrsRePerSymb);
-        }
-
         //----------------------------------------------------------
         //------------------- gNB phy procedures -------------------
         //----------------------------------------------------------
@@ -1452,13 +1445,8 @@ int main(int argc, char *argv[])
         //----------------------------------------------------------
 
         if ((pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) && (SNR == snr0) && (trial == 0) && (round == 0)) {
-          ptrs_symbols = 0;
-          for (int i = pusch_pdu->start_symbol_index; i < pusch_pdu->start_symbol_index + pusch_pdu->nr_of_symbols; i++)
-            ptrs_symbols += ((pusch_vars->ptrs_symbols) >> i) & 1;
-
-          /*  2*5*(50/2), for RB = 50,K = 2 for 5 OFDM PTRS symbols */
-          available_bits -= 2 * ptrs_symbols * ((nb_rb + ptrs_freq_density - 1) / ptrs_freq_density);
-          printf("[ULSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5d \n", available_bits, (ptrsSymbPerSlot * ptrsRePerSymb * 2));
+          printf("[ULSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5d \n",
+                 available_bits, (ptrsSymbPerSlot * ptrsRePerSymb * mod_order * precod_nbr_layers));
         }
 
         for (i = 0; i < available_bits; i++) {

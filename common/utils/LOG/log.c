@@ -89,7 +89,7 @@ const mapping log_options[] = {{"nocolor", FLAG_NOCOLOR},
                                {"wall_clock", FLAG_REAL_TIME},
                                {NULL, -1}};
 
-mapping log_maskmap[] = LOG_MASKMAP_INIT;
+const mapping log_maskmap[] = LOG_MASKMAP_INIT;
 
 static const char *const log_level_highlight_start[] =
     {LOG_RED, LOG_ORANGE, LOG_GREEN, "", LOG_BLUE, LOG_CYBL}; /*!< \brief Optional start-format strings for highlighting */
@@ -283,7 +283,7 @@ void  log_getconfig(log_t *g_log)
   paramdef_t logparams_logfile[MAX_LOG_PREDEF_COMPONENTS];
   paramdef_t logparams_debug[sizeof(log_maskmap)/sizeof(mapping)];
   paramdef_t logparams_dump[sizeof(log_maskmap)/sizeof(mapping)];
-  int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
+  int ret = config_get(config_get_if(), logparams_defaults, sizeofArray(logparams_defaults), CONFIG_STRING_LOG_PREFIX);
 
   if (ret <0) {
     fprintf(stderr,"[LOG] init aborted, configuration couldn't be performed\n");
@@ -337,8 +337,8 @@ void  log_getconfig(log_t *g_log)
   }
 
   /* read the per component parameters */
-  config_get( logparams_level,    MAX_LOG_PREDEF_COMPONENTS,CONFIG_STRING_LOG_PREFIX);
-  config_get( logparams_logfile,  MAX_LOG_PREDEF_COMPONENTS,CONFIG_STRING_LOG_PREFIX);
+  config_get(config_get_if(), logparams_level, MAX_LOG_PREDEF_COMPONENTS, CONFIG_STRING_LOG_PREFIX);
+  config_get(config_get_if(), logparams_logfile, MAX_LOG_PREDEF_COMPONENTS, CONFIG_STRING_LOG_PREFIX);
 
   /* now set the log levels and infile option, according to what we read */
   for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_PREDEF_COMPONENTS; i++) {
@@ -367,10 +367,10 @@ void  log_getconfig(log_t *g_log)
     logparams_dump[i].numelt      = 0;
   }
 
-  config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1,CONFIG_STRING_LOG_PREFIX);
-  config_get( logparams_dump,(sizeof(log_maskmap)/sizeof(mapping)) - 1,CONFIG_STRING_LOG_PREFIX);
+  config_get(config_get_if(), logparams_debug, sizeofArray(log_maskmap) - 1, CONFIG_STRING_LOG_PREFIX);
+  config_get(config_get_if(), logparams_dump, sizeofArray(log_maskmap) - 1, CONFIG_STRING_LOG_PREFIX);
 
-  if (config_check_unknown_cmdlineopt(CONFIG_STRING_LOG_PREFIX) > 0)
+  if (config_check_unknown_cmdlineopt(config_get_if(), CONFIG_STRING_LOG_PREFIX) > 0)
     exit(1);
 
   /* set the debug mask according to the debug parameters values */

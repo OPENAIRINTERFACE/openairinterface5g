@@ -109,20 +109,19 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
-    uint16_t beta_ptrs = 1;
-    uint8_t ptrs_symbol = 0;
     uint16_t dlPtrsSymPos = 0;
     uint16_t n_ptrs = 0;
-    uint16_t ptrs_idx = 0;
-    uint8_t is_ptrs_re = 0;
+    uint32_t ptrsSymbPerSlot = 0;
     if(rel15->pduBitmap & 0x1) {
       set_ptrs_symb_idx(&dlPtrsSymPos,
-                          rel15->NrOfSymbols,
-                          rel15->StartSymbolIndex,
-                          1<<rel15->PTRSTimeDensity,
-                          rel15->dlDmrsSymbPos);
-      n_ptrs = (rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity;
+                        rel15->NrOfSymbols,
+                        rel15->StartSymbolIndex,
+                        1 << rel15->PTRSTimeDensity,
+                        rel15->dlDmrsSymbPos);
+      n_ptrs = (rel15->rbSize + rel15->PTRSFreqDensity - 1) / rel15->PTRSFreqDensity;
+      ptrsSymbPerSlot = get_ptrs_symbols_in_slot(dlPtrsSymPos, rel15->StartSymbolIndex, rel15->NrOfSymbols);
     }
+    harq->unav_res = ptrsSymbPerSlot * n_ptrs;
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
@@ -131,7 +130,15 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     start_meas(dlsch_encoding_stats);
 
     if (nr_dlsch_encoding(gNB,
-                          frame, slot, harq, frame_parms,output,tinput,tprep,tparity,toutput,
+                          frame,
+                          slot,
+                          harq,
+                          frame_parms,
+                          output,
+                          tinput,
+                          tprep,
+                          tparity,
+                          toutput,
                           dlsch_rate_matching_stats,
                           dlsch_interleaving_stats,
                           dlsch_segmentation_stats) == -1)
@@ -300,16 +307,17 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
         }
 
         /* calculate if current symbol is PTRS symbols */
-        ptrs_idx = 0;
+        uint16_t ptrs_idx = 0;
         int16_t *mod_ptrs = NULL;
+        uint8_t ptrs_symbol = 0;
         if(rel15->pduBitmap & 0x1) {
-          ptrs_symbol = is_ptrs_symbol(l,dlPtrsSymPos);
+          ptrs_symbol = is_ptrs_symbol(l, dlPtrsSymPos);
           if(ptrs_symbol) {
             /* PTRS QPSK Modulation for each OFDM symbol in a slot */
-            LOG_D(PHY,"Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
+            LOG_D(PHY,"Doing ptrs modulation for symbol %d, n_ptrs %d\n", l, n_ptrs);
             int16_t mod_ptrsBuf[n_ptrs<<1] __attribute__ ((aligned(16)));
-            mod_ptrs =mod_ptrsBuf;
-            nr_modulation(pdsch_dmrs[l][rel15->SCID], (n_ptrs<<1), DMRS_MOD_ORDER, mod_ptrs);
+            mod_ptrs = mod_ptrsBuf;
+            nr_modulation(pdsch_dmrs[l][rel15->SCID], (n_ptrs << 1), DMRS_MOD_ORDER, mod_ptrs);
           }
         }
         uint16_t k = start_sc;
@@ -318,13 +326,11 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
           // Loop Over SCs:
           for (int i=0; i<rel15->rbSize*NR_NB_SC_PER_RB; i++) {
             /* check if cuurent RE is PTRS RE*/
-            is_ptrs_re = 0;
+            uint8_t is_ptrs_re = 0;
             /* check for PTRS symbol and set flag for PTRS RE */
             if(ptrs_symbol){
               is_ptrs_re = is_ptrs_subcarrier(k,
                                               rel15->rnti,
-                                              nl,
-                                              rel15->dmrsConfigType,
                                               rel15->PTRSFreqDensity,
                                               rel15->rbSize,
                                               rel15->PTRSReOffset,
@@ -348,6 +354,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
             }
             /* Map PTRS Symbol */
             else if(is_ptrs_re){
+              uint16_t beta_ptrs = 1;
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = (beta_ptrs*amp*mod_ptrs[ptrs_idx<<1]) >> 15;
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (beta_ptrs*amp*mod_ptrs[(ptrs_idx<<1) + 1])>> 15;
 #ifdef DEBUG_DLSCH_MAPPING

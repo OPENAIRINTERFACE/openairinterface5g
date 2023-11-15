@@ -88,6 +88,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t 
 
   // create an ITTI message and copy SDU
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
+  message_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_initial_ul_rrc_message_t *ul_rrc = &F1AP_INITIAL_UL_RRC_MESSAGE(message_p);
   ul_rrc->gNB_DU_ue_id = du_ue_id;
   ul_rrc->nr_cellid = nr_cellid; // CU instance
@@ -107,9 +108,8 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t 
 /*
     DL RRC Message Transfer.
 */
-//void CU_send_DL_RRC_MESSAGE_TRANSFER(F1AP_DLRRCMessageTransfer_t *DLRRCMessageTransfer) {
-int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
-                                    f1ap_dl_rrc_message_t    *f1ap_dl_rrc) {
+int CU_send_DL_RRC_MESSAGE_TRANSFER(sctp_assoc_t assoc_id, f1ap_dl_rrc_message_t *f1ap_dl_rrc)
+{
   LOG_D(F1AP, "CU send DL_RRC_MESSAGE_TRANSFER \n");
   F1AP_F1AP_PDU_t                 pdu= {0};
   F1AP_DLRRCMessageTransfer_t    *out;
@@ -207,7 +207,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(assoc_id, buffer, len);
   return 0;
 }
 

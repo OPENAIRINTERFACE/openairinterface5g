@@ -134,11 +134,15 @@ static instance_t get_f1_gtp_instance(void)
 
 void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req)
 {
+  bool need_ue_id_mgmt = e1_used();
+
   /* mirror the CU-CP UE ID for CU-UP */
   uint32_t cu_up_ue_id = req->gNB_cu_cp_ue_id;
   f1_ue_data_t ued = {.secondary_ue = req->gNB_cu_cp_ue_id};
-  cu_add_f1_ue_data(cu_up_ue_id, &ued);
-  LOG_I(E1AP, "adding UE with CU-CP UE ID %d and CU-UP UE ID %d\n", req->gNB_cu_cp_ue_id, cu_up_ue_id);
+  if (need_ue_id_mgmt) {
+    cu_add_f1_ue_data(cu_up_ue_id, &ued);
+    LOG_I(E1AP, "adding UE with CU-CP UE ID %d and CU-UP UE ID %d\n", req->gNB_cu_cp_ue_id, cu_up_ue_id);
+  }
 
   instance_t n3inst = get_n3_gtp_instance();
   instance_t f1inst = get_f1_gtp_instance();
@@ -260,6 +264,8 @@ void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req)
 
 void e1_bearer_release_cmd(const e1ap_bearer_release_cmd_t *cmd)
 {
+  bool need_ue_id_mgmt = e1_used();
+
   instance_t n3inst = get_n3_gtp_instance();
   instance_t f1inst = get_f1_gtp_instance();
 
@@ -269,7 +275,9 @@ void e1_bearer_release_cmd(const e1ap_bearer_release_cmd_t *cmd)
   if (f1inst >= 0)  // is there F1-U?
     newGtpuDeleteAllTunnels(f1inst, cmd->gNB_cu_up_ue_id);
   nr_pdcp_remove_UE(cmd->gNB_cu_up_ue_id);
-  cu_remove_f1_ue_data(cmd->gNB_cu_up_ue_id);
+  if (need_ue_id_mgmt) {
+    cu_remove_f1_ue_data(cmd->gNB_cu_up_ue_id);
+  }
 
   e1ap_bearer_release_cplt_t cplt = {
     .gNB_cu_cp_ue_id = cmd->gNB_cu_cp_ue_id,

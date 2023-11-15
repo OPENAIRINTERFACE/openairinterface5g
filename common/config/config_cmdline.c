@@ -37,9 +37,11 @@
 #include <errno.h>
 #include <platform_types.h>
 #include "config_userapi.h"
+#include "config_common.h"
 #include "../utils/LOG/log.h"
 
-int parse_stringlist(paramdef_t *cfgoptions, char *val) {
+static int parse_stringlist(configmodule_interface_t *cfg, paramdef_t *cfgoptions, char *val)
+{
   char *atoken;
   char *tokctx = NULL;
   char *tmpval=strdup(val);
@@ -57,21 +59,22 @@ int parse_stringlist(paramdef_t *cfgoptions, char *val) {
   AssertFatal(MAX_LIST_SIZE > numelt, 
               "This piece of code use fixed size arry of constant #define MAX_LIST_SIZE %d\n", 
               MAX_LIST_SIZE );
-  config_check_valptr(cfgoptions, sizeof(char*), numelt);
-  
+  config_check_valptr(cfg, cfgoptions, sizeof(char *), numelt);
+
   cfgoptions->numelt=numelt;
   atoken=strtok_r(val, ",",&tokctx);
 
   for( int i=0; i<cfgoptions->numelt && atoken != NULL ; i++) {
     snprintf(cfgoptions->strlistptr[i],DEFAULT_EXTRA_SZ,"%s",atoken);
-    printf_params("[LIBCONFIG] %s[%i]: %s\n", cfgoptions->optname,i,cfgoptions->strlistptr[i]);
+    printf_params(cfg, "[LIBCONFIG] %s[%i]: %s\n", cfgoptions->optname, i, cfgoptions->strlistptr[i]);
     atoken=strtok_r(NULL, ",",&tokctx);
   }
 
   return (cfgoptions->numelt > 0);
 }
 
-int processoption(paramdef_t *cfgoptions, char *value) {
+static int processoption(configmodule_interface_t *cfg, paramdef_t *cfgoptions, char *value)
+{
   char *tmpval = value;
   int optisset=0;
   char defbool[2]="1";
@@ -79,6 +82,7 @@ int processoption(paramdef_t *cfgoptions, char *value) {
   if ( value == NULL) {
     if( (cfgoptions->paramflags &PARAMFLAG_BOOL) == 0 ) { /* not a boolean, argument required */
       CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
+      AssertFatal(false, "[CONFIG] command line, requires an argument\n");
     } else {        /* boolean value option without argument, set value to true*/
       tmpval = defbool;
     }
@@ -89,19 +93,18 @@ int processoption(paramdef_t *cfgoptions, char *value) {
 
     case TYPE_STRING:
       if (cfgoptions->numelt == 0 )
-        config_check_valptr(cfgoptions, 1,
-                            strlen(tmpval)+1);
+        config_check_valptr(cfg, cfgoptions, 1, strlen(tmpval) + 1);
       if (cfgoptions->numelt < (strlen(tmpval)+1)) {
         CONFIG_PRINTF_ERROR("[CONFIG] command line option %s value too long\n",
                             cfgoptions->optname);
       }
       snprintf(*cfgoptions->strptr, cfgoptions->numelt ,"%s",tmpval);
-      printf_cmdl("[CONFIG] %s set to  %s from command line\n", cfgoptions->optname, tmpval);
+      printf_cmdl(cfg, "[CONFIG] %s set to  %s from command line\n", cfgoptions->optname, tmpval);
       optisset=1;
       break;
 
     case TYPE_STRINGLIST:
-      optisset=parse_stringlist(cfgoptions,tmpval);
+      optisset = parse_stringlist(cfg, cfgoptions, tmpval);
       break;
 
     case TYPE_UINT32:
@@ -110,8 +113,8 @@ int processoption(paramdef_t *cfgoptions, char *value) {
     case TYPE_INT16:
     case TYPE_UINT8:
     case TYPE_INT8:
-      config_check_valptr(cfgoptions, sizeof(*cfgoptions->iptr), 1);
-      config_assign_int(cfgoptions,cfgoptions->optname,(int32_t)strtol(tmpval,&charptr,0));
+      config_check_valptr(cfg, cfgoptions, sizeof(*cfgoptions->iptr), 1);
+      config_assign_int(cfg, cfgoptions, cfgoptions->optname, (int32_t)strtol(tmpval, &charptr, 0));
 
       if( *charptr != 0) {
         CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires an integer argument\n",cfgoptions->optname);
@@ -122,14 +125,14 @@ int processoption(paramdef_t *cfgoptions, char *value) {
 
     case TYPE_UINT64:
     case TYPE_INT64:
-      config_check_valptr(cfgoptions, sizeof(*cfgoptions->i64ptr), 1);
+      config_check_valptr(cfg, cfgoptions, sizeof(*cfgoptions->i64ptr), 1);
       *(cfgoptions->i64ptr)=strtoll(tmpval,&charptr,0);
 
       if( *charptr != 0) {
         CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires an integer argument\n",cfgoptions->optname);
       }
 
-      printf_cmdl("[CONFIG] %s set to  %lli from command line\n", cfgoptions->optname, (long long)*cfgoptions->i64ptr);
+      printf_cmdl(cfg, "[CONFIG] %s set to  %lli from command line\n", cfgoptions->optname, (long long)*cfgoptions->i64ptr);
       optisset=1;
       break;
 
@@ -138,14 +141,14 @@ int processoption(paramdef_t *cfgoptions, char *value) {
       break;
 
     case TYPE_DOUBLE:
-      config_check_valptr(cfgoptions, sizeof(*cfgoptions->dblptr), 1);
+      config_check_valptr(cfg, cfgoptions, sizeof(*cfgoptions->dblptr), 1);
       *cfgoptions->dblptr = strtof(tmpval,&charptr);
 
       if( *charptr != 0) {
         CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires a double argument\n",cfgoptions->optname);
       }
 
-      printf_cmdl("[CONFIG] %s set to  %lf from command line\n", cfgoptions->optname, *(cfgoptions->dblptr));
+      printf_cmdl(cfg, "[CONFIG] %s set to  %lf from command line\n", cfgoptions->optname, *(cfgoptions->dblptr));
       optisset=1;
       break;
 
@@ -167,7 +170,8 @@ int processoption(paramdef_t *cfgoptions, char *value) {
 /*--------------------------------------------------------------------*/
 /*  check unknown options in the command line
 */
-int config_check_unknown_cmdlineopt(char *prefix) {
+int config_check_unknown_cmdlineopt(configmodule_interface_t *cfg, char *prefix)
+{
   int unknowndetected=0;
   char testprefix[CONFIG_MAXOPTLENGTH];
   int finalcheck = 0;
@@ -182,18 +186,21 @@ int config_check_unknown_cmdlineopt(char *prefix) {
     }
   }
 
-  for (int i=1; i<config_get_if()->argc ; i++) {
-    if ( !finalcheck && strstr(config_get_if()->argv[i],testprefix) == NULL ) continue;
+  for (int i = 1; i < cfg->argc; i++) {
+    if (!finalcheck && strstr(cfg->argv[i], testprefix) == NULL)
+      continue;
 
-    if ( !finalcheck && testprefix[0]==0 && index(config_get_if()->argv[i],'.') != NULL) continue;
+    if (!finalcheck && testprefix[0] == 0 && index(cfg->argv[i], '.') != NULL)
+      continue;
 
-    if ( !finalcheck && isdigit(config_get_if()->argv[i][0])) continue;
+    if (!finalcheck && isdigit(cfg->argv[i][0]))
+      continue;
 
-    if ( !finalcheck && config_get_if()->argv[i][0] == '-' && isdigit(config_get_if()->argv[i][1])) continue;
+    if (!finalcheck && cfg->argv[i][0] == '-' && isdigit(cfg->argv[i][1]))
+      continue;
 
-    if ( (config_get_if()->argv_info[i] & CONFIG_CMDLINEOPT_PROCESSED) == 0 ) {
-      fprintf(stderr,"[CONFIG] unknown option: %s\n",
-              config_get_if()->argv[i] );
+    if ((cfg->argv_info[i] & CONFIG_CMDLINEOPT_PROCESSED) == 0) {
+      fprintf(stderr, "[CONFIG] unknown option: %s\n", cfg->argv[i]);
       unknowndetected++;
     }
   }
@@ -204,10 +211,11 @@ int config_check_unknown_cmdlineopt(char *prefix) {
   }
 
   return unknowndetected;
-}  /* config_check_unknown_cmdlineopt */
+} /* config_check_unknown_cmdlineopt */
 
-int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) {
-  int c = config_get_if()->argc;
+int config_process_cmdline(configmodule_interface_t *cfg, paramdef_t *cfgoptions, int numoptions, char *prefix)
+{
+  int c = cfg->argc;
   int i,j;
   char *pp;
   char cfgpath[CONFIG_MAXOPTLENGTH];
@@ -215,15 +223,16 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
   i = 0;
 
   while (c > 0 ) {
-    char *oneargv = strdup(config_get_if()->argv[i]);          /* we use strtok_r which modifies its string paramater, and we don't want argv to be modified */
+    char *oneargv =
+        strdup(cfg->argv[i]); /* we use strtok_r which modifies its string paramater, and we don't want argv to be modified */
     if(!oneargv) abort();
     /* first check help options, either --help, -h or --help_<section> */
     if (strncmp(oneargv, "-h",2) == 0 || strncmp(oneargv, "--help",6) == 0 ) {
       char *tokctx = NULL;
       pp=strtok_r(oneargv, "_",&tokctx);
-      config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
+      cfg->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
 
-      if (pp == NULL || strcasecmp(pp,config_get_if()->argv[i] ) == 0 ) {
+      if (pp == NULL || strcasecmp(pp, cfg->argv[i]) == 0) {
         if( prefix == NULL) {
           config_printhelp(cfgoptions,numoptions,"(root section)");
 
@@ -263,10 +272,10 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
              ((strlen(oneargv) > 2) && (strcmp(oneargv + 2, cfgoptions[n].optname) == 0 ) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ) {
           char *valptr=NULL;
           int ret;
-          config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
+          cfg->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
 
           if (c > 0) {
-            pp = config_get_if()->argv[i+1];
+            pp = cfg->argv[i + 1];
 
             if (pp != NULL ) {
               ret = strlen(pp);
@@ -280,11 +289,11 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
             }
           }
 
-          j += processoption(&(cfgoptions[n]), valptr);
+          j += processoption(cfg, &(cfgoptions[n]), valptr);
 
           if (  valptr != NULL ) {
             i++;
-            config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
+            cfg->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
             c--;
           }
 
@@ -298,6 +307,6 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
     c--;
   }   /* fin du while */
 
-  printf_cmdl("[CONFIG] %s %i options set from command line\n",((prefix == NULL) ? "(root)":prefix),j);
+  printf_cmdl(cfg, "[CONFIG] %s %i options set from command line\n", ((prefix == NULL) ? "(root)" : prefix), j);
   return j;
-}  /* parse_cmdline*/
+} /* parse_cmdline*/

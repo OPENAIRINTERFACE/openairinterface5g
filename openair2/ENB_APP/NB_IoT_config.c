@@ -54,7 +54,7 @@ void RCconfig_NbIoTL1(void) {
   paramlist_def_t NbIoT_L1_ParamList = {NBIOT_L1LIST_CONFIG_STRING,NULL,0};
   /* No component carrier for NbIoT, ignore number of CC */
   //  NbIoT_L1_Params[L1_CC_IDX ].paramflags = PARAMFLAG_DONOTREAD;
-  config_getlist( &NbIoT_L1_ParamList,NbIoT_L1_Params,sizeof(NbIoT_L1_Params)/sizeof(paramdef_t), NULL);
+  config_getlist(&NbIoT_L1_ParamList, NbIoT_L1_Params, sizeofArray(NbIoT_L1_Params), NULL);
 
   if (NbIoT_L1_ParamList.numelt > 0) {
     if (RC.L1_NB_IoT == NULL) {
@@ -96,7 +96,7 @@ void RCconfig_NbIoTmacrlc(void) {
   paramlist_def_t NbIoT_MacRLC_ParamList = {NBIOT_MACRLCLIST_CONFIG_STRING,NULL,0};
   /* No component carrier for NbIoT, ignore number of CC */
   //  NbIoT_MacRLC_Params[MACRLC_CC_IDX ].paramflags = PARAMFLAG_DONOTREAD;
-  config_getlist( &NbIoT_MacRLC_ParamList,NbIoT_MacRLC_Params,sizeof(NbIoT_MacRLC_Params)/sizeof(paramdef_t), NULL);
+  config_getlist(&NbIoT_MacRLC_ParamList, NbIoT_MacRLC_Params, sizeofArray(NbIoT_MacRLC_Params), NULL);
 
   if ( NbIoT_MacRLC_ParamList.numelt > 0) {
     mac_top_init_eNB_NB_IoT();
@@ -152,15 +152,15 @@ int RCconfig_NbIoTRRC(MessageDef *msg_p, int nbiotrrc_id,eNB_RRC_INST_NB_IoT *nb
   checkedparam_t NBIoTLteCCCheckParams[] = NBIOT_LTECCPARAMS_CHECK_DESC;
 
   /* map parameter checking array instances to parameter definition array instances */
-  for (int i=0; (i<sizeof(NBIoTParams)/sizeof(paramdef_t)) && (i<sizeof(NBIoTCheckParams)/sizeof(checkedparam_t)); i++ ) {
+  for (int i = 0; i < sizeofArray(NBIoTParams) && i < sizeofArray(NBIoTCheckParams); i++) {
     NBIoTParams[i].chkPptr = &(NBIoTCheckParams[i]);
   }
 
-  for (int i=0; (i<sizeof(NBIoTParams)/sizeof(paramdef_t)) && (i<sizeof(NBIoTCheckParamsB)/sizeof(checkedparam_t)); i++ ) {
+  for (int i=0; (i<sizeofArray(NBIoTParams) && i<sizeofArray(NBIoTCheckParamsB); i++ ) {
     NBIoTParams[i+15].chkPptr = &(NBIoTCheckParamsB[i]);
   }
 
-  for (int i=0; (i<sizeof(NBIoTPrachParams)/sizeof(paramdef_t)) && (i<sizeof(NBIoTPrachCheckParams)/sizeof(checkedparam_t)); i++ ) {
+  for (int i=0; i<sizeofArray(NBIoTPrachParams && i<sizeofArray(NBIoTPrachCheckParams); i++ ) {
     NBIoTPrachParams[i].chkPptr = &(NBIoTPrachCheckParams[i]);
   }
 
@@ -192,11 +192,11 @@ int RCconfig_NbIoTRRC(MessageDef *msg_p, int nbiotrrc_id,eNB_RRC_INST_NB_IoT *nb
   NBIoTParams[NBIOT_UE_TIMERSANDCONSTANTS_N310_NB_IDX].uptr              = (uint32_t *)&(NBIOTRRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n310_NB);
   NBIoTParams[NBIOT_UE_TIMERSANDCONSTANTS_N311_NB_IDX].uptr              = (uint32_t *)&(NBIOTRRC_CONFIGURATION_REQ (msg_p).ue_TimersAndConstants_n311_NB);
   sprintf(instprefix, NBIOT_RRCLIST_CONFIG_STRING ".[%i]",nbiotrrc_id);
-  config_get( NBIoTParams,sizeof(NBIoTParams)/sizeof(paramdef_t),instprefix);
-  NBIOTRRC_CONFIGURATION_REQ (msg_p).nprach_SubcarrierMSG3_RangeStart    = config_get_processedint( &(NBIoTParams[NBIOT_NPRACH_SUBCARRIERMSG3_RANGESTART_IDX]) );
-  NBIOTRRC_CONFIGURATION_REQ (msg_p).npusch_groupHoppingEnabled          = config_get_processedint( &(NBIoTParams[NBIOT_NPUSCH_GROUPHOPPINGENABLED_IDX]      ) );
-  NBIOTRRC_CONFIGURATION_REQ (msg_p).dl_GapDurationCoeff_NB              = config_get_processedint( &(NBIoTParams[NBIOT_DL_GAPDURATIONCOEFF_NB_IDX]          ) );
-  NBIOTRRC_CONFIGURATION_REQ (msg_p).npusch_alpha                        = config_get_processedint( &(NBIoTParams[NBIOT_NPUSCH_ALPHA_IDX]                    ) );
+  config_get( NBIoTParams,sizeofArray(NBIoTParams),instprefix);
+  NBIOTRRC_CONFIGURATION_REQ (msg_p).nprach_SubcarrierMSG3_RangeStart    = config_get_processedint(config_get_if(), &(NBIoTParams[NBIOT_NPRACH_SUBCARRIERMSG3_RANGESTART_IDX]) );
+  NBIOTRRC_CONFIGURATION_REQ (msg_p).npusch_groupHoppingEnabled          = config_get_processedint(config_get_if(), &(NBIoTParams[NBIOT_NPUSCH_GROUPHOPPINGENABLED_IDX]      ) );
+  NBIOTRRC_CONFIGURATION_REQ (msg_p).dl_GapDurationCoeff_NB              = config_get_processedint(config_get_if(), &(NBIoTParams[NBIOT_DL_GAPDURATIONCOEFF_NB_IDX]          ) );
+  NBIOTRRC_CONFIGURATION_REQ (msg_p).npusch_alpha                        = config_get_processedint(config_get_if(), &(NBIoTParams[NBIOT_NPUSCH_ALPHA_IDX]                    ) );
 
   for (int i=0; i<MAX_NUM_NBIOT_CELEVELS; i++) {
     char *tmpptr=NULL;
@@ -209,13 +209,14 @@ int RCconfig_NbIoTRRC(MessageDef *msg_p, int nbiotrrc_id,eNB_RRC_INST_NB_IoT *nb
     NBIoTParams[NBIOT_NPDCCH_STARTSF_CSS_RA_IDX].uptr              = (uint32_t *)&(NBIOTRRC_CONFIGURATION_REQ (msg_p).npdcch_StartSF_CSS_RA[i]);
     NBIoTParams[NBIOT_NPDCCH_OFFSET_RA_IDX].strptr         = &tmpptr;
     sprintf(instprefix, "%s.[%i].%s.[%i]",NBIOT_RRCLIST_CONFIG_STRING, nbiotrrc_id,NBIOT_RRCLIST_NPRACHPARAMS_CONFIG_STRING,i);
-    config_get( NBIoTPrachParams,sizeof(NBIoTPrachParams)/sizeof(paramdef_t),instprefix);
-    NBIOTRRC_CONFIGURATION_REQ (msg_p).npdcch_Offset_RA[i] = config_get_processedint( &(NBIoTPrachParams[NBIOT_NPDCCH_OFFSET_RA_IDX]) );
+    config_get(NBIoTPrachParams, sizeofArray(NBIoTPrachParams), instprefix);
+    NBIOTRRC_CONFIGURATION_REQ(msg_p).npdcch_Offset_RA[i] =
+        config_get_processedint(config_get_if(), &(NBIoTPrachParams[NBIOT_NPDCCH_OFFSET_RA_IDX]));
   }
 
   /* get the LTE RRC and CC this NB-IoT RRC instance is attached to */
   sprintf(instprefix, NBIOT_RRCLIST_CONFIG_STRING ".[%i]." NBIOT_LTERRCREF_CONFIG_STRING, nbiotrrc_id );
-  config_get( NBIoTRRCRefParams,sizeof(NBIoTRRCRefParams)/sizeof(paramdef_t),instprefix);
+  config_get( NBIoTRRCRefParams,sizeofArray(NBIoTRRCRefParams),instprefix);
   /* read SIB1 parameters in the LTE RRC and CC sections */
   sprintf(instprefix, ENB_CONFIG_STRING_ENB_LIST ".[%i]."  ENB_CONFIG_STRING_COMPONENT_CARRIERS ".[%i]",
           *(NBIoTRRCRefParams[NBIOT_RRCINST_IDX].uptr), *(NBIoTRRCRefParams[NBIOT_CCINST_IDX].uptr));
@@ -227,14 +228,14 @@ int RCconfig_NbIoTRRC(MessageDef *msg_p, int nbiotrrc_id,eNB_RRC_INST_NB_IoT *nb
   NBIoTLteCCParams[LTECCPARAMS_NID_CELL_IDX].uptr          = (uint32_t *)&(NBIOTRRC_CONFIGURATION_REQ (msg_p).Nid_cell);
   NBIoTLteCCParams[LTECCPARAMS_N_RB_DL_IDX].uptr           = (uint32_t *)&(NBIOTRRC_CONFIGURATION_REQ (msg_p).N_RB_DL);
 
-  for (int i=0; (i<sizeof(NBIoTLteCCParams)/sizeof(paramdef_t)) && (i<sizeof(NBIoTLteCCCheckParams)/sizeof(checkedparam_t)); i++ ) {
+  for (int i=0;i<sizeofArray(NBIoTLteCCParams) && i<sizeofArray(NBIoTLteCCCheckParams); i++ ) {
     NBIoTLteCCParams[i].chkPptr = &(NBIoTLteCCCheckParams[i]);
   }
 
-  config_get( NBIoTLteCCParams,sizeof(NBIoTLteCCParams)/sizeof(paramdef_t),instprefix);
-  NBIOTRRC_CONFIGURATION_REQ (msg_p).frame_type = config_get_processedint( &(NBIoTLteCCParams[LTECCPARAMS_FRAME_TYPE_IDX]) );
-  NBIOTRRC_CONFIGURATION_REQ (msg_p).prefix_type = config_get_processedint( &(NBIoTLteCCParams[LTECCPARAMS_PREFIX_TYPE_IDX]) );
-  NBIOTRRC_CONFIGURATION_REQ (msg_p).prefix_type = config_get_processedint( &(NBIoTLteCCParams[LTECCPARAMS_PREFIX_TYPE_UL_IDX]) );
+  config_get( NBIoTLteCCParams,sizeofArray(NBIoTLteCCParams),instprefix);
+  NBIOTRRC_CONFIGURATION_REQ (msg_p).frame_type = config_get_processedint(config_get_if(), &(NBIoTLteCCParams[LTECCPARAMS_FRAME_TYPE_IDX]) );
+  NBIOTRRC_CONFIGURATION_REQ (msg_p).prefix_type = config_get_processedint(config_get_if(), &(NBIoTLteCCParams[LTECCPARAMS_PREFIX_TYPE_IDX]) );
+  NBIOTRRC_CONFIGURATION_REQ (msg_p).prefix_type = config_get_processedint(config_get_if(), &(NBIoTLteCCParams[LTECCPARAMS_PREFIX_TYPE_UL_IDX]) );
   return 0;
 }
 

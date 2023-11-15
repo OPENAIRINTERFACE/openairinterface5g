@@ -712,12 +712,12 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
     return -1;
   }
 
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
   int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
-  dlsch_pdu->targetCodeRate = R;
-
-  int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
-  int nb_re_dmrs = ((dlsch_pdu->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
-  if (R > 0)
+  if (R > 0) {
+    dlsch_pdu->targetCodeRate = R;
+    int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
+    int nb_re_dmrs = ((dlsch_pdu->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
     dlsch_pdu->TBS = nr_compute_tbs(dlsch_pdu->qamModOrder,
                                     R,
                                     dlsch_pdu->number_rbs,
@@ -726,6 +726,14 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
                                     nb_rb_oh,
                                     0,
                                     1);
+    // storing for possible retransmissions
+    current_harq->R = dlsch_pdu->targetCodeRate;
+    current_harq->TBS = dlsch_pdu->TBS;
+  }
+  else {
+    dlsch_pdu->targetCodeRate = current_harq->R;
+    dlsch_pdu->TBS = current_harq->TBS;
+  }
 
   int bw_tbslbrm;
   if (current_DL_BWP->initial_BWPSize > 0)
@@ -1119,8 +1127,6 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   /* TODO same calculation for MCS table as done in UL */
   dlsch_pdu->mcs_table = (pdsch_Config->mcs_Table) ? (*pdsch_Config->mcs_Table + 1) : 0;
   dlsch_pdu->qamModOrder = nr_get_Qm_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
-  int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
-  dlsch_pdu->targetCodeRate = R;
   if (dlsch_pdu->qamModOrder == 0) {
     LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
     return -1;
@@ -1132,7 +1138,11 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   }
   int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
   int nb_re_dmrs = ((dmrs_type == NULL) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
-  if (R > 0)
+
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
+  int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
+  if (R > 0) {
+    dlsch_pdu->targetCodeRate = R;
     dlsch_pdu->TBS = nr_compute_tbs(dlsch_pdu->qamModOrder,
                                     R,
                                     dlsch_pdu->number_rbs,
@@ -1141,6 +1151,14 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
                                     nb_rb_oh,
                                     0,
                                     Nl);
+    // storing for possible retransmissions
+    current_harq->R = dlsch_pdu->targetCodeRate;
+    current_harq->TBS = dlsch_pdu->TBS;
+  }
+  else {
+    dlsch_pdu->targetCodeRate = current_harq->R;
+    dlsch_pdu->TBS = current_harq->TBS;
+  }
 
   // TBS_LBRM according to section 5.4.2.1 of 38.212
   long *maxMIMO_Layers = current_DL_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
@@ -1241,8 +1259,8 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
                      int n_CCE,
                      int N_CCE,
                      frame_t frame,
-                     int slot) {
-
+                     int slot)
+{
   NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[harq_id];
 
   current_harq->active = true;

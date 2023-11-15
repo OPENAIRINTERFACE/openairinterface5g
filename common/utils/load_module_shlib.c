@@ -46,7 +46,7 @@ void loader_init(void) {
   paramdef_t LoaderParams[] = LOADER_PARAMS_DESC;
 
   loader_data.mainexec_buildversion =  PACKAGE_VERSION;
-  int ret = config_get( LoaderParams,sizeof(LoaderParams)/sizeof(paramdef_t),LOADER_CONFIG_PREFIX);
+  int ret = config_get(config_get_if(), LoaderParams, sizeofArray(LoaderParams), LOADER_CONFIG_PREFIX);
   if (ret <0) {
        printf("[LOADER]  configuration couldn't be performed via config module, parameters set to default values\n");
        if (loader_data.shlibpath == NULL) {
@@ -82,7 +82,7 @@ static char *loader_format_shlibpath(char *modname, char *version)
   /* shared lib name is formatted as lib<module name><module version>.so */
   char cfgprefix[sizeof(LOADER_CONFIG_PREFIX)+strlen(modname)+16];
   sprintf(cfgprefix,LOADER_CONFIG_PREFIX ".%s",modname);
-  ret = config_get(LoaderParams, sizeofArray(LoaderParams), cfgprefix);
+  ret = config_get(config_get_if(), LoaderParams, sizeofArray(LoaderParams), cfgprefix);
   if (ret <0) {
     fprintf(stderr, "[LOADER]  %s %d couldn't retrieve config from section %s\n", __FILE__, __LINE__, cfgprefix);
   }
@@ -214,7 +214,7 @@ int load_module_version_shlib(char *modname, char *version, loader_shlibfunc_t *
       int j = 0;
       for (; j < shlib->numfunc; ++j) {
         if (shlib->funcarray[j].fptr == farray[i].fptr) {
-          int rc = strcmp(shlib->funcarray[i].fname, farray[i].fname);
+          int rc = strcmp(shlib->funcarray[j].fname, farray[i].fname);
           AssertFatal(rc == 0,
                       "reloading the same fptr with different fnames (%s, %s)\n",
                       shlib->funcarray[i].fname, farray[i].fname);

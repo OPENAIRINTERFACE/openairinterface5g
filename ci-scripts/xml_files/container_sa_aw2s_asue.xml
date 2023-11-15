@@ -35,6 +35,11 @@
     002003
     002004
     002005
+    002006
+    002007
+    002008
+    002009
+    002010
     000100
     000010
     000020
@@ -97,12 +102,42 @@
     <id>amarisoft_ue_5</id>
   </testCase>
 
+  <testCase id="002006">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_6</id>
+  </testCase>
+
+  <testCase id="002007">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_7</id>
+  </testCase>
+
+  <testCase id="002008">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_8</id>
+  </testCase>
+
+  <testCase id="002009">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_9</id>
+  </testCase>
+
+  <testCase id="002010">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_10</id>
+  </testCase>
+
   <testCase id="000010">
     <class>Iperf</class>
-    <desc>iperf (DL/20Mbps/UDP)(30 sec)(multi-ue profile)</desc>
-    <iperf_args>-u -b 60M -t 30 -i 1 -R</iperf_args>
+    <desc>iperf (DL/7Mbps/UDP)(30 sec)(multi-ue profile)</desc>
+    <iperf_args>-u -b 70M -t 30 -i 1 -R</iperf_args>
     <direction>IPERF3</direction>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
     <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
     <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
     <iperf_profile>balanced</iperf_profile>
@@ -110,10 +145,10 @@
 
   <testCase id="000020">
     <class>Iperf</class>
-    <desc>iperf (UL/5Mbps/UDP)(30 sec)(multi-ue profile)</desc>
-    <iperf_args>-u -b 15M -t 30 -i 1 </iperf_args>
+    <desc>iperf (UL/2Mbps/UDP)(30 sec)(multi-ue profile)</desc>
+    <iperf_args>-u -b 20M -t 30 -i 1 </iperf_args>
     <direction>IPERF3</direction>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
     <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
     <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
     <iperf_profile>balanced</iperf_profile>
@@ -122,7 +157,7 @@
   <testCase id="000100">
     <class>Ping</class>
     <desc>Ping: 20pings in 20sec, multi-ue</desc>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
     <ping_args>-c 20 %cn_ip%</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
     <ping_rttavg_threshold>25</ping_rttavg_threshold>
@@ -131,7 +166,7 @@
   <testCase id="000200">
     <class>Ping</class>
     <desc>Ping: 100pings in 20sec, multi-ue</desc>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
     <ping_args>-c 100 -i 0.2 %cn_ip%</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
     <ping_rttavg_threshold>30</ping_rttavg_threshold>
@@ -140,7 +175,7 @@
   <testCase id="003000">
     <class>Detach_UE</class>
     <desc>Detach UE</desc>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
   </testCase>
 
   <testCase id="004000">

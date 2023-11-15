@@ -114,14 +114,15 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
       amf_desc_p = ngap_gNB_nnsf_select_amf_by_amf_setid(instance_p, UEfirstReq->establishment_cause, UEfirstReq->selected_plmn_identity, UEfirstReq->ue_identity.s_tmsi.amf_set_id);
 
       if (amf_desc_p) {
-        NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through S-TMSI AMFSI %d and selected PLMN Identity index %d MCC %d MNC %d\n",
-                  instance,
-                  amf_desc_p->amf_name,
-                  amf_desc_p->assoc_id,
-                  UEfirstReq->ue_identity.s_tmsi.amf_set_id,
-                  UEfirstReq->selected_plmn_identity,
-                  instance_p->mcc[UEfirstReq->selected_plmn_identity],
-                  instance_p->mnc[UEfirstReq->selected_plmn_identity]);
+        NGAP_INFO(
+            "[gNB %ld] Chose AMF '%s' (assoc_id %d) through S-TMSI AMFSI %d and selected PLMN Identity index %d MCC %d MNC %d\n",
+            instance,
+            amf_desc_p->amf_name,
+            amf_desc_p->assoc_id,
+            UEfirstReq->ue_identity.s_tmsi.amf_set_id,
+            UEfirstReq->selected_plmn_identity,
+            instance_p->plmn[UEfirstReq->selected_plmn_identity].mcc,
+            instance_p->plmn[UEfirstReq->selected_plmn_identity].mnc);
       }
     }
   }
@@ -138,8 +139,8 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
                 amf_desc_p->amf_name,
                 amf_desc_p->assoc_id,
                 UEfirstReq->selected_plmn_identity,
-                instance_p->mcc[UEfirstReq->selected_plmn_identity],
-                instance_p->mnc[UEfirstReq->selected_plmn_identity]);
+                instance_p->plmn[UEfirstReq->selected_plmn_identity].mcc,
+                instance_p->plmn[UEfirstReq->selected_plmn_identity].mnc);
     }
   }
 
@@ -212,16 +213,16 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
     MACRO_GNB_ID_TO_CELL_IDENTITY(instance_p->gNB_id,
                                   0, // Cell ID
                                   &userinfo_nr_p->nR_CGI.nRCellIdentity);
-    MCC_MNC_TO_TBCD(instance_p->mcc[ue_desc_p->selected_plmn_identity],
-                    instance_p->mnc[ue_desc_p->selected_plmn_identity],
-                    instance_p->mnc_digit_length[ue_desc_p->selected_plmn_identity],
+    MCC_MNC_TO_TBCD(instance_p->plmn[ue_desc_p->selected_plmn_identity].mcc,
+                    instance_p->plmn[ue_desc_p->selected_plmn_identity].mnc,
+                    instance_p->plmn[ue_desc_p->selected_plmn_identity].mnc_digit_length,
                     &userinfo_nr_p->nR_CGI.pLMNIdentity);
 
     /* Set TAI */
     INT24_TO_OCTET_STRING(instance_p->tac, &userinfo_nr_p->tAI.tAC);
-    MCC_MNC_TO_PLMNID(instance_p->mcc[ue_desc_p->selected_plmn_identity],
-                      instance_p->mnc[ue_desc_p->selected_plmn_identity],
-                      instance_p->mnc_digit_length[ue_desc_p->selected_plmn_identity],
+    MCC_MNC_TO_PLMNID(instance_p->plmn[ue_desc_p->selected_plmn_identity].mcc,
+                      instance_p->plmn[ue_desc_p->selected_plmn_identity].mnc,
+                      instance_p->plmn[ue_desc_p->selected_plmn_identity].mnc_digit_length,
                       &userinfo_nr_p->tAI.pLMNIdentity);
   }
 
@@ -444,16 +445,16 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     MACRO_GNB_ID_TO_CELL_IDENTITY(ngap_gNB_instance_p->gNB_id,
                                   0, // Cell ID
                                   &userinfo_nr_p->nR_CGI.nRCellIdentity);
-    MCC_MNC_TO_TBCD(ngap_gNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
-                    ngap_gNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
-                    ngap_gNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
+    MCC_MNC_TO_TBCD(ngap_gNB_instance_p->plmn[ue_context_p->selected_plmn_identity].mcc,
+                    ngap_gNB_instance_p->plmn[ue_context_p->selected_plmn_identity].mnc,
+                    ngap_gNB_instance_p->plmn[ue_context_p->selected_plmn_identity].mnc_digit_length,
                     &userinfo_nr_p->nR_CGI.pLMNIdentity);
 
     /* Set TAI */
     INT24_TO_OCTET_STRING(ngap_gNB_instance_p->tac, &userinfo_nr_p->tAI.tAC);
-    MCC_MNC_TO_PLMNID(ngap_gNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
-                      ngap_gNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
-                      ngap_gNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
+    MCC_MNC_TO_PLMNID(ngap_gNB_instance_p->plmn[ue_context_p->selected_plmn_identity].mcc,
+                      ngap_gNB_instance_p->plmn[ue_context_p->selected_plmn_identity].mnc,
+                      ngap_gNB_instance_p->plmn[ue_context_p->selected_plmn_identity].mnc_digit_length,
                       &userinfo_nr_p->tAI.pLMNIdentity);
   }
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {

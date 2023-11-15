@@ -24,9 +24,10 @@
 #include "mac_rrc_dl.h"
 #include "nr_rrc_defs.h"
 
-static void f1_setup_response_f1ap(const f1ap_setup_resp_t *resp)
+static void f1_setup_response_f1ap(sctp_assoc_t assoc_id, const f1ap_setup_resp_t *resp)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_SETUP_RESP);
+  msg->ittiMsgHeader.originInstance = assoc_id;
   f1ap_setup_resp_t *f1ap_msg = &F1AP_SETUP_RESP(msg);
   *f1ap_msg = *resp;
   if (resp->gNB_CU_name != NULL)
@@ -34,17 +35,19 @@ static void f1_setup_response_f1ap(const f1ap_setup_resp_t *resp)
   itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
-static void f1_setup_failure_f1ap(const f1ap_setup_failure_t *fail)
+static void f1_setup_failure_f1ap(sctp_assoc_t assoc_id, const f1ap_setup_failure_t *fail)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_SETUP_FAILURE);
+  msg->ittiMsgHeader.originInstance = assoc_id;
   f1ap_setup_failure_t *f1ap_msg = &F1AP_SETUP_FAILURE(msg);
   *f1ap_msg = *fail;
   itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
-static void ue_context_setup_request_f1ap(const f1ap_ue_context_setup_t *req)
+static void ue_context_setup_request_f1ap(sctp_assoc_t assoc_id, const f1ap_ue_context_setup_t *req)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
+  msg->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_setup_t *f1ap_msg = &F1AP_UE_CONTEXT_SETUP_REQ(msg);
   *f1ap_msg = *req;
   AssertFatal(req->cu_to_du_rrc_information == NULL, "cu_to_du_rrc_information not supported yet\n");
@@ -59,9 +62,10 @@ static void ue_context_setup_request_f1ap(const f1ap_ue_context_setup_t *req)
   itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
-static void ue_context_modification_request_f1ap(const f1ap_ue_context_modif_req_t *req)
+static void ue_context_modification_request_f1ap(sctp_assoc_t assoc_id, const f1ap_ue_context_modif_req_t *req)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REQ);
+  msg->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_modif_req_t *f1ap_msg = &F1AP_UE_CONTEXT_MODIFICATION_REQ(msg);
   *f1ap_msg = *req;
   if (req->cu_to_du_rrc_information != NULL) {
@@ -110,9 +114,10 @@ static void ue_context_modification_request_f1ap(const f1ap_ue_context_modif_req
   itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
-static void ue_context_modification_confirm_f1ap(const f1ap_ue_context_modif_confirm_t *confirm)
+static void ue_context_modification_confirm_f1ap(sctp_assoc_t assoc_id, const f1ap_ue_context_modif_confirm_t *confirm)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_CONFIRM);
+  msg->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_modif_confirm_t *f1ap_msg = &F1AP_UE_CONTEXT_MODIFICATION_CONFIRM(msg);
   f1ap_msg->gNB_CU_ue_id = confirm->gNB_CU_ue_id;
   f1ap_msg->gNB_DU_ue_id = confirm->gNB_DU_ue_id;
@@ -127,17 +132,19 @@ static void ue_context_modification_confirm_f1ap(const f1ap_ue_context_modif_con
   itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
-static void ue_context_modification_refuse_f1ap(const f1ap_ue_context_modif_refuse_t *refuse)
+static void ue_context_modification_refuse_f1ap(sctp_assoc_t assoc_id, const f1ap_ue_context_modif_refuse_t *refuse)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REFUSE);
+  msg->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_modif_refuse_t *f1ap_msg = &F1AP_UE_CONTEXT_MODIFICATION_REFUSE(msg);
   *f1ap_msg = *refuse;
   itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
-static void ue_context_release_command_f1ap(const f1ap_ue_context_release_cmd_t *cmd)
+static void ue_context_release_command_f1ap(sctp_assoc_t assoc_id, const f1ap_ue_context_release_cmd_t *cmd)
 {
   MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
+  message_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_ue_context_release_cmd_t *msg = &F1AP_UE_CONTEXT_RELEASE_CMD(message_p);
   *msg = *cmd;
   if (cmd->rrc_container_length > 0) {
@@ -149,11 +156,12 @@ static void ue_context_release_command_f1ap(const f1ap_ue_context_release_cmd_t 
   itti_send_msg_to_task (TASK_CU_F1, 0, message_p);
 }
 
-static void dl_rrc_message_transfer_f1ap(const f1ap_dl_rrc_message_t *dl_rrc)
+static void dl_rrc_message_transfer_f1ap(sctp_assoc_t assoc_id, const f1ap_dl_rrc_message_t *dl_rrc)
 {
   /* TODO call F1AP function directly? no real-time constraint here */
 
   MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
+  message_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_dl_rrc_message_t *msg = &F1AP_DL_RRC_MESSAGE(message_p);
   *msg = *dl_rrc;
   if (dl_rrc->old_gNB_DU_ue_id) {

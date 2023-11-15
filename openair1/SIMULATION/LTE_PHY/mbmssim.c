@@ -583,7 +583,7 @@ int extended_prefix_flag=0;
 int verbose=0, help=0;
 double SNR,snr0=-2.0,snr1,rate = 0;
 int print_perf=0;
-
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv) {
   int k = 0,i,j,aa;
   int re;
@@ -984,7 +984,7 @@ int main(int argc, char **argv) {
   if (transmission_mode>1) pa=dBm3;
 
   printf("dlsim: tmode %d, pa %d\n",transmission_mode,pa);
-  AssertFatal(load_configmodule(argc,argv, CONFIG_ENABLECMDLINEONLY) != NULL,
+  AssertFatal((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) != NULL,
               "cannot load configuration module, exiting\n");
   logInit();
   set_glog_onlinelog(true);

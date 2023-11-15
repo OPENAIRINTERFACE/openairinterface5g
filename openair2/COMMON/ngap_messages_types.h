@@ -194,6 +194,11 @@ typedef enum ngap_rrc_establishment_cause_e {
   NGAP_RRC_CAUSE_LAST
 } ngap_rrc_establishment_cause_t;
 
+typedef struct nssai_s {
+  uint8_t sst;
+  uint32_t sd;
+} nssai_t;
+
 typedef struct pdusession_level_qos_parameter_s {
   uint8_t qfi;
   uint64_t fiveQI;
@@ -209,12 +214,6 @@ typedef struct ngap_guami_s {
   uint16_t amf_set_id;
   uint8_t  amf_pointer;
 } ngap_guami_t;
-
-typedef struct ngap_allowed_NSSAI_s{
-  uint8_t sST;
-  uint8_t sD_flag;
-  uint8_t sD[3];
-}ngap_allowed_NSSAI_t;
 
 typedef struct fiveg_s_tmsi_s {
   uint16_t amf_set_id;
@@ -282,6 +281,7 @@ typedef struct pdusession_s {
   transport_layer_addr_t gNB_addr_N3;
   uint32_t UPF_teid_N3;
   transport_layer_addr_t UPF_addr_N3;
+  nssai_t nssai;
 } pdusession_t;
 
 typedef enum pdusession_qosflow_mapping_ind_e{
@@ -423,6 +423,14 @@ typedef enum ngap_paging_ind_present_s {
   NGAP_PAGING_IND_PAGING_PRIORITY = (1 << 1),
 } ngap_paging_ind_present_t;
 
+typedef struct {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t mnc_digit_length;
+  uint8_t num_nssai;
+  nssai_t s_nssai[8];
+} ngap_plmn_t;
+
 //-------------------------------------------------------------------------------------------//
 // gNB application layer -> NGAP messages
 typedef struct ngap_register_gnb_req_s {
@@ -447,13 +455,8 @@ typedef struct ngap_register_gnb_req_s {
   /* Mobile Country Code
    * Mobile Network Code
    */
-  uint16_t mcc[PLMN_LIST_MAX_SIZE];
-  uint16_t mnc[PLMN_LIST_MAX_SIZE];
-  uint8_t  mnc_digit_length[PLMN_LIST_MAX_SIZE];
   uint8_t  num_plmn;
-
-  uint16_t              num_nssai[PLMN_LIST_MAX_SIZE];
-  ngap_allowed_NSSAI_t  s_nssai[PLMN_LIST_MAX_SIZE][8];
+  ngap_plmn_t plmn[PLMN_LIST_MAX_SIZE];
 
   /* Default Paging DRX of the gNB as defined in TS 38.304 */
   ngap_paging_drx_t default_drx;
@@ -601,7 +604,7 @@ typedef struct ngap_initial_context_setup_req_s {
 
   /* allowed nssai */
   uint8_t nb_allowed_nssais;
-  ngap_allowed_NSSAI_t allowed_nssai[8];
+  nssai_t allowed_nssai[8];
 
   /* Security algorithms */
   ngap_security_capabilities_t security_capabilities;
@@ -662,7 +665,7 @@ typedef struct ngap_pdusession_setup_req_s {
 
   /* S-NSSAI */
   // Fixme: illogical, nssai is part of each pdu session
-  ngap_allowed_NSSAI_t allowed_nssai[8];
+  nssai_t allowed_nssai[8];
 
   /* Number of pdusession to be setup in the list */
   uint8_t nb_pdusessions_tosetup;

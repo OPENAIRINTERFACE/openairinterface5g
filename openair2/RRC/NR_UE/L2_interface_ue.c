@@ -33,9 +33,9 @@
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "assertions.h"
-#include "rrc_vars.h"
 #include "MAC/mac.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
+#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
 typedef uint32_t channel_t;
 

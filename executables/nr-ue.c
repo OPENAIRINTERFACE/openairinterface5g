@@ -367,7 +367,7 @@ static void UE_synch(void *arg) {
   PHY_VARS_NR_UE *UE = syncD->UE;
   sync_mode_t sync_mode = pbch;
   //int CC_id = UE->CC_id;
-  static int freq_offset=0;
+  static int freq_offset = 0;
   UE->is_synchronized = 0;
 
   if (UE->UE_scan == 0) {
@@ -460,15 +460,10 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
         UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
-        if (UE->UE_scan_carrier == 1) {
+        if (UE->UE_scan_carrier == 1)
           UE->UE_scan_carrier = 0;
-        } else {
+        else
           UE->is_synchronized = 1;
-        }
-        if (UE->synch_request.received_synch_request == 1) {
-          UE->is_synchronized = 0;
-          UE->synch_request.received_synch_request = 0;
-        }
       } else {
 
         if (UE->UE_scan_carrier == 1) {
@@ -590,13 +585,11 @@ nr_phy_data_t UE_dl_preprocessing(PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc)
   if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
 
     // Start synchronization with a target gNB
-    if (UE->synch_request.received_synch_request == 1 && UE->target_Nid_cell == -1) {
+    if (UE->synch_request.received_synch_request == 1) {
       UE->is_synchronized = 0;
       UE->target_Nid_cell = UE->synch_request.synch_req.target_Nid_cell;
-      clean_UE_ulsch(UE, proc->gNB_id);
-    } else if (UE->synch_request.received_synch_request == 1 && UE->target_Nid_cell != -1) {
+      clean_UE_harq(UE);
       UE->synch_request.received_synch_request = 0;
-      UE->target_Nid_cell = -1;
     }
 
     /* send tick to RLC and PDCP every ms */
@@ -810,7 +803,7 @@ void *UE_thread(void *arg)
       }
     }
 
-    AssertFatal( !syncRunning, "At this point synchronization can't be running\n");
+    AssertFatal(!syncRunning, "At this point synchronization can't be running\n");
 
     if (!UE->is_synchronized) {
       readFrame(UE, &timestamp, false);

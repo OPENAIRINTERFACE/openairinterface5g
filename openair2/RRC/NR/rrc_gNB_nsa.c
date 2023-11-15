@@ -414,7 +414,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   LOG_D(RRC, "calling rrc_remove_nsa_user rnti %d\n", rnti);
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, rnti, 0, 0, rrc->module_id);
 
-  ue_context = rrc_gNB_get_ue_context_by_rnti(rrc, rnti);
+  ue_context = rrc_gNB_get_ue_context_by_rnti_any_du(rrc, rnti);
   if (ue_context == NULL) {
     LOG_W(RRC, "rrc_remove_nsa_user: rnti %d not found\n", rnti);
     return;

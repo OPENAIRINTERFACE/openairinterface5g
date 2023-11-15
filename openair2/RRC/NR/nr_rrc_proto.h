@@ -110,13 +110,6 @@ void *rrc_gnb_task(void *args_p);
    \ *reOffset Pointer to RE Offset Value */
 void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, long *ptrsNrb, long *ptrsMcs, long *epre_Ratio, long *reOffset);
 
-int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
-                                 const frame_t         frameP,
-                                 const sub_frame_t     sub_frameP,
-                                 const rnti_t          rntiP,
-                                 const int             dl_bwp_id,
-                                 const int             ul_bwp_id);
-
 int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP,
                                protocol_ctxt_t              *const ctxt_pP,
                                const int                    dl_bwp_id,
@@ -159,7 +152,7 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
                       uint8_t *const kUPenc,
                       uint8_t *const kUPint);
 
-int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t instance, uint8_t CC_id);
+int rrc_gNB_generate_pcch_msg(sctp_assoc_t assoc_id, const NR_SIB1_t *sib, uint32_t tmsi, uint8_t paging_drx);
 
 void nr_rrc_transfer_protected_rrc_message(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue_p, uint8_t srb_id, const uint8_t* buffer, int size);
 /** @}*/

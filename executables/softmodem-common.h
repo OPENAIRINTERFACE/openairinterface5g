@@ -359,7 +359,7 @@ extern uint64_t get_softmodem_optmask(void);
 extern uint64_t set_softmodem_optmask(uint64_t bitmask);
 extern uint64_t clear_softmodem_optmask(uint64_t bitmask);
 extern softmodem_params_t *get_softmodem_params(void);
-extern void get_common_options(uint32_t execmask);
+extern void get_common_options(configmodule_interface_t *cfg, uint32_t execmask);
 extern char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr);
 #define SOFTMODEM_RTSIGNAL  (SIGRTMIN+1)
 extern void set_softmodem_sighandler(void);

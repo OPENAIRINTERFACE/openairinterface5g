@@ -11,7 +11,7 @@ paramdef_t someoptions[] = {
    {"opt1",  "<help opt1>",   0,      uptr:&varopt1, defuintval:0, TYPE_UINT,  0 },
 };
 
-config_get( someoptions,sizeof(someoptions)/sizeof(paramdef_t),"somesection");
+config_get( someoptions,sizeofArray(someoptions),"somesection");
 
 ```
 new code:
@@ -31,7 +31,7 @@ paramdef_t someoptions[] = {
    {"opt2",  "<help opt2>",   0,      strptr:&varopt2,defstrval:"",TYPE_STRING,0   },
 };
 
-config_get( someoptions,sizeof(someoptions)/sizeof(paramdef_t),"somesection");
+config_get( someoptions,sizeofArray(someoptions),"somesection");
 
 ```
 

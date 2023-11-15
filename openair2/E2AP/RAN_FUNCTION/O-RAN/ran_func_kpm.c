@@ -43,7 +43,7 @@ matched_ues_mac_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const co
       {
         if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type))
         {
-          rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], ue->rnti);
+          rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], ue->rnti);
           ngap_ue_context_list = ngap_get_ue_context(rrc_ue_context_list->ue_context.rrc_ue_id);
           assert(ngap_ue_context_list->gNB_instance[0].s_nssai[0][0].sST == value && "Please, check the condition for S-NSSAI. At the moment, OAI supports eMBB");
         }
@@ -589,7 +589,7 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_ma
   for (size_t i = 0; i<msg_frm_3.ue_meas_report_lst_len; i++)
   {
     // Fill UE ID data
-    rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], matched_ues.ue_list[i].rnti);
+    rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], matched_ues.ue_list[i].rnti);
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_UE_ID_E2SM;
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb = fill_gnb_data(rrc_ue_context_list);
       

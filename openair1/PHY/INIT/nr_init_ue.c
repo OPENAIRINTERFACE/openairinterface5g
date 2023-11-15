@@ -46,7 +46,7 @@ void RCconfig_nrUE_prs(void *cfg)
 
   paramlist_def_t gParamList = {CONFIG_STRING_PRS_LIST,NULL,0};
   paramdef_t gParams[] = PRS_GLOBAL_PARAMS_DESC;
-  config_getlist( &gParamList,gParams,sizeof(gParams)/sizeof(paramdef_t), NULL);
+  config_getlist(config_get_if(), &gParamList, gParams, sizeofArray(gParams), NULL);
   if (gParamList.numelt > 0)
   {
     ue->prs_active_gNBs = *(gParamList.paramarray[j][PRS_ACTIVE_GNBS_IDX].uptr);
@@ -61,7 +61,7 @@ void RCconfig_nrUE_prs(void *cfg)
     sprintf(PRS_ParamList.listname, "%s%i", CONFIG_STRING_PRS_CONFIG, i);
 
     sprintf(aprefix, "%s.[%i]", CONFIG_STRING_PRS_LIST, 0);
-    config_getlist( &PRS_ParamList,PRS_Params,sizeof(PRS_Params)/sizeof(paramdef_t), aprefix);
+    config_getlist(config_get_if(), &PRS_ParamList, PRS_Params, sizeofArray(PRS_Params), aprefix);
 
     if (PRS_ParamList.numelt > 0) {
       for (j = 0; j < PRS_ParamList.numelt; j++) {
@@ -627,6 +627,23 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
 
   for(int i=0; i<5; i++)
     ue->dl_stats[i] = 0;
+}
+
+void clean_UE_harq(PHY_VARS_NR_UE *UE)
+{
+  for (int harq_pid = 0; harq_pid < NR_MAX_DLSCH_HARQ_PROCESSES; harq_pid++) {
+    for (int i = 0; i < 2; i++) {
+      NR_DL_UE_HARQ_t *dl_harq_process = &UE->dl_harq_processes[i][harq_pid];
+      init_downlink_harq_status(dl_harq_process);
+    }
+  }
+  for (int harq_pid = 0; harq_pid < NR_MAX_ULSCH_HARQ_PROCESSES; harq_pid++) {
+    NR_UL_UE_HARQ_t *ul_harq_process = &UE->ul_harq_processes[harq_pid];
+    ul_harq_process->tx_status = NEW_TRANSMISSION_HARQ;
+    ul_harq_process->status = SCH_IDLE;
+    ul_harq_process->round = 0;
+    ul_harq_process->first_tx = 1;
+  }
 }
 
 

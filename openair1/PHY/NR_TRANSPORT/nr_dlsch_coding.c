@@ -159,10 +159,11 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch) {
   dlsch->active = 0;
 }
 
-void ldpc8blocks( void *p) {
+void ldpc8blocks(void *p)
+{
   encoder_implemparams_t *impp=(encoder_implemparams_t *) p;
   NR_DL_gNB_HARQ_t *harq = (NR_DL_gNB_HARQ_t *)impp->harq;
-  uint16_t Kr= impp->K;
+  uint16_t Kr = impp->K;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   uint8_t mod_order = rel15->qamModOrder[0];
   uint16_t nb_rb = rel15->rbSize;
@@ -176,7 +177,7 @@ void ldpc8blocks( void *p) {
   else
     nb_re_dmrs = 4*rel15->numDmrsCdmGrpsNoData;
 
-  unsigned int G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15->nrOfLayers);
+  unsigned int G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq->unav_res, mod_order, rel15->nrOfLayers);
   LOG_D(PHY,"dlsch coding A %d  Kr %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n",
         A,impp->K,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,(int)mod_order);
   // nrLDPC_encoder output is in "d"

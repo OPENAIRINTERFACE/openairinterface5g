@@ -117,16 +117,11 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id,
                             const int dedicatedInfoNASLength,
                             const char *dedicatedInfoNAS);
 
-int do_RRCSetupRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv);
+int do_RRCSetupRequest(uint8_t *buffer, size_t buffer_size, uint8_t *rv);
 
 uint8_t do_NR_RRCReconfigurationComplete_for_nsa(uint8_t *buffer, size_t buffer_size, NR_RRC_TransactionIdentifier_t Transaction_id);
 
-uint8_t do_NR_RRCReconfigurationComplete(
-                        const protocol_ctxt_t *const ctxt_pP,
-                        uint8_t *buffer,
-                        size_t buffer_size,
-                        const uint8_t Transaction_id
-                      );
+uint8_t do_NR_RRCReconfigurationComplete(uint8_t *buffer, size_t buffer_size, const uint8_t Transaction_id);
 
 uint8_t do_NR_DLInformationTransfer(uint8_t Mod_id,
                                     uint8_t *buffer,

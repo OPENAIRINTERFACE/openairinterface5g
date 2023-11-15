@@ -198,6 +198,42 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
+    oai-du2:
+        image: oaisoftwarealliance/oai-gnb:develop
+        privileged: true
+        container_name: rfsim5g-oai-du2
+        environment:
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_ID 0xe01 --gNBs.[0].nr_cellid 87654321 --gNBs.[0].servingCellConfigCommon.[0].physCellId 1 --MACRLCs.[0].local_n_address 192.168.71.143 --log_config.global_log_options level,nocolor,time
+        depends_on:
+            - oai-cu
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.143
+        volumes:
+            - ../../conf_files/gnb-du.sa.band78.106prb.rfsim.conf:/opt/oai-gnb/etc/gnb.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-du3:
+        image: oaisoftwarealliance/oai-gnb:develop
+        privileged: true
+        container_name: rfsim5g-oai-du3
+        environment:
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_ID 0xe02 --gNBs.[0].nr_cellid 11111111 --gNBs.[0].servingCellConfigCommon.[0].physCellId 2 --MACRLCs.[0].local_n_address 192.168.71.144 --log_config.global_log_options level,nocolor,time
+        depends_on:
+            - oai-cu
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.144
+        volumes:
+            - ../../conf_files/gnb-du.sa.band78.106prb.rfsim.conf:/opt/oai-gnb/etc/gnb.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
     oai-nr-ue:
         image: oaisoftwarealliance/oai-nr-ue:develop
         privileged: true
@@ -209,6 +245,42 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.71.150
+        volumes:
+            - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-nr-ue2:
+        image: oaisoftwarealliance/oai-nr-ue:develop
+        privileged: true
+        container_name: rfsim5g-oai-nr-ue2
+        environment:
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001101 -C 3619200000 --rfsimulator.serveraddr 192.168.71.143 --log_config.global_log_options level,nocolor,time
+        depends_on:
+            - oai-du2
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.151
+        volumes:
+            - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-nr-ue3:
+        image: oaisoftwarealliance/oai-nr-ue:develop
+        privileged: true
+        container_name: rfsim5g-oai-nr-ue3
+        environment:
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001102 -C 3619200000 --rfsimulator.serveraddr 192.168.71.144 --log_config.global_log_options level,nocolor,time
+        depends_on:
+            - oai-du3
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.152
         volumes:
             - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
         healthcheck:

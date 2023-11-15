@@ -602,37 +602,21 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
         ue, nbRx, ptrs_phase_per_slot, ptrs_re_per_slot, rx_size_symbol, rxdataF_comp, frame_parms, dlsch0_harq, dlsch1_harq, gNB_id, nr_slot_rx, symbol, (nb_rb_pdsch * 12), dlsch[0].rnti, dlsch);
     dl_valid_re[symbol-1] -= ptrs_re_per_slot[0][symbol];
   }
-  
+
   /* at last symbol in a slot calculate LLR's for whole slot */
   if(symbol == (startSymbIdx + nbSymb -1)) {
-    uint8_t nb_re_dmrs;
-    if (dlsch[0].dlsch_config.dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
-      nb_re_dmrs = 6*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
-    }
-    else {
-      nb_re_dmrs = 4*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
-    }
-    uint16_t dmrs_len = get_num_dmrs(dlsch[0].dlsch_config.dlDmrsSymbPos);
 
-    const uint32_t rx_llr_size = nr_get_G(dlsch[0].dlsch_config.number_rbs,
-                                          dlsch[0].dlsch_config.number_symbols,
-                                          nb_re_dmrs,
-                                          dmrs_len,
-                                          dlsch[0].dlsch_config.qamModOrder,
-                                          dlsch[0].Nl);
-    const uint32_t rx_llr_layer_size = (rx_llr_size + dlsch[0].Nl - 1) / dlsch[0].Nl;
+    const uint32_t rx_llr_layer_size = (dlsch0_harq->G + dlsch[0].Nl - 1) / dlsch[0].Nl;
 
     int16_t* layer_llr[NR_MAX_NB_LAYERS];
-    for (int i=0; i<NR_MAX_NB_LAYERS; i++)
-      layer_llr[i] = (int16_t *)malloc16_clear(rx_llr_layer_size*sizeof(int16_t));
-    for(uint8_t i =startSymbIdx; i < (startSymbIdx+nbSymb);i++) {
+    for (int i = 0; i < NR_MAX_NB_LAYERS; i++)
+      layer_llr[i] = (int16_t *)malloc16_clear(rx_llr_layer_size * sizeof(int16_t));
+    for(uint8_t i = startSymbIdx; i < (startSymbIdx+nbSymb); i++) {
       /* re evaluating the first symbol flag as LLR's are done in symbol loop  */
-      if(i == startSymbIdx && i < 3) {
-        first_symbol_flag =1;
-      }
-      else {
-        first_symbol_flag=0;
-      }
+      if(i == startSymbIdx && i < 3)
+        first_symbol_flag = 1;
+      else
+        first_symbol_flag = 0;
       /* Calculate LLR's for each symbol */
       nr_dlsch_llr(rx_size_symbol,
                    nbRx,
@@ -655,13 +639,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                    dlsch,
                    llr_offset);
     }
-    
-    dlsch0_harq->G = nr_get_G(dlsch[0].dlsch_config.number_rbs,
-                              dlsch[0].dlsch_config.number_symbols,
-                              nb_re_dmrs,
-                              dmrs_len,
-                              dlsch[0].dlsch_config.qamModOrder,
-                              dlsch[0].Nl);
 
     nr_dlsch_layer_demapping(llr,
                              dlsch[0].Nl,
@@ -1156,17 +1133,13 @@ void nr_dlsch_scale_channel(uint32_t rx_size_symbol,
 //compute average channel_level on each (TX,RX) antenna pair
 void nr_dlsch_channel_level(uint32_t rx_size_symbol,
                             int32_t dl_ch_estimates_ext[][rx_size_symbol],
-			                      NR_DL_FRAME_PARMS *frame_parms,
-			                      uint8_t n_tx,
-			                      int32_t *avg,
-			                      uint8_t symbol,
-			                      uint32_t len,
-			                      unsigned short nb_rb)
+                            NR_DL_FRAME_PARMS *frame_parms,
+                            uint8_t n_tx,
+                            int32_t *avg,
+                            uint8_t symbol,
+                            uint32_t len,
+                            unsigned short nb_rb)
 {
-
-
-  short rb;
-  unsigned char aatx,aarx;
   simde__m128i *dl_ch128, avg128D;
 
   //nb_rb*nre = y * 2^x
@@ -1178,14 +1151,14 @@ void nr_dlsch_channel_level(uint32_t rx_size_symbol,
 
   AssertFatal(y!=0,"Cannot divide by zero: in function %s of file %s\n", __func__, __FILE__);
 
-  for (aatx=0; aatx<n_tx; aatx++)
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+  for (int aatx = 0; aatx < n_tx; aatx++) {
+    for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128D = simde_mm_setzero_si128();
 
-      dl_ch128=(simde__m128i *)dl_ch_estimates_ext[(aatx*frame_parms->nb_antennas_rx)+aarx];
+      dl_ch128 = (simde__m128i *)dl_ch_estimates_ext[(aatx * frame_parms->nb_antennas_rx) + aarx];
 
-      for (rb=0;rb<nb_rb_0;rb++) {
+      for (int rb = 0; rb < nb_rb_0; rb++) {
         avg128D = simde_mm_add_epi32(avg128D,simde_mm_srai_epi32(simde_mm_madd_epi16(dl_ch128[0],dl_ch128[0]),x));
         avg128D = simde_mm_add_epi32(avg128D,simde_mm_srai_epi32(simde_mm_madd_epi16(dl_ch128[1],dl_ch128[1]),x));
         avg128D = simde_mm_add_epi32(avg128D,simde_mm_srai_epi32(simde_mm_madd_epi16(dl_ch128[2],dl_ch128[2]),x));
@@ -1195,10 +1168,10 @@ void nr_dlsch_channel_level(uint32_t rx_size_symbol,
       avg[(aatx*frame_parms->nb_antennas_rx)+aarx] =(((int32_t*)&avg128D)[0] +
                             ((int32_t*)&avg128D)[1] +
                             ((int32_t*)&avg128D)[2] +
-			      ((int32_t*)&avg128D)[3])/y;
-                //  printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+                            ((int32_t*)&avg128D)[3])/y;
+      //  printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
-
+  }
   simde_mm_empty();
   simde_m_empty();
 }

@@ -65,10 +65,10 @@ static void prepare_NR_SL_SyncConfig(NR_SL_SyncConfig_r16_t *sl_syncconfig)
   paramdef_t SL_SYNCCFGPARAMS[] = SL_SYNCPARAMS_DESC(sl_syncconfig);
   paramlist_def_t SL_SYNCFGParamList = {SL_CONFIG_STRING_SL_SYNCCONFIG_LIST, NULL, 0};
   sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
-  config_getlist(&SL_SYNCFGParamList, NULL, 0, aprefix);
+  config_getlist(config_get_if(), &SL_SYNCFGParamList, NULL, 0, aprefix);
   LOG_I(RRC, "NUM SL-SYNCCFG elem in cfg file:%d\n", SL_SYNCFGParamList.numelt);
   sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_SYNCCONFIG_LIST, 0);
-  config_get(SL_SYNCCFGPARAMS,sizeof(SL_SYNCCFGPARAMS)/sizeof(paramdef_t),aprefix);
+  config_get(config_get_if(), SL_SYNCCFGPARAMS, sizeofArray(SL_SYNCCFGPARAMS), aprefix);
 }
 
 static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
@@ -184,7 +184,7 @@ static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
   else
     sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_RX_RPOOL_LIST, 0);
 
-  config_get(SL_POOLPARAMS,sizeof(SL_POOLPARAMS)/sizeof(paramdef_t),aprefix);
+  config_get(config_get_if(), SL_POOLPARAMS, sizeofArray(SL_POOLPARAMS), aprefix);
 }
 
 static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
@@ -214,16 +214,16 @@ static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
   paramdef_t SL_BWPPARAMS[] = SL_BWPPARAMS_DESC(sl_bwp);
   paramlist_def_t SL_BWPParamList = {SL_CONFIG_STRING_SL_BWP_LIST, NULL, 0};
   sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
-  config_getlist(&SL_BWPParamList, NULL, 0, aprefix);
+  config_getlist(config_get_if(), &SL_BWPParamList, NULL, 0, aprefix);
   LOG_I(RRC, "NUM SL-BWP elem in cfg file:%d\n", SL_BWPParamList.numelt);
   sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0, SL_CONFIG_STRING_SL_BWP_LIST, 0);
-  config_get( SL_BWPPARAMS,sizeof(SL_BWPPARAMS)/sizeof(paramdef_t),aprefix);
+  config_get(config_get_if(), SL_BWPPARAMS, sizeofArray(SL_BWPPARAMS), aprefix);
 
   sl_bwp->sl_BWP_PoolConfigCommon_r16 = calloc(1, sizeof(NR_SL_BWP_PoolConfigCommon_r16_t));
 
   paramlist_def_t SL_RxPoolParamList = {SL_CONFIG_STRING_SL_RX_RPOOL_LIST, NULL, 0};
   sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
-  config_getlist(&SL_RxPoolParamList, NULL, 0, aprefix);
+  config_getlist(config_get_if(), &SL_RxPoolParamList, NULL, 0, aprefix);
   LOG_I(RRC, "NUM Rx RPOOLs in cfg file:%d\n", SL_RxPoolParamList.numelt);
   AssertFatal(SL_RxPoolParamList.numelt <= 1 && num_rx_pools <= 1, "Only Max 1 RX Respool Supported now\n");
 
@@ -239,7 +239,7 @@ static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
 
   paramlist_def_t SL_TxPoolParamList = {SL_CONFIG_STRING_SL_TX_RPOOL_LIST, NULL, 0};
   sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
-  config_getlist(&SL_TxPoolParamList, NULL, 0, aprefix);
+  config_getlist(config_get_if(), &SL_TxPoolParamList, NULL, 0, aprefix);
   LOG_I(RRC, "NUM Tx RPOOL in cfg file:%d\n", SL_TxPoolParamList.numelt);
   AssertFatal(SL_TxPoolParamList.numelt <= 1 && num_tx_pools <= 1, "Only Max 1 TX Respool Supported now\n");
 
@@ -289,10 +289,10 @@ static void prepare_NR_SL_FreqConfigCommon(NR_SL_FreqConfigCommon_r16_t *sl_fcfg
   paramdef_t SL_FCCPARAMS[] = SL_FCCPARAMS_DESC(sl_fcfg);
   paramlist_def_t SL_FCCParamList = {SL_CONFIG_STRING_SL_FCC_LIST, NULL, 0};
   sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0);
-  config_getlist(&SL_FCCParamList, NULL, 0, aprefix);
+  config_getlist(config_get_if(), &SL_FCCParamList, NULL, 0, aprefix);
   LOG_I(RRC, "NUM SL-FCC elem in cfg file:%d\n", SL_FCCParamList.numelt);
   sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0, SL_CONFIG_STRING_SL_FCC_LIST, 0);
-  config_get( SL_FCCPARAMS,sizeof(SL_FCCPARAMS)/sizeof(paramdef_t),aprefix);
+  config_get(config_get_if(), SL_FCCPARAMS, sizeofArray(SL_FCCPARAMS), aprefix);
 
   // Sidelink BWP configuration. 
   // In REL16, 17 SUPPORTS only 1 SIDELINK Bandwidth part
@@ -374,7 +374,7 @@ NR_SL_PreconfigurationNR_r16_t *prepare_NR_SL_PRECONFIGURATION(uint16_t num_tx_p
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];
   sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0);
   paramdef_t SLTDDCFG_PARAMS[] = SL_TDDCONFIGPARAMS_DESC(tdd_uldl_cfg);
-  config_get(SLTDDCFG_PARAMS,sizeof(SLTDDCFG_PARAMS)/sizeof(paramdef_t),aprefix);
+  config_get(config_get_if(), SLTDDCFG_PARAMS, sizeofArray(SLTDDCFG_PARAMS), aprefix);
 
   NR_SL_FreqConfigCommon_r16_t *fcc =  sl_preconfig->sl_PreconfigFreqInfoList_r16->list.array[0];
   tdd_uldl_cfg->referenceSubcarrierSpacing =
