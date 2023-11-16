@@ -538,13 +538,13 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
                                 RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE |
                                 RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE |
                                 RTE_BBDEV_LDPC_HQ_COMBINE_OUT_ENABLE;
-    if (ops[i]->ldpc_dec.rv_index != 0) {
-                                ops[i]->ldpc_dec.op_flags |= RTE_BBDEV_LDPC_HQ_COMBINE_IN_ENABLE;
+    if (p_offloadParams->setCombIn) {
+      ops[i]->ldpc_dec.op_flags |= RTE_BBDEV_LDPC_HQ_COMBINE_IN_ENABLE;
     }
+    LOG_D(PHY,"ULSCH %02d HARQPID %02d R %02d COMBIN %d RV %d NCB %05d \n", ulsch_id, harq_pid, r, p_offloadParams->setCombIn, p_offloadParams->rv, p_offloadParams->n_cb);
     ops[i]->ldpc_dec.code_block_mode = 1; // ldpc_dec->code_block_mode;
     ops[i]->ldpc_dec.harq_combined_input.offset = ulsch_id * (32 * 1024 * 1024) + harq_pid * (2 * 1024 * 1024) + r * (1024 * 32);
     ops[i]->ldpc_dec.harq_combined_output.offset = ulsch_id * (32 * 1024 * 1024) + harq_pid * (2 * 1024 * 1024) + r * (1024 * 32);
-
     if (bufs->hard_outputs != NULL)
       ops[i]->ldpc_dec.hard_output = bufs->hard_outputs[start_idx + i];
     if (bufs->inputs != NULL)
@@ -1042,8 +1042,8 @@ int32_t LDPCdecoder(struct nrLDPC_dec_params *p_decParams,
                     decode_abort_t *ab)
 {
   pthread_mutex_lock(&decode_mutex);
-
   // hardcoded we use first device
+
   struct active_device *ad = active_devs;
   t_nrLDPCoffload_params offloadParams = {.E = p_decParams->E,
                                           .n_cb = (p_decParams->BG == 1) ? (66 * p_decParams->Z) : (50 * p_decParams->Z),
@@ -1051,8 +1051,8 @@ int32_t LDPCdecoder(struct nrLDPC_dec_params *p_decParams,
                                           .Z = p_decParams->Z,
                                           .rv = p_decParams->rv,
                                           .F = p_decParams->F,
-                                          .Qm = p_decParams->Qm};
-  LOG_D(PHY,"E %d\n",p_decParams->E);
+                                          .Qm = p_decParams->Qm,
+                                          .setCombIn = p_decParams->setCombIn};
   struct rte_bbdev_info info;
   rte_bbdev_info_get(ad->dev_id, &info);
   int socket_id = GET_SOCKET(info.socket_id);

@@ -420,7 +420,7 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   decParams.Z = harq_process->Z;
   decParams.numMaxIter = ulsch->max_ldpc_iterations;
   decParams.outMode = 0;
-
+  decParams.setCombIn = !harq_process->harq_to_be_cleared;
   if (harq_process->harq_to_be_cleared) {
     for (int r = 0; r < harq_process->C; r++)
       harq_process->d_to_be_cleared[r] = true;

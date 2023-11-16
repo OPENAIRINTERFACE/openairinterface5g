@@ -93,6 +93,7 @@ typedef struct nrLDPC_dec_params {
     e_nrLDPC_outMode outMode; /**< Output format */
     int crc_type;
     int (*check_crc)(uint8_t* decoded_bytes, uint32_t n, uint8_t crc_type);
+    uint8_t setCombIn;
 } t_nrLDPC_dec_params;
 
 typedef struct nrLDPCoffload_params {
@@ -104,6 +105,7 @@ typedef struct nrLDPCoffload_params {
     uint16_t n_cb;
     uint16_t F; /**< Filler bits */
     uint8_t Qm; /**< Modulation */
+    uint8_t setCombIn;
 } t_nrLDPCoffload_params;
 
 /**
