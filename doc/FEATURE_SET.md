@@ -305,6 +305,7 @@ Furthermore, the gNB and UE support
    - HARQ procedures
 * ULSCH scheduler
    - Configuration of fapi PDU according to DCI
+   - Logical channel prioritization of 'data from any logical channel'
 * NR-CSIRS scheduler
   - Scheduling of NR-CSIRS reception
   - Fill UCI for CSI measurement reporting
