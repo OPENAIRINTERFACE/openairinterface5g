@@ -81,8 +81,6 @@ typedef struct {
   int hplmn_sd;
 } nr_nas_msg_snssai_t;
 
-extern nr_nas_msg_snssai_t nas_allowed_nssai[8];
-
 /* Security Key for SA UE */
 typedef struct {
   uint8_t kausf[32];
