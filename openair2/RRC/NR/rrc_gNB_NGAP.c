@@ -68,6 +68,7 @@
 #include "NGAP_QosFlowSetupRequestItem.h"
 #include "NGAP_QosFlowAddOrModifyRequestItem.h"
 #include "NGAP_NonDynamic5QIDescriptor.h"
+#include "NGAP_Dynamic5QIDescriptor.h"
 #include "conversions.h"
 #include "RRC/NR/rrc_gNB_radio_bearers.h"
 
@@ -263,10 +264,15 @@ static void fill_qos(NGAP_QosFlowSetupRequestList_t *qos, pdusession_t *session)
     // Set the QOS informations
     session->qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
     NGAP_QosCharacteristics_t *qosChar = &qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics;
+    AssertFatal(qosChar, "Qos characteristics are not available for qos flow index %d\n", qosIdx);
     if (qosChar->present == NGAP_QosCharacteristics_PR_nonDynamic5QI) {
-      if (qosChar->choice.nonDynamic5QI != NULL) {
-        session->qos[qosIdx].fiveQI = (uint64_t)qosChar->choice.nonDynamic5QI->fiveQI;
-      }
+      AssertFatal(qosChar->choice.dynamic5QI, "Non-Dynamic 5QI is NULL\n");
+      session->qos[qosIdx].fiveQI_type = non_dynamic;
+      session->qos[qosIdx].fiveQI = (uint64_t)qosChar->choice.nonDynamic5QI->fiveQI;
+    } else {
+      AssertFatal(qosChar->choice.dynamic5QI, "Dynamic 5QI is NULL\n");
+      session->qos[qosIdx].fiveQI_type = dynamic;
+      session->qos[qosIdx].fiveQI = (uint64_t)(*qosChar->choice.dynamic5QI->fiveQI);
     }
 
     ngap_allocation_retention_priority_t *tmp = &session->qos[qosIdx].allocation_retention_priority;
@@ -820,15 +826,25 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
 
       drb->numQosFlow2Setup = session->nb_qos;
       for (int k=0; k < drb->numQosFlow2Setup; k++) {
-        qos_flow_to_setup_t *qos = drb->qosFlows + k;
+        qos_flow_to_setup_t *qos_flow = drb->qosFlows + k;
+        pdusession_level_qos_parameter_t *qos_session = session->qos + k;
 
-        qos->id = session->qos[k].qfi;
-        qos->fiveQI = session->qos[k].fiveQI;
-        qos->fiveQI_type = session->qos[k].fiveQI_type;
+        qos_characteristics_t *qos_char = &qos_flow->qos_params.qos_characteristics;
+        qos_flow->qfi = qos_session->qfi;
+        qos_char->qos_type = qos_session->fiveQI_type;
+        if (qos_char->qos_type == dynamic) {
+          qos_char->dynamic.fiveqi = qos_session->fiveQI;
+          qos_char->dynamic.qos_priority_level = qos_session->qos_priority;
+        } else {
+          qos_char->non_dynamic.fiveqi = qos_session->fiveQI;
+          qos_char->non_dynamic.qos_priority_level = qos_session->qos_priority;
+        }
 
-        qos->qoSPriorityLevel = session->qos[k].allocation_retention_priority.priority_level;
-        qos->pre_emptionCapability = session->qos[k].allocation_retention_priority.pre_emp_capability;
-        qos->pre_emptionVulnerability = session->qos[k].allocation_retention_priority.pre_emp_vulnerability;
+        ngran_allocation_retention_priority_t *rent_priority = &qos_flow->qos_params.alloc_reten_priority;
+        ngap_allocation_retention_priority_t *rent_priority_in = &qos_session->allocation_retention_priority;
+        rent_priority->priority_level = rent_priority_in->priority_level;
+        rent_priority->preemption_capability = rent_priority_in->pre_emp_capability;
+        rent_priority->preemption_vulnerability = rent_priority_in->pre_emp_vulnerability;
       }
     }
   }
@@ -854,12 +870,15 @@ static void fill_qos2(NGAP_QosFlowAddOrModifyRequestList_t *qos, pdusession_t *s
     // Set the QOS informations
     session->qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
     NGAP_QosCharacteristics_t *qosChar = &qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics;
+    AssertFatal(qosChar, "Qos characteristics are not available for qos flow index %d\n", qosIdx);
     if (qosChar->present == NGAP_QosCharacteristics_PR_nonDynamic5QI) {
-      if (qosChar->choice.nonDynamic5QI != NULL) {
-        session->qos[qosIdx].fiveQI = (uint64_t)qosChar->choice.nonDynamic5QI->fiveQI;
-      }
-    } else if (qosChar->present == NGAP_QosCharacteristics_PR_dynamic5QI) {
-      // TODO
+      AssertFatal(qosChar->choice.dynamic5QI, "Non-Dynamic 5QI is NULL\n");
+      session->qos[qosIdx].fiveQI_type = non_dynamic;
+      session->qos[qosIdx].fiveQI = (uint64_t)qosChar->choice.nonDynamic5QI->fiveQI;
+    } else {
+      AssertFatal(qosChar->choice.dynamic5QI, "Dynamic 5QI is NULL\n");
+      session->qos[qosIdx].fiveQI_type = dynamic;
+      session->qos[qosIdx].fiveQI = (uint64_t)(*qosChar->choice.dynamic5QI->fiveQI);
     }
 
     ngap_allocation_retention_priority_t *tmp = &session->qos[qosIdx].allocation_retention_priority;

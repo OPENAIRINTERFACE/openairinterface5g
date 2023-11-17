@@ -53,8 +53,8 @@ static void fill_DRB_configList_e1(NR_DRB_ToAddModList_t *DRB_configList, const 
 
     asn1cCalloc(sdap_config->mappedQoS_FlowsToAdd, FlowsToAdd);
     for (int j=0; j < drb->numQosFlow2Setup; j++) {
-      asn1cSequenceAdd(FlowsToAdd->list, NR_QFI_t, id);
-      *id = drb->qosFlows[j].id;
+      asn1cSequenceAdd(FlowsToAdd->list, NR_QFI_t, qfi);
+      *qfi = drb->qosFlows[j].qfi;
     }
     sdap_config->mappedQoS_FlowsToRelease = NULL;
 
@@ -164,8 +164,11 @@ void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req)
     DRB_nGRAN_setup_t *resp_drb = &resp_pdu->DRBnGRanList[0];
     resp_drb->id = req_drb->id;
     resp_drb->numQosFlowSetup = req_drb->numQosFlow2Setup;
-    for (int k = 0; k < resp_drb->numQosFlowSetup; k++)
-      resp_drb->qosFlows[k].id = req_drb->qosFlows[k].id;
+    for (int k = 0; k < resp_drb->numQosFlowSetup; k++) {
+      const qos_flow_to_setup_t *qosflow2Setup = &req_drb->qosFlows[k];
+      qos_flow_setup_t *qosflowSetup = &resp_drb->qosFlows[k];
+      qosflowSetup->qfi = qosflow2Setup->qfi;
+    }
 
     // GTP tunnel for N3/to core
     gtpv1u_gnb_create_tunnel_resp_t resp_n3 = {0};

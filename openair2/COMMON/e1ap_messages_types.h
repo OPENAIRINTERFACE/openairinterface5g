@@ -118,17 +118,39 @@ typedef struct drb_to_setup_s {
   cell_group_t cellGroupList[E1AP_MAX_NUM_CELL_GROUPS];
 } drb_to_setup_t;
 
-typedef struct qos_flow_to_setup_s {
-  long id;
-  fiveQI_type_t fiveQI_type;
-  long fiveQI;
-  long qoSPriorityLevel;
-  long packetDelayBudget;
-  long packetError_scalar;
-  long packetError_exponent;
-  long priorityLevel;
-  long pre_emptionCapability;
-  long pre_emptionVulnerability;
+typedef struct qos_characteristics_s {
+  union {
+    struct {
+      long fiveqi;
+      long qos_priority_level;
+    } non_dynamic;
+    struct {
+      long fiveqi; // -1 -> optional
+      long qos_priority_level;
+      long packet_delay_budget;
+      struct {
+        long per_scalar;
+        long per_exponent;
+      } packet_error_rate;
+    } dynamic;
+  };
+  fiveQI_type_t qos_type;
+} qos_characteristics_t;
+
+typedef struct ngran_allocation_retention_priority_s {
+  uint16_t priority_level;
+  long preemption_capability;
+  long preemption_vulnerability;
+} ngran_allocation_retention_priority_t;
+
+typedef struct qos_flow_level_qos_parameters_s {
+  qos_characteristics_t qos_characteristics;
+  ngran_allocation_retention_priority_t alloc_reten_priority; // additional members should be added!!
+} qos_flow_level_qos_parameters_t;
+
+typedef struct qos_flow_setup_e {
+  long qfi; // qos flow identifier
+  qos_flow_level_qos_parameters_t qos_params;
 } qos_flow_to_setup_t;
 
 typedef struct DRB_nGRAN_to_setup_s {
@@ -198,7 +220,7 @@ typedef struct e1ap_bearer_release_cplt_s {
 } e1ap_bearer_release_cplt_t;
 
 typedef struct qos_flow_setup_s {
-  long id;
+  long qfi;
 } qos_flow_setup_t;
 
 typedef struct DRB_nGRAN_setup_s {
