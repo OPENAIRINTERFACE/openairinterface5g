@@ -1119,5 +1119,11 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     }
   }
 
+  /* write on a socket fails if the other end is closed and we get SIGPIPE */
+  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+    perror("SIGPIPE");
+    exit(1);
+  }
+
   return 0;
 }
