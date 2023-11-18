@@ -807,7 +807,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
       drb->pDCP_SN_Size_DL = E1AP_PDCP_SN_Size_s_18;
 
       drb->discardTimer = E1AP_DiscardTimer_infinity;
-      drb->reorderingTimer = E1AP_T_Reordering_ms0;
+      drb->reorderingTimer = E1AP_T_Reordering_ms100;
 
       drb->rLC_Mode = E1AP_RLC_Mode_rlc_am;
 
