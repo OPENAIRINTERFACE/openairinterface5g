@@ -95,7 +95,7 @@ Command line parameters for UE in --sa mode:
 - `--numerology` : numerology index (default value 1)
 - `-r` : bandwidth in terms of RBs (default value 106)
 - `--band` : NR band number (default value 78)
-- `--ssb` : SSB start subcarrier (default value 512)
+- `--ssb` : SSB start subcarrier (default value 516)
 
 You can run this, using USRPs, on two separate machines:
 
