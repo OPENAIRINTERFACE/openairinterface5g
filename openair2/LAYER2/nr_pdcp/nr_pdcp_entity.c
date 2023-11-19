@@ -357,7 +357,7 @@ static void check_t_reordering(nr_pdcp_entity_t *entity)
   }
 }
 
-void nr_pdcp_entity_set_time(struct nr_pdcp_entity_t *entity, uint64_t now)
+static void nr_pdcp_entity_set_time(struct nr_pdcp_entity_t *entity, uint64_t now)
 {
   entity->t_current = now;
 
@@ -379,7 +379,7 @@ static void deliver_all_sdus(nr_pdcp_entity_t *entity)
   }
 }
 
-void nr_pdcp_entity_suspend(nr_pdcp_entity_t *entity)
+static void nr_pdcp_entity_suspend(nr_pdcp_entity_t *entity)
 {
   entity->tx_next = 0;
   if (entity->t_reordering_start != 0) {
