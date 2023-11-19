@@ -335,6 +335,8 @@ static void check_t_reordering(nr_pdcp_entity_t *entity)
                         cur->buffer, cur->size);
     entity->rx_list = cur->next;
     entity->rx_size -= cur->size;
+    entity->stats.txsdu_pkts++;
+    entity->stats.txsdu_bytes += cur->size;
     nr_pdcp_free_sdu(cur);
   }
 
@@ -346,6 +348,8 @@ static void check_t_reordering(nr_pdcp_entity_t *entity)
                         cur->buffer, cur->size);
     entity->rx_list = cur->next;
     entity->rx_size -= cur->size;
+    entity->stats.txsdu_pkts++;
+    entity->stats.txsdu_bytes += cur->size;
     nr_pdcp_free_sdu(cur);
     count++;
   }
