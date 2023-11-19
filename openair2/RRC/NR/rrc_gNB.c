@@ -1046,11 +1046,15 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   for (int srb_id = 1; srb_id < maxSRBs; srb_id++) {
     if (ue_p->Srb[srb_id].Active) {
       nr_pdcp_config_set_security(ue_p->rrc_ue_id, srb_id, security_mode, kRRCenc, kRRCint, kUPenc);
+      // TODO: should send E1 UE Bearer Modification with PDCP Reestablishment flag
+      nr_pdcp_reestablishment(ue_p->rrc_ue_id, srb_id, true);
     }
   }
 
   // TODO: should send E1 UE Bearer Modification with PDCP Reestablishment flag
-  nr_pdcp_reestablishment(ue_p->rrc_ue_id);
+  /* TODO: reestablish only exisiting RBs */
+  for (int drb_id = 1; drb_id <= MAX_DRBS_PER_UE; drb_id++)
+    nr_pdcp_reestablishment(ue_p->rrc_ue_id, drb_id, false);
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
   RETURN_IF_INVALID_ASSOC_ID(ue_data);

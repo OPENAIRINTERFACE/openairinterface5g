@@ -64,7 +64,7 @@ void add_drb(int is_gnb,
 void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
 
 bool nr_pdcp_remove_UE(ue_id_t ue_id);
-void nr_pdcp_reestablishment(ue_id_t ue_id);
+void nr_pdcp_reestablishment(ue_id_t ue_id, int rb_id, bool srb_flag);
 
 void nr_pdcp_suspend_srb(ue_id_t ue_id, int srb_id);
 void nr_pdcp_suspend_drb(ue_id_t ue_id, int drb_id);

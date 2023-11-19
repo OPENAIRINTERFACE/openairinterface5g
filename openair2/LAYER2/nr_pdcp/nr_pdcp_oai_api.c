@@ -1136,36 +1136,32 @@ void nr_pdcp_release_drb(ue_id_t ue_id, int drb_id)
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-void nr_pdcp_reestablishment(ue_id_t ue_id)
+void nr_pdcp_reestablishment(ue_id_t ue_id, int rb_id, bool srb_flag)
 {
-  // TODO implement this on a per RB basis following TS 38.323 Sec 5.1.2
+  nr_pdcp_ue_t     *ue;
+  nr_pdcp_entity_t *rb;
+
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
-  nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
-  if (ue == NULL) {
-    LOG_E(PDCP, "Cannot find PDCP entity for UE %lx\n", ue_id);
-    nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
-    return;
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
+
+  if (srb_flag) {
+    if (rb_id < 1 || rb_id > 3)
+      rb = NULL;
+    else
+      rb = ue->srb[rb_id - 1];
+  } else {
+    if (rb_id < 1 || rb_id > MAX_DRBS_PER_UE)
+      rb = NULL;
+    else
+      rb = ue->drb[rb_id - 1];
   }
 
-  for (int i = 0; i < 3; i++) {
-    nr_pdcp_entity_t *srb = ue->srb[i];
-    if (srb != NULL) {
-      srb->tx_next = 0;
-      srb->rx_next = 0;
-      srb->rx_deliv = 0;
-      srb->rx_reord = 0;
-    }
+  if (rb != NULL) {
+    rb->reestablish_entity(rb);
+  } else {
+    LOG_W(PDCP, "UE %4.4lx cannot re-establish RB %d (is_srb %d), RB not found\n", ue_id, rb_id, srb_flag);
   }
 
-  for (int i = 0; i < MAX_DRBS_PER_UE; i++) {
-    nr_pdcp_entity_t *drb = ue->drb[i];
-    if (drb != NULL) {
-      // drb->tx_next = 0; // Should continue from the previous value
-      drb->rx_next = 0;
-      //drb->rx_deliv = 0; // should continue from the previous value
-      drb->rx_reord = 0;
-    }
-  }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 

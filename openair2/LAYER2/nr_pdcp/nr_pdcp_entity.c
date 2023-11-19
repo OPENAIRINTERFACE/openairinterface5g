@@ -395,19 +395,71 @@ static void nr_pdcp_entity_suspend(nr_pdcp_entity_t *entity)
   entity->rx_deliv = 0;
 }
 
-void nr_pdcp_entity_release(nr_pdcp_entity_t *entity)
-{
-  deliver_all_sdus(entity);
-}
-
-void nr_pdcp_entity_delete(nr_pdcp_entity_t *entity)
+static void free_rx_list(nr_pdcp_entity_t *entity)
 {
   nr_pdcp_sdu_t *cur = entity->rx_list;
   while (cur != NULL) {
     nr_pdcp_sdu_t *next = cur->next;
+    entity->stats.rxpdu_dd_pkts++;
+    entity->stats.rxpdu_dd_bytes += cur->size;
     nr_pdcp_free_sdu(cur);
     cur = next;
   }
+  entity->rx_list = NULL;
+  entity->rx_size = 0;
+}
+
+static void nr_pdcp_entity_reestablish_drb_am(nr_pdcp_entity_t *entity)
+{
+  /* transmitting entity procedures */
+  /* todo: deal with ciphering/integrity algos and keys */
+
+  /* receiving entity procedures */
+  /* todo: deal with ciphering/integrity algos and keys */
+}
+
+static void nr_pdcp_entity_reestablish_drb_um(nr_pdcp_entity_t *entity)
+{
+  /* transmitting entity procedures */
+  entity->tx_next = 0;
+  /* todo: deal with ciphering/integrity algos and keys */
+
+  /* receiving entity procedures */
+  /* deliver all SDUs if t_reordering is running */
+  if (entity->t_reordering_start != 0)
+    deliver_all_sdus(entity);
+  /* stop t_reordering */
+  entity->t_reordering_start = 0;
+  /* set rx_next and rx_deliv to the initial value */
+  entity->rx_next = 0;
+  entity->rx_deliv = 0;
+  /* todo: deal with ciphering/integrity algos and keys */
+}
+
+static void nr_pdcp_entity_reestablish_srb(nr_pdcp_entity_t *entity)
+{
+  /* transmitting entity procedures */
+  entity->tx_next = 0;
+  /* todo: deal with ciphering/integrity algos and keys */
+
+  /* receiving entity procedures */
+  free_rx_list(entity);
+  /* stop t_reordering */
+  entity->t_reordering_start = 0;
+  /* set rx_next and rx_deliv to the initial value */
+  entity->rx_next = 0;
+  entity->rx_deliv = 0;
+  /* todo: deal with ciphering/integrity algos and keys */
+}
+
+static void nr_pdcp_entity_release(nr_pdcp_entity_t *entity)
+{
+  deliver_all_sdus(entity);
+}
+
+static void nr_pdcp_entity_delete(nr_pdcp_entity_t *entity)
+{
+  free_rx_list(entity);
   if (entity->free_security != NULL)
     entity->free_security(entity->security_context);
   if (entity->free_integrity != NULL)
@@ -461,6 +513,18 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
   ret->delete_entity = nr_pdcp_entity_delete;
   ret->release_entity = nr_pdcp_entity_release;
   ret->suspend_entity = nr_pdcp_entity_suspend;
+
+  switch (type) {
+    case NR_PDCP_DRB_AM:
+      ret->reestablish_entity = nr_pdcp_entity_reestablish_drb_am;
+      break;
+    case NR_PDCP_DRB_UM:
+      ret->reestablish_entity = nr_pdcp_entity_reestablish_drb_um;
+      break;
+    case NR_PDCP_SRB:
+      ret->reestablish_entity = nr_pdcp_entity_reestablish_srb;
+      break;
+  }
   
   ret->get_stats = nr_pdcp_entity_get_stats;
   ret->deliver_sdu = deliver_sdu;
