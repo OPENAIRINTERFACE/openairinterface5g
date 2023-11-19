@@ -88,7 +88,6 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->stats.rxpdu_dd_pkts++;
     entity->stats.rxpdu_dd_bytes += size;
 
-
     return;
   }
 
@@ -120,7 +119,6 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
       entity->stats.rxpdu_dd_pkts++;
       entity->stats.rxpdu_dd_bytes += size;
 
-
     }
   }
 
@@ -129,7 +127,6 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     LOG_W(PDCP, "discard NR PDU rcvd_count=%d, entity->rx_deliv %d,sdu_in_list %d\n", rcvd_count,entity->rx_deliv,nr_pdcp_sdu_in_list(entity->rx_list,rcvd_count));
     entity->stats.rxpdu_dd_pkts++;
     entity->stats.rxpdu_dd_bytes += size;
-
 
     return;
   }
@@ -157,7 +154,6 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
       entity->rx_size -= cur->size;
       entity->stats.txsdu_pkts++;
       entity->stats.txsdu_bytes += cur->size;
-
 
       nr_pdcp_free_sdu(cur);
       count++;
@@ -224,7 +220,7 @@ static int nr_pdcp_entity_process_sdu(nr_pdcp_entity_t *entity,
 
   memcpy(buf + header_size, buffer, size);
 
-  if (entity->has_integrity){
+  if (entity->has_integrity) {
     uint8_t integrity[4] = {0};
     entity->integrity(entity->integrity_context,
                       integrity,
@@ -232,13 +228,12 @@ static int nr_pdcp_entity_process_sdu(nr_pdcp_entity_t *entity,
                       entity->rb_id, count, entity->is_gnb ? 1 : 0);
 
     memcpy((unsigned char *)buf + header_size + size, integrity, 4);
+  } else if (integrity_size == 4) {
+    // set MAC-I to 0 for SRBs with integrity not active
+    memset(buf + header_size + size, 0, 4);
   }
 
-  // set MAC-I to 0 for SRBs with integrity not active
-  else if (integrity_size == 4)
-    memset(buf + header_size + size, 0, 4);
-
-  if (entity->has_ciphering && (entity->is_gnb || entity->security_mode_completed)){
+  if (entity->has_ciphering && (entity->is_gnb || entity->security_mode_completed)) {
     entity->cipher(entity->security_context,
                    (unsigned char *)buf + header_size, size + integrity_size,
                    entity->rb_id, count, entity->is_gnb ? 1 : 0);
