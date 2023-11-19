@@ -123,7 +123,7 @@ typedef struct nr_pdcp_entity_t {
   uint64_t t_current;
 
   /* timers (stores the ms of activation, 0 means not active) */
-  int t_reordering_start;
+  uint64_t t_reordering_start;
 
   /* security */
   int has_ciphering;
