@@ -75,64 +75,84 @@ Note: The available resources, and their current usage, is indicated here:
 ### [RAN-Container-Parent](https://jenkins-oai.eurecom.fr/job/RAN-Container-Parent/)
 
 **Purpose**: automatically triggered tests on MR creation or push, from Gitlab
-Webhook
+Webhook ~documentation ~BUILD-ONLY ~4G-LTE ~5G-NR
 
 - [OAI-CN5G-COTS-UE-Test](https://jenkins-oai.eurecom.fr/job/OAI-CN5G-COTS-UE-Test/)
+  ~5G-NR
   - using 5GC bench (resources `CI-Cetautomatix-OC-oaicicd-session`, `CI-Dogmatix-CN5G-gNB`): Attach/Detach of UE with multiple PDU sessions
 - [RAN-cppcheck](https://jenkins-oai.eurecom.fr/job/RAN-cppcheck/1664/)
+  ~BUILD-ONLY ~4G-LTE ~5G-NR
   - obelix
   - performs static code analysis, currently not actively enforced
 - [RAN-gNB-N300-Timing-Phytest-LDPC](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-gNB-N300-Timing-Phytest-LDPC/)
+  ~5G-NR
   - caracal + N310
   - pure performance test through phy-test scheduler, see command line for more details
 - [RAN-Interop-F1](https://jenkins-oai.eurecom.fr/job/RAN-Interop-F1/)
+  ~5G-NR
   - ofqot (DU, 1x UE)
   - F1 interoperability testing: sets up connection to Accelleran CU, UE connection and connectivity test
 - [RAN-L2-Sim-Test-4G](https://jenkins-oai.eurecom.fr/job/RAN-L2-Sim-Test-4G/)
+  ~4G-LTE
   - obelix (eNB, 1x UE, OAI EPC)
   - L2simulator: skips physical layer and uses proxy between eNB and UE
 - [RAN-L2-Sim-Test-5G](https://jenkins-oai.eurecom.fr/job/RAN-L2-Sim-Test-5G/)
+  ~5G-NR
   - obelix (gNB, 1x UE, OAI 5GC)
   - L2simulator: skips physical layer and uses proxy between gNB and UE, currently only ping
 - [RAN-LTE-FDD-LTEBOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-LTE-FDD-LTEBOX-Container/)
+  ~4G-LTE
   - hutch + B210, nano w/ ltebox + 2x UE
   - tests RRC inactivity timers, different bandwidths, IF4p5 fronthaul
 - [RAN-LTE-FDD-OAIUE-OAICN4G-Container](https://jenkins-oai.eurecom.fr/job/RAN-LTE-FDD-OAIUE-OAICN4G-Container/)
+  ~4G-LTE
   - hutch + B210 (eNB), carabe + B210 (4G UE), nano w/ OAI 4GC
   - tests OAI 4G for 10 MHz/TM1; known to be unstable
 - [RAN-LTE-TDD-2x2-Container](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-LTE-TDD-2x2-Container/)
+  ~4G-LTE
   - obelix + N310, porcepix, nrmodule2 + Quectel
   - TM1 and TM2 test, IF4p5 fronthaul
 - [RAN-LTE-TDD-LTEBOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-LTE-TDD-LTEBOX-Container/)
+  ~4G-LTE
   - starsky + B210, nano w/ ltebox + 2x UE
   - TM1 over bandwidths 5, 10, 20 MHz in Band 40, default scheduler for 20 MHz
 - [RAN-NSA-B200-Module-LTEBOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-NSA-B200-Module-LTEBOX-Container/)
+  ~4G-LTE ~5G-NR
   - nepes + B200 (eNB), ofqot + B200 (gNB), idefix + Quectel, nepes w/ ltebox
   - basic NSA test
 - [RAN-PhySim-Cluster](https://jenkins-oai.eurecom.fr/job/RAN-PhySim-Cluster/)
+  ~4G-LTE ~5G-NR
   - cluster (`Asterix-OC-oaicicd-session` resource), tests in OpenShift Cluster
   - unitary simulators (`nr_dlsim`, etc.)
 - [RAN-RF-Sim-Test-4G](https://jenkins-oai.eurecom.fr/job/RAN-RF-Sim-Test-4G/)
+  ~4G-LTE
   - obelix (eNB, lteUE, OAI EPC)
   - uses RFsimulator, for FDD 5, 10, 20MHz with core, 5MHz noS1
 - [RAN-RF-Sim-Test-5G](https://jenkins-oai.eurecom.fr/job/RAN-RF-Sim-Test-5G/)
+  ~5G-NR
   - obelix (gNB, nrUE, OAI 5GC)
   - uses RFsimulator, TDD 40MHz, FDD 40MHz, F1 split
 - [RAN-RHEL8-Cluster-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Cluster-Image-Builder/)
+  ~BUILD-ONLY ~4G-LTE ~5G-NR
   - cluster (`Asterix-OC-oaicicd-session` resource): RHEL image build using the OpenShift Cluster (using gcc/clang)
 - [RAN-ARM-Cross-Compile-Builder](https://jenkins-oai.eurecom.fr/job/RAN-ARM-Cross-Compile-Builder/)
+  ~BUILD-ONLY ~4G-LTE ~5G-NR
   - orion: Cross-compilation from Intel to ARM
 - [RAN-SA-AW2S-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-AW2S-CN5G/)
+  ~5G-NR
   - 5G-NR SA test setup: avra(RHEL9.1) + AW2S, amariue, OAI CN5G
   - uses OpenShift cluster for CN deployment and container images for gNB deployment
   - multi UE testing using Amarisoft UE simulator
 - [RAN-SA-B200-Module-SABOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-SA-B200-Module-SABOX-Container/)
+  ~5G-NR
   - ofqot + B200, idefix + Quectel, nepes w/ sabox
   - basic SA test (20 MHz TDD), F1, reestablishment, ...
 - [RAN-SA-OAIUE-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-OAIUE-CN5G/)
+  ~5G-NR
   - 5G-NR SA test setup: gNB on avra(RHEL9.2) + N310, OAIUE on caracal(RHEL9.1) + N310, OAI CN5G
   - OpenShift cluster for CN deployment and container images for gNB and UE deployment
 - [RAN-Ubuntu18-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu18-Image-Builder/)
+  ~BUILD-ONLY ~4G-LTE ~5G-NR
   - obelix: Ubuntu 20 image build using docker (Note: builds U20 images while pipeline is named U18!)
 
 ### RAN-CI-NSA-Trigger
