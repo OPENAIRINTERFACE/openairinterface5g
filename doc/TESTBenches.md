@@ -128,7 +128,7 @@ Webhook
 - [RAN-SA-AW2S-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-AW2S-CN5G/)
   - 5G-NR SA test setup: avra(RHEL9.1) + AW2S, amariue, OAI CN5G
   - uses OpenShift cluster for CN deployment and container images for gNB deployment
-  - multi UE testing
+  - multi UE testing using Amarisoft UE simulator
 - [RAN-SA-B200-Module-SABOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-SA-B200-Module-SABOX-Container/)
   - ofqot + B200, idefix + Quectel, nepes w/ sabox
   - basic SA test (20 MHz TDD), F1, reestablishment, ...
@@ -148,6 +148,3 @@ Webhook
 - [RAN-SA-Module-CN5G](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-Module-CN5G/)
   - asterix + N310 (gNB), nrmodule2 + Quectel, porcepix w/ OAI 5GC
   - NR 2x2 (standalone)
-- [RAN-SA-AmariS-CN5G](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-AmariS-CN5G/)
-  - asterix + N310, amariue (1x UE), porcepix w/ OAI 5GC
-  - Amarisoft UE simulator: expected to be increased to more UEs
