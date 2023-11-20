@@ -174,7 +174,7 @@
 
 #define SCCPARAMS_DESC(scc) { \
 {GNB_CONFIG_STRING_PHYSCELLID,NULL,0,.i64ptr=scc->physCellId,.defint64val=0,TYPE_INT64,0/*0*/}, \
-{GNB_CONFIG_STRING_NTIMINGADVANCEOFFSET,NULL,0,.i64ptr=scc->n_TimingAdvanceOffset,.defint64val=NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n0,TYPE_INT64,0/*1*/},\
+{GNB_CONFIG_STRING_NTIMINGADVANCEOFFSET,NULL,0,.i64ptr=scc->n_TimingAdvanceOffset,.defint64val=-1,TYPE_INT64,0/*1*/},\
 {GNB_CONFIG_STRING_SSBPERIODICITYSERVINGCELL,NULL,0,.i64ptr=scc->ssb_periodicityServingCell,.defint64val=NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms20,TYPE_INT64,0/*2*/},\
 {GNB_CONFIG_STRING_DMRSTYPEAPOSITION,NULL,0,.i64ptr=&scc->dmrs_TypeA_Position,.defint64val=NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2,TYPE_INT64,0/*3*/},\
 {GNB_CONFIG_STRING_SUBCARRIERSPACING,NULL,0,.i64ptr=scc->ssbSubcarrierSpacing,.defint64val=NR_SubcarrierSpacing_kHz30,TYPE_INT64,0/*4*/},\
