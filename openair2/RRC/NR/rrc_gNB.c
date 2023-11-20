@@ -1052,9 +1052,10 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   }
 
   // TODO: should send E1 UE Bearer Modification with PDCP Reestablishment flag
-  /* TODO: reestablish only exisiting RBs */
-  for (int drb_id = 1; drb_id <= MAX_DRBS_PER_UE; drb_id++)
-    nr_pdcp_reestablishment(ue_p->rrc_ue_id, drb_id, false);
+  for (int drb_id = 1; drb_id <= MAX_DRBS_PER_UE; drb_id++) {
+    if (ue_p->established_drbs[drb_id - 1].status != DRB_INACTIVE)
+      nr_pdcp_reestablishment(ue_p->rrc_ue_id, drb_id, false);
+  }
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
   RETURN_IF_INVALID_ASSOC_ID(ue_data);
