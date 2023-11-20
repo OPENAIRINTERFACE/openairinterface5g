@@ -28,6 +28,7 @@
 typedef struct{
   const char *ip;
   const char *sm_dir;
+  const bool enabled;
 } e2_agent_args_t;
 
 #endif
