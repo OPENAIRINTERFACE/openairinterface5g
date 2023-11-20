@@ -6,7 +6,7 @@
 
 | Machine       | IP address      | Lockable Resource     | Function           | Connected devices                                     |
 | ------------- | --------------- | --------------------- | ------------------ | ----------------------------------------------------- |
-| asterix       | 172.21.16.127   | CI-Asterix-Usage      | gNB (n78)          | 172.21.19.14                                          |
+| asterix       | 172.21.16.127   | CI-Asterix-Usage      | *unused*           | 172.21.19.14                                          |
 | obelix        | 172.21.16.128   | CI-Obelix-Usage       | eNB (n40, n78), nrUE | 172.21.19.13, X300 (192.168.60.2)                   |
 | porcepix      | 172.21.16.136   | CI-Porcepix           | Executor, EPC, 5GC | --                                                    |
 | nrmodule2     | 172.21.16.139   | CI-NrModule2          | Quectel            | Quectel module                                        |
@@ -15,24 +15,17 @@
 | idefix        | 172.21.16.135   | CI-Idefix             | Quectel            | Quectel module                                        |
 | caracal       | 172.21.16.132   | CI-Caracal            | gNB/phytest        | N300 (192.168.10.2)                                   |
 | amariue       | 172.21.16.144   | CI-Amarisoft-UE-Usage | nrUE               | Amarisoft UE simulator                                |
-| manarola      | 172.21.8.116    | _None_                | gNB                | AW2S                                                  |
 | nano          | 172.21.18.48    | CI-Nano-Legacy-EPC    | Executor, EPC, adb | 2x COTS (adb)                                         |
 | hutch         | 172.21.18.46    | CI-Hutch-Legacy-FDD-eNB | eNB (B7)           | B200mini (30C5239)                                  |
 | starsky       | 172.21.18.45    | CI-Starsky-Legacy-TDD-eNB       | eNB (B40)  | b200mini (30A3E3C)                                  |
 | carabe        | 172.21.18.47    | CI-Carabe-Legacy-FDD-OAI-LTE-UE | UE (B7UE)  | B200mini (30AE8C9)                                  |
 | nokiabox      | 172.21.19.39    | _None_                | gNB (Nokia), 5GC   | _Nokia RF integrated_                                 |
 | avra          | 172.21.16.124   | CI-Avra-Usage         | gNB (n78)          | AW2S Jaguar (192.168.80.239)                          |
+| orion         | 172.21.16.134   | CI-Orion-Build-Sanity-Check-Deploy-Test, CI-Orion-DsTester-Deploy-Test | Build | |
 
 Note: The available resources, and their current usage, is indicated here:
 - [Lockable resources of jenkins-oai](https://jenkins-oai.eurecom.fr/lockable-resources/):
   "New" Jenkins, i.e., with RAN-Container-Parent
-
-## Networked devices
-
-| Type          | IP address (mgmt) |
-| ------------- | ----------------- |
-| USRP N310     | 172.21.19.14      |
-| USRP N310     | 172.21.19.13      |
 
 ## Testbenches
 
@@ -84,6 +77,8 @@ Note: The available resources, and their current usage, is indicated here:
 **Purpose**: automatically triggered tests on MR creation or push, from Gitlab
 Webhook
 
+- [OAI-CN5G-COTS-UE-Test](https://jenkins-oai.eurecom.fr/job/OAI-CN5G-COTS-UE-Test/)
+  - using 5GC bench (resources `CI-Cetautomatix-OC-oaicicd-session`, `CI-Dogmatix-CN5G-gNB`): Attach/Detach of UE with multiple PDU sessions
 - [RAN-cppcheck](https://jenkins-oai.eurecom.fr/job/RAN-cppcheck/1664/)
   - obelix
   - performs static code analysis, currently not actively enforced
@@ -124,7 +119,9 @@ Webhook
   - obelix (gNB, nrUE, OAI 5GC)
   - uses RFsimulator, TDD 40MHz, FDD 40MHz, F1 split
 - [RAN-RHEL8-Cluster-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Cluster-Image-Builder/)
-  - cluster (`Asterix-OC-oaicicd-session` resource): RHEL 8 image build using the OpenShift Cluster
+  - cluster (`Asterix-OC-oaicicd-session` resource): RHEL image build using the OpenShift Cluster (using gcc/clang)
+- [RAN-ARM-Cross-Compile-Builder](https://jenkins-oai.eurecom.fr/job/RAN-ARM-Cross-Compile-Builder/)
+  - orion: Cross-compilation from Intel to ARM
 - [RAN-SA-AW2S-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-AW2S-CN5G/)
   - 5G-NR SA test setup: avra(RHEL9.1) + AW2S, amariue, OAI CN5G
   - uses OpenShift cluster for CN deployment and container images for gNB deployment
