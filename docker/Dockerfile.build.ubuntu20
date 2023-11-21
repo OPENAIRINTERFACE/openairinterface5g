@@ -39,5 +39,6 @@ RUN /bin/sh oaienv && \
       --eNB --gNB --RU --UE --nrUE \
       --build-lib "telnetsrv enbscope uescope nrscope nrqtscope" \
       -w USRP -t Ethernet \
+      --build-e2 --cmake-opt -DXAPP_MULTILANGUAGE=OFF \
       --noavx512 \
       --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror
