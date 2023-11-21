@@ -48,37 +48,12 @@ matched_ues_mac_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const co
 
   /* IMPORTANT: in the case of gNB-DU, it is not possible to filter UEs by S-NSSAI as the ngap context is stored in gNB-CU
                 instead, we take all connected UEs*/
+  AssertFatal(condition == EQUAL_TEST_COND, "Condition %d not yet implemented", condition);
 
   // Take MAC info
-  UE_iterator(RC.nrmac[0]->UE_info.list, ue)
-  {
-    if (ue)
-    {
-      ngap_gNB_ue_context_t *ngap_ue_context_list = NULL;
-
-      // Filter connected UEs by S-NSSAI test condition to get list of matched UEs 
-      // note: not possible to filter 
-      switch (condition)
-      {
-      case EQUAL_TEST_COND:
-      {
-        if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type))
-        {
-          rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], ue->rnti);
-          ngap_ue_context_list = ngap_get_ue_context(rrc_ue_context_list->ue_context.rrc_ue_id);
-          assert(ngap_ue_context_list->gNB_instance[0].s_nssai[0][0].sST == value && "Please, check the condition for S-NSSAI. At the moment, OAI supports eMBB");
-        }
-          matched_ues.ue_list[matched_ues.num_ues] = *ue;
-          matched_ues.num_ues++;
-          break;
-        }
-      
-    
-      default:
-        assert(false && "Condition not yet implemented");
-      }
-      
-    }    
+  UE_iterator (RC.nrmac[0]->UE_info.list, ue) {
+    matched_ues.ue_list[matched_ues.num_ues] = *ue;
+    matched_ues.num_ues++;
   }
 
   assert(matched_ues.num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
@@ -99,24 +74,12 @@ matched_ues_rrc_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, int64
   matched_ues_rrc_t matched_ues = {.num_ues = 0, .rrc_ue_id_list = calloc(MAX_MOBILES_PER_GNB, sizeof(f1_ue_data_t)) };
   assert(matched_ues.rrc_ue_id_list != NULL && "Memory exhausted");
 
+  AssertFatal(condition == EQUAL_TEST_COND, "Condition %d not yet implemented\n", condition);
 
   struct rrc_gNB_ue_context_s *ue_context_p1 = NULL;
   RB_FOREACH(ue_context_p1, rrc_nr_ue_tree_s, &RC.nrrrc[0]->rrc_ue_head) {
-    
-    ngap_gNB_ue_context_t *ngap_ue_context_list = ngap_get_ue_context(ue_context_p1->ue_context.rrc_ue_id);
-    
-    // Filter connected UEs by S-NSSAI test condition to get list of matched UEs 
-    switch (condition)
-    {
-    case EQUAL_TEST_COND:
-      assert(ngap_ue_context_list->gNB_instance[0].s_nssai[0][0].sST == value && "Please, check the condition for S-NSSAI. At the moment, OAI supports eMBB");
-      matched_ues.rrc_ue_id_list[matched_ues.num_ues].secondary_ue = ue_context_p1->ue_context.rrc_ue_id;
-      matched_ues.num_ues++;
-      break;
-    
-    default:
-      assert(false && "Condition not yet implemented");
-    }
+    matched_ues.rrc_ue_id_list[matched_ues.num_ues].secondary_ue = ue_context_p1->ue_context.rrc_ue_id;
+    matched_ues.num_ues++;
   }
   
   assert(matched_ues.num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
