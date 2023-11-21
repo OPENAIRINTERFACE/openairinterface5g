@@ -35,56 +35,51 @@
 
 
 typedef struct {
-    NR_UE_info_t *ue_list;
-    size_t num_ues;
+  NR_UE_info_t* ue_list[MAX_MOBILES_PER_GNB];
+  size_t num_ues;
 } matched_ues_mac_t;
 
-
-static
-matched_ues_mac_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const condition, int64_t const value)
+static size_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const condition,
+                                                        int64_t const value,
+                                                        matched_ues_mac_t* matches)
 {
-  matched_ues_mac_t matched_ues = {.num_ues = 0, .ue_list = calloc(MAX_MOBILES_PER_GNB, sizeof(NR_UE_info_t)) };
-  assert(matched_ues.ue_list != NULL && "Memory exhausted");
-
-  /* IMPORTANT: in the case of gNB-DU, it is not possible to filter UEs by S-NSSAI as the ngap context is stored in gNB-CU
-                instead, we take all connected UEs*/
+  DevAssert(matches != NULL);
   AssertFatal(condition == EQUAL_TEST_COND, "Condition %d not yet implemented", condition);
 
   // Take MAC info
+  size_t i = 0;
   UE_iterator (RC.nrmac[0]->UE_info.list, ue) {
-    matched_ues.ue_list[matched_ues.num_ues] = *ue;
-    matched_ues.num_ues++;
+    matches->ue_list[i++] = ue;
+    AssertFatal(i < MAX_MOBILES_PER_GNB, "cannot have more UEs than global UE number maximum\n");
   }
 
-  assert(matched_ues.num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
-
-  return matched_ues;
+  matches->num_ues = i;
+  assert(matches->num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
+  return i;
 }
 
 
 typedef struct {
-  f1_ue_data_t * rrc_ue_id_list;  // list of matched UEs on RRC level containing only rrc_ue_id (gNB CU UE ID)
+  uint32_t rrc_ue_id_list[MAX_MOBILES_PER_GNB]; // list of matched UEs on RRC level containing only rrc_ue_id (gNB CU UE ID)
   size_t num_ues;
 
 } matched_ues_rrc_t;
 
-static
-matched_ues_rrc_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, int64_t const value)
+static size_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, int64_t const value, matched_ues_rrc_t* matches)
 {
-  matched_ues_rrc_t matched_ues = {.num_ues = 0, .rrc_ue_id_list = calloc(MAX_MOBILES_PER_GNB, sizeof(f1_ue_data_t)) };
-  assert(matched_ues.rrc_ue_id_list != NULL && "Memory exhausted");
-
+  DevAssert(matches != NULL);
   AssertFatal(condition == EQUAL_TEST_COND, "Condition %d not yet implemented\n", condition);
 
   struct rrc_gNB_ue_context_s *ue_context_p1 = NULL;
+  size_t i = 0;
   RB_FOREACH(ue_context_p1, rrc_nr_ue_tree_s, &RC.nrrrc[0]->rrc_ue_head) {
-    matched_ues.rrc_ue_id_list[matched_ues.num_ues].secondary_ue = ue_context_p1->ue_context.rrc_ue_id;
-    matched_ues.num_ues++;
+    matches->rrc_ue_id_list[i++] = ue_context_p1->ue_context.rrc_ue_id;
+    AssertFatal(i < MAX_MOBILES_PER_GNB, "cannot have more UEs than global UE number maximum\n");
   }
-  
-  assert(matched_ues.num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
-  
-  return matched_ues;
+
+  matches->num_ues = i;
+  assert(matches->num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
+  return i;
 }
 
 static
@@ -382,8 +377,8 @@ kpm_ind_msg_format_1_t fill_kpm_ind_msg_frm_1_in_du(const NR_UE_info_t* UE, cons
   return msg_frm_1;
 }
 
-static
-kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_du(const matched_ues_mac_t matched_ues, const kpm_act_def_format_1_t * act_def_fr_1)
+static kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_du(const matched_ues_mac_t* matched_ues,
+                                                           const kpm_act_def_format_1_t* act_def_fr_1)
 {
   assert(act_def_fr_1 != NULL);
 
@@ -391,20 +386,20 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_du(const matched_ues_mac_t matc
   kpm_ind_msg_format_3_t msg_frm_3 = {0};
 
   // Fill UE Measurement Reports
-  
-  msg_frm_3.ue_meas_report_lst_len = matched_ues.num_ues;
+
+  msg_frm_3.ue_meas_report_lst_len = matched_ues->num_ues;
   msg_frm_3.meas_report_per_ue = calloc(msg_frm_3.ue_meas_report_lst_len, sizeof(meas_report_per_ue_t));
   assert(msg_frm_3.meas_report_per_ue != NULL && "Memory exhausted");
 
   for (size_t i = 0; i<msg_frm_3.ue_meas_report_lst_len; i++)
   {
     // Fill UE ID data
-    f1_ue_data_t rrc_ue_id = du_get_f1_ue_data(matched_ues.ue_list[i].rnti);  // get gNB CU UE ID as rrc_ue_id
+    f1_ue_data_t rrc_ue_id = du_get_f1_ue_data(matched_ues->ue_list[i]->rnti); // get gNB CU UE ID as rrc_ue_id
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_DU_UE_ID_E2SM;
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb_du = fill_gnb_du_data(&rrc_ue_id);
       
     // Fill UE related info
-    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_du(&matched_ues.ue_list[i], i, act_def_fr_1);
+    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_du(matched_ues->ue_list[i], i, act_def_fr_1);
   }
 
 
@@ -465,8 +460,8 @@ kpm_ind_msg_format_1_t fill_kpm_ind_msg_frm_1_in_cu(const uint32_t rrc_ue_id, co
   return msg_frm_1;
 }
 
-static
-kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_cu(const matched_ues_rrc_t matched_ues, const kpm_act_def_format_1_t * act_def_fr_1)
+static kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_cu(const matched_ues_rrc_t* matched_ues,
+                                                           const kpm_act_def_format_1_t* act_def_fr_1)
 {
   assert(act_def_fr_1 != NULL);
 
@@ -474,20 +469,21 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_cu(const matched_ues_rrc_t matc
   kpm_ind_msg_format_3_t msg_frm_3 = {0};
 
   // Fill UE Measurement Reports
-  
-  msg_frm_3.ue_meas_report_lst_len = matched_ues.num_ues;
+
+  msg_frm_3.ue_meas_report_lst_len = matched_ues->num_ues;
   msg_frm_3.meas_report_per_ue = calloc(msg_frm_3.ue_meas_report_lst_len, sizeof(meas_report_per_ue_t));
   assert(msg_frm_3.meas_report_per_ue != NULL && "Memory exhausted");
 
   for (size_t i = 0; i<msg_frm_3.ue_meas_report_lst_len; i++)
   {
     // Fill UE ID data
-    rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context(RC.nrrrc[0], matched_ues.rrc_ue_id_list[i].secondary_ue);
+    rrc_gNB_ue_context_t* rrc_ue_context_list = rrc_gNB_get_ue_context(RC.nrrrc[0], matched_ues->rrc_ue_id_list[i]);
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_UE_ID_E2SM;
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb = fill_gnb_data(rrc_ue_context_list);
 
     // Fill UE related info
-    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_cu(matched_ues.rrc_ue_id_list[i].secondary_ue, i, act_def_fr_1);
+    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 =
+        fill_kpm_ind_msg_frm_1_in_cu(matched_ues->rrc_ue_id_list[i], i, act_def_fr_1);
   }
 
   return msg_frm_3;
@@ -555,8 +551,8 @@ kpm_ind_msg_format_1_t fill_kpm_ind_msg_frm_1_in_monolithic(const NR_UE_info_t* 
   return msg_frm_1;
 }
 
-static
-kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_mac_t matched_ues, const kpm_act_def_format_1_t * act_def_fr_1)
+static kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_mac_t* matched_ues,
+                                                                   const kpm_act_def_format_1_t* act_def_fr_1)
 {
   assert(act_def_fr_1 != NULL);
 
@@ -564,8 +560,8 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_ma
   kpm_ind_msg_format_3_t msg_frm_3 = {0};
 
   // Fill UE Measurement Reports
-  
-  msg_frm_3.ue_meas_report_lst_len = matched_ues.num_ues;
+
+  msg_frm_3.ue_meas_report_lst_len = matched_ues->num_ues;
   msg_frm_3.meas_report_per_ue = calloc(msg_frm_3.ue_meas_report_lst_len, sizeof(meas_report_per_ue_t));
   assert(msg_frm_3.meas_report_per_ue != NULL && "Memory exhausted");
 
@@ -573,12 +569,13 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_ma
   for (size_t i = 0; i<msg_frm_3.ue_meas_report_lst_len; i++)
   {
     // Fill UE ID data
-    rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], matched_ues.ue_list[i].rnti);
+    rrc_gNB_ue_context_t* rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], matched_ues->ue_list[i]->rnti);
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_UE_ID_E2SM;
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb = fill_gnb_data(rrc_ue_context_list);
       
     // Fill UE related info
-    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_monolithic(&matched_ues.ue_list[i], i, rrc_ue_context_list->ue_context.rrc_ue_id, act_def_fr_1);
+    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 =
+        fill_kpm_ind_msg_frm_1_in_monolithic(matched_ues->ue_list[i], i, rrc_ue_context_list->ue_context.rrc_ue_id, act_def_fr_1);
   }
 
   return msg_frm_3;
@@ -736,14 +733,17 @@ void read_kpm_sm(void* data)
             int64_t const value = *frm_4->matching_cond_lst[i].test_info_lst.int_value;
             // Check E2 Node NG-RAN Type
             if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-              matched_ues_mac_t matched_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value);
-              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_du(matched_ues, &frm_4->action_def_format_1);
+              matched_ues_mac_t matched_ues = {0};
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value, &matched_ues);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_du(&matched_ues, &frm_4->action_def_format_1);
             } else if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-              matched_ues_rrc_t matched_ues = filter_ues_by_s_nssai_in_cu(test_cond, value);
-              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_cu(matched_ues, &frm_4->action_def_format_1);
+              matched_ues_rrc_t matched_ues = {0};
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_cu(test_cond, value, &matched_ues);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_cu(&matched_ues, &frm_4->action_def_format_1);
             } else if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type)) {
-              matched_ues_mac_t matched_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value);
-              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_monolithic(matched_ues, &frm_4->action_def_format_1);
+              matched_ues_mac_t matched_ues = {0};
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value, &matched_ues);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_monolithic(&matched_ues, &frm_4->action_def_format_1);
             } else {
               assert(false && "NG-RAN Type not implemented");
             }
