@@ -39,8 +39,19 @@ typedef struct {
   size_t num_ues;
 } matched_ues_mac_t;
 
+static bool nssai_matches(nssai_t a_nssai, uint8_t b_sst, const uint32_t *b_sd)
+{
+  AssertFatal(b_sd == NULL || *b_sd <= 0xffffff, "illegal SD %d\n", *b_sd);
+  if (b_sd == NULL) {
+    return a_nssai.sst == b_sst && a_nssai.sd == 0xffffff;
+  } else {
+    return a_nssai.sst == b_sst && a_nssai.sd == *b_sd;
+  }
+}
+
 static size_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const condition,
-                                                        int64_t const value,
+                                                        uint8_t sst,
+                                                        const uint32_t *sd,
                                                         matched_ues_mac_t* matches)
 {
   DevAssert(matches != NULL);
@@ -49,7 +60,15 @@ static size_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const condit
   // Take MAC info
   size_t i = 0;
   UE_iterator (RC.nrmac[0]->UE_info.list, ue) {
-    matches->ue_list[i++] = ue;
+    NR_UE_sched_ctrl_t *sched_ctrl = &ue->UE_sched_ctrl;
+    // UE matches if any of its DRBs matches
+    for (int l = 0; l < sched_ctrl->dl_lc_num; ++l) {
+      long lcid = sched_ctrl->dl_lc_ids[l];
+      if (nssai_matches(sched_ctrl->dl_lc_nssai[lcid], sst, sd)) {
+        matches->ue_list[i++] = ue;
+        break;
+      }
+    }
     AssertFatal(i < MAX_MOBILES_PER_GNB, "cannot have more UEs than global UE number maximum\n");
   }
 
@@ -65,7 +84,7 @@ typedef struct {
 
 } matched_ues_rrc_t;
 
-static size_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, int64_t const value, matched_ues_rrc_t* matches)
+static size_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, uint8_t sst, const uint32_t *sd, matched_ues_rrc_t* matches)
 {
   DevAssert(matches != NULL);
   AssertFatal(condition == EQUAL_TEST_COND, "Condition %d not yet implemented\n", condition);
@@ -73,7 +92,14 @@ static size_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, int64_t c
   struct rrc_gNB_ue_context_s *ue_context_p1 = NULL;
   size_t i = 0;
   RB_FOREACH(ue_context_p1, rrc_nr_ue_tree_s, &RC.nrrrc[0]->rrc_ue_head) {
-    matches->rrc_ue_id_list[i++] = ue_context_p1->ue_context.rrc_ue_id;
+    gNB_RRC_UE_t *ue = &ue_context_p1->ue_context;
+    for (int p = 0; p < ue->nb_of_pdusessions; ++p) {
+      pdusession_t *pdu = &ue->pduSession[0].param;
+      if (nssai_matches(pdu->nssai, sst, sd)) {
+        matches->rrc_ue_id_list[i++] = ue_context_p1->ue_context.rrc_ue_id;
+        break;
+      }
+    }
     AssertFatal(i < MAX_MOBILES_PER_GNB, "cannot have more UEs than global UE number maximum\n");
   }
 
@@ -655,6 +681,39 @@ kpm_ind_hdr_t kpm_ind_hdr(void)
   return hdr;
 }
 
+static void capture_sst_sd(test_info_lst_t* test, uint8_t *sst, uint32_t **sd)
+{
+  DevAssert(test != NULL && test->test_cond_value != NULL);
+  DevAssert(sst != NULL);
+  DevAssert(sd != NULL);
+
+  // we made a mistake in the past: NSSAI is supposed to be an OCTET_STRING,
+  // but earlier version of the RAN function and the xApp used integer, so
+  // handle this gracefully by accepting integer as well
+  switch (*test->test_cond_value) {
+    case INTEGER_TEST_COND_VALUE:
+      AssertFatal(*test->int_value <= 0xff, "illegal SST %ld\n", *test->int_value);
+      *sst = *test->int_value;
+      *sd = NULL;
+      break;
+    case OCTET_STRING_TEST_COND_VALUE:
+      if (test->octet_string_value->len == 1) {
+        *sst = test->octet_string_value->buf[0];
+        *sd = NULL;
+      } else {
+        DevAssert(test->octet_string_value->len == 4);
+        uint8_t *buf = test->octet_string_value->buf;
+        *sst = buf[0];
+        *sd = malloc(**sd);
+        **sd = buf[1] << 16 | buf[2] << 8 | buf[3];
+      }
+      break;
+    default:
+      AssertFatal(false, "test condition value %d impossible\n", *test->test_cond_value);
+      break;
+  }
+}
+
 void read_kpm_sm(void* data)
 {
   assert(data != NULL);
@@ -730,23 +789,26 @@ void read_kpm_sm(void* data)
             assert(frm_4->matching_cond_lst[i].test_info_lst.int_value != NULL && "Even though is optional..");
 
             test_cond_e const test_cond = *frm_4->matching_cond_lst[i].test_info_lst.test_cond;
-            int64_t const value = *frm_4->matching_cond_lst[i].test_info_lst.int_value;
+            uint8_t sst = 0;
+            uint32_t *sd = NULL;
+            capture_sst_sd(&frm_4->matching_cond_lst[i].test_info_lst, &sst, &sd);
             // Check E2 Node NG-RAN Type
             if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
               matched_ues_mac_t matched_ues = {0};
-              matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value, &matched_ues);
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, sst, sd, &matched_ues);
               kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_du(&matched_ues, &frm_4->action_def_format_1);
             } else if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
               matched_ues_rrc_t matched_ues = {0};
-              matched_ues.num_ues = filter_ues_by_s_nssai_in_cu(test_cond, value, &matched_ues);
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_cu(test_cond, sst, sd, &matched_ues);
               kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_cu(&matched_ues, &frm_4->action_def_format_1);
             } else if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type)) {
               matched_ues_mac_t matched_ues = {0};
-              matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value, &matched_ues);
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, sst, sd, &matched_ues);
               kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_monolithic(&matched_ues, &frm_4->action_def_format_1);
             } else {
               assert(false && "NG-RAN Type not implemented");
             }
+            free(sd); // if NULL, nothing happens
 
             break;
           }
