@@ -77,13 +77,52 @@ Note: The available resources, and their current usage, is indicated here:
 **Purpose**: automatically triggered tests on MR creation or push, from Gitlab
 Webhook ~documentation ~BUILD-ONLY ~4G-LTE ~5G-NR
 
-- [OAI-CN5G-COTS-UE-Test](https://jenkins-oai.eurecom.fr/job/OAI-CN5G-COTS-UE-Test/)
-  ~5G-NR
-  - using 5GC bench (resources `CI-Cetautomatix-OC-oaicicd-session`, `CI-Dogmatix-CN5G-gNB`): Attach/Detach of UE with multiple PDU sessions
+This pipeline has basically two main stages, as follows. For the image build,
+please also refer to the [dedicated documentation](../docker/README.md) for
+information on how the images are built.
+
+#### Image Build pipelines
+
+- [RAN-ARM-Cross-Compile-Builder](https://jenkins-oai.eurecom.fr/job/RAN-ARM-Cross-Compile-Builder/)
+  ~BUILD-ONLY ~4G-LTE ~5G-NR
+  - orion: Cross-compilation from Intel to ARM
+  - base image from `Dockerfile.base.ubuntu20.cross-arm64`
+  - build image from `Dockerfile.build.ubuntu20.cross-arm64` (no target images)
 - [RAN-cppcheck](https://jenkins-oai.eurecom.fr/job/RAN-cppcheck/1664/)
   ~BUILD-ONLY ~4G-LTE ~5G-NR
   - obelix
   - performs static code analysis, currently not actively enforced
+- [RAN-RHEL8-Cluster-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Cluster-Image-Builder/)
+  ~BUILD-ONLY ~4G-LTE ~5G-NR
+  - cluster (`Asterix-OC-oaicicd-session` resource): RHEL image build using the OpenShift Cluster (using gcc/clang)
+  - base image from `Dockerfile.build.rhel9`
+  - build image from `Dockerfile.build.rhel9`, followed by
+    - target image from `Dockerfile.eNB.rhel9`
+    - target image from `Dockerfile.gNB.rhel9`,
+    - target image from `Dockerfile.gNB.aw2s.rhel9`
+    - target image from `Dockerfile.nr-cuup.rhel9`
+    - target image from `Dockerfile.lteUE.rhel9`
+    - target image from `Dockerfile.nrUE.rhel9`
+  - build image from `Dockerfile.phySim.rhel9` (creates as direct target physical simulator
+    image)
+  - build image from `Dockerfile.clang.rhel9` (compilation only, artifacts not used currently)
+- [RAN-Ubuntu18-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu18-Image-Builder/)
+  ~BUILD-ONLY ~4G-LTE ~5G-NR
+  - obelix: Ubuntu 20 image build using docker (Note: builds U20 images while pipeline is named U18!)
+  - base image from `Dockerfile.base.ubuntu20`
+  - build image from `Dockerfile.build.ubuntu20`, followed by
+    - target image from `Dockerfile.eNB.ubuntu20`
+    - target image from `Dockerfile.gNB.ubuntu20`
+    - target image from `Dockerfile.nr-cuup.ubuntu20`
+    - target image from `Dockerfile.nrUE.ubuntu20`
+    - target image from `Dockerfile.lteUE.ubuntu20`
+    - target image from `Dockerfile.lteRU.ubuntu20`
+
+#### Image Test pipelines
+
+- [OAI-CN5G-COTS-UE-Test](https://jenkins-oai.eurecom.fr/job/OAI-CN5G-COTS-UE-Test/)
+  ~5G-NR
+  - using 5GC bench (resources `CI-Cetautomatix-OC-oaicicd-session`, `CI-Dogmatix-CN5G-gNB`): Attach/Detach of UE with multiple PDU sessions
 - [RAN-gNB-N300-Timing-Phytest-LDPC](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-gNB-N300-Timing-Phytest-LDPC/)
   ~5G-NR
   - caracal + N310
@@ -133,12 +172,6 @@ Webhook ~documentation ~BUILD-ONLY ~4G-LTE ~5G-NR
   ~5G-NR
   - obelix (gNB, nrUE, OAI 5GC)
   - uses RFsimulator, TDD 40MHz, FDD 40MHz, F1 split
-- [RAN-RHEL8-Cluster-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Cluster-Image-Builder/)
-  ~BUILD-ONLY ~4G-LTE ~5G-NR
-  - cluster (`Asterix-OC-oaicicd-session` resource): RHEL image build using the OpenShift Cluster (using gcc/clang)
-- [RAN-ARM-Cross-Compile-Builder](https://jenkins-oai.eurecom.fr/job/RAN-ARM-Cross-Compile-Builder/)
-  ~BUILD-ONLY ~4G-LTE ~5G-NR
-  - orion: Cross-compilation from Intel to ARM
 - [RAN-SA-AW2S-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-AW2S-CN5G/)
   ~5G-NR
   - 5G-NR SA test setup: avra(RHEL9.1) + AW2S, amariue, OAI CN5G
@@ -152,9 +185,6 @@ Webhook ~documentation ~BUILD-ONLY ~4G-LTE ~5G-NR
   ~5G-NR
   - 5G-NR SA test setup: gNB on avra(RHEL9.2) + N310, OAIUE on caracal(RHEL9.1) + N310, OAI CN5G
   - OpenShift cluster for CN deployment and container images for gNB and UE deployment
-- [RAN-Ubuntu18-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu18-Image-Builder/)
-  ~BUILD-ONLY ~4G-LTE ~5G-NR
-  - obelix: Ubuntu 20 image build using docker (Note: builds U20 images while pipeline is named U18!)
 
 ### RAN-CI-NSA-Trigger
 
