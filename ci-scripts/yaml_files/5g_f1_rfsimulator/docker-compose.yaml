@@ -203,7 +203,7 @@ services:
         privileged: true
         container_name: rfsim5g-oai-du2
         environment:
-            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_ID 0xe01 --gNBs.[0].nr_cellid 87654321 --gNBs.[0].servingCellConfigCommon.[0].physCellId 1 --MACRLCs.[0].local_n_address 192.168.71.143 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_DU_ID 0xe01 --gNBs.[0].nr_cellid 87654321 --gNBs.[0].servingCellConfigCommon.[0].physCellId 1 --MACRLCs.[0].local_n_address 192.168.71.143 --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-cu
         networks:
@@ -221,7 +221,7 @@ services:
         privileged: true
         container_name: rfsim5g-oai-du3
         environment:
-            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_ID 0xe02 --gNBs.[0].nr_cellid 11111111 --gNBs.[0].servingCellConfigCommon.[0].physCellId 2 --MACRLCs.[0].local_n_address 192.168.71.144 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_DU_ID 0xe02 --gNBs.[0].nr_cellid 11111111 --gNBs.[0].servingCellConfigCommon.[0].physCellId 2 --MACRLCs.[0].local_n_address 192.168.71.144 --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-cu
         networks:

@@ -730,6 +730,7 @@ typedef bool (*nr_pp_impl_ul)(module_id_t mod_id,
 typedef struct f1_config_t {
   f1ap_setup_req_t *setup_req;
   f1ap_setup_resp_t *setup_resp;
+  uint32_t gnb_id; // associated gNB's ID, not used in DU itself
 } f1_config_t;
 
 /*! \brief top level eNB MAC structure */

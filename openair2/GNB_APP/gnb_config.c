@@ -1034,7 +1034,9 @@ static NR_ServingCellConfig_t *get_scd_config(configmodule_interface_t *cfg)
 }
 
 static int read_du_cell_info(configmodule_interface_t *cfg,
-                             uint64_t *id,
+                             bool separate_du,
+                             uint32_t *gnb_id,
+                             uint64_t *gnb_du_id,
                              char **name,
                              f1ap_served_cell_info_t *info,
                              int max_cell_info)
@@ -1051,7 +1053,11 @@ static int read_du_cell_info(configmodule_interface_t *cfg,
 
   // Output a list of all eNBs.
   config_getlist(cfg, &GNBParamList, GNBParams, sizeof(GNBParams) / sizeof(paramdef_t), NULL);
-  AssertFatal(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr != NULL, "gNB id %u is not defined in configuration file\n", 0);
+
+  // read the gNB-ID. The DU itself only needs the gNB-DU ID, but some (e.g.,
+  // E2 agent) need the gNB-ID as well if it is running in a separate process
+  AssertFatal(config_isparamset(GNBParamList.paramarray[0], GNB_GNB_ID_IDX), "%s is not defined in configuration file\n", GNB_CONFIG_STRING_GNB_ID);
+  *gnb_id = *GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr;
 
   AssertFatal(strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[0], *GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr) == 0,
               "no active gNB found/mismatch of gNBs: %s vs %s\n",
@@ -1068,7 +1074,17 @@ static int read_du_cell_info(configmodule_interface_t *cfg,
   paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
   config_getlist(cfg, &PLMNParamList, PLMNParams, sizeof(PLMNParams) / sizeof(paramdef_t), aprefix);
 
-  *id = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+  // if fronthaul is F1, require gNB_DU_ID, else use gNB_ID
+  if (separate_du) {
+    AssertFatal(config_isparamset(GNBParamList.paramarray[0], GNB_GNB_DU_ID_IDX), "%s is not defined in configuration file\n", GNB_CONFIG_STRING_GNB_DU_ID);
+    *gnb_du_id = *GNBParamList.paramarray[0][GNB_GNB_DU_ID_IDX].u64ptr;
+  } else {
+    AssertFatal(!config_isparamset(GNBParamList.paramarray[0], GNB_GNB_DU_ID_IDX),
+                "%s should not be defined in configuration file for monolithic gNB\n",
+                GNB_CONFIG_STRING_GNB_DU_ID);
+    *gnb_du_id = *gnb_id; // the gNB-DU ID is equal to the gNB ID, since the config has no gNB-DU ID
+  }
+
   *name = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
   info->tac = malloc(sizeof(*info->tac));
   AssertFatal(info->tac != NULL, "out of memory\n");
@@ -1305,10 +1321,11 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
       memcpy(RC.nrmac[j]->ulprbbl, prbbl, 275 * sizeof(prbbl[0]));
     } //  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
 
-    uint64_t id;
+    uint64_t gnb_du_id = 0;
+    uint32_t gnb_id = 0;
     char *name = NULL;
     f1ap_served_cell_info_t info;
-    read_du_cell_info(cfg, &id, &name, &info, 1);
+    read_du_cell_info(cfg, macrlc_has_f1, &gnb_id, &gnb_du_id, &name, &info, 1);
 
     if (get_softmodem_params()->sa)
       nr_mac_configure_sib1(RC.nrmac[0], &info.plmn, info.nr_cellid, *info.tac);
@@ -1317,9 +1334,10 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
     // and store it at MAC for sending later
     NR_BCCH_BCH_Message_t *mib = RC.nrmac[0]->common_channels[0].mib;
     const NR_BCCH_DL_SCH_Message_t *sib1 = RC.nrmac[0]->common_channels[0].sib1;
-    f1ap_setup_req_t *req = RC_read_F1Setup(id, name, &info, scc, mib, sib1);
+    f1ap_setup_req_t *req = RC_read_F1Setup(gnb_du_id, name, &info, scc, mib, sib1);
     AssertFatal(req != NULL, "could not read F1 Setup information\n");
     RC.nrmac[0]->f1_config.setup_req = req;
+    RC.nrmac[0]->f1_config.gnb_id = gnb_id;
 
     free(name); /* read_du_cell_info() allocated memory */
 
