@@ -572,6 +572,7 @@ void init_pdcp(void) {
 }
 
 #ifdef E2_AGENT
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h" // need to get info from MAC
 static void initialize_agent(ngran_node_t node_type, e2_agent_args_t oai_args)
 {
   AssertFatal(oai_args.sm_dir != NULL , "Please, specify the directory where the SMs are located in the config file, i.e., add in config file the next line: e2_agent = {near_ric_ip_addr = \"127.0.0.1\"; sm_dir = \"/usr/local/lib/flexric/\");} ");
@@ -593,15 +594,17 @@ static void initialize_agent(ngran_node_t node_type, e2_agent_args_t oai_args)
   int nb_id = 0;
   int cu_du_id = 0;
   if (node_type == ngran_gNB) {
-    nb_id = rrc->nr_cellid;
+    nb_id = rrc->node_id;
   } else if (node_type == ngran_gNB_DU) {
-    AssertFatal(rrc->node_id != 0, "cannot handle node ID 0, please change gNB_ID\n");
-    cu_du_id = rrc->node_id;
-    nb_id = rrc->nr_cellid;
+    const gNB_MAC_INST* mac = RC.nrmac[0];
+    AssertFatal(mac != NULL, "MAC not initialized\n");
+    cu_du_id = mac->f1_config.gnb_id;
+    nb_id = mac->f1_config.setup_req->gNB_DU_id;
   } else if (node_type == ngran_gNB_CU) {
-    AssertFatal(rrc->node_id != 0, "cannot handle node ID 0, please change gNB_ID\n");
+    // agent buggy: the CU has no second ID, it is the CU-UP ID
+    // however, that is not a problem her for us, so put the same ID twice
+    nb_id = rrc->node_id;
     cu_du_id = rrc->node_id;
-    nb_id = rrc->nr_cellid;
   } else {
     LOG_E(NR_RRC, "not supported ran type detect\n");
   }
