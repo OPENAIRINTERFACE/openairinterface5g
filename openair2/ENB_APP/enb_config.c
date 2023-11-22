@@ -2944,7 +2944,6 @@ e2_agent_args_t RCconfig_E2agent(void)
   }
   return (e2_agent_args_t) {
     .ip = *e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr,
-    .port = *e2agent_params[E2AGENT_CONFIG_PORT_IDX].u16ptr,
     .sm_dir = *e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr,
   };
 }
