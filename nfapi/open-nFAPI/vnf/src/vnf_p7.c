@@ -25,7 +25,9 @@
 #include <errno.h>
 #include <stdio.h>
 #include <assert.h>
-
+#ifdef ENABLE_AERIAL
+#include "nfapi/oai_integration/aerial/fapi_nvIPC.h"
+#endif
 #include "vnf_p7.h"
 
 #ifdef NDEBUG

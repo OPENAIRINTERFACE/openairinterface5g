@@ -1285,7 +1285,7 @@ void *ru_thread( void *param ) {
 
   while (!oai_exit) {
     
-    if (NFAPI_MODE==NFAPI_MODE_VNF) {
+    if (NFAPI_MODE==NFAPI_MODE_VNF || NFAPI_MODE == NFAPI_MODE_AERIAL ) {
       // We should make a VNF main loop with proper tasks calls in case of VNF
       slot_start = timespec_add(slot_start,slot_duration);
       struct timespec curr_time;

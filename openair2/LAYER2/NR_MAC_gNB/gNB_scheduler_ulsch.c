@@ -625,11 +625,13 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
 
     // if not missed detection (10dB threshold for now)
     if (rssi>0) {
-      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
+      if (ul_cqi != 0xff) {
+        UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
+        UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10, UE_scheduling_control->pusch_snrx10, 30);
+      }
       if (timing_advance != 0xffff)
         UE_scheduling_control->ta_update = timing_advance;
       UE_scheduling_control->raw_rssi = rssi;
-      UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
 
       LOG_D(NR_MAC, "[UE %04x] PUSCH TPC %d and TA %d\n",UE->rnti,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
     }
@@ -670,7 +672,7 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
         if (UE_scheduling_control->sched_ul_bytes < 0)
           UE_scheduling_control->sched_ul_bytes = 0;
       }
-      if (ul_cqi <= 128) {
+      if (ul_cqi == 0xff || ul_cqi <= 128) {
         UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt++;
         UE->mac_stats.ulsch_DTX++;
       }
@@ -756,7 +758,10 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
 
         NR_UE_sched_ctrl_t *UE_scheduling_control = &UE_msg3_stage->UE_sched_ctrl;
 
-        UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10, ul_cqi, 30);
+        if (ul_cqi != 0xff) {
+          UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
+          UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10, UE_scheduling_control->pusch_snrx10, 30);
+        }
         if (timing_advance != 0xffff)
           UE_scheduling_control->ta_update = timing_advance;
         UE_scheduling_control->raw_rssi = rssi;
@@ -2245,11 +2250,15 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
     pusch_pdu->num_dmrs_cdm_grps_no_data = sched_pusch->dmrs_info.num_dmrs_cdm_grps_no_data;
 
     /* FAPI: DMRS */
+    pusch_pdu->num_dmrs_cdm_grps_no_data = sched_pusch->dmrs_info.num_dmrs_cdm_grps_no_data;
+    pusch_pdu->dmrs_ports = ((1<<sched_pusch->nrOfLayers) - 1);
     pusch_pdu->ul_dmrs_symb_pos = sched_pusch->dmrs_info.ul_dmrs_symb_pos;
     pusch_pdu->dmrs_config_type = sched_pusch->dmrs_info.dmrs_config_type;
+    pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
     const NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = get_DMRS_UplinkConfig(current_BWP->pusch_Config, &sched_pusch->tda_info);
     if (pusch_pdu->transform_precoding) { // transform precoding disabled
       long *scramblingid=NULL;
+      pusch_pdu->pusch_identity = *scc->physCellId;
       if (NR_DMRS_UplinkConfig && pusch_pdu->scid == 0)
         scramblingid = NR_DMRS_UplinkConfig->transformPrecodingDisabled->scramblingID0;
       else if (NR_DMRS_UplinkConfig)
@@ -2356,7 +2365,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu = &ul_dci_req->ul_dci_pdu_list[ul_dci_req->numPdus];
       memset(ul_dci_request_pdu, 0, sizeof(nfapi_nr_ul_dci_request_pdus_t));
       ul_dci_request_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
-      ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
+      ul_dci_request_pdu->PDUSize = (uint8_t)(4+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
       nr_configure_pdcch(pdcch_pdu, coreset, &sched_ctrl->sched_pdcch);

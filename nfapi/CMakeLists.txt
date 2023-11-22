@@ -1,0 +1,1 @@
+include(${OPENAIR_DIR}/nfapi/oai_integration/aerial/CMakeLists.txt)

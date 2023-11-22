@@ -27,6 +27,7 @@ static const char *const nfapi_str_mode[] = {
     "MONOLITHIC",
     "PNF",
     "VNF",
+    "AERIAL",
     "UE_STUB_PNF",
     "UE_STUB_OFFNET",
     "STANDALONE_PNF",
@@ -64,7 +65,7 @@ const char *nfapi_get_strmode(void) {
 }
 
 void nfapi_logmode() {
-  LOG_I(ENB_APP,"nfapi running mode: %s\n",nfapi_get_strmode());
+  LOG_I(ENB_APP,"nfapi (%d) running mode: %s\n",nfapi_params.nfapi_mode,nfapi_get_strmode());
 }
 
 nfapi_mode_t nfapi_getmode(void) {

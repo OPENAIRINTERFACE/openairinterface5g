@@ -426,6 +426,12 @@ static void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dl_req->nPDUs += 1;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
+  pdsch_pdu_rel15->precodingAndBeamforming.num_prgs=0;
+  pdsch_pdu_rel15->precodingAndBeamforming.prg_size=0;
+  pdsch_pdu_rel15->precodingAndBeamforming.dig_bf_interfaces=0;
+  pdsch_pdu_rel15->precodingAndBeamforming.prgs_list[0].pm_idx = 0;
+  pdsch_pdu_rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = 0;
+
   pdcch_pdu_rel15->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
 
   pdsch_pdu_rel15->pduBitmap = 0;

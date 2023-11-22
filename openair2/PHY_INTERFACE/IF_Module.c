@@ -26,7 +26,7 @@ void handle_rach(UL_IND_t *UL_info) {
   int i;
   int j = UL_info->subframe;
   AssertFatal(j < sizeof(UL_RCC_INFO.rach_ind) / sizeof(UL_RCC_INFO.rach_ind[0]), "j index out of range of index of rach_ind\n");
-  if (NFAPI_MODE == NFAPI_MODE_VNF)
+  if (NFAPI_MODE == NFAPI_MODE_VNF || NFAPI_MODE == NFAPI_MODE_AERIAL)
   {
     if (UL_RCC_INFO.rach_ind[j].rach_indication_body.number_of_preambles > 0)
     {
@@ -97,7 +97,7 @@ void handle_sr(UL_IND_t *UL_info) {
     if (UL_info->sr_ind.sr_indication_body.number_of_srs>0) {
       oai_nfapi_sr_indication(&UL_info->sr_ind);
     }
-  } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
+  } else if(NFAPI_MODE == NFAPI_MODE_VNF || NFAPI_MODE == NFAPI_MODE_AERIAL) {
     for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs > 0) {
         assert(UL_RCC_INFO.sr_ind[j].sr_indication_body.number_of_srs <= NFAPI_SR_IND_MAX_PDU);
@@ -140,7 +140,7 @@ void handle_cqi(UL_IND_t *UL_info) {
       oai_nfapi_cqi_indication(&UL_info->cqi_ind);
       UL_info->cqi_ind.cqi_indication_body.number_of_cqis=0;
     }
-  } else if (NFAPI_MODE == NFAPI_MODE_VNF) {
+  } else if (NFAPI_MODE == NFAPI_MODE_VNF || NFAPI_MODE == NFAPI_MODE_AERIAL) {
     for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis > 0) {
         assert(UL_RCC_INFO.cqi_ind[j].cqi_indication_body.number_of_cqis <= NFAPI_CQI_IND_MAX_PDU);
@@ -187,7 +187,7 @@ void handle_harq(UL_IND_t *UL_info) {
     }
 
     UL_info->harq_ind.harq_indication_body.number_of_harqs = 0;
-  } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
+  } else if(NFAPI_MODE == NFAPI_MODE_VNF || NFAPI_MODE == NFAPI_MODE_AERIAL) {
     for(uint8_t j = 0; j < NUM_NFAPI_SUBFRAME; j++) {
       if(UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs > 0) {
         assert(UL_RCC_INFO.harq_ind[j].harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
@@ -232,7 +232,7 @@ void handle_ulsch(UL_IND_t *UL_info) {
       oai_nfapi_rx_ind(&UL_info->rx_ind);
       UL_info->rx_ind.rx_indication_body.number_of_pdus = 0;
     }
-  } else if(NFAPI_MODE == NFAPI_MODE_VNF) {
+  } else if(NFAPI_MODE == NFAPI_MODE_VNF || NFAPI_MODE == NFAPI_MODE_AERIAL) {
     for(uint8_t k = 0; k < NUM_NFAPI_SUBFRAME; k++) {
       if((UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus>0) && (UL_RCC_INFO.crc_ind[k].crc_indication_body.number_of_crcs>0)) {
         assert(UL_RCC_INFO.rx_ind[k].rx_indication_body.number_of_pdus <= NFAPI_RX_IND_MAX_PDU);

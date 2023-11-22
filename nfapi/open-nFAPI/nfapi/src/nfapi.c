@@ -102,8 +102,13 @@ uint8_t push16(uint16_t in, uint8_t **out, uint8_t *end) {
   uint8_t *pOut = *out;
 
   if((end - pOut) >= 2) {
+#ifdef FAPI_BYTE_ORDERING_BIG_ENDIAN
+    pOut[1] = (in & 0xFF00) >> 8;
+    pOut[0] = (in & 0xFF);
+#else
     pOut[0] = (in & 0xFF00) >> 8;
     pOut[1] = (in & 0xFF);
+#endif
     (*out)+=2;
     return 2;
   } else {
@@ -117,8 +122,13 @@ uint8_t pushs16(int16_t in, uint8_t **out, uint8_t *end) {
   uint8_t *pOut = *out;
 
   if((end - pOut) >= 2) {
+#ifdef FAPI_BYTE_ORDERING_BIG_ENDIAN
+    pOut[1] = (in & 0xFF00) >> 8;
+    pOut[0] = (in & 0xFF);
+#else
     pOut[0] = (in & 0xFF00) >> 8;
     pOut[1] = (in & 0xFF);
+#endif
     (*out)+=2;
     return 2;
   } else {
@@ -132,10 +142,17 @@ uint8_t push32(uint32_t in, uint8_t **out, uint8_t *end) {
   uint8_t *pOut = *out;
 
   if((end - pOut) >= 4) {
+#ifdef FAPI_BYTE_ORDERING_BIG_ENDIAN
+    pOut[3] = (in & 0xFF000000) >> 24;
+    pOut[2] = (in & 0xFF0000) >> 16;
+    pOut[1] = (in & 0xFF00) >> 8;
+    pOut[0] = (in & 0xFF);
+#else
     pOut[0] = (in & 0xFF000000) >> 24;
     pOut[1] = (in & 0xFF0000) >> 16;
     pOut[2] = (in & 0xFF00) >> 8;
     pOut[3] = (in & 0xFF);
+#endif
     (*out)+=4;
     return 4;
   } else {
@@ -149,10 +166,17 @@ uint8_t pushs32(int32_t in, uint8_t **out, uint8_t *end) {
   uint8_t *pOut = *out;
 
   if((end - pOut) >= 4) {
+#ifdef FAPI_BYTE_ORDERING_BIG_ENDIAN
+    pOut[3] = (in & 0xFF000000) >> 24;
+    pOut[2] = (in & 0xFF0000) >> 16;
+    pOut[1] = (in & 0xFF00) >> 8;
+    pOut[0] = (in & 0xFF);
+#else
     pOut[0] = (in & 0xFF000000) >> 24;
     pOut[1] = (in & 0xFF0000) >> 16;
     pOut[2] = (in & 0xFF00) >> 8;
     pOut[3] = (in & 0xFF);
+#endif
     (*out)+=4;
     return 4;
   } else {
@@ -194,7 +218,11 @@ uint8_t pull16(uint8_t **in, uint16_t *out, uint8_t *end) {
   uint8_t *pIn = *in;
 
   if((end - pIn) >=2 ) {
+#ifdef FAPI_BYTE_ORDERING_BIG_ENDIAN
+    *out = ((pIn[1]) << 8) | pIn[0];
+#else
     *out = ((pIn[0]) << 8) | pIn[1];
+#endif
     (*in)+=2;
     return 2;
   } else {
@@ -208,7 +236,11 @@ uint8_t pulls16(uint8_t **in, int16_t *out, uint8_t *end) {
   uint8_t *pIn = *in;
 
   if((end - pIn) >=2 ) {
+#ifdef FAPI_BYTE_ORDERING_BIG_ENDIAN
+    *out = ((pIn[1]) << 8) | pIn[0];
+#else
     *out = ((pIn[0]) << 8) | pIn[1];
+#endif
     (*in)+=2;
     return 2;
   } else {
@@ -222,7 +254,11 @@ uint8_t pull32(uint8_t **in, uint32_t *out, uint8_t *end) {
   uint8_t *pIn = *in;
 
   if((end - pIn) >= 4) {
+#ifdef FAPI_BYTE_ORDERING_BIG_ENDIAN
+    *out = ((uint32_t)pIn[3] << 24) | (pIn[2] << 16) | (pIn[1] << 8) | pIn[0];
+#else
     *out = ((uint32_t)pIn[0] << 24) | (pIn[1] << 16) | (pIn[2] << 8) | pIn[3];
+#endif
     (*in) += 4;
     return 4;
   } else {
@@ -236,7 +272,11 @@ uint8_t pulls32(uint8_t **in, int32_t *out, uint8_t *end) {
   uint8_t *pIn = *in;
 
   if((end - pIn) >=4 ) {
+#ifdef FAPI_BYTE_ORDERING_BIG_ENDIAN
+    *out = (pIn[3] << 24) | (pIn[2] << 16) | (pIn[1] << 8) | pIn[0];
+#else
     *out = (pIn[0] << 24) | (pIn[1] << 16) | (pIn[2] << 8) | pIn[3];
+#endif
     (*in)+=4;
     return 4;
   } else {
@@ -839,7 +879,6 @@ int unpack_nr_tlv_list(unpack_tlv_t unpack_fns[],
       }
     }
   }
-
   return 1;
 }
 

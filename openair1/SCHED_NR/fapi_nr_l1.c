@@ -29,6 +29,9 @@
  * \note
  * \warning
  */
+#ifdef ENABLE_AERIAL
+#include "nfapi/oai_integration/aerial/fapi_vnf_p5.h"
+#endif
 #include "fapi_nr_l1.h"
 #include "common/ran_context.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
@@ -36,7 +39,6 @@
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "openair2/NR_PHY_INTERFACE/nr_sched_response.h"
-
 
 extern int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req);
 extern int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req);
@@ -237,19 +239,43 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
     }
   }
 
-  if (NFAPI_MODE == NFAPI_MODE_VNF) { //If VNF, oai_nfapi functions send respective p7 msgs to PNF for which nPDUs is greater than 0
+  if (NFAPI_MODE == NFAPI_MODE_VNF) { // If VNF, oai_nfapi functions send respective p7 msgs to PNF for which nPDUs > 0
 
-    if(number_ul_tti_pdu>0)
+    if (number_ul_tti_pdu > 0)
       oai_nfapi_ul_tti_req(UL_tti_req);
 
-    if (number_ul_dci_pdu>0)
+    if (number_ul_dci_pdu > 0)
       oai_nfapi_ul_dci_req(UL_dci_req);
 
-    if (number_tx_data_pdu>0)
+    if (number_dl_pdu > 0)
+      oai_nfapi_dl_tti_req(DL_req);
+
+    if (number_tx_data_pdu > 0)
       oai_nfapi_tx_data_req(TX_req);
 
-    if (number_dl_pdu>0)
-      oai_nfapi_dl_tti_req(DL_req);
+  } else if (NFAPI_MODE == NFAPI_MODE_AERIAL) {
+#ifdef ENABLE_AERIAL
+    bool send_slt_resp = false;
+    if (number_dl_pdu > 0) {
+      oai_fapi_dl_tti_req(DL_req);
+      send_slt_resp = true;
+    }
+    if (number_ul_tti_pdu > 0) {
+      oai_fapi_ul_tti_req(UL_tti_req);
+      send_slt_resp = true;
+    }
+    if (number_tx_data_pdu > 0) {
+      oai_fapi_tx_data_req(TX_req);
+      send_slt_resp = true;
+    }
+    if (number_ul_dci_pdu > 0) {
+      oai_fapi_ul_dci_req(UL_dci_req);
+      send_slt_resp = true;
+    }
+    if (send_slt_resp) {
+      oai_fapi_send_end_request(0,frame,slot);
+    }
+#endif
   }
 
   /* this thread is done with the sched_info, decrease the reference counter */
