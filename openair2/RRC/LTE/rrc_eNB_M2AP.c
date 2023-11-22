@@ -481,6 +481,14 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26_v1530:
 	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26a_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib27_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib28_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib29_v1610:
+        break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2:
 
         LOG_I(RRC, "Adding MBSFN subframe Configuration 1 to SIB2\n");
@@ -784,6 +792,14 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26_v1530:
 	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26a_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib27_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib28_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib29_v1610:
+        break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2: 
 
 	LOG_I(RRC,"Adding MBSFN subframe Configuration 1 to SIB2, %p %p\n",&typeandinfo->choice.sib2,*sib2);
@@ -1140,6 +1156,14 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26_v1530:
 	break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib26a_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib27_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib28_v1610:
+        break;
+      case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib29_v1610:
+        break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2: 
 
 	LOG_I(RRC,"Adding MBSFN subframe Configuration 1 to SIB2, %p %p\n",&typeandinfo->choice.sib2,*sib2);
