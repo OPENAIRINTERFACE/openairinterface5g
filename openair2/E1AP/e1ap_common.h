@@ -29,6 +29,7 @@
 
 typedef struct e1ap_upcp_inst_s {
   instance_t instance;
+  uint32_t gnb_id; // associated gNB's ID, unused in E1 but necessary for e.g. E2 agent
   E1_t type;
   enum sctp_state_e sockState;
   struct {
@@ -52,7 +53,7 @@ e1ap_upcp_inst_t *getCxtE1(instance_t instance);
 long E1AP_get_next_transaction_identifier();
 void E1AP_free_transaction_identifier(long id);
 
-void createE1inst(E1_t type, instance_t instance, e1ap_net_config_t *nc, e1ap_setup_req_t *req);
+void createE1inst(E1_t type, instance_t instance, uint64_t gnb_id, e1ap_net_config_t *nc, e1ap_setup_req_t *req);
 
 int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, struct E1AP_E1AP_PDU *pdu, uint16_t stream, const char *func);
 

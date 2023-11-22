@@ -402,9 +402,9 @@ static int create_gNB_tasks(ngran_node_t node_type, configmodule_interface_t *cf
 
     // If CU
     if (node_type == ngran_gNB_CU || node_type == ngran_gNB) {
-      MessageDef *msg = RCconfig_NR_CU_E1(false);
+      MessageDef *msg = RCconfig_NR_CU_E1(NULL);
       instance_t inst = 0;
-      createE1inst(UPtype, inst, &E1AP_REGISTER_REQ(msg).net_config, NULL);
+      createE1inst(UPtype, inst, E1AP_REGISTER_REQ(msg).gnb_id, &E1AP_REGISTER_REQ(msg).net_config, NULL);
       cuup_init_n3(inst);
       RC.nrrrc[gnb_id_start]->e1_inst = inst; // stupid instance !!!*/
 
