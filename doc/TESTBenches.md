@@ -91,7 +91,8 @@ Webhook ~documentation ~BUILD-ONLY ~4G-LTE ~5G-NR
 - [RAN-Interop-F1](https://jenkins-oai.eurecom.fr/job/RAN-Interop-F1/)
   ~5G-NR
   - ofqot (DU, 1x UE)
-  - F1 interoperability testing: sets up connection to Accelleran CU, UE connection and connectivity test
+  - F1 interoperability: set up connection between Accelleran CU and OAI DU and pass all traffic over F1
+  - 3rd-party gNB/CU interoperability: set up connection between Accelleran CU and OAI UE and test connectivity
 - [RAN-L2-Sim-Test-4G](https://jenkins-oai.eurecom.fr/job/RAN-L2-Sim-Test-4G/)
   ~4G-LTE
   - obelix (eNB, 1x UE, OAI EPC)
