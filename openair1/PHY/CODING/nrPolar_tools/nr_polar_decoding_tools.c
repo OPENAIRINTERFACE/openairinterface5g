@@ -45,20 +45,23 @@ static inline void updateBit(uint8_t listSize,
 			     uint8_t bit[xlen][ylen][zlen],
 			     uint8_t bitU[xlen][ylen])
 {
-	uint16_t offset = ( xlen/(pow(2,(ylen-col))) );
+  uint16_t offset = (xlen / (pow(2, (ylen - col))));
 
-	for (uint8_t i=0; i<listSize; i++) {
-		if (( (row) % (2*offset) ) >= offset ) {
-		  if (bitU[row][col-1]==0) updateBit(listSize, row, (col-1), xlen, ylen, zlen, bit, bitU);
-			bit[row][col][i] = bit[row][col-1][i];
-		} else {
-		  if (bitU[row][col-1]==0) updateBit(listSize, row, (col-1), xlen, ylen, zlen, bit, bitU);
-		  if (bitU[row+offset][col-1]==0) updateBit(listSize, (row+offset), (col-1), xlen, ylen, zlen, bit, bitU);
-			bit[row][col][i] = ( (bit[row][col-1][i]+bit[row+offset][col-1][i]) % 2);
-		}
-	}
+  for (uint8_t i = 0; i < listSize; i++) {
+    if (((row) % (2 * offset)) >= offset) {
+      if (bitU[row][col - 1] == 0)
+        updateBit(listSize, row, (col - 1), xlen, ylen, zlen, bit, bitU);
+      bit[row][col][i] = bit[row][col - 1][i];
+    } else {
+      if (bitU[row][col - 1] == 0)
+        updateBit(listSize, row, (col - 1), xlen, ylen, zlen, bit, bitU);
+      if (bitU[row + offset][col - 1] == 0)
+        updateBit(listSize, (row + offset), (col - 1), xlen, ylen, zlen, bit, bitU);
+      bit[row][col][i] = ((bit[row][col - 1][i] + bit[row + offset][col - 1][i]) % 2);
+    }
+  }
 
-	bitU[row][col]=1;
+  bitU[row][col] = 1;
 }
 
 static inline void computeLLR(uint16_t row,
@@ -75,35 +78,38 @@ static inline void computeLLR(uint16_t row,
   llr[row][col][i] = log((exp(a + b) + 1) / (exp(a) + exp(b))); //eq. (8a)
 }
 
-
 void updateLLR(uint8_t listSize,
-	       uint16_t row,
-	       uint16_t col,
-	        uint16_t xlen,
-	       uint8_t ylen,
-	       int zlen,
-	       double  llr[xlen][ylen][zlen],
-	       uint8_t llrU[xlen][ylen],
-	       uint8_t bit[xlen][ylen][zlen],
-	       uint8_t bitU[xlen][ylen]
-	       )
+               uint16_t row,
+               uint16_t col,
+               uint16_t xlen,
+               uint8_t ylen,
+               int zlen,
+               double llr[xlen][ylen][zlen],
+               uint8_t llrU[xlen][ylen],
+               uint8_t bit[xlen][ylen][zlen],
+               uint8_t bitU[xlen][ylen])
 {
-	uint16_t offset = (xlen/(pow(2,(ylen-col-1))));
-	for (uint8_t i=0; i<listSize; i++) {
-		if (( (row) % (2*offset) ) >= offset ) {
-		  if(bitU[row-offset][col]==0) updateBit(listSize, (row-offset), col, xlen, ylen, zlen, bit, bitU);
-		  if(llrU[row-offset][col+1]==0) updateLLR(listSize, (row-offset), (col+1), xlen, ylen, zlen, llr, llrU, bit, bitU );
-		  if(llrU[row][col+1]==0) updateLLR(listSize, row, (col+1), xlen, ylen, zlen, llr, llrU, bit, bitU);
-			llr[row][col][i] = (pow((-1),bit[row-offset][col][i])*llr[row-offset][col+1][i]) + llr[row][col+1][i];
-		} else {
-		  if(llrU[row][col+1]==0) updateLLR(listSize, row, (col+1), xlen, ylen, zlen, llr, llrU, bit, bitU );
-		  if(llrU[row+offset][col+1]==0) updateLLR(listSize, (row+offset), (col+1), xlen, ylen, zlen, llr, llrU, bit, bitU );
-		  computeLLR(row, col, i, offset, xlen, ylen, zlen, llr);
-		}
-	}
-	llrU[row][col]=1;
+  uint16_t offset = (xlen / (pow(2, (ylen - col - 1))));
+  for (uint8_t i = 0; i < listSize; i++) {
+    if ((row % (2 * offset)) >= offset) {
+      if (bitU[row - offset][col] == 0)
+        updateBit(listSize, (row - offset), col, xlen, ylen, zlen, bit, bitU);
+      if (llrU[row - offset][col + 1] == 0)
+        updateLLR(listSize, (row - offset), (col + 1), xlen, ylen, zlen, llr, llrU, bit, bitU);
+      if (llrU[row][col + 1] == 0)
+        updateLLR(listSize, row, (col + 1), xlen, ylen, zlen, llr, llrU, bit, bitU);
+      llr[row][col][i] = (pow((-1), bit[row - offset][col][i]) * llr[row - offset][col + 1][i]) + llr[row][col + 1][i];
+    } else {
+      if (llrU[row][col + 1] == 0)
+        updateLLR(listSize, row, (col + 1), xlen, ylen, zlen, llr, llrU, bit, bitU);
+      if (llrU[row + offset][col + 1] == 0)
+        updateLLR(listSize, (row + offset), (col + 1), xlen, ylen, zlen, llr, llrU, bit, bitU);
+      computeLLR(row, col, i, offset, xlen, ylen, zlen, llr);
+    }
+  }
+  llrU[row][col] = 1;
 
-	//	printf("LLR (a %f, b %f): llr[%d][%d] %f\n",32*a,32*b,col,row,32*llr[col][row]);
+  //	printf("LLR (a %f, b %f): llr[%d][%d] %f\n",32*a,32*b,col,row,32*llr[col][row]);
 }
 
 void updatePathMetric(double *pathMetric,
