@@ -364,7 +364,7 @@ void nr_get_prach_resources(module_id_t mod_id,
                             NR_PRACH_RESOURCES_t *prach_resources,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
 
-void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, NR_UE_HARQ_STATUS_t *current_harq, int ack_nack);
+void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, int pid, int ack_nack);
 void configure_initial_pucch(PUCCH_sched_t *pucch, int res_ind);
 
 void init_RA(module_id_t mod_id,

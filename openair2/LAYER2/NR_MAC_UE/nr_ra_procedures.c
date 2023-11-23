@@ -951,8 +951,9 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
   }
 }
 
-void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, NR_UE_HARQ_STATUS_t *current_harq, int ack_nack)
+void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, int pid, int ack_nack)
 {
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[pid];
   int sched_slot = current_harq->ul_slot;
   int sched_frame = current_harq->ul_frame;
   fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, sched_slot, 0);
@@ -970,6 +971,11 @@ void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, NR_UE_HARQ_STATUS_t *current_h
   pucch.n_harq = 1;
   current_harq->active = false;
   current_harq->ack_received = false;
+  if (get_softmodem_params()->emulate_l1) {
+    mac->nr_ue_emul_l1.harq[pid].active = true;
+    mac->nr_ue_emul_l1.harq[pid].active_dl_harq_sfn = sched_frame;
+    mac->nr_ue_emul_l1.harq[pid].active_dl_harq_slot = sched_slot;
+  }
   nr_ue_configure_pucch(mac,
                         sched_slot,
                         mac->ra.t_crnti,
