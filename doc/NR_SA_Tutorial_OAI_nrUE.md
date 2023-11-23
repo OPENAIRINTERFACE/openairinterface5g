@@ -207,3 +207,8 @@ sudo ethtool -G enp1s0f0 tx 4096 rx 4096
 
 ## 6.3 Uplink issues related with noise on the DC carriers
 - There is noise on the DC carriers on N300 and especially the X300 in UL. To avoid their use or shift them away from the center to use more UL spectrum, use the `--tune-offset <Hz>` command line switch, where `<Hz>` is ideally half the bandwidth, or possibly less.
+
+## 6.4 Timing-related Problems
+- Sometimes, the nrUE would keep repeating RA procedure because of Msg3 failure at the gNB. If it happens, add the `-A` option at the nrUE and/or gNB side, e.g., `-A 45`. This modifies the timing advance (in samples). Adjust +/-5 if the issue persists.
+- This can be necessary since certain USRPs have larger signal delays than others; it is therefore specific to the used USRP model.
+- The x310 and B210 are found to work with the default configuration; N310 and x410 can benefit from setting this timing advance.
