@@ -22,6 +22,7 @@
 | nokiabox      | 172.21.19.39    | _None_                | gNB (Nokia), 5GC   | _Nokia RF integrated_                                 |
 | avra          | 172.21.16.124   | CI-Avra-Usage         | gNB (n78)          | AW2S Jaguar (192.168.80.239)                          |
 | orion         | 172.21.16.134   | CI-Orion-Build-Sanity-Check-Deploy-Test, CI-Orion-DsTester-Deploy-Test | Build | |
+| bellatrix     | 172.21.16.104   | CI-Bellatrix-RAN-Docker | Static Code Analysis | --                                                    |
 
 Note: The available resources, and their current usage, is indicated here:
 - [Lockable resources of jenkins-oai](https://jenkins-oai.eurecom.fr/lockable-resources/):
@@ -88,9 +89,9 @@ information on how the images are built.
   - orion: Cross-compilation from Intel to ARM
   - base image from `Dockerfile.base.ubuntu20.cross-arm64`
   - build image from `Dockerfile.build.ubuntu20.cross-arm64` (no target images)
-- [RAN-cppcheck](https://jenkins-oai.eurecom.fr/job/RAN-cppcheck/1664/)
+- [RAN-cppcheck](https://jenkins-oai.eurecom.fr/job/RAN-cppcheck/)
   ~BUILD-ONLY ~4G-LTE ~5G-NR
-  - obelix
+  - bellatrix
   - performs static code analysis, currently not actively enforced
 - [RAN-RHEL8-Cluster-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Cluster-Image-Builder/)
   ~BUILD-ONLY ~4G-LTE ~5G-NR
