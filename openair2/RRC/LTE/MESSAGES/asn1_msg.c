@@ -511,7 +511,7 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
   (*sib1_MBMS)->cellAccessRelatedInfo_r14.cellIdentity_r14.bits_unused=4;
   (*sib1_MBMS)->freqBandIndicator_r14 = configuration->eutra_band[CC_id];
 
-  schedulingInfo->si_Periodicity_r14=LTE_SchedulingInfo__si_Periodicity_rf16;
+  schedulingInfo->si_Periodicity_r14=LTE_SI_Periodicity_r12_rf16;
   *sib_type = LTE_SIB_Type_MBMS_r14_sibType13_v920;
   asn1cSeqAdd(&schedulingInfo->sib_MappingInfo_r14.list, sib_type);
   asn1cSeqAdd(&(*sib1_MBMS)->schedulingInfoList_MBMS_r14.list, schedulingInfo);
@@ -549,7 +549,7 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
     memset((MBSFN_Area1)->ext1,0,sizeof(*(MBSFN_Area1)->ext1));
     MBSFN_Area1->ext1->subcarrierSpacingMBMS_r14 = CALLOC(1,sizeof(*( MBSFN_Area1->ext1)->subcarrierSpacingMBMS_r14));
     memset(MBSFN_Area1->ext1->subcarrierSpacingMBMS_r14,0,sizeof(*((MBSFN_Area1)->ext1)->subcarrierSpacingMBMS_r14));
-    *(MBSFN_Area1->ext1->subcarrierSpacingMBMS_r14) = LTE_MBSFN_AreaInfo_r9__ext1__subcarrierSpacingMBMS_r14_khz_1dot25;
+    *(MBSFN_Area1->ext1->subcarrierSpacingMBMS_r14) = LTE_MBSFN_AreaInfo_r9__ext1__subcarrierSpacingMBMS_r14_kHz1dot25;
     asn1cSeqAdd(&MBSFNArea_list->list,MBSFN_Area1);
   }
 
@@ -938,9 +938,9 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   //(*sib1)->p_Max = CALLOC(1, sizeof(P_Max_t));
   // *((*sib1)->p_Max) = 23;
   
-  schedulingInfo.si_Periodicity=LTE_SchedulingInfo__si_Periodicity_rf8;
+  schedulingInfo.si_Periodicity=LTE_SI_Periodicity_r12_rf8;
   if(configuration->eMBMS_M2_configured){
-       schedulingInfo2.si_Periodicity=LTE_SchedulingInfo__si_Periodicity_rf8;
+       schedulingInfo2.si_Periodicity=LTE_SI_Periodicity_r12_rf8;
   }
   // This is for SIB2/3
   sib_type=LTE_SIB_Type_sibType3;
