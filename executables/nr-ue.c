@@ -975,7 +975,7 @@ void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconf
         nr_rrc_mac_config_req_ue_logicalChannelBearer(0, &rlc_toadd_list, NULL);
 
         // free memory
-        free_nr_noS1_bearer_config(&rbconfig, &rlc_rbconfig);
+        free_nr_noS1_bearer_config(&rbconfig, NULL);
       }
     }
   }
