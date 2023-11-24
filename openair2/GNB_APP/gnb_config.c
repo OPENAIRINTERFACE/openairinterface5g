@@ -1175,6 +1175,9 @@ static f1ap_setup_req_t *RC_read_F1Setup(uint64_t id,
     sys_info->sib1_length = (enc_rval.encoded + 7) / 8;
   }
 
+  int num = read_version(TO_STRING(NR_RRC_VERSION), &req->rrc_ver[0], &req->rrc_ver[1], &req->rrc_ver[2]);
+  AssertFatal(num == 3, "could not read RRC version string %s\n", TO_STRING(NR_RRC_VERSION));
+
   return req;
 }
 

@@ -204,6 +204,22 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint3
     }
   }
 
+   /* Handle RRC Version */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version, true);
+  // Latest RRC Version: "This IE is not used in this release."
+  // BIT_STRING_to_uint8(&ie->value.choice.RRC_Version.latest_RRC_Version);
+  if (ie->value.choice.RRC_Version.iE_Extensions) {
+    F1AP_ProtocolExtensionContainer_10696P228_t *ext =
+        (F1AP_ProtocolExtensionContainer_10696P228_t *)ie->value.choice.RRC_Version.iE_Extensions;
+    if (ext->list.count > 0) {
+      F1AP_RRC_Version_ExtIEs_t *rrcext = ext->list.array[0];
+      OCTET_STRING_t *os = &rrcext->extensionValue.choice.OCTET_STRING_SIZE_3_;
+      DevAssert(os->size == 3);
+      for (int i = 0; i < 3; ++i)
+        req->rrc_ver[i] = os->buf[i];
+    }
+  }
   itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
   
   return 0;
@@ -299,6 +315,36 @@ int CU_send_F1_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_setup_resp_t *f1ap_set
       }
     }
   }
+
+  /* c5. RRC VERSION */
+  asn1cSequenceAdd(out->protocolIEs.list, F1AP_F1SetupResponseIEs_t, ie4);
+  ie4->id = F1AP_ProtocolIE_ID_id_GNB_CU_RRC_Version;
+  ie4->criticality = F1AP_Criticality_reject;
+  ie4->value.present = F1AP_F1SetupResponseIEs__value_PR_RRC_Version;
+  // RRC Version: "This IE is not used in this release."
+  // we put one bit for each byte in rrc_ver that is != 0
+  uint8_t bits = 0;
+  for (int i = 0; i < 3; ++i)
+    bits |= (f1ap_setup_resp->rrc_ver[i] != 0) << i;
+  BIT_STRING_t *bs = &ie4->value.choice.RRC_Version.latest_RRC_Version;
+  bs->buf = calloc(1, sizeof(char));
+  AssertFatal(bs->buf != NULL, "out of memory\n");
+  bs->buf[0] = bits;
+  bs->size = 1;
+  bs->bits_unused = 5;
+
+  F1AP_ProtocolExtensionContainer_10696P228_t *p = (F1AP_ProtocolExtensionContainer_10696P228_t*)calloc(1, sizeof(F1AP_ProtocolExtensionContainer_10696P228_t));    
+  asn1cSequenceAdd(p->list, F1AP_RRC_Version_ExtIEs_t, rrcv_ext);
+  rrcv_ext->id = F1AP_ProtocolIE_ID_id_latest_RRC_Version_Enhanced;
+  rrcv_ext->criticality = F1AP_Criticality_ignore;
+  rrcv_ext->extensionValue.present = F1AP_RRC_Version_ExtIEs__extensionValue_PR_OCTET_STRING_SIZE_3_;
+  OCTET_STRING_t *os = &rrcv_ext->extensionValue.choice.OCTET_STRING_SIZE_3_;
+  os->size = 3;
+  os->buf = malloc(3 * sizeof(*os->buf));
+  AssertFatal(os->buf != NULL, "out of memory\n");
+  for (int i = 0; i < 3; ++i)
+    os->buf[i] = f1ap_setup_resp->rrc_ver[i];
+  ie4->value.choice.RRC_Version.iE_Extensions = (struct F1AP_ProtocolExtensionContainer *)p;
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {

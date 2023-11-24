@@ -152,7 +152,10 @@ typedef struct f1ap_setup_req_s {
   // F1_Setup_Req payload
   uint64_t gNB_DU_id;
   char *gNB_DU_name;
-  
+
+  /// rrc version
+  uint8_t rrc_ver[3];
+
   /// number of DU cells available
   uint16_t num_cells_available; //0< num_cells_available <= 512;
   struct {
@@ -188,6 +191,10 @@ typedef struct f1ap_setup_resp_s {
   /// number of DU cells to activate
   uint16_t num_cells_to_activate; //0< num_cells_to_activate <= 512;
   served_cells_to_activate_t cells_to_activate[F1AP_MAX_NB_CELLS];
+
+  /// rrc version
+  uint8_t rrc_ver[3];
+
 } f1ap_setup_resp_t;
 
 typedef struct f1ap_gnb_cu_configuration_update_s {
