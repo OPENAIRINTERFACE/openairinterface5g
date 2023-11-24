@@ -88,7 +88,6 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     entity->stats.rxpdu_dd_pkts++;
     entity->stats.rxpdu_dd_bytes += size;
 
-
     return;
   }
 
@@ -120,7 +119,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
       entity->stats.rxpdu_dd_pkts++;
       entity->stats.rxpdu_dd_bytes += size;
 
-
+      return;
     }
   }
 
@@ -129,7 +128,6 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     LOG_W(PDCP, "discard NR PDU rcvd_count=%d, entity->rx_deliv %d,sdu_in_list %d\n", rcvd_count,entity->rx_deliv,nr_pdcp_sdu_in_list(entity->rx_list,rcvd_count));
     entity->stats.rxpdu_dd_pkts++;
     entity->stats.rxpdu_dd_bytes += size;
-
 
     return;
   }
@@ -157,7 +155,6 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
       entity->rx_size -= cur->size;
       entity->stats.txsdu_pkts++;
       entity->stats.txsdu_bytes += cur->size;
-
 
       nr_pdcp_free_sdu(cur);
       count++;
@@ -224,7 +221,7 @@ static int nr_pdcp_entity_process_sdu(nr_pdcp_entity_t *entity,
 
   memcpy(buf + header_size, buffer, size);
 
-  if (entity->has_integrity){
+  if (entity->has_integrity) {
     uint8_t integrity[4] = {0};
     entity->integrity(entity->integrity_context,
                       integrity,
@@ -232,13 +229,12 @@ static int nr_pdcp_entity_process_sdu(nr_pdcp_entity_t *entity,
                       entity->rb_id, count, entity->is_gnb ? 1 : 0);
 
     memcpy((unsigned char *)buf + header_size + size, integrity, 4);
+  } else if (integrity_size == 4) {
+    // set MAC-I to 0 for SRBs with integrity not active
+    memset(buf + header_size + size, 0, 4);
   }
 
-  // set MAC-I to 0 for SRBs with integrity not active
-  else if (integrity_size == 4)
-    memset(buf + header_size + size, 0, 4);
-
-  if (entity->has_ciphering && (entity->is_gnb || entity->security_mode_completed)){
+  if (entity->has_ciphering && (entity->is_gnb || entity->security_mode_completed)) {
     entity->cipher(entity->security_context,
                    (unsigned char *)buf + header_size, size + integrity_size,
                    entity->rb_id, count, entity->is_gnb ? 1 : 0);
@@ -339,6 +335,8 @@ static void check_t_reordering(nr_pdcp_entity_t *entity)
                         cur->buffer, cur->size);
     entity->rx_list = cur->next;
     entity->rx_size -= cur->size;
+    entity->stats.txsdu_pkts++;
+    entity->stats.txsdu_bytes += cur->size;
     nr_pdcp_free_sdu(cur);
   }
 
@@ -350,6 +348,8 @@ static void check_t_reordering(nr_pdcp_entity_t *entity)
                         cur->buffer, cur->size);
     entity->rx_list = cur->next;
     entity->rx_size -= cur->size;
+    entity->stats.txsdu_pkts++;
+    entity->stats.txsdu_bytes += cur->size;
     nr_pdcp_free_sdu(cur);
     count++;
   }
@@ -362,7 +362,7 @@ static void check_t_reordering(nr_pdcp_entity_t *entity)
   }
 }
 
-void nr_pdcp_entity_set_time(struct nr_pdcp_entity_t *entity, uint64_t now)
+static void nr_pdcp_entity_set_time(struct nr_pdcp_entity_t *entity, uint64_t now)
 {
   entity->t_current = now;
 
@@ -384,7 +384,7 @@ static void deliver_all_sdus(nr_pdcp_entity_t *entity)
   }
 }
 
-void nr_pdcp_entity_suspend(nr_pdcp_entity_t *entity)
+static void nr_pdcp_entity_suspend(nr_pdcp_entity_t *entity)
 {
   entity->tx_next = 0;
   if (entity->t_reordering_start != 0) {
@@ -395,19 +395,71 @@ void nr_pdcp_entity_suspend(nr_pdcp_entity_t *entity)
   entity->rx_deliv = 0;
 }
 
-void nr_pdcp_entity_release(nr_pdcp_entity_t *entity)
-{
-  deliver_all_sdus(entity);
-}
-
-void nr_pdcp_entity_delete(nr_pdcp_entity_t *entity)
+static void free_rx_list(nr_pdcp_entity_t *entity)
 {
   nr_pdcp_sdu_t *cur = entity->rx_list;
   while (cur != NULL) {
     nr_pdcp_sdu_t *next = cur->next;
+    entity->stats.rxpdu_dd_pkts++;
+    entity->stats.rxpdu_dd_bytes += cur->size;
     nr_pdcp_free_sdu(cur);
     cur = next;
   }
+  entity->rx_list = NULL;
+  entity->rx_size = 0;
+}
+
+static void nr_pdcp_entity_reestablish_drb_am(nr_pdcp_entity_t *entity)
+{
+  /* transmitting entity procedures */
+  /* todo: deal with ciphering/integrity algos and keys */
+
+  /* receiving entity procedures */
+  /* todo: deal with ciphering/integrity algos and keys */
+}
+
+static void nr_pdcp_entity_reestablish_drb_um(nr_pdcp_entity_t *entity)
+{
+  /* transmitting entity procedures */
+  entity->tx_next = 0;
+  /* todo: deal with ciphering/integrity algos and keys */
+
+  /* receiving entity procedures */
+  /* deliver all SDUs if t_reordering is running */
+  if (entity->t_reordering_start != 0)
+    deliver_all_sdus(entity);
+  /* stop t_reordering */
+  entity->t_reordering_start = 0;
+  /* set rx_next and rx_deliv to the initial value */
+  entity->rx_next = 0;
+  entity->rx_deliv = 0;
+  /* todo: deal with ciphering/integrity algos and keys */
+}
+
+static void nr_pdcp_entity_reestablish_srb(nr_pdcp_entity_t *entity)
+{
+  /* transmitting entity procedures */
+  entity->tx_next = 0;
+  /* todo: deal with ciphering/integrity algos and keys */
+
+  /* receiving entity procedures */
+  free_rx_list(entity);
+  /* stop t_reordering */
+  entity->t_reordering_start = 0;
+  /* set rx_next and rx_deliv to the initial value */
+  entity->rx_next = 0;
+  entity->rx_deliv = 0;
+  /* todo: deal with ciphering/integrity algos and keys */
+}
+
+static void nr_pdcp_entity_release(nr_pdcp_entity_t *entity)
+{
+  deliver_all_sdus(entity);
+}
+
+static void nr_pdcp_entity_delete(nr_pdcp_entity_t *entity)
+{
+  free_rx_list(entity);
   if (entity->free_security != NULL)
     entity->free_security(entity->security_context);
   if (entity->free_integrity != NULL)
@@ -461,6 +513,18 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
   ret->delete_entity = nr_pdcp_entity_delete;
   ret->release_entity = nr_pdcp_entity_release;
   ret->suspend_entity = nr_pdcp_entity_suspend;
+
+  switch (type) {
+    case NR_PDCP_DRB_AM:
+      ret->reestablish_entity = nr_pdcp_entity_reestablish_drb_am;
+      break;
+    case NR_PDCP_DRB_UM:
+      ret->reestablish_entity = nr_pdcp_entity_reestablish_drb_um;
+      break;
+    case NR_PDCP_SRB:
+      ret->reestablish_entity = nr_pdcp_entity_reestablish_srb;
+      break;
+  }
   
   ret->get_stats = nr_pdcp_entity_get_stats;
   ret->deliver_sdu = deliver_sdu;
