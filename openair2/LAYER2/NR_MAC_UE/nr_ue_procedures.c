@@ -1262,7 +1262,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
                      int slot)
 {
   NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[harq_id];
-
   current_harq->active = true;
   current_harq->ack_received = false;
   current_harq->pucch_resource_indicator = pucch_id;
@@ -2172,6 +2171,19 @@ void multiplex_pucch_resource(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch, int n
   }
 }
 
+void configure_initial_pucch(PUCCH_sched_t *pucch, int res_ind)
+{
+  /* see TS 38.213 9.2.1  PUCCH Resource Sets */
+  int delta_PRI = res_ind;
+  int n_CCE_0 = pucch->n_CCE;
+  int N_CCE_0 = pucch->N_CCE;
+  if (N_CCE_0 == 0)
+    AssertFatal(1 == 0, "PUCCH No compatible pucch format found\n");
+  int r_PUCCH = ((2 * n_CCE_0) / N_CCE_0) + (2 * delta_PRI);
+  pucch->initial_pucch_id = r_PUCCH;
+  pucch->pucch_resource = NULL;
+}
+
 /*******************************************************************
 *
 * NAME :         get_downlink_ack
@@ -2356,18 +2368,10 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
   }
 
   NR_PUCCH_Config_t *pucch_Config = current_UL_BWP->pucch_Config;
-  if (mac->state == UE_WAIT_TX_ACK_MSG4 || !pucch_Config || !pucch_Config->resourceSetToAddModList
-      || pucch_Config->resourceSetToAddModList->list.array[0] == NULL) {
-    /* see TS 38.213 9.2.1  PUCCH Resource Sets */
-    int delta_PRI = res_ind;
-    int n_CCE_0 = pucch->n_CCE;
-    int N_CCE_0 = pucch->N_CCE;
-    if (N_CCE_0 == 0)
-      AssertFatal(1 == 0, "PUCCH No compatible pucch format found\n");
-    int r_PUCCH = ((2 * n_CCE_0) / N_CCE_0) + (2 * delta_PRI);
-    pucch->initial_pucch_id = r_PUCCH;
-    pucch->pucch_resource = NULL;
-  } else {
+  if (!pucch_Config || !pucch_Config->resourceSetToAddModList
+      || pucch_Config->resourceSetToAddModList->list.array[0] == NULL)
+    configure_initial_pucch(pucch, res_ind);
+  else {
     int resource_set_id = find_pucch_resource_set(mac, O_ACK);
     int n_list = pucch_Config->resourceSetToAddModList->list.count;
     AssertFatal(resource_set_id < n_list, "Invalid PUCCH resource set id %d\n", resource_set_id);
@@ -2381,7 +2385,7 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
     pucch->pucch_resource = acknack_resource;
     LOG_D(MAC, "frame %d slot %d pucch acknack payload %d\n", frame, slot, o_ACK);
   }
-  reverse_n_bits(&o_ACK,number_harq_feedback);
+  reverse_n_bits(&o_ACK, number_harq_feedback);
   pucch->ack_payload = o_ACK;
   pucch->n_harq = number_harq_feedback;
 
@@ -2833,7 +2837,8 @@ void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, int pdu_id)
 {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 
-  LOG_D(MAC, "In %s [%d.%d] Handling DLSCH PDU...\n", __FUNCTION__, dl_info->frame, dl_info->slot);
+  LOG_D(MAC, "In [%d.%d] Handling DLSCH PDU type %d\n",
+        dl_info->frame, dl_info->slot, dl_info->rx_ind->rx_indication_body[pdu_id].pdu_type);
 
   // Processing MAC PDU
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs

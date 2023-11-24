@@ -1103,15 +1103,20 @@ int8_t handle_csirs_measurements(module_id_t module_id, frame_t frame, int slot,
   return nr_ue_process_csirs_measurements(module_id, frame, slot, csirs_measurements);
 }
 
-void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nack) {
-
+void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nack)
+{
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[harq_pid];
 
   if (current_harq->active) {
-    current_harq->ack = ack_nack;
-    current_harq->ack_received = true;
-    LOG_T(PHY,"Updating harq_status for harq_id %d,ack/nak %d\n",harq_pid,current_harq->ack);
+    LOG_D(PHY,"Updating harq_status for harq_id %d, ack/nak %d\n", harq_pid, current_harq->ack);
+    // we can prepare feedback for MSG4 in advance
+    if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
+      prepare_msg4_feedback(mac, harq_pid, ack_nack);
+    else {
+      current_harq->ack = ack_nack;
+      current_harq->ack_received = true;
+    }
   }
   else {
     //shouldn't get here

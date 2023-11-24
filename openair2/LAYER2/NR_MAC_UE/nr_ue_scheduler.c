@@ -60,8 +60,8 @@
 static prach_association_pattern_t prach_assoc_pattern;
 static void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
-void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type){
-
+void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type)
+{
   AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
               "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
   // clear ul_config for new frame/slot
@@ -91,8 +91,8 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              int cc_id,
                              frame_t frame,
                              int slot,
-                             void *phy_data){
-
+                             void *phy_data)
+{
   scheduled_response->dl_config  = dl_config;
   scheduled_response->ul_config  = ul_config;
   scheduled_response->tx_request = tx_request;
@@ -2137,8 +2137,6 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, vo
       fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, phy_data);
       if (mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
-      if (mac->state == UE_WAIT_TX_ACK_MSG4)
-        mac->state = UE_CONNECTED;
     }
   }
 }
