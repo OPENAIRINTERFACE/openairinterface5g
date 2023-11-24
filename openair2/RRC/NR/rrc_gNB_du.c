@@ -168,7 +168,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
       .nrpci = cell_info->nr_pci,
       .num_SI = 0,
   };
-  f1ap_setup_resp_t resp = {.num_cells_to_activate = 1, .cells_to_activate[0] = cell};
+  f1ap_setup_resp_t resp = {.transaction_id = req->transaction_id, .num_cells_to_activate = 1, .cells_to_activate[0] = cell};
   if (rrc->node_name != NULL)
     resp.gNB_CU_name = strdup(rrc->node_name);
   rrc->mac_rrc.f1_setup_response(assoc_id, &resp);

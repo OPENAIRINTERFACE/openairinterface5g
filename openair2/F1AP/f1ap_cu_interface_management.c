@@ -89,6 +89,12 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint3
   MessageDef *message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
   message_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_setup_req_t *req = &F1AP_SETUP_REQ(message_p);
+
+  /* Transaction ID*/
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container, F1AP_ProtocolIE_ID_id_TransactionID, true);
+  req->transaction_id = ie->value.choice.TransactionID;
+  LOG_D(F1AP, "req->transaction_id %lu \n", req->transaction_id);
+
   /* gNB_DU_id */
   // this function exits if the ie is mandatory
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
@@ -224,7 +230,7 @@ int CU_send_F1_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_setup_resp_t *f1ap_set
   ie1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie1->criticality               = F1AP_Criticality_reject;
   ie1->value.present             = F1AP_F1SetupResponseIEs__value_PR_TransactionID;
-  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
+  ie1->value.choice.TransactionID = f1ap_setup_resp->transaction_id;
 
   /* optional */
   /* c2. GNB_CU_Name */

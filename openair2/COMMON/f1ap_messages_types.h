@@ -146,6 +146,8 @@ typedef struct f1ap_gnb_du_system_info_t {
 } f1ap_gnb_du_system_info_t;
 
 typedef struct f1ap_setup_req_s {
+  /// ulong transaction id
+  uint64_t transaction_id;
 
   // F1_Setup_Req payload
   uint64_t gNB_DU_id;
@@ -179,6 +181,8 @@ typedef struct served_cells_to_activate_s {
 } served_cells_to_activate_t;
 
 typedef struct f1ap_setup_resp_s {
+  /// ulong transaction id
+  uint64_t transaction_id;
   /// string holding gNB_CU_name
   char     *gNB_CU_name;
   /// number of DU cells to activate
