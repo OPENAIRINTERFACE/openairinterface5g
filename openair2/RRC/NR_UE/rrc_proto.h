@@ -56,14 +56,21 @@ extern queue_t nr_ul_tti_req_queue;
 //  main_rrc.c
 //
 /**\brief Layer 3 initialization*/
-NR_UE_RRC_INST_t *nr_l3_init_ue(char *, char *, char *);
+NR_UE_RRC_INST_t *nr_l3_init_ue(char *);
 
 //
 //  UE_rrc.c
 //
 
 /**\brief Initial the top level RRC structure instance*/
-NR_UE_RRC_INST_t *openair_rrc_top_init_ue_nr(char *, char *, char *);
+NR_UE_RRC_INST_t *openair_rrc_top_init_ue_nr(char *);
+void init_nsa_message (NR_UE_RRC_INST_t *rrc, char* reconfig_file, char* rbconfig_file);
+
+void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, void *message, int msg_len);
+
+void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB,
+                                    instance_t instance,
+                                    NR_CellGroupConfig_t *cellGroupConfig);
 
 /**\brief interface between MAC and RRC thru SRB0 (RLC TM/no PDCP)
    \param module_id  module id

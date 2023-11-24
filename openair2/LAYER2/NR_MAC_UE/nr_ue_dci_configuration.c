@@ -186,15 +186,38 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
       dci_pdu_rel15_t temp_pdu;
       if(dci_format == NR_DL_DCI_FORMAT_1_0)
         alt_size =
-            nr_dci_size(current_DL_BWP, current_UL_BWP, mac->cg, &temp_pdu, NR_UL_DCI_FORMAT_0_0, rnti_type, coreset, dl_bwp_id, ss->searchSpaceType->present, mac->type0_PDCCH_CSS_config.num_rbs, 0);
+            nr_dci_size(current_DL_BWP,
+                        current_UL_BWP,
+                        mac->crossCarrierSchedulingConfig,
+                        mac->pdsch_HARQ_ACK_Codebook,
+                        &temp_pdu,
+                        NR_UL_DCI_FORMAT_0_0,
+                        rnti_type,
+                        coreset,
+                        dl_bwp_id,
+                        ss->searchSpaceType->present,
+                        mac->type0_PDCCH_CSS_config.num_rbs,
+                        0);
       if(dci_format == NR_UL_DCI_FORMAT_0_0)
         alt_size =
-            nr_dci_size(current_DL_BWP, current_UL_BWP, mac->cg, &temp_pdu, NR_DL_DCI_FORMAT_1_0, rnti_type, coreset, dl_bwp_id, ss->searchSpaceType->present, mac->type0_PDCCH_CSS_config.num_rbs, 0);
+            nr_dci_size(current_DL_BWP,
+                        current_UL_BWP,
+                        mac->crossCarrierSchedulingConfig,
+                        mac->pdsch_HARQ_ACK_Codebook,
+                        &temp_pdu,
+                        NR_DL_DCI_FORMAT_1_0,
+                        rnti_type,
+                        coreset,
+                        dl_bwp_id,
+                        ss->searchSpaceType->present,
+                        mac->type0_PDCCH_CSS_config.num_rbs,
+                        0);
     }
 
     rel15->dci_length_options[i] = nr_dci_size(current_DL_BWP,
                                                current_UL_BWP,
-                                               mac->cg,
+                                               mac->crossCarrierSchedulingConfig,
+                                               mac->pdsch_HARQ_ACK_Codebook,
                                                &mac->def_dci_pdu_rel15[dl_config->slot][dci_format],
                                                dci_format,
                                                rnti_type,

@@ -169,6 +169,9 @@ void nr_ue_init_mac(module_id_t module_idP)
   mac->phy_config_request_sent = false;
   mac->state = UE_NOT_SYNC;
   mac->si_window_start = -1;
+  mac->servCellIndex = 0;
+  memset(&mac->current_DL_BWP, 0, sizeof(mac->current_DL_BWP));
+  memset(&mac->current_UL_BWP, 0, sizeof(mac->current_UL_BWP));
 }
 
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
@@ -735,11 +738,9 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
     dlsch_pdu->TBS = current_harq->TBS;
   }
 
-  int bw_tbslbrm;
-  if (current_DL_BWP->initial_BWPSize > 0)
-    bw_tbslbrm = get_dlbw_tbslbrm(current_DL_BWP->initial_BWPSize, mac->cg);
-  else
-    bw_tbslbrm = dlsch_pdu->BWPSize;
+  int bw_tbslbrm = current_DL_BWP->initial_BWPSize > 0 ?
+                   current_DL_BWP->bw_tbslbrm :
+                   dlsch_pdu->BWPSize;
   dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, 1);
 
   /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -1164,8 +1165,7 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   long *maxMIMO_Layers = current_DL_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
   AssertFatal(maxMIMO_Layers != NULL, "Option with max MIMO layers not configured is not supported\n");
   int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
-  int bw_tbslbrm = get_dlbw_tbslbrm(current_DL_BWP->initial_BWPSize, mac->cg);
-  dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, nl_tbslbrm);
+  dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, current_DL_BWP->bw_tbslbrm, nl_tbslbrm);
   /*PTRS configuration */
   dlsch_pdu->pduBitmap = 0;
   if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
@@ -1363,7 +1363,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
     NR_PUCCH_Resource_t *pucchres = pucch->pucch_resource;
 
-    if (current_UL_BWP->harq_ACK_SpatialBundlingPUCCH != NULL || *current_DL_BWP->pdsch_HARQ_ACK_Codebook != 1) {
+    if (mac->harq_ACK_SpatialBundlingPUCCH ||
+        mac->pdsch_HARQ_ACK_Codebook != NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) {
       LOG_E(MAC,"PUCCH Unsupported cell group configuration\n");
       return;
     } else if (current_DL_BWP && current_DL_BWP->pdsch_servingcellconfig && current_DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
@@ -2883,6 +2884,11 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                           current_DL_BWP->initial_BWPSize);
   else
     N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
+
+  if (N_RB == 0) {
+    LOG_E(MAC, "DCI configuration error! N_RB = 0\n");
+    return 1;
+  }
 
   switch(dci_format) {
 

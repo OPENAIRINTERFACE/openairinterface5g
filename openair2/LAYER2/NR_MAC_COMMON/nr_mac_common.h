@@ -95,7 +95,8 @@ NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda
 
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
-                     const NR_CellGroupConfig_t *cg,
+                     const NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig,
+                     long pdsch_HARQ_ACK_Codebook,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
@@ -196,10 +197,10 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset);
 
 int get_dlbw_tbslbrm(int scc_bwpsize,
-                     NR_CellGroupConfig_t *cg);
+                     const NR_ServingCellConfig_t *servingCellConfig);
 
 int get_ulbw_tbslbrm(int scc_bwpsize,
-                     NR_CellGroupConfig_t *cg);
+                     const NR_ServingCellConfig_t *servingCellConfig);
 
 uint32_t nr_compute_tbslbrm(uint16_t table,
 			    uint16_t nb_rb,

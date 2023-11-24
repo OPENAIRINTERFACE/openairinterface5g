@@ -1086,10 +1086,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     long maxMIMO_Layers = current_BWP->pdsch_servingcellconfig ? *current_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers : 1;
     const int nl_tbslbrm = min(maxMIMO_Layers, 4);
     // Maximum number of PRBs across all configured DL BWPs
-    int scc_bwpsize = current_BWP->initial_BWPSize;
-    int bw_tbslbrm = get_dlbw_tbslbrm(scc_bwpsize, cg);
     pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcsTableIdx,
-                                                                         bw_tbslbrm,
+                                                                         current_BWP->bw_tbslbrm,
                                                                          nl_tbslbrm);
     pdsch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
 
@@ -1200,6 +1198,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        bwp_id,
                        sched_ctrl->search_space,
                        sched_ctrl->coreset,
+                       UE->pdsch_HARQ_ACK_Codebook,
                        gNB_mac->cset0_bwp_size);
 
     LOG_D(NR_MAC,

@@ -1138,9 +1138,10 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int bwp_id,
                         NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
+                        long pdsch_HARQ_ACK_Codebook,
                         uint16_t cset0_bwp_size)
 {
-
+  NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig = NULL; // TODO configure
   uint8_t fsize = 0, pos = 0;
   uint64_t *dci_pdu = (uint64_t *)pdcch_dci_pdu->Payload;
   *dci_pdu = 0;
@@ -1158,16 +1159,49 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     // computing alternative size for padding
     dci_pdu_rel15_t temp_pdu;
     if(dci_format == NR_DL_DCI_FORMAT_1_0)
-      alt_size = nr_dci_size(current_DL_BWP, current_UL_BWP, CellGroup, &temp_pdu, NR_UL_DCI_FORMAT_0_0, rnti_type, coreset, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
+      alt_size = nr_dci_size(current_DL_BWP,
+                             current_UL_BWP,
+                             crossCarrierSchedulingConfig,
+                             pdsch_HARQ_ACK_Codebook,
+                             &temp_pdu,
+                             NR_UL_DCI_FORMAT_0_0,
+                             rnti_type,
+                             coreset,
+                             bwp_id,
+                             ss->searchSpaceType->present,
+                             cset0_bwp_size,
+                             0);
 
     if(dci_format == NR_UL_DCI_FORMAT_0_0)
-      alt_size = nr_dci_size(current_DL_BWP, current_UL_BWP, CellGroup, &temp_pdu, NR_DL_DCI_FORMAT_1_0, rnti_type, coreset, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
+      alt_size = nr_dci_size(current_DL_BWP,
+                             current_UL_BWP,
+                             crossCarrierSchedulingConfig,
+                             pdsch_HARQ_ACK_Codebook,
+                             &temp_pdu,
+                             NR_DL_DCI_FORMAT_1_0,
+                             rnti_type,
+                             coreset,
+                             bwp_id,
+                             ss->searchSpaceType->present,
+                             cset0_bwp_size,
+                             0);
 
   }
   else
     N_RB = cset0_bwp_size;
 
-  int dci_size = nr_dci_size(current_DL_BWP, current_UL_BWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, coreset, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, alt_size);
+  int dci_size = nr_dci_size(current_DL_BWP,
+                             current_UL_BWP,
+                             crossCarrierSchedulingConfig,
+                             pdsch_HARQ_ACK_Codebook,
+                             dci_pdu_rel15,
+                             dci_format,
+                             rnti_type,
+                             coreset,
+                             bwp_id,
+                             ss->searchSpaceType->present,
+                             cset0_bwp_size,
+                             alt_size);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
@@ -2024,14 +2058,13 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
   int target_ss;
 
-  if (CellGroup && CellGroup->physicalCellGroupConfig)
-    DL_BWP->pdsch_HARQ_ACK_Codebook = &CellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook;
-
+  NR_ServingCellConfig_t *servingCellConfig = NULL;
   if (CellGroup &&
       CellGroup->spCellConfig &&
       CellGroup->spCellConfig->spCellConfigDedicated) {
 
-    const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
+    servingCellConfig  = CellGroup->spCellConfig->spCellConfigDedicated;
+    UL_BWP->supplementaryUplink = servingCellConfig->supplementaryUplink;
     DL_BWP->pdsch_servingcellconfig = servingCellConfig->pdsch_ServingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
     UL_BWP->pusch_servingcellconfig = servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->pusch_ServingCellConfig ?
                                       servingCellConfig->uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL;
@@ -2144,6 +2177,9 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   UL_BWP->initial_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
+  DL_BWP->bw_tbslbrm = get_dlbw_tbslbrm(DL_BWP->initial_BWPSize, servingCellConfig);
+  UL_BWP->bw_tbslbrm = get_ulbw_tbslbrm(UL_BWP->initial_BWPSize, servingCellConfig);
+
   if (UL_BWP->bwp_id > 0) {
     UL_BWP->pucch_ConfigCommon = ul_bwp->bwp_Common->pucch_ConfigCommon ? ul_bwp->bwp_Common->pucch_ConfigCommon->choice.setup : NULL;
     UL_BWP->rach_ConfigCommon = ul_bwp->bwp_Common->rach_ConfigCommon ? ul_bwp->bwp_Common->rach_ConfigCommon->choice.setup : NULL;
@@ -2153,6 +2189,9 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   }
 
   if(UE) {
+
+    if (CellGroup && CellGroup->physicalCellGroupConfig)
+      UE->pdsch_HARQ_ACK_Codebook = CellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook;
 
     // Reset required fields in sched_ctrl (e.g. ul_ri and tpmi)
     reset_sched_ctrl(sched_ctrl);

@@ -570,9 +570,9 @@ typedef struct NR_UE_DL_BWP {
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_PDSCH_Config_t *pdsch_Config;
   NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig;
-  long *pdsch_HARQ_ACK_Codebook;
   uint8_t mcsTableIdx;
   nr_dci_format_t dci_format;
+  int bw_tbslbrm;
 } NR_UE_DL_BWP_t;
 
 typedef struct NR_UE_UL_BWP {
@@ -591,13 +591,14 @@ typedef struct NR_UE_UL_BWP {
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;
   NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon;
-  long *harq_ACK_SpatialBundlingPUCCH;
+  NR_UplinkConfig_t *supplementaryUplink;
   NR_CSI_MeasConfig_t *csi_MeasConfig;
   NR_SRS_Config_t *srs_Config;
   long *msg3_DeltaPreamble;
   long transform_precoding;
   uint8_t mcs_table;
   nr_dci_format_t dci_format;
+  int bw_tbslbrm;
   int max_fb_time;
 } NR_UE_UL_BWP_t;
 

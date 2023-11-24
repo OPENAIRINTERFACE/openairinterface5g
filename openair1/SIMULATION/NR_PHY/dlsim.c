@@ -822,7 +822,7 @@ int main(int argc, char **argv)
     nr_gold_pdsch(UE, i, UE->scramblingID_dlsch[i]);
   }
 
-  nr_l2_init_ue(NULL);
+  nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
   ue_init_config_request(UE_mac, mu);
 
@@ -835,7 +835,6 @@ int main(int argc, char **argv)
   UE->chest_time = chest_type[1];
 
   UE_mac->if_module = nr_ue_if_module_init(0);
-  UE_mac->state = UE_CONNECTED;
 
   unsigned int available_bits=0;
   unsigned char *estimated_output_bit;
@@ -853,7 +852,10 @@ int main(int argc, char **argv)
   //Configure UE
   NR_BCCH_BCH_Message_t *mib = get_new_MIB_NR(scc);
   nr_rrc_mac_config_req_mib(0, 0, mib->message.choice.mib, false);
-  nr_rrc_mac_config_req_scg(0, 0, secondaryCellGroup);
+  nr_rrc_mac_config_req_cg(0, 0, secondaryCellGroup);
+
+  UE_mac->state = UE_CONNECTED;
+  UE_mac->ra.ra_state = RA_SUCCEEDED;
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
