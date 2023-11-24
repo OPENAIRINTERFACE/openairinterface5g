@@ -112,40 +112,34 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
 
   // if there is no system info or no SIB1 and we run in SA mode, we cannot handle it
   const f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
-  if (sys_info == NULL || sys_info->mib == NULL || (sys_info->sib1 == NULL && get_softmodem_params()->sa)) {
-    LOG_E(NR_RRC, "no system information provided by DU, rejecting\n");
-    f1ap_setup_failure_t fail = {.cause = F1AP_CauseProtocol_semantic_error};
-    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
-    return;
-  }
-
-  /* do we need the MIB? for the moment, just check it is valid, then drop it */
   NR_BCCH_BCH_Message_t *mib = NULL;
-  asn_dec_rval_t dec_rval =
-      uper_decode_complete(NULL, &asn_DEF_NR_BCCH_BCH_Message, (void **)&mib, sys_info->mib, sys_info->mib_length);
-  if (dec_rval.code != RC_OK || mib->message.present != NR_BCCH_BCH_MessageType_PR_mib
-      || mib->message.choice.messageClassExtension == NULL) {
-    LOG_E(RRC, "Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
-    f1ap_setup_failure_t fail = {.cause = F1AP_CauseProtocol_semantic_error};
-    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
-    ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, mib);
-    return;
-  }
-
   NR_SIB1_t *sib1 = NULL;
-  if (sys_info->sib1) {
-    dec_rval = uper_decode_complete(NULL, &asn_DEF_NR_SIB1, (void **)&sib1, sys_info->sib1, sys_info->sib1_length);
-    if (dec_rval.code != RC_OK) {
-      LOG_E(RRC, "Failed to decode NR_SIB1 (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
+
+  if (sys_info != NULL && sys_info->mib != NULL && !(sys_info->sib1 == NULL && get_softmodem_params()->sa)) {
+    asn_dec_rval_t dec_rval =
+        uper_decode_complete(NULL, &asn_DEF_NR_BCCH_BCH_Message, (void **)&mib, sys_info->mib, sys_info->mib_length);
+    if (dec_rval.code != RC_OK || mib->message.present != NR_BCCH_BCH_MessageType_PR_mib
+        || mib->message.choice.messageClassExtension == NULL) {
+      LOG_E(RRC, "Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
       f1ap_setup_failure_t fail = {.cause = F1AP_CauseProtocol_semantic_error};
       rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB1, sib1);
+      ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, mib);
       return;
     }
-    if (LOG_DEBUGFLAG(DEBUG_ASN1))
-      xer_fprint(stdout, &asn_DEF_NR_SIB1, sib1);
-  }
 
+    if (sys_info->sib1) {
+      dec_rval = uper_decode_complete(NULL, &asn_DEF_NR_SIB1, (void **)&sib1, sys_info->sib1, sys_info->sib1_length);
+      if (dec_rval.code != RC_OK) {
+        LOG_E(RRC, "Failed to decode NR_SIB1 (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
+        f1ap_setup_failure_t fail = {.cause = F1AP_CauseProtocol_semantic_error};
+        rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
+        ASN_STRUCT_FREE(asn_DEF_NR_SIB1, sib1);
+        return;
+      }
+      if (LOG_DEBUGFLAG(DEBUG_ASN1))
+        xer_fprint(stdout, &asn_DEF_NR_SIB1, sib1);
+    }
+  }
   LOG_I(RRC, "Accepting DU %ld (%s), sending F1 Setup Response\n", req->gNB_DU_id, req->gNB_DU_name);
 
   // we accept the DU
@@ -159,10 +153,12 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
   du->setup_req = malloc(sizeof(*du->setup_req));
   AssertFatal(du->setup_req != NULL, "out of memory\n");
   *du->setup_req = *req;
-  du->mib = mib->message.choice.mib;
-  mib->message.choice.mib = NULL;
-  ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_MessageType, mib);
-  du->sib1 = sib1;
+  if (mib != NULL && sib1 != NULL) {
+    du->mib = mib->message.choice.mib;
+    mib->message.choice.mib = NULL;
+    ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_MessageType, mib);
+    du->sib1 = sib1;
+  }
   RB_INSERT(rrc_du_tree, &rrc->dus, du);
   rrc->num_dus++;
 

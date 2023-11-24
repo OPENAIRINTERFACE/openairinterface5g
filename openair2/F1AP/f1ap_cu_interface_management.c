@@ -180,20 +180,24 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint3
     } else {
       AssertFatal(false, "unknown NR Mode info %d\n", servedCellInformation->nR_Mode_Info.present);
     }
-	
+
     struct F1AP_GNB_DU_System_Information * DUsi=served_cells_item->gNB_DU_System_Information;
-    // System Information
-    req->cell[i].sys_info = calloc(1, sizeof(*req->cell[i].sys_info));
-    AssertFatal(req->cell[i].sys_info != NULL, "out of memory\n");
-    f1ap_gnb_du_system_info_t *sys_info = req->cell[i].sys_info;
-    /* mib */
-    sys_info->mib = calloc(DUsi->mIB_message.size, sizeof(char));
-    memcpy(sys_info->mib, DUsi->mIB_message.buf, DUsi->mIB_message.size);
-    sys_info->mib_length = DUsi->mIB_message.size;
-    /* sib1 */
-    sys_info->sib1 = calloc(DUsi->sIB1_message.size, sizeof(char));
-    memcpy(sys_info->sib1, DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
-    sys_info->sib1_length = DUsi->sIB1_message.size;
+    if (DUsi != NULL) {
+      // System Information
+      req->cell[i].sys_info = calloc(1, sizeof(*req->cell[i].sys_info));
+      AssertFatal(req->cell[i].sys_info != NULL, "out of memory\n");
+      f1ap_gnb_du_system_info_t *sys_info = req->cell[i].sys_info;
+      /* mib */
+      sys_info->mib = calloc(DUsi->mIB_message.size, sizeof(char));
+      memcpy(sys_info->mib, DUsi->mIB_message.buf, DUsi->mIB_message.size);
+      sys_info->mib_length = DUsi->mIB_message.size;
+      /* sib1 */
+      sys_info->sib1 = calloc(DUsi->sIB1_message.size, sizeof(char));
+      memcpy(sys_info->sib1, DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
+      sys_info->sib1_length = DUsi->sIB1_message.size;
+    } else {
+      LOG_D(F1AP, "No SysInfo in F1SetupReq, expecting GNB DU Config Update\n");
+    }
   }
 
   itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
