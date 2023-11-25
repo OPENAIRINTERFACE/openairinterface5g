@@ -7,7 +7,7 @@ services:
         container_name: oai-gnb
         environment:
             TZ: Europe/Paris
-            USE_ADDITIONAL_OPTIONS: --sa --tune-offset 20000000 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --tune-offset 20000000 -A 45 --log_config.global_log_options level,nocolor,time
         volumes:
             - ../../conf_files/gnb.sa.band78.106prb.n310.7ds2u.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
