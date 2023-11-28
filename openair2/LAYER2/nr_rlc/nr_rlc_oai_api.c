@@ -647,7 +647,7 @@ void nr_rlc_reestablish_entity(int rnti, int lc_id)
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
 
-void nr_rlc_reconfigure_entity(int rnti, int lc_id, struct NR_RLC_Config *rlc_Config, struct NR_LogicalChannelConfig *lc_Config)
+void nr_rlc_reconfigure_entity(int rnti, int lc_id, NR_RLC_Config_t *rlc_Config)
 {
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
@@ -656,12 +656,6 @@ void nr_rlc_reconfigure_entity(int rnti, int lc_id, struct NR_RLC_Config *rlc_Co
     LOG_E(RLC, "RLC instance for the given UE was not found \n");
 
   nr_rlc_entity_t *rb = get_rlc_entity_from_lcid(ue, lc_id);
-  if (lc_Config) {
-    if (lc_Config->ul_SpecificParameters && lc_Config->ul_SpecificParameters->logicalChannelGroup)
-      AssertFatal(*lc_Config->ul_SpecificParameters->logicalChannelGroup < 2,
-                  "LCG %ld not supported as per limitation when creating RBs\n",
-                  *lc_Config->ul_SpecificParameters->logicalChannelGroup);
-  }
   if (rlc_Config) {
     AssertFatal(rb->stats.mode != NR_RLC_TM, "Cannot reconfigure TM mode\n");
     if (rb->stats.mode == NR_RLC_AM) {
@@ -718,9 +712,6 @@ void nr_rlc_reconfigure_entity(int rnti, int lc_id, struct NR_RLC_Config *rlc_Co
 void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_BearerConfig)
 {
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
-  struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
-  int logical_channel_group;
-
   int t_status_prohibit;
   int t_poll_retransmit;
   int poll_pdu;
@@ -732,17 +723,6 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
   LOG_D(RLC, "Trying to add SRB %d\n", srb_id);
   AssertFatal(srb_id > 0 && srb_id < 4,
               "Invalid srb id %d\n", srb_id);
-
-  if (l && l->ul_SpecificParameters && l->ul_SpecificParameters->logicalChannelGroup)
-    logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
-  else
-    logical_channel_group = 0; // default value as in 9.2.1 of 38.331
-
-  /* TODO: accept other values? */
-  if (logical_channel_group != 0) {
-    LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
 
   if (r && r->present == NR_RLC_Config_PR_am) {
     struct NR_RLC_Config__am *am;
@@ -800,8 +780,6 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
 static void add_drb_am(int rnti, int drb_id, const NR_RLC_BearerConfig_t *rlc_BearerConfig)
 {
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
-  struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
-  int logical_channel_group;
 
   int t_status_prohibit;
   int t_poll_retransmit;
@@ -813,14 +791,6 @@ static void add_drb_am(int rnti, int drb_id, const NR_RLC_BearerConfig_t *rlc_Be
 
   AssertFatal(drb_id > 0 && drb_id <= MAX_DRBS_PER_UE,
               "Invalid DRB ID %d\n", drb_id);
-
-  logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
-
-  /* TODO: accept other values? */
-  if (logical_channel_group != 1) {
-    LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
-    //exit(1);
-  }
 
   switch (r->present) {
   case NR_RLC_Config_PR_am: {
@@ -875,22 +845,12 @@ static void add_drb_am(int rnti, int drb_id, const NR_RLC_BearerConfig_t *rlc_Be
 static void add_drb_um(int rnti, int drb_id, const NR_RLC_BearerConfig_t *rlc_BearerConfig)
 {
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
-  struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
-  int logical_channel_group;
 
   int sn_field_length;
   int t_reassembly;
 
   AssertFatal(drb_id > 0 && drb_id <= MAX_DRBS_PER_UE,
               "Invalid DRB ID %d\n", drb_id);
-
-  logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
-
-  /* TODO: accept other values? */
-  if (logical_channel_group != 1) {
-    LOG_E(RLC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
 
   switch (r->present) {
   case NR_RLC_Config_PR_um_Bi_Directional: {
