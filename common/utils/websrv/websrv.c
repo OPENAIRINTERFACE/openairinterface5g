@@ -819,7 +819,7 @@ void *websrv_autoinit()
 {
   int ret;
   memset(&websrvparams, 0, sizeof(websrvparams));
-  config_get(websrvoptions, sizeofArray(websrvoptions), "websrv");
+  config_get(config_get_if(), websrvoptions, sizeofArray(websrvoptions), "websrv");
   /* check if telnet server is loaded or not */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
   if (addcmd != NULL) {
