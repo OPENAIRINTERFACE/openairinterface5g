@@ -894,7 +894,6 @@ void nr_ra_succeeded(const module_id_t mod_id, const uint8_t gNB_index, const fr
 
   if (ra->cfra) {
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CF-RA: RAR successfully received.\n", mod_id, frame, slot);
-    mac->state = UE_CONNECTED;
     ra->RA_window_cnt = -1;
   } else {
     LOG_A(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
@@ -902,12 +901,12 @@ void nr_ra_succeeded(const module_id_t mod_id, const uint8_t gNB_index, const fr
     mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
     LOG_D(MAC, "In %s: [UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", __FUNCTION__, mod_id, frame, slot);
-    mac->state = UE_WAIT_TX_ACK_MSG4;
   }
 
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
   ra->ra_state = RA_SUCCEEDED;
+  mac->state = UE_CONNECTED;
   nr_mac_rrc_ra_ind(mod_id, frame, true);
 }
 
@@ -915,8 +914,8 @@ void nr_ra_succeeded(const module_id_t mod_id, const uint8_t gNB_index, const fr
 // according to section 5 of 3GPP TS 38.321 version 16.2.1 Release 16
 // todo:
 // - complete handling of received contention-based RA preamble
-void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_resources, frame_t frame, int slot) {
-
+void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_resources, frame_t frame, int slot)
+{
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   // Random seed generation
@@ -950,5 +949,38 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
     // Resetting RA window
     nr_get_RA_window(mac);
   }
+}
 
+void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, int pid, int ack_nack)
+{
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[pid];
+  int sched_slot = current_harq->ul_slot;
+  int sched_frame = current_harq->ul_frame;
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, sched_slot, 0);
+  pthread_mutex_lock(&ul_config->mutex_ul_config);
+  mac->nr_ue_emul_l1.num_harqs = 1;
+  AssertFatal(ul_config->number_pdus < FAPI_NR_UL_CONFIG_LIST_NUM,
+              "ul_config->number_pdus %d out of bounds\n",
+              ul_config->number_pdus);
+  fapi_nr_ul_config_pucch_pdu *pucch_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu;
+  PUCCH_sched_t pucch = {0};
+  pucch.n_CCE = current_harq->n_CCE;
+  pucch.N_CCE = current_harq->N_CCE;
+  pucch.delta_pucch = current_harq->delta_pucch;
+  pucch.ack_payload = ack_nack;
+  pucch.n_harq = 1;
+  current_harq->active = false;
+  current_harq->ack_received = false;
+  if (get_softmodem_params()->emulate_l1) {
+    mac->nr_ue_emul_l1.harq[pid].active = true;
+    mac->nr_ue_emul_l1.harq[pid].active_dl_harq_sfn = sched_frame;
+    mac->nr_ue_emul_l1.harq[pid].active_dl_harq_slot = sched_slot;
+  }
+  nr_ue_configure_pucch(mac,
+                        sched_slot,
+                        mac->ra.t_crnti,
+                        &pucch,
+                        pucch_pdu);
+  fill_ul_config(ul_config, sched_frame, sched_slot, FAPI_NR_UL_CONFIG_TYPE_PUCCH);
+  pthread_mutex_unlock(&ul_config->mutex_ul_config);
 }

@@ -705,6 +705,7 @@ typedef struct {
   uint32_t ra_timer;
   float ul_thr_ue;
   float dl_thr_ue;
+  long pdsch_HARQ_ACK_Codebook;
 } NR_UE_info_t;
 
 typedef struct {

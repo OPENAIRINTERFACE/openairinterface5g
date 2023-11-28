@@ -8,7 +8,7 @@ services:
         #entrypoint: /bin/bash -c "sleep infinity"
         environment:
             TZ: Europe/Paris
-            USE_ADDITIONAL_OPTIONS: --usrp-args type=n3xx,name=ni-n3xx-31641B9,addr=192.168.20.2 -r 106 --numerology 1 --band 78 -C 3511200000 --sa --ue-fo-compensation --ue-rxgain 65 --tune-offset 20000000 --log_config.global_log_options level,nocolor,time --uicc0.imsi 208970000000111 --uicc0.nssai_sd 16777215
+            USE_ADDITIONAL_OPTIONS: --usrp-args type=n3xx,name=ni-n3xx-31641B9,addr=192.168.20.2 -r 106 --numerology 1 --band 78 -C 3511200000 --sa --ue-fo-compensation --ue-rxgain 65 --tune-offset 20000000 -A 45 --log_config.global_log_options level,nocolor,time --uicc0.imsi 208970000000111 --uicc0.nssai_sd 16777215
         volumes:
             - ../../conf_files/ue.sa.conf:/opt/oai-nr-ue/etc/nr-ue.conf
         healthcheck:

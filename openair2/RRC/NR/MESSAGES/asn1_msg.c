@@ -460,8 +460,10 @@ void free_nr_noS1_bearer_config(NR_RadioBearerConfig_t **rbconfig,
 {
   ASN_STRUCT_FREE(asn_DEF_NR_RadioBearerConfig, *rbconfig);
   *rbconfig = NULL;
-  ASN_STRUCT_FREE(asn_DEF_NR_RLC_BearerConfig, *rlc_rbconfig);
-  *rlc_rbconfig = NULL;
+  if (rlc_rbconfig != NULL) {
+    ASN_STRUCT_FREE(asn_DEF_NR_RLC_BearerConfig, *rlc_rbconfig);
+    *rlc_rbconfig = NULL;
+  }
 }
 
 //------------------------------------------------------------------------------

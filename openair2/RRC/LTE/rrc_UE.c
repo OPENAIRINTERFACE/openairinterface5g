@@ -2538,9 +2538,14 @@ rrc_ue_decode_dcch(
         case LTE_DL_DCCH_MessageType__c1_PR_rnReconfiguration_r10:
           break;
 
+        case LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionResume_r13:
+          break;
+
+        case LTE_DL_DCCH_MessageType__c1_PR_dlDedicatedMessageSegment_r16:
+          break;
+
         case LTE_DL_DCCH_MessageType__c1_PR_spare1:
         case LTE_DL_DCCH_MessageType__c1_PR_spare2:
-        case LTE_DL_DCCH_MessageType__c1_PR_spare3:
           break;
 
         default:

@@ -690,11 +690,11 @@ int main(int argc, char *argv[])
   }
 
   //Configure UE
-  NR_UE_RRC_INST_t rrcue = {0};
-  rrcue.scell_group_config = secondaryCellGroup;
-  nr_l2_init_ue(&rrcue);
+  nr_l2_init_ue();
 
   NR_UE_MAC_INST_t* UE_mac = get_mac_inst(0);
+
+  ue_init_config_request(UE_mac, mu);
   
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;

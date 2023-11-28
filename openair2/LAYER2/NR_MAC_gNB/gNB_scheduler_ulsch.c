@@ -2288,10 +2288,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
       if (!maxMIMO_Layers)
         maxMIMO_Layers = current_BWP->pusch_Config->maxRank;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-      const int scc_bwpsize = current_BWP->initial_BWPSize;
-      int bw_tbslbrm = get_ulbw_tbslbrm(scc_bwpsize, cg);
       pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcs_table,
-                                                                           bw_tbslbrm,
+                                                                           current_BWP->bw_tbslbrm,
                                                                            *maxMIMO_Layers);
     }
     else
@@ -2396,6 +2394,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
                        current_BWP->bwp_id,
                        ss,
                        coreset,
+                       UE->pdsch_HARQ_ACK_Codebook,
                        nr_mac->cset0_bwp_size);
 
     memset(sched_pusch, 0, sizeof(*sched_pusch));

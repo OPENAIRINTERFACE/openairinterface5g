@@ -667,6 +667,8 @@ install_asn1c_from_source(){
     git clone https://github.com/mouse07410/asn1c /tmp/asn1c
     cd /tmp/asn1c
     git checkout vlm_master
+    # Showing which version is used
+    git log -n1
     autoreconf -iv
     ./configure --prefix /opt/asn1c/
     make -j`nproc`

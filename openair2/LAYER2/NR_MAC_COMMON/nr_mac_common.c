@@ -3278,7 +3278,8 @@ uint16_t get_rb_bwp_dci(nr_dci_format_t format,
 
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
-                     const NR_CellGroupConfig_t *cg,
+                     const NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig,
+                     long pdsch_HARQ_ACK_Codebook,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
@@ -3328,12 +3329,12 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       /// fixed: Format identifier 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2, ULSCH indicator 1 --16
       size += 16;
       // Carrier indicator
-      if (cg->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL) {
+      if (crossCarrierSchedulingConfig != NULL) {
         dci_pdu->carrier_indicator.nbits=3;
         size += dci_pdu->carrier_indicator.nbits;
       }
       // UL/SUL indicator
-      if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink != NULL) {
+      if (UL_BWP->supplementaryUplink != NULL) {
         dci_pdu->carrier_indicator.nbits=1;
         size += dci_pdu->ul_sul_indicator.nbits;
       }
@@ -3376,7 +3377,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         size += 1;
       }
       // 1st DAI
-      if (DL_BWP->pdsch_HARQ_ACK_Codebook && *DL_BWP->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
+      if (pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
         dci_pdu->dai[0].nbits = 2;
       else
         dci_pdu->dai[0].nbits = 1;
@@ -3416,7 +3417,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       size += dci_pdu->antenna_ports.nbits;
       LOG_D(NR_MAC,"dci_pdu->antenna_ports.nbits = %d\n",dci_pdu->antenna_ports.nbits);
       // SRS request
-      if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
+      if (UL_BWP->supplementaryUplink == NULL)
         dci_pdu->srs_request.nbits = 2;
       else
         dci_pdu->srs_request.nbits = 3;
@@ -3481,7 +3482,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       // Format identifier
       size = 1;
       // Carrier indicator
-      if (cg->spCellConfig->spCellConfigDedicated->crossCarrierSchedulingConfig != NULL) {
+      if (crossCarrierSchedulingConfig != NULL) {
         dci_pdu->carrier_indicator.nbits=3;
         size += dci_pdu->carrier_indicator.nbits;
       }
@@ -3548,7 +3549,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       // HARQ PID
       size += 4;
       // DAI
-      if (DL_BWP->pdsch_HARQ_ACK_Codebook && *DL_BWP->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) { // FIXME in case of more than one serving cell
+      if (pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) { // FIXME in case of more than one serving cell
         dci_pdu->dai[0].nbits = 2;
         size += dci_pdu->dai[0].nbits;
       }
@@ -3575,7 +3576,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         size += dci_pdu->transmission_configuration_indication.nbits;
       }
       // SRS request
-      if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
+      if (UL_BWP->supplementaryUplink == NULL)
         dci_pdu->srs_request.nbits = 2;
       else
         dci_pdu->srs_request.nbits = 3;
@@ -4734,11 +4735,10 @@ uint16_t compute_pucch_prb_size(uint8_t format,
 }
 
 int get_dlbw_tbslbrm(int scc_bwpsize,
-                     NR_CellGroupConfig_t *cg) {
-
+                     const NR_ServingCellConfig_t *servingCellConfig)
+{
   int bw = scc_bwpsize;
-  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated) {
-    const NR_ServingCellConfig_t *servingCellConfig = cg->spCellConfig->spCellConfigDedicated;
+  if (servingCellConfig) {
     if(servingCellConfig->downlinkBWP_ToAddModList) {
       const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = servingCellConfig->downlinkBWP_ToAddModList;
       for (int i=0; i<BWP_list->list.count; i++) {
@@ -4753,11 +4753,10 @@ int get_dlbw_tbslbrm(int scc_bwpsize,
 }
 
 int get_ulbw_tbslbrm(int scc_bwpsize,
-                     NR_CellGroupConfig_t *cg) {
-
+                     const NR_ServingCellConfig_t *servingCellConfig)
+{
   int bw = scc_bwpsize;
-  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated) {
-    const NR_ServingCellConfig_t *servingCellConfig = cg->spCellConfig->spCellConfigDedicated;
+  if (servingCellConfig) {
     if (servingCellConfig->uplinkConfig &&
         servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList) {
       const struct NR_UplinkConfig__uplinkBWP_ToAddModList *BWP_list = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;

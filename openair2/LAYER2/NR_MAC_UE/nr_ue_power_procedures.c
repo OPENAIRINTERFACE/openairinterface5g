@@ -58,7 +58,7 @@ int nr_get_Pcmax(NR_UE_MAC_INST_t *mac, int Qm, bool powerBoostPi2BPSK, int scs,
 
     //TODO configure P-MAX from the upper layers according to 38.331
     int p_powerclass = 23; // dBm assuming poweclass 3 UE
-    int p_emax = mac->p_Max ? *mac->p_Max : 0;
+    int p_emax = mac->p_Max != INT_MIN ? mac->p_Max : p_powerclass;
     int delta_P_powerclass = 0; // for powerclass 2 needs to be changed
     if(mac->p_Max && Qm == 1 && powerBoostPi2BPSK && (nr_band == 40 || nr_band == 41 || nr_band == 77 || nr_band == 78 || nr_band == 79)) {
       p_emax += 3;

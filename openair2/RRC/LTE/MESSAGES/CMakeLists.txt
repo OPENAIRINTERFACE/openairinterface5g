@@ -1,8 +1,10 @@
-set(LTE_RRC_VERSION 15 6 0)
+set(LTE_RRC_VERSION 16 13 0)
 make_version(LTE_RRC_cc ${LTE_RRC_VERSION})
 string(REPLACE ";" "." LTE_RRC_RELEASE "${LTE_RRC_VERSION}")
 
-if(LTE_RRC_RELEASE VERSION_EQUAL "15.6.0")
+if(LTE_RRC_RELEASE VERSION_EQUAL "16.13.0")
+  include(ASN.1/lte-rrc-16.13.0.cmake)
+elseif(LTE_RRC_RELEASE VERSION_EQUAL "15.6.0")
   include(ASN.1/lte-rrc-15.6.0.cmake)
 else()
   message(FATAL_ERROR "unknown LTE_RRC_RELEASE ${LTE_RRC_RELEASE}")

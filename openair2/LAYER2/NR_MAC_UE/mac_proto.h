@@ -43,6 +43,8 @@
    \param module_id      module id */
 void nr_ue_init_mac(module_id_t module_idP);
 
+void send_srb0_rrc(int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *data);
+
 /**\brief apply default configuration values in nr_mac instance
    \param mac           mac instance */
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac);
@@ -67,13 +69,9 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
                                                    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
                                                    struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list);
 
-void nr_rrc_mac_config_req_scg(module_id_t module_id,
-                               int cc_idP,
-                               NR_CellGroupConfig_t *scell_group_config);
-
-void nr_rrc_mac_config_req_mcg(module_id_t module_id,
-                               int cc_idP,
-                               NR_CellGroupConfig_t *scell_group_config);
+void nr_rrc_mac_config_req_cg(module_id_t module_id,
+                              int cc_idP,
+                              NR_CellGroupConfig_t *cell_group_config);
 
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
                                int cc_idP,
@@ -82,16 +80,15 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 int cc_idP,
-                                struct NR_SI_SchedulingInfo *si_SchedulingInfo,
+                                NR_SI_SchedulingInfo_t *si_SchedulingInfo,
                                 NR_ServingCellConfigCommonSIB_t *scc);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
-NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst);
+NR_UE_MAC_INST_t * nr_l2_init_ue();
 
 /**\brief fetch MAC instance by module_id, within 0 - (NB_NR_UE_MAC_INST-1)
    \param module_id index of MAC instance(s)*/
-NR_UE_MAC_INST_t *get_mac_inst(
-    module_id_t module_id);
+NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id);
 
 /**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
@@ -147,6 +144,13 @@ bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t
 */
 uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size,
                                     int value);
+
+/*! \fn  int nr_get_pbr(uint8_t prioritizedbitrate)
+   \brief get the rate in kbps from the rate configured by the higher layer
+\param[in]  prioritizedbitrate
+\return the rate in kbps
+*/
+uint32_t nr_get_pbr(uint8_t prioritizedbitrate);
 
 /*! \fn  int nr_get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
    \brief get the number of subframe from the periodic BSR timer configured by the higher layers
@@ -363,6 +367,9 @@ void nr_get_prach_resources(module_id_t mod_id,
                             uint8_t gNB_id,
                             NR_PRACH_RESOURCES_t *prach_resources,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
+
+void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, int pid, int ack_nack);
+void configure_initial_pucch(PUCCH_sched_t *pucch, int res_ind);
 
 void init_RA(module_id_t mod_id,
              NR_PRACH_RESOURCES_t *prach_resources,

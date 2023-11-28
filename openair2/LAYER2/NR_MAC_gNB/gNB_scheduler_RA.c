@@ -847,6 +847,7 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
                        ul_bwp->bwp_id,
                        ss,
                        coreset,
+                       0, // parameter not needed for DCI 0_0
                        nr_mac->cset0_bwp_size);
 
     // Mark the corresponding RBs as used
@@ -1312,9 +1313,8 @@ static void nr_generate_Msg2(module_id_t module_idP,
       pdsch_pdu_rel15->TBSize[0] = TBS;
     }
 
-    int bw_tbslbrm = get_dlbw_tbslbrm(dl_bwp->initial_BWPSize, ra->CellGroup);
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
-                                                                               bw_tbslbrm,
+                                                                               dl_bwp->bw_tbslbrm,
                                                                                1);
     pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
 
@@ -1374,6 +1374,7 @@ static void nr_generate_Msg2(module_id_t module_idP,
                        dl_bwp->bwp_id,
                        ss,
                        coreset,
+                       0, // parameter not needed for DCI 1_0
                        nr_mac->cset0_bwp_size);
 
     // DL TX request
@@ -1522,9 +1523,8 @@ static void prepare_dl_pdus(gNB_MAC_INST *nr_mac,
   int x_Overhead = 0;
   nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
 
-  int bw_tbslbrm = get_dlbw_tbslbrm(dl_bwp->initial_BWPSize, ra->CellGroup);
   pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
-                                                                             bw_tbslbrm,
+                                                                             dl_bwp->bw_tbslbrm,
                                                                              1);
   pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(tb_size<<3,R);
 
@@ -1597,6 +1597,7 @@ static void prepare_dl_pdus(gNB_MAC_INST *nr_mac,
                      dl_bwp->bwp_id,
                      ss,
                      coreset,
+                     0, // parameter not needed for DCI 1_0
                      nr_mac->cset0_bwp_size);
 
     LOG_D(NR_MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);

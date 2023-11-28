@@ -78,6 +78,7 @@ typedef struct nr_pdcp_entity_t {
   void (*delete_entity)(struct nr_pdcp_entity_t *entity);
   void (*release_entity)(struct nr_pdcp_entity_t *entity);
   void (*suspend_entity)(struct nr_pdcp_entity_t *entity);
+  void (*reestablish_entity)(struct nr_pdcp_entity_t *entity);
   void (*get_stats)(struct nr_pdcp_entity_t *entity, nr_pdcp_statistics_t *out);
 
   /* set_security: pass -1 to integrity_algorithm / ciphering_algorithm
@@ -123,7 +124,7 @@ typedef struct nr_pdcp_entity_t {
   uint64_t t_current;
 
   /* timers (stores the ms of activation, 0 means not active) */
-  int t_reordering_start;
+  uint64_t t_reordering_start;
 
   /* security */
   int has_ciphering;

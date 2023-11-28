@@ -212,7 +212,7 @@ init_SI(
         LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS Subcarrier Spacing MBMS: %s\n",
               PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
               (*RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->ext1->subcarrierSpacingMBMS_r14 ==
-               LTE_MBSFN_AreaInfo_r9__ext1__subcarrierSpacingMBMS_r14_khz_1dot25 ? "khz_1dot25": "khz_7dot5"));
+               LTE_MBSFN_AreaInfo_r9__ext1__subcarrierSpacingMBMS_r14_kHz1dot25 ? "khz_1dot25": "khz_7dot5"));
       }
     }
 
