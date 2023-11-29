@@ -152,7 +152,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint3
       }
       FDDs->dl_freqinfo.arfcn = fDD_Info->dL_NRFreqInfo.nRARFCN;
       int dlBands=fDD_Info->dL_NRFreqInfo.freqBandListNr.list.count;
-      AssertFatal(dlBands == 0, "cannot handled more than one frequency band\n");
+      AssertFatal(dlBands == 1, "cannot handled more than one frequency band\n");
       for (int dlB=0; dlB < dlBands; dlB++) {
 	F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->dL_NRFreqInfo.freqBandListNr.list.array[dlB];
         FDDs->dl_freqinfo.band = FreqItem->freqBandIndicatorNr;
