@@ -93,7 +93,6 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 
 extern uint16_t sf_ahead;
-int macrlc_has_f1 = 0;
 
 // synchronization raster per band tables (Rel.15)
 // (38.101-1 Table 5.4.3.3-1 and 38.101-2 Table 5.4.3.3-1)
@@ -1278,9 +1277,7 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
         RC.nrmac[j]->eth_params_n.remote_portc = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTC_IDX].iptr);
         RC.nrmac[j]->eth_params_n.my_portd = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_n.remote_portd = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTD_IDX].iptr);
-        ;
         RC.nrmac[j]->eth_params_n.transp_preference = ETH_UDP_MODE;
-        macrlc_has_f1 = 1;
       } else { // other midhaul
         AssertFatal(1 == 0, "MACRLC %d: %s unknown northbound midhaul\n", j, *(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr));
       }
@@ -1325,7 +1322,7 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
     uint32_t gnb_id = 0;
     char *name = NULL;
     f1ap_served_cell_info_t info;
-    read_du_cell_info(cfg, macrlc_has_f1, &gnb_id, &gnb_du_id, &name, &info, 1);
+    read_du_cell_info(cfg, NODE_IS_DU(node_type), &gnb_id, &gnb_du_id, &name, &info, 1);
 
     if (get_softmodem_params()->sa)
       nr_mac_configure_sib1(RC.nrmac[0], &info.plmn, info.nr_cellid, *info.tac);
@@ -2251,7 +2248,7 @@ ngran_node_t get_node_type(void)
     RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt; 
     for (int j = 0; j < RC.nb_nr_macrlc_inst; j++) {
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
-        macrlc_has_f1 = 1;
+        return ngran_gNB_DU; // MACRLCs present in config: it must be a DU
       }
     }
   }
@@ -2265,10 +2262,9 @@ ngran_node_t get_node_type(void)
       return ngran_gNB_CUUP;
     else
       return ngran_gNB_CU;
-  } else if (macrlc_has_f1 == 0)
+  } else {
     return ngran_gNB;
-  else
-    return ngran_gNB_DU;
+  }
 }
 
 #ifdef E2_AGENT
