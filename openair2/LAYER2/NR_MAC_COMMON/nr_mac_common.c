@@ -608,7 +608,9 @@ NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda
                               int mux_pattern, nr_rnti_type_t rnti_type, int coresetid, bool sib1)
 {
   NR_tda_info_t tda_info;
-  bool normal_CP = dl_BWP->cyclicprefix ? false : true;
+  bool normal_CP = true;
+  if (dl_BWP && dl_BWP->cyclicprefix)
+    normal_CP = false;
   // implements Table 5.1.2.1.1-1 of 38.214
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdalist = get_dl_tdalist(dl_BWP, coresetid, ss_type, rnti_type);
   switch (rnti_type) {
@@ -3708,7 +3710,6 @@ int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,
                        mappingType_t mappingtype,
                        int length)
 {
-
   int dmrs_AdditionalPosition = 0;
   NR_DMRS_DownlinkConfig_t *dmrs_config = NULL;
 
@@ -4727,43 +4728,6 @@ uint16_t compute_pucch_prb_size(uint8_t format,
     AssertFatal(1==0,"Not yet implemented");
   }
   return 0;
-}
-
-int get_dlbw_tbslbrm(int scc_bwpsize,
-                     const NR_ServingCellConfig_t *servingCellConfig)
-{
-  int bw = scc_bwpsize;
-  if (servingCellConfig) {
-    if(servingCellConfig->downlinkBWP_ToAddModList) {
-      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = servingCellConfig->downlinkBWP_ToAddModList;
-      for (int i=0; i<BWP_list->list.count; i++) {
-        NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
-        int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        if (curr_bw > bw)
-          bw = curr_bw;
-      }
-    }
-  }
-  return bw;
-}
-
-int get_ulbw_tbslbrm(int scc_bwpsize,
-                     const NR_ServingCellConfig_t *servingCellConfig)
-{
-  int bw = scc_bwpsize;
-  if (servingCellConfig) {
-    if (servingCellConfig->uplinkConfig &&
-        servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList) {
-      const struct NR_UplinkConfig__uplinkBWP_ToAddModList *BWP_list = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-      for (int i=0; i<BWP_list->list.count; i++) {
-        NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
-        int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        if (curr_bw > bw)
-          bw = curr_bw;
-      }
-    }
-  }
-  return bw;
 }
 
 /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */

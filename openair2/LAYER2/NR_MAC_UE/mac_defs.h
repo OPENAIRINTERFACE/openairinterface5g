@@ -432,6 +432,17 @@ typedef struct nr_lcordered_info_s {
   NR_LogicalChannelConfig_t *logicalChannelConfig_ordered;
 } nr_lcordered_info_t;
 
+typedef struct {
+  NR_SearchSpace_t *otherSI_SS;
+  NR_SearchSpace_t *ra_SS;
+  NR_SearchSpace_t *paging_SS;
+  NR_ControlResourceSet_t *coreset0;
+  NR_ControlResourceSet_t *commonControlResourceSet;
+  NR_SearchSpace_t *search_space_zero;
+  A_SEQUENCE_OF(NR_ControlResourceSet_t) list_Coreset;
+  A_SEQUENCE_OF(NR_SearchSpace_t) list_SS;
+} NR_BWP_PDCCH_t;
+
 /*!\brief Top level UE MAC structure */
 typedef struct {
   NR_UE_L2_STATE_t state;
@@ -446,24 +457,16 @@ typedef struct {
   ssb_list_info_t ssb_list;
 
   NR_UE_ServingCell_Info_t sc_info;
-  NR_UE_DL_BWP_t current_DL_BWP;
-  NR_UE_UL_BWP_t current_UL_BWP;
-  NR_BWP_DownlinkCommon_t *bwp_dlcommon;
-  NR_BWP_UplinkCommon_t *bwp_ulcommon;
+  A_SEQUENCE_OF(NR_UE_DL_BWP_t) dl_BWPs;
+  A_SEQUENCE_OF(NR_UE_UL_BWP_t) ul_BWPs;
+  NR_BWP_PDCCH_t config_BWP_PDCCH[5];
+  NR_UE_DL_BWP_t *current_DL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP;
 
   bool harq_ACK_SpatialBundlingPUCCH;
   bool harq_ACK_SpatialBundlingPUSCH;
 
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
-
-  NR_SearchSpace_t *otherSI_SS;
-  NR_SearchSpace_t *ra_SS;
-  NR_SearchSpace_t *paging_SS;
-  NR_ControlResourceSet_t *BWP_coresets[FAPI_NR_MAX_CORESET_PER_BWP];
-  NR_ControlResourceSet_t *coreset0;
-  NR_SearchSpace_t *BWP_searchspaces[FAPI_NR_MAX_SS];
-  NR_SearchSpace_t *search_space_zero;
-
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon;
 
   bool phy_config_request_sent;

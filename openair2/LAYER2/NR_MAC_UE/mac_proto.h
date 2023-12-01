@@ -56,6 +56,21 @@
                 type); \
 } \
 
+#define handleMACsetupreleaseElement(destination, origin, type, asn_DEF) { \
+  if (origin->present == 1) { \
+    ASN_STRUCT_FREE(asn_DEF, destination); \
+    destination = NULL; \
+  } \
+  if (origin->present == 2) { \
+    if (!destination) \
+      destination = calloc(1, sizeof(*destination)); \
+    destination->present = origin->present; \
+    updateMACie(destination->choice.setup, \
+                origin->choice.setup, \
+                type); \
+  } \
+} \
+
 /**\brief initialize the field in nr_mac instance
    \param module_id      module id */
 void nr_ue_init_mac(module_id_t module_idP);

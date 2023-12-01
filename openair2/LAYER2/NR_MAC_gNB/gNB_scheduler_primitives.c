@@ -2018,6 +2018,43 @@ void reset_sched_ctrl(NR_UE_sched_ctrl_t *sched_ctrl)
   sched_ctrl->srs_feedback.sri = 0;
 }
 
+int get_dlbw_tbslbrm(int scc_bwpsize,
+                     const NR_ServingCellConfig_t *servingCellConfig)
+{
+  int bw = scc_bwpsize;
+  if (servingCellConfig) {
+    if(servingCellConfig->downlinkBWP_ToAddModList) {
+      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = servingCellConfig->downlinkBWP_ToAddModList;
+      for (int i=0; i<BWP_list->list.count; i++) {
+        NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
+        int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        if (curr_bw > bw)
+          bw = curr_bw;
+      }
+    }
+  }
+  return bw;
+}
+
+int get_ulbw_tbslbrm(int scc_bwpsize,
+                     const NR_ServingCellConfig_t *servingCellConfig)
+{
+  int bw = scc_bwpsize;
+  if (servingCellConfig) {
+    if (servingCellConfig->uplinkConfig &&
+        servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList) {
+      const struct NR_UplinkConfig__uplinkBWP_ToAddModList *BWP_list = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+      for (int i=0; i<BWP_list->list.count; i++) {
+        NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
+        int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        if (curr_bw > bw)
+          bw = curr_bw;
+      }
+    }
+  }
+  return bw;
+}
+
 // main function to configure parameters of current BWP
 void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                       NR_ServingCellConfigCommon_t *scc,
