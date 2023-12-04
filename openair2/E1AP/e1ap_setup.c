@@ -68,7 +68,7 @@ static void get_NGU_S1U_addr(char **addr, uint16_t *port)
   return;
 }
 
-MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
+MessageDef *RCconfig_NR_CU_E1(const E1_t *entity)
 {
   MessageDef *msgConfig = itti_alloc_new_message(TASK_GNB_APP, 0, E1AP_REGISTER_REQ);
   if (!msgConfig)
@@ -82,14 +82,12 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
   sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
   int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal(num_gnbs == 1, "Support only one gNB per process\n");
+  config_getlist(config_get_if(), &GNBParamList, GNBParams, sizeofArray(GNBParams), NULL);
+  paramdef_t *gnbParms = GNBParamList.paramarray[0];
+  e1ap_setup_req_t *e1Setup = &E1AP_REGISTER_REQ(msgConfig).setup_req;
 
   if (num_gnbs > 0) {
-    config_getlist(config_get_if(), &GNBParamList, GNBParams, sizeofArray(GNBParams), NULL);
-    paramdef_t *gnbParms = GNBParamList.paramarray[0];
-    AssertFatal(gnbParms[GNB_GNB_ID_IDX].uptr != NULL, "gNB id %d is not defined in configuration file\n", 0);
-    e1ap_setup_req_t *e1Setup = &E1AP_REGISTER_REQ(msgConfig).setup_req;
     msgConfig->ittiMsgHeader.destinationInstance = 0;
-    e1Setup->gNB_cu_up_id = *(gnbParms[GNB_GNB_ID_IDX].uptr);
     if (*gnbParms[GNB_GNB_NAME_IDX].strptr)
       e1Setup->gNB_cu_up_name = *(gnbParms[GNB_GNB_NAME_IDX].strptr);
 
@@ -132,7 +130,11 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     get_NGU_S1U_addr(&e1ap_nc->localAddressN3, &e1ap_nc->localPortN3);
     e1ap_nc->remotePortN3 = e1ap_nc->localPortN3 ;
 
-    if (separate_CUUP_process) {
+    AssertFatal(config_isparamset(gnbParms, GNB_GNB_ID_IDX), "%s is not defined in configuration file\n", GNB_CONFIG_STRING_GNB_ID);
+    uint32_t gnb_id = *gnbParms[GNB_GNB_ID_IDX].uptr;
+    E1AP_REGISTER_REQ(msgConfig).gnb_id = gnb_id;
+
+    if (entity != NULL) {
       paramlist_def_t GNBE1ParamList = {GNB_CONFIG_STRING_E1_PARAMETERS, NULL, 0};
       paramdef_t GNBE1Params[] = GNBE1PARAMS_DESC;
       config_getlist(config_get_if(), &GNBE1ParamList, GNBE1Params, sizeofArray(GNBE1Params), aprefix);
@@ -141,6 +143,24 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
       e1ap_nc->CUCP_e1_ip_address.ipv4 = 1;
       strcpy(e1ap_nc->CUUP_e1_ip_address.ipv4_address, *(e1Parms[GNB_CONFIG_E1_IPV4_ADDRESS_CUUP].strptr));
       e1ap_nc->CUUP_e1_ip_address.ipv4 = 1;
+      if (*entity == CPtype) {
+        // CP needs gNB_ID (although not used, but other parts check it as
+        // well), and gNB-CU-UP ID should NOT be present as it comes through E1!
+        AssertFatal(!config_isparamset(gnbParms, GNB_GNB_CU_UP_ID_IDX), "%s must not be defined in configuration file\n", GNB_CONFIG_STRING_GNB_CU_UP_ID);
+      } else { // UPtype
+        AssertFatal(config_isparamset(gnbParms, GNB_GNB_CU_UP_ID_IDX), "%s is not be defined in configuration file\n", GNB_CONFIG_STRING_GNB_CU_UP_ID);
+        e1Setup->gNB_cu_up_id = *gnbParms[GNB_GNB_CU_UP_ID_IDX].u64ptr;
+      }
+    } else {
+      // integrated CU-CP/UP. We don't care about the gNB-CU-UP ID that much,
+      // but if it's there, check it's the same as gNB ID
+      uint64_t *gnb_cu_up_id = gnbParms[GNB_GNB_CU_UP_ID_IDX].u64ptr;
+      AssertFatal(!config_isparamset(gnbParms, GNB_GNB_CU_UP_ID_IDX) || *gnb_cu_up_id == gnb_id,
+                  "%s is different of %s: they need to match or remove %s from config\n",
+                  GNB_CONFIG_STRING_GNB_CU_UP_ID,
+                  GNB_CONFIG_STRING_GNB_ID,
+                  GNB_CONFIG_STRING_GNB_CU_UP_ID);
+      e1Setup->gNB_cu_up_id = gnb_id;
     }
   }
   return msgConfig;

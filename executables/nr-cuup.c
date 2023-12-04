@@ -130,7 +130,8 @@ int main(int argc, char **argv)
   AssertFatal(rc >= 0, "Create task for CUUP E1 failed\n");
   nr_pdcp_layer_init(true);
   cu_init_f1_ue_data(); // for CU-UP/CP mapping: we use the same
-  MessageDef *msg = RCconfig_NR_CU_E1(true);
+  E1_t e1type = UPtype;
+  MessageDef *msg = RCconfig_NR_CU_E1(&e1type);
   AssertFatal(msg != NULL, "Send init to task for E1AP UP failed\n");
   itti_send_msg_to_task(TASK_CUUP_E1, 0, msg);
 

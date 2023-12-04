@@ -87,6 +87,7 @@ typedef struct e1ap_setup_req_s {
 typedef struct e1ap_register_req_t {
   e1ap_setup_req_t setup_req;
   e1ap_net_config_t net_config;
+  uint32_t gnb_id; // unused in CU-UP, but might be necessary for some functionality, e.g., E2 agent
 } e1ap_register_req_t;
 
 typedef struct e1ap_setup_resp_s {

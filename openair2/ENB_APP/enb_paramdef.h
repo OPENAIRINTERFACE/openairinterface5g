@@ -1330,9 +1330,8 @@ typedef struct srb1_params_s {
 //#define E2AGENT_CONFIG_PORT  "port"
 #define E2AGENT_CONFIG_SMDIR "sm_dir"
 
-static const char* const e2agent_config_ip_default = NULL;
-static const char* const e2agent_config_smdir_default = NULL;
-//static const uint16_t e2agent_config_port_default = 36421;
+static const char* const e2agent_config_ip_default = "127.0.0.1";
+static const char* const e2agent_config_smdir_default = ".";
 
 #define E2AGENT_PARAMS_DESC { \
   {E2AGENT_CONFIG_IP,    "RIC IP address",             0, strptr:NULL, defstrval:(char*)e2agent_config_ip_default,    TYPE_STRING, 0}, \
