@@ -35,7 +35,7 @@
 		<mode>TesteNB</mode>	
 		<class>Build_eNB</class>
 		<desc>Build gNB (USRP)</desc>
-		<Build_eNB_args>--gNB -w USRP --ninja -c -P --build-lib "ldpc_cuda ldpc_t1" --cmake-opt -DASN1C_EXEC=/opt/asn1c/bin/asn1c</Build_eNB_args>
+		<Build_eNB_args>--gNB -w USRP --ninja -c -P --build-lib "ldpc_cuda" --cmake-opt -DASN1C_EXEC=/opt/asn1c/bin/asn1c</Build_eNB_args>
 		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 	</testCase>
 

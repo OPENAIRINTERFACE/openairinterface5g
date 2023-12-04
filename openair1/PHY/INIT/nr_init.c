@@ -501,6 +501,9 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
   return 0;
 }
 
+// A global var to reduce the changes size
+ldpc_interface_t ldpc_interface = {0}, ldpc_interface_offload = {0};
+
 int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
 {
   // shortcuts
@@ -528,11 +531,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
 
   nr_init_fde(); // Init array for frequency equalization of transform precoding of PUSCH
 
-  load_nrLDPClib(NULL);
+  load_LDPClib(NULL, &ldpc_interface);
 
   if (gNB->ldpc_offload_flag)
-    load_nrLDPClib_offload();
-
+    load_LDPClib("_t2", &ldpc_interface_offload);
   gNB->max_nb_pdsch = MAX_MOBILES_PER_GNB;
 
   init_codebook_gNB(gNB);

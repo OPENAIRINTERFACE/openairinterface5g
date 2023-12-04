@@ -46,7 +46,7 @@ BUILD_DOXYGEN=0
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
-OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope nrqtscope ldpc_cuda ldpc_t1 websrv oai_iqplayer"
+OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope nrqtscope ldpc_cuda ldpc_t2 websrv oai_iqplayer"
 TARGET_LIST=""
 
 function print_help() {

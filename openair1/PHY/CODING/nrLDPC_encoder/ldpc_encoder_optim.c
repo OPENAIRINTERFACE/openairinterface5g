@@ -37,15 +37,17 @@
 #include "common/utils/LOG/log.h"
 #include "time_meas.h"
 #include "openair1/PHY/CODING/nrLDPC_defs.h"
+#include "openair1/PHY/CODING/nrLDPC_extern.h"
 #include "ldpc_encode_parity_check.c"
 #include "ldpc_generate_coefficient.c"
 
-
-
-int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc,int Kb,short block_length, short BG, encoder_implemparams_t *impp)
+int LDPCencoder(uint8_t **test_input, uint8_t **channel_input, encoder_implemparams_t *impp)
 {
-
-  short nrows=0,ncols=0;
+  int Zc = impp->Zc;
+  int Kb = impp->Kb;
+  int block_length = impp->K;
+  int BG = impp->BG;
+  int nrows=0,ncols=0;
   int rate=3;
   int no_punctured_columns,removed_bit;
 
@@ -79,17 +81,17 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
   if ((Zc&31) > 0) simd_size = 16;
   else simd_size = 32;
 
-  unsigned char c[22*Zc] __attribute__((aligned(32))); //padded input, unpacked, max size
-  unsigned char d[46*Zc] __attribute__((aligned(32))); //coded parity part output, unpacked, max size
+  uint8_t c[22*Zc] __attribute__((aligned(32))); //padded input, unpacked, max size
+  uint8_t d[46*Zc] __attribute__((aligned(32))); //coded parity part output, unpacked, max size
 
   // calculate number of punctured bits
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
-  removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*rate);
+  removed_bit = (nrows - no_punctured_columns - 2) * Zc + block_length - block_length * rate;
   // printf("%d\n",no_punctured_columns);
   // printf("%d\n",removed_bit);
   // unpack input
-  memset(c,0,sizeof(unsigned char) * ncols * Zc);
-  memset(d,0,sizeof(unsigned char) * nrows * Zc);
+  memset(c, 0, sizeof(c));
+  memset(d, 0, sizeof(d));
 
   if(impp->tinput != NULL) start_meas(impp->tinput);
   for (int i=0; i<block_length; i++) {
