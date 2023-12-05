@@ -942,6 +942,59 @@ void configure_physicalcellgroup(NR_UE_MAC_INST_t *mac,
                                         *p_UE_FR1 : *p_NR_FR1);
 }
 
+void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroupConfig_t *mcg)
+{
+  NR_UE_SCHEDULING_INFO *si = &mac->scheduling_info;
+  if (mcg->drx_Config)
+    LOG_E(NR_MAC, "DRX not implemented! Configuration not handled!\n");
+  if (mcg->schedulingRequestConfig) {
+    const NR_SchedulingRequestConfig_t *src = mcg->schedulingRequestConfig;
+    if (src->schedulingRequestToReleaseList) {
+      for (int i = 0; i < src->schedulingRequestToReleaseList->list.count; i++) {
+        if (*src->schedulingRequestToReleaseList->list.array[i] == si->sr_id) {
+          si->SR_COUNTER = 0;
+          si->sr_ProhibitTimer = 0;
+          si->sr_ProhibitTimer_Running = 0;
+          si->sr_id = -1; // invalid init value
+        }
+        else
+          LOG_E(NR_MAC, "Cannot release SchedulingRequestConfig. Not configured.\n");
+      }
+    }
+    if (src->schedulingRequestToAddModList) {
+      for (int i = 0; i < src->schedulingRequestToAddModList->list.count; i++) {
+        NR_SchedulingRequestToAddMod_t *sr = src->schedulingRequestToAddModList->list.array[i];
+        AssertFatal(si->sr_id == -1 ||
+                    si->sr_id == sr->schedulingRequestId,
+                    "Current implementation cannot handle more than 1 SR configuration\n");
+        si->sr_id = sr->schedulingRequestId;
+        si->sr_TransMax = sr->sr_TransMax;
+        if (sr->sr_ProhibitTimer)
+          LOG_E(NR_MAC, "SR prohibit timer not properly implemented\n");
+      }
+    }
+  }
+  if (mcg->bsr_Config) {
+    si->periodicBSR_Timer = mcg->bsr_Config->periodicBSR_Timer;
+    si->retxBSR_Timer = mcg->bsr_Config->retxBSR_Timer;
+    if (mcg->bsr_Config->logicalChannelSR_DelayTimer)
+      LOG_E(NR_MAC, "Handling of logicalChannelSR_DelayTimer not implemented\n");
+  }
+  if (mcg->tag_Config) {
+    // TODO TAG not handled
+    if(mcg->tag_Config->tag_ToAddModList) {
+      for (int i = 0; i < mcg->tag_Config->tag_ToAddModList->list.count; i++) {
+        if (mcg->tag_Config->tag_ToAddModList->list.array[i]->timeAlignmentTimer !=
+            NR_TimeAlignmentTimer_infinity)
+          LOG_E(NR_MAC, "TimeAlignmentTimer not handled\n");
+      }
+    }
+  }
+  if (mcg->phr_Config) {
+    // TODO configuration when PHR is implemented
+  }
+}
+
 void nr_rrc_mac_config_req_cg(module_id_t module_id,
                               int cc_idP,
                               NR_CellGroupConfig_t *cell_group_config)
@@ -950,9 +1003,8 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
   AssertFatal(cell_group_config, "CellGroupConfig should not be NULL\n");
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  if (cell_group_config->mac_CellGroupConfig) {
-    // TODO handle MAC-CellGroupConfig
-  }
+  if (cell_group_config->mac_CellGroupConfig)
+    configure_maccellgroup(mac, cell_group_config->mac_CellGroupConfig);
 
   if (cell_group_config->physicalCellGroupConfig)
     configure_physicalcellgroup(mac, cell_group_config->physicalCellGroupConfig);
