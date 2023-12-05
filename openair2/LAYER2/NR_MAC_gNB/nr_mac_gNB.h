@@ -228,6 +228,7 @@ typedef struct {
   // BWP for RA
   NR_UE_DL_BWP_t DL_BWP;
   NR_UE_UL_BWP_t UL_BWP;
+  NR_UE_ServingCell_Info_t sc_info;
 } NR_RA_t;
 
 /*! \brief gNB common channels */

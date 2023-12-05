@@ -560,29 +560,22 @@ typedef struct nr_srs_feedback {
 
 typedef struct NR_UE_DL_BWP {
   NR_BWP_Id_t bwp_id;
-  int n_dl_bwp;
   int scs;
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
-  uint16_t initial_BWPSize;
-  uint16_t initial_BWPStart;
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_PDSCH_Config_t *pdsch_Config;
   uint8_t mcsTableIdx;
   nr_dci_format_t dci_format;
-  int bw_tbslbrm;
 } NR_UE_DL_BWP_t;
 
 typedef struct NR_UE_UL_BWP {
   NR_BWP_Id_t bwp_id;
-  int n_ul_bwp;
   int scs;
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
-  uint16_t initial_BWPSize;
-  uint16_t initial_BWPStart;
   NR_RACH_ConfigCommon_t *rach_ConfigCommon;
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_ConfiguredGrantConfig_t *configuredGrantConfig;
@@ -594,7 +587,6 @@ typedef struct NR_UE_UL_BWP {
   long transform_precoding;
   uint8_t mcs_table;
   nr_dci_format_t dci_format;
-  int bw_tbslbrm;
   int max_fb_time;
 } NR_UE_UL_BWP_t;
 
@@ -613,6 +605,14 @@ typedef struct {
   long *maxMIMO_Layers_PUSCH;
   NR_CSI_MeasConfig_t *csi_MeasConfig;
   NR_CSI_AperiodicTriggerStateList_t *aperiodicTriggerStateList;
+  uint16_t initial_dl_BWPSize;
+  uint16_t initial_dl_BWPStart;
+  uint16_t initial_ul_BWPSize;
+  uint16_t initial_ul_BWPStart;
+  int n_dl_bwp;
+  int n_ul_bwp;
+  int dl_bw_tbslbrm;
+  int ul_bw_tbslbrm;
 } NR_UE_ServingCell_Info_t;
 
 typedef enum {

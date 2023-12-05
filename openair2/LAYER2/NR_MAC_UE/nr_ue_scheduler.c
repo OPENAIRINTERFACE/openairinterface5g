@@ -445,8 +445,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   if (rar_grant) {
 
     // Note: for Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0
-    int ibwp_start = current_UL_BWP->initial_BWPStart;
-    int ibwp_size = current_UL_BWP->initial_BWPSize;
+    int ibwp_start = sc_info->initial_ul_BWPStart;
+    int ibwp_size = sc_info->initial_ul_BWPSize;
     int abwp_start = current_UL_BWP->BWPStart;
     int abwp_size = current_UL_BWP->BWPSize;
     int scs = current_UL_BWP->scs;
@@ -669,7 +669,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
         maxMIMO_Layers = pusch_Config ? pusch_Config->maxRank : NULL;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
       pusch_config_pdu->tbslbrm = nr_compute_tbslbrm(pusch_config_pdu->mcs_table,
-                                                     current_UL_BWP->bw_tbslbrm,
+                                                     sc_info->ul_bw_tbslbrm,
                                                      *maxMIMO_Layers);
     } else
       pusch_config_pdu->tbslbrm = 0;

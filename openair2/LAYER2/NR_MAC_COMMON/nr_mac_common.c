@@ -3286,7 +3286,6 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      uint16_t cset0_bwp_size,
                      uint16_t alt_size)
 {
-
   uint16_t size = 0;
   uint16_t numRBG = 0;
   long rbg_size_config;
@@ -3304,8 +3303,8 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                           cset0_bwp_size,
                           UL_BWP->BWPSize,
                           DL_BWP->BWPSize,
-                          UL_BWP->initial_BWPSize,
-                          DL_BWP->initial_BWPSize);
+                          sc_info->initial_ul_BWPSize,
+                          sc_info->initial_dl_BWPSize);
 
   switch(format) {
     case NR_UL_DCI_FORMAT_0_0:
@@ -3336,11 +3335,11 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         size += dci_pdu->ul_sul_indicator.nbits;
       }
       // BWP Indicator
-      if (UL_BWP->n_ul_bwp < 2)
-        dci_pdu->bwp_indicator.nbits = UL_BWP->n_ul_bwp;
+      if (sc_info->n_ul_bwp < 2)
+        dci_pdu->bwp_indicator.nbits = sc_info->n_ul_bwp;
       else
         dci_pdu->bwp_indicator.nbits = 2;
-      LOG_D(NR_MAC, "BWP indicator nbits %d, num UL BWPs %d\n", dci_pdu->bwp_indicator.nbits, UL_BWP->n_ul_bwp);
+      LOG_D(NR_MAC, "BWP indicator nbits %d, num UL BWPs %d\n", dci_pdu->bwp_indicator.nbits, sc_info->n_ul_bwp);
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
       if (pusch_Config) {
@@ -3485,8 +3484,8 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       }
 
       // BWP Indicator
-      if (DL_BWP->n_dl_bwp < 2)
-        dci_pdu->bwp_indicator.nbits = DL_BWP->n_dl_bwp;
+      if (sc_info->n_dl_bwp < 2)
+        dci_pdu->bwp_indicator.nbits = sc_info->n_dl_bwp;
       else
         dci_pdu->bwp_indicator.nbits = 2;
       size += dci_pdu->bwp_indicator.nbits;
@@ -3610,7 +3609,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
     default:
       AssertFatal(1==0, "Invalid NR DCI format %d\n", format);
   }
-
+  LOG_D(NR_MAC, "DCI size: %d\n", size);
   return size;
 }
 

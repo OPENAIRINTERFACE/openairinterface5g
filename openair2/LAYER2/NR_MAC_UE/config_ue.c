@@ -1517,11 +1517,11 @@ NR_UE_DL_BWP_t *get_dl_bwp_structure(NR_UE_MAC_INST_t *mac,
     ASN_SEQUENCE_ADD(&mac->dl_BWPs, bwp);
   }
   if (!setup) {
-    bwp->n_dl_bwp = mac->dl_BWPs.count - 1;
-    bwp->bw_tbslbrm = 0;
+    mac->sc_info.n_dl_bwp = mac->dl_BWPs.count - 1;
+    mac->sc_info.dl_bw_tbslbrm = 0;
     for (int i = 0; i < mac->dl_BWPs.count; i++) {
-      if (mac->dl_BWPs.array[i]->BWPSize > bwp->bw_tbslbrm)
-        bwp->bw_tbslbrm = mac->dl_BWPs.array[i]->BWPSize;
+      if (mac->dl_BWPs.array[i]->BWPSize > mac->sc_info.dl_bw_tbslbrm)
+        mac->sc_info.dl_bw_tbslbrm = mac->dl_BWPs.array[i]->BWPSize;
     }
   }
   return bwp;
@@ -1543,11 +1543,11 @@ NR_UE_UL_BWP_t *get_ul_bwp_structure(NR_UE_MAC_INST_t *mac,
     ASN_SEQUENCE_ADD(&mac->ul_BWPs, bwp);
   }
   if (!setup) {
-    bwp->n_ul_bwp = mac->ul_BWPs.count - 1;
-    bwp->bw_tbslbrm = 0;
+    mac->sc_info.n_ul_bwp = mac->ul_BWPs.count - 1;
+    mac->sc_info.ul_bw_tbslbrm = 0;
     for (int i = 0; i < mac->ul_BWPs.count; i++) {
-      if (mac->ul_BWPs.array[i]->BWPSize > bwp->bw_tbslbrm)
-        bwp->bw_tbslbrm = mac->ul_BWPs.array[i]->BWPSize;
+      if (mac->ul_BWPs.array[i]->BWPSize > mac->sc_info.ul_bw_tbslbrm)
+        mac->sc_info.ul_bw_tbslbrm = mac->ul_BWPs.array[i]->BWPSize;
     }
   }
   return bwp;
@@ -1657,8 +1657,8 @@ void configure_common_BWP_dl(NR_UE_MAC_INST_t *mac,
     bwp->BWPSize = NRRIV2BW(dl_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     bwp->BWPStart = NRRIV2PRBOFFSET(dl_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     if (bwp_id == 0) {
-      bwp->initial_BWPSize = bwp->BWPSize;
-      bwp->initial_BWPStart = bwp->BWPStart;
+      mac->sc_info.initial_dl_BWPSize = bwp->BWPSize;
+      mac->sc_info.initial_dl_BWPStart = bwp->BWPStart;
     }
     if (dl_common->pdsch_ConfigCommon) {
       if (dl_common->pdsch_ConfigCommon->present ==
@@ -1699,8 +1699,8 @@ void configure_common_BWP_ul(NR_UE_MAC_INST_t *mac,
     bwp->BWPSize = NRRIV2BW(ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     bwp->BWPStart = NRRIV2PRBOFFSET(ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     if (bwp_id == 0) {
-      bwp->initial_BWPSize = bwp->BWPSize;
-      bwp->initial_BWPStart = bwp->BWPStart;
+      mac->sc_info.initial_ul_BWPSize = bwp->BWPSize;
+      mac->sc_info.initial_ul_BWPStart = bwp->BWPStart;
     }
     if (ul_common->rach_ConfigCommon) {
       handleMACsetuprelease(bwp->rach_ConfigCommon,
@@ -1793,11 +1793,20 @@ void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
     AssertFatal(reconfigurationWithSync->rach_ConfigDedicated->present ==
                 NR_ReconfigurationWithSync__rach_ConfigDedicated_PR_uplink,
                 "RACH on supplementaryUplink not supported\n");
-    ra->rach_ConfigDedicated = reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+    updateMACie(ra->rach_ConfigDedicated,
+                reconfigurationWithSync->rach_ConfigDedicated->choice.uplink,
+                NR_RACH_ConfigDedicated_t);
   }
 
   if (reconfigurationWithSync->spCellConfigCommon) {
     NR_ServingCellConfigCommon_t *scc = reconfigurationWithSync->spCellConfigCommon;
+    if (scc->physCellId)
+      mac->physCellId = *scc->physCellId;
+    mac->dmrs_TypeA_Position = scc->dmrs_TypeA_Position;
+    updateMACie(mac->tdd_UL_DL_ConfigurationCommon,
+                scc->tdd_UL_DL_ConfigurationCommon,
+                NR_TDD_UL_DL_ConfigCommon_t);
+    config_common_ue(mac, scc, module_id, cc_idP);
     if (scc->downlinkConfigCommon)
       configure_common_BWP_dl(mac,
                               0, // bwp-id
@@ -1806,13 +1815,6 @@ void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
       configure_common_BWP_ul(mac,
                               0, // bwp-id
                               scc->uplinkConfigCommon->initialUplinkBWP);
-    if (scc->physCellId)
-      mac->physCellId = *scc->physCellId;
-    mac->dmrs_TypeA_Position = scc->dmrs_TypeA_Position;
-    updateMACie(mac->tdd_UL_DL_ConfigurationCommon,
-                scc->tdd_UL_DL_ConfigurationCommon,
-                NR_TDD_UL_DL_ConfigCommon_t);
-    config_common_ue(mac, scc, module_id, cc_idP);
   }
 
   mac->state = UE_NOT_SYNC;

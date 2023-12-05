@@ -497,7 +497,7 @@ static void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot)
   uint8_t i, j;
 
   //bwp indicator
-  int n_dl_bwp = dl_bwp->n_dl_bwp;
+  int n_dl_bwp = UE->sc_info.n_dl_bwp;
   const int bwp_id = dl_bwp->bwp_id;
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;

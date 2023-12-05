@@ -2288,7 +2288,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
         maxMIMO_Layers = current_BWP->pusch_Config->maxRank;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
       pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcs_table,
-                                                                           current_BWP->bw_tbslbrm,
+                                                                           sc_info->ul_bw_tbslbrm,
                                                                            *maxMIMO_Layers);
     }
     else

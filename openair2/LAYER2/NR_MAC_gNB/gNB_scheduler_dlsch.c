@@ -400,8 +400,8 @@ static void get_start_stop_allocation(gNB_MAC_INST *mac,
       *rbStop = *rbStart + mac->cset0_bwp_size;
     }
     else {
-      *rbStart = dl_bwp->initial_BWPStart;
-      *rbStop = *rbStart + dl_bwp->initial_BWPSize;
+      *rbStart = UE->sc_info.initial_dl_BWPStart;
+      *rbStop = *rbStart + UE->sc_info.initial_dl_BWPSize;
     }
   }
 }
@@ -1086,7 +1086,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int nl_tbslbrm = min(maxMIMO_Layers, 4);
     // Maximum number of PRBs across all configured DL BWPs
     pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcsTableIdx,
-                                                                         current_BWP->bw_tbslbrm,
+                                                                         UE->sc_info.dl_bw_tbslbrm,
                                                                          nl_tbslbrm);
     pdsch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
 
@@ -1138,7 +1138,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
     // as per table 7.3.1.1.2-1 in 38.212
-    dci_payload.bwp_indicator.val = current_BWP->n_dl_bwp < 4 ? bwp_id : bwp_id - 1;
+    dci_payload.bwp_indicator.val = UE->sc_info.n_dl_bwp < 4 ? bwp_id : bwp_id - 1;
 
     AssertFatal(pdsch_Config == NULL || pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");

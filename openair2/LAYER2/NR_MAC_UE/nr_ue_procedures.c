@@ -616,7 +616,7 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
   NR_PDSCH_Config_t *pdsch_config = (current_DL_BWP || !mac->get_sib1) ? current_DL_BWP->pdsch_Config : NULL;
   if (dci_ind->ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
     dlsch_pdu->BWPSize =
-        mac->type0_PDCCH_CSS_config.num_rbs ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->initial_BWPSize;
+        mac->type0_PDCCH_CSS_config.num_rbs ? mac->type0_PDCCH_CSS_config.num_rbs : mac->sc_info.initial_dl_BWPSize;
     dlsch_pdu->BWPStart = dci_ind->cset_start;
   } else {
     dlsch_pdu->BWPSize = current_DL_BWP->BWPSize;
@@ -737,7 +737,7 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
   }
 
   int bw_tbslbrm = current_DL_BWP?
-                   current_DL_BWP->bw_tbslbrm :
+                   mac->sc_info.dl_bw_tbslbrm :
                    dlsch_pdu->BWPSize;
   dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, 1);
 
@@ -1168,7 +1168,7 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   // TBS_LBRM according to section 5.4.2.1 of 38.212
   AssertFatal(sc_info->maxMIMO_Layers_PDSCH != NULL, "Option with max MIMO layers not configured is not supported\n");
   int nl_tbslbrm = *sc_info->maxMIMO_Layers_PDSCH < 4 ? *sc_info->maxMIMO_Layers_PDSCH : 4;
-  dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, current_DL_BWP->bw_tbslbrm, nl_tbslbrm);
+  dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, sc_info->dl_bw_tbslbrm, nl_tbslbrm);
   /*PTRS configuration */
   dlsch_pdu->pduBitmap = 0;
   if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
@@ -2885,8 +2885,8 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                           mac->type0_PDCCH_CSS_config.num_rbs,
                           current_UL_BWP->BWPSize,
                           current_DL_BWP->BWPSize,
-                          current_UL_BWP->initial_BWPSize,
-                          current_DL_BWP->initial_BWPSize);
+                          mac->sc_info.initial_dl_BWPSize,
+                          mac->sc_info.initial_dl_BWPSize);
   else
     N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
 

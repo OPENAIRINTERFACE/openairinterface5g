@@ -684,8 +684,8 @@ void config_uldci(const NR_UE_ServingCell_Info_t *sc_info,
                   int time_domain_assignment,
                   uint8_t tpc,
                   uint8_t ndi,
-                  NR_UE_UL_BWP_t *ul_bwp) {
-
+                  NR_UE_UL_BWP_t *ul_bwp)
+{
   int bwp_id = ul_bwp->bwp_id;
   nr_dci_format_t dci_format = ul_bwp->dci_format;
 
@@ -710,7 +710,7 @@ void config_uldci(const NR_UE_ServingCell_Info_t *sc_info,
       LOG_D(NR_MAC,"Configuring DCI Format 0_1\n");
       dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator as per table 7.3.1.1.2-1 in 38.212
-      dci_pdu_rel15->bwp_indicator.val = ul_bwp->n_ul_bwp < 4 ? bwp_id : bwp_id - 1;
+      dci_pdu_rel15->bwp_indicator.val = sc_info->n_ul_bwp < 4 ? bwp_id : bwp_id - 1;
       // SRS resource indicator
       if (pusch_Config &&
           pusch_Config->txConfig != NULL) {
@@ -1150,8 +1150,8 @@ void fill_dci_pdu_rel15(const NR_UE_ServingCell_Info_t *servingCellInfo,
                           cset0_bwp_size,
                           current_UL_BWP->BWPSize,
                           current_DL_BWP->BWPSize,
-                          current_UL_BWP->initial_BWPSize,
-                          current_DL_BWP->initial_BWPSize);
+                          servingCellInfo->initial_ul_BWPSize,
+                          servingCellInfo->initial_dl_BWPSize);
 
     // computing alternative size for padding
     dci_pdu_rel15_t temp_pdu;
@@ -2067,6 +2067,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   AssertFatal((ra != NULL && UE == NULL) || (ra == NULL && UE != NULL), "RA and UE structures are mutually exlusive in BWP configuration\n");
 
   NR_CellGroupConfig_t *CellGroup;
+  NR_UE_ServingCell_Info_t *sc_info;
   NR_UE_DL_BWP_t *DL_BWP;
   NR_UE_UL_BWP_t *UL_BWP;
 
@@ -2074,19 +2075,21 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     DL_BWP = &ra->DL_BWP;
     UL_BWP = &ra->UL_BWP;
     CellGroup = ra->CellGroup;
+    sc_info = &ra->sc_info;
   }
   else {
     DL_BWP = &UE->current_DL_BWP;
     UL_BWP = &UE->current_UL_BWP;
     CellGroup = UE->CellGroup;
+    sc_info = &UE->sc_info;
   }
   NR_BWP_Downlink_t *dl_bwp = NULL;
   NR_BWP_Uplink_t *ul_bwp = NULL;
   NR_BWP_DownlinkDedicated_t *bwpd = NULL;
   NR_BWP_UplinkDedicated_t *ubwpd = NULL;
   // number of additional BWPs (excluding initial BWP)
-  DL_BWP->n_dl_bwp = 0;
-  UL_BWP->n_ul_bwp = 0;
+  sc_info->n_dl_bwp = 0;
+  sc_info->n_ul_bwp = 0;
   int old_dl_bwp_id = DL_BWP->bwp_id;
   int old_ul_bwp_id = UL_BWP->bwp_id;
 
@@ -2117,7 +2120,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
     if(bwpList)
-      DL_BWP->n_dl_bwp = bwpList->list.count;
+      sc_info->n_dl_bwp = bwpList->list.count;
     if (DL_BWP->bwp_id>0) {
       for (int i=0; i<bwpList->list.count; i++) {
         dl_bwp = bwpList->list.array[i];
@@ -2129,7 +2132,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
     if(ubwpList)
-      UL_BWP->n_ul_bwp = ubwpList->list.count;
+      sc_info->n_ul_bwp = ubwpList->list.count;
     if (UL_BWP->bwp_id>0) {
       for (int i=0; i<ubwpList->list.count; i++) {
         ul_bwp = ubwpList->list.array[i];
@@ -2190,8 +2193,8 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   DL_BWP->cyclicprefix = dl_genericParameters.cyclicPrefix;
   DL_BWP->BWPSize = NRRIV2BW(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   DL_BWP->BWPStart = NRRIV2PRBOFFSET(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  DL_BWP->initial_BWPSize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  DL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  sc_info->initial_dl_BWPSize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  sc_info->initial_dl_BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   NR_BWP_t ul_genericParameters = (UL_BWP->bwp_id > 0 && ul_bwp) ?
     ul_bwp->bwp_Common->genericParameters:
@@ -2201,11 +2204,11 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   UL_BWP->cyclicprefix = ul_genericParameters.cyclicPrefix;
   UL_BWP->BWPSize = NRRIV2BW(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->BWPStart = NRRIV2PRBOFFSET(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  UL_BWP->initial_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  UL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  sc_info->initial_ul_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  sc_info->initial_ul_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  DL_BWP->bw_tbslbrm = get_dlbw_tbslbrm(DL_BWP->initial_BWPSize, servingCellConfig);
-  UL_BWP->bw_tbslbrm = get_ulbw_tbslbrm(UL_BWP->initial_BWPSize, servingCellConfig);
+  sc_info->dl_bw_tbslbrm = get_dlbw_tbslbrm(sc_info->initial_dl_BWPSize, servingCellConfig);
+  sc_info->dl_bw_tbslbrm = get_ulbw_tbslbrm(sc_info->initial_ul_BWPSize, servingCellConfig);
 
   if (UL_BWP->bwp_id > 0) {
     UL_BWP->pucch_ConfigCommon = ul_bwp->bwp_Common->pucch_ConfigCommon ? ul_bwp->bwp_Common->pucch_ConfigCommon->choice.setup : NULL;
@@ -2216,7 +2219,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   }
 
   if(UE) {
-    NR_UE_ServingCell_Info_t *sc_info = &UE->sc_info;
     if (servingCellConfig) {
       if(servingCellConfig->csi_MeasConfig) {
         sc_info->csi_MeasConfig = servingCellConfig->csi_MeasConfig->choice.setup;
@@ -2360,7 +2362,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
 
   // We will attach at the end, to mitigate race conditions
   // This is not good, but we will fix it progressively
-  NR_UE_info_t *UE=calloc(1,sizeof(NR_UE_info_t));
+  NR_UE_info_t *UE = calloc(1,sizeof(NR_UE_info_t));
   if(!UE) {
     LOG_E(NR_MAC,"want to add UE %04x but the fixed allocated size is full\n",rntiP);
     return NULL;
@@ -2394,9 +2396,9 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   sched_ctrl->sched_pusch.time_domain_allocation = -1;
 
   /* Set default BWPs */
-  AssertFatal(ul_bwp->n_ul_bwp <= NR_MAX_NUM_BWP,
+  AssertFatal(UE->sc_info.n_ul_bwp <= NR_MAX_NUM_BWP,
               "uplinkBWP_ToAddModList has %d BWP!\n",
-              ul_bwp->n_ul_bwp);
+              UE->sc_info.n_ul_bwp);
 
   if (get_softmodem_params()->phy_test == 0) {
     UE->ra_timer = 12000 << UE->current_DL_BWP.scs; // 12000 ms is arbitrary and found to be a good timeout from experiments
