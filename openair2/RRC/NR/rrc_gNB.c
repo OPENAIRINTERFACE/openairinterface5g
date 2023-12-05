@@ -254,11 +254,19 @@ static int get_ssb_arfcn(const f1ap_served_cell_info_t *cell_info, const NR_MIB_
   uint32_t dl_arfcn = get_dl_arfcn(cell_info);
   int scs = get_ssb_scs(cell_info);
   int band = get_dl_band(cell_info);
-  uint64_t scaling = band < 100 ? 1 : 3;
+  // FR1 includes frequency bands from 410 MHz (ARFCN 82000) to 7125 MHz (ARFCN 875000)
+  // FR2 includes frequency bands from 24.25 GHz (ARFCN 2016667) to 71.0 GHz (ARFCN 2795832)
+  uint64_t scaling = 0;
+  if (dl_arfcn >= 82000 && dl_arfcn < 875000)
+    scaling = 1;
+  else if (dl_arfcn >= 2016667 && dl_arfcn < 2795832)
+    scaling = 4;
+  else
+    AssertFatal(false, "Invalid absoluteFrequencyPointA: %d\n", dl_arfcn);
+
 
   uint64_t freqpointa = from_nrarfcn(band, scs, dl_arfcn);
-  // offsetToPointA and kSSB are both on 15kHz SCS (see 38.211 sections 7.4.3.1
-  // and 4.4.4.2)
+  // offsetToPointA and kSSB are both on 15kHz SCS for FR1 and 60kHz SCS for FR2 (see 38.211 sections 7.4.3.1 and 4.4.4.2)
   // SSB uses the SCS of the cell and is 20 RBs wide, so use 10
   uint64_t freqssb = freqpointa + scaling * 15000 * (offsetToPointA * 12 + kssb)  + 10ll * 12 * (1 << scs) * 15000;
   int bw_index = get_supported_band_index(scs, band, get_dl_bw(cell_info));
