@@ -93,7 +93,6 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 
 extern uint16_t sf_ahead;
-int macrlc_has_f1 = 0;
 
 // synchronization raster per band tables (Rel.15)
 // (38.101-1 Table 5.4.3.3-1 and 38.101-2 Table 5.4.3.3-1)
@@ -1034,7 +1033,9 @@ static NR_ServingCellConfig_t *get_scd_config(configmodule_interface_t *cfg)
 }
 
 static int read_du_cell_info(configmodule_interface_t *cfg,
-                             uint64_t *id,
+                             bool separate_du,
+                             uint32_t *gnb_id,
+                             uint64_t *gnb_du_id,
                              char **name,
                              f1ap_served_cell_info_t *info,
                              int max_cell_info)
@@ -1051,7 +1052,11 @@ static int read_du_cell_info(configmodule_interface_t *cfg,
 
   // Output a list of all eNBs.
   config_getlist(cfg, &GNBParamList, GNBParams, sizeof(GNBParams) / sizeof(paramdef_t), NULL);
-  AssertFatal(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr != NULL, "gNB id %u is not defined in configuration file\n", 0);
+
+  // read the gNB-ID. The DU itself only needs the gNB-DU ID, but some (e.g.,
+  // E2 agent) need the gNB-ID as well if it is running in a separate process
+  AssertFatal(config_isparamset(GNBParamList.paramarray[0], GNB_GNB_ID_IDX), "%s is not defined in configuration file\n", GNB_CONFIG_STRING_GNB_ID);
+  *gnb_id = *GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr;
 
   AssertFatal(strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[0], *GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr) == 0,
               "no active gNB found/mismatch of gNBs: %s vs %s\n",
@@ -1068,7 +1073,17 @@ static int read_du_cell_info(configmodule_interface_t *cfg,
   paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
   config_getlist(cfg, &PLMNParamList, PLMNParams, sizeof(PLMNParams) / sizeof(paramdef_t), aprefix);
 
-  *id = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+  // if fronthaul is F1, require gNB_DU_ID, else use gNB_ID
+  if (separate_du) {
+    AssertFatal(config_isparamset(GNBParamList.paramarray[0], GNB_GNB_DU_ID_IDX), "%s is not defined in configuration file\n", GNB_CONFIG_STRING_GNB_DU_ID);
+    *gnb_du_id = *GNBParamList.paramarray[0][GNB_GNB_DU_ID_IDX].u64ptr;
+  } else {
+    AssertFatal(!config_isparamset(GNBParamList.paramarray[0], GNB_GNB_DU_ID_IDX),
+                "%s should not be defined in configuration file for monolithic gNB\n",
+                GNB_CONFIG_STRING_GNB_DU_ID);
+    *gnb_du_id = *gnb_id; // the gNB-DU ID is equal to the gNB ID, since the config has no gNB-DU ID
+  }
+
   *name = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
   info->tac = malloc(sizeof(*info->tac));
   AssertFatal(info->tac != NULL, "out of memory\n");
@@ -1252,7 +1267,8 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_RRC") == 0) {
         // check number of instances is same as RRC/PDCP
 
-      } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
+      } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0
+                 || strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "cudu") == 0) {
         printf("Configuring F1 interfaces for MACRLC\n");
         RC.nrmac[j]->eth_params_n.local_if_name = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
         RC.nrmac[j]->eth_params_n.my_addr = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
@@ -1261,18 +1277,6 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
         RC.nrmac[j]->eth_params_n.remote_portc = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTC_IDX].iptr);
         RC.nrmac[j]->eth_params_n.my_portd = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_n.remote_portd = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTD_IDX].iptr);
-        ;
-        RC.nrmac[j]->eth_params_n.transp_preference = ETH_UDP_MODE;
-        macrlc_has_f1 = 1;
-      } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "cudu") == 0) {
-        RC.nrmac[j]->eth_params_n.local_if_name = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
-        RC.nrmac[j]->eth_params_n.my_addr = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
-        RC.nrmac[j]->eth_params_n.remote_addr = strdup(*(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_ADDRESS_IDX].strptr));
-        RC.nrmac[j]->eth_params_n.my_portc = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTC_IDX].iptr);
-        RC.nrmac[j]->eth_params_n.remote_portc = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTC_IDX].iptr);
-        RC.nrmac[j]->eth_params_n.my_portd = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTD_IDX].iptr);
-        RC.nrmac[j]->eth_params_n.remote_portd = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTD_IDX].iptr);
-        ;
         RC.nrmac[j]->eth_params_n.transp_preference = ETH_UDP_MODE;
       } else { // other midhaul
         AssertFatal(1 == 0, "MACRLC %d: %s unknown northbound midhaul\n", j, *(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr));
@@ -1314,10 +1318,11 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
       memcpy(RC.nrmac[j]->ulprbbl, prbbl, 275 * sizeof(prbbl[0]));
     } //  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
 
-    uint64_t id;
+    uint64_t gnb_du_id = 0;
+    uint32_t gnb_id = 0;
     char *name = NULL;
     f1ap_served_cell_info_t info;
-    read_du_cell_info(cfg, &id, &name, &info, 1);
+    read_du_cell_info(cfg, NODE_IS_DU(node_type), &gnb_id, &gnb_du_id, &name, &info, 1);
 
     if (get_softmodem_params()->sa)
       nr_mac_configure_sib1(RC.nrmac[0], &info.plmn, info.nr_cellid, *info.tac);
@@ -1326,9 +1331,10 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
     // and store it at MAC for sending later
     NR_BCCH_BCH_Message_t *mib = RC.nrmac[0]->common_channels[0].mib;
     const NR_BCCH_DL_SCH_Message_t *sib1 = RC.nrmac[0]->common_channels[0].sib1;
-    f1ap_setup_req_t *req = RC_read_F1Setup(id, name, &info, scc, mib, sib1);
+    f1ap_setup_req_t *req = RC_read_F1Setup(gnb_du_id, name, &info, scc, mib, sib1);
     AssertFatal(req != NULL, "could not read F1 Setup information\n");
     RC.nrmac[0]->f1_config.setup_req = req;
+    RC.nrmac[0]->f1_config.gnb_id = gnb_id;
 
     free(name); /* read_du_cell_info() allocated memory */
 
@@ -1550,12 +1556,12 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
     printf("NRRRC %u: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
 
     rrc->node_type = get_node_type();
+    rrc->node_id        = gnb_id;
     if (NODE_IS_CU(rrc->node_type)) {
       paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
       char aprefix[MAX_OPTNAME_SIZE*2 + 8];
       sprintf(aprefix,"%s.[%u].%s",GNB_CONFIG_STRING_GNB_LIST,i,GNB_CONFIG_STRING_SCTP_CONFIG);
       config_get(config_get_if(), SCTPParams, sizeofArray(SCTPParams), aprefix);
-      rrc->node_id        = gnb_id;
       LOG_I(GNB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,rrc->node_id);
       rrc->node_name = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
       LOG_I(GNB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,rrc->node_name);
@@ -2242,7 +2248,7 @@ ngran_node_t get_node_type(void)
     RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt; 
     for (int j = 0; j < RC.nb_nr_macrlc_inst; j++) {
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
-        macrlc_has_f1 = 1;
+        return ngran_gNB_DU; // MACRLCs present in config: it must be a DU
       }
     }
   }
@@ -2256,10 +2262,9 @@ ngran_node_t get_node_type(void)
       return ngran_gNB_CUUP;
     else
       return ngran_gNB_CU;
-  } else if (macrlc_has_f1 == 0)
+  } else {
     return ngran_gNB;
-  else
-    return ngran_gNB_DU;
+  }
 }
 
 #ifdef E2_AGENT
@@ -2272,7 +2277,14 @@ e2_agent_args_t RCconfig_NR_E2agent(void)
     LOG_W(GNB_APP, "configuration file does not contain a \"%s\" section, applying default parameters from FlexRIC\n", CONFIG_STRING_E2AGENT);
     return (e2_agent_args_t) { 0 };
   }
-  e2_agent_args_t dst = {0};
+
+  bool enabled = config_isparamset(e2agent_params, E2AGENT_CONFIG_SMDIR_IDX)
+              && config_isparamset(e2agent_params, E2AGENT_CONFIG_IP_IDX);
+  e2_agent_args_t dst = {.enabled = enabled};
+  if (!enabled) {
+    LOG_W(GNB_APP, "E2 agent is DISABLED (for activation, define .%s.{%s,%s} parameters)\n", CONFIG_STRING_E2AGENT, E2AGENT_CONFIG_IP, E2AGENT_CONFIG_SMDIR);
+    return dst;
+  }
 
   if (e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr != NULL)
     dst.sm_dir = *e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr;

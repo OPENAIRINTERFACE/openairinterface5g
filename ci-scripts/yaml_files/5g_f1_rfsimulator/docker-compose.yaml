@@ -168,6 +168,7 @@ services:
         container_name: rfsim5g-oai-cu
         environment: 
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-ext-dn
         networks:
@@ -186,6 +187,7 @@ services:
         container_name: rfsim5g-oai-du
         environment: 
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-cu
         networks:
@@ -203,7 +205,8 @@ services:
         privileged: true
         container_name: rfsim5g-oai-du2
         environment:
-            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_ID 0xe01 --gNBs.[0].nr_cellid 87654321 --gNBs.[0].servingCellConfigCommon.[0].physCellId 1 --MACRLCs.[0].local_n_address 192.168.71.143 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_DU_ID 0xe01 --gNBs.[0].nr_cellid 87654321 --gNBs.[0].servingCellConfigCommon.[0].physCellId 1 --MACRLCs.[0].local_n_address 192.168.71.143 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-cu
         networks:
@@ -221,7 +224,8 @@ services:
         privileged: true
         container_name: rfsim5g-oai-du3
         environment:
-            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_ID 0xe02 --gNBs.[0].nr_cellid 11111111 --gNBs.[0].servingCellConfigCommon.[0].physCellId 2 --MACRLCs.[0].local_n_address 192.168.71.144 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --gNBs.[0].gNB_DU_ID 0xe02 --gNBs.[0].nr_cellid 11111111 --gNBs.[0].servingCellConfigCommon.[0].physCellId 2 --MACRLCs.[0].local_n_address 192.168.71.144 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-cu
         networks:
@@ -240,6 +244,7 @@ services:
         container_name: rfsim5g-oai-nr-ue
         environment: 
             USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001100 -C 3619200000 --rfsimulator.serveraddr 192.168.71.142 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-du
         networks:
@@ -258,6 +263,7 @@ services:
         container_name: rfsim5g-oai-nr-ue2
         environment:
             USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001101 -C 3619200000 --rfsimulator.serveraddr 192.168.71.143 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-du2
         networks:
@@ -276,6 +282,7 @@ services:
         container_name: rfsim5g-oai-nr-ue3
         environment:
             USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001102 -C 3619200000 --rfsimulator.serveraddr 192.168.71.144 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-du3
         networks:

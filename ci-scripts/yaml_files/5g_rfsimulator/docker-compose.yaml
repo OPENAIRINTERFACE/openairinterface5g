@@ -168,6 +168,7 @@ services:
         container_name: rfsim5g-oai-gnb
         environment:
             USE_ADDITIONAL_OPTIONS: --sa -E --rfsim --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-ext-dn
         networks:
@@ -186,6 +187,7 @@ services:
         container_name: rfsim5g-oai-nr-ue
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001100 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -204,6 +206,7 @@ services:
         container_name: rfsim5g-oai-nr-ue2
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001101 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -222,6 +225,7 @@ services:
         container_name: rfsim5g-oai-nr-ue3
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001102 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -240,6 +244,7 @@ services:
         container_name: rfsim5g-oai-nr-ue4
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001103 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -258,6 +263,7 @@ services:
         container_name: rfsim5g-oai-nr-ue5
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001104 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -276,6 +282,7 @@ services:
         container_name: rfsim5g-oai-nr-ue6
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001105 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -294,6 +301,7 @@ services:
         container_name: rfsim5g-oai-nr-ue7
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001106 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -312,6 +320,7 @@ services:
         container_name: rfsim5g-oai-nr-ue8
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001107 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -330,6 +339,7 @@ services:
         container_name: rfsim5g-oai-nr-ue9
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001108 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:
@@ -348,6 +358,7 @@ services:
         container_name: rfsim5g-oai-nr-ue10
         environment:
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001109 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:

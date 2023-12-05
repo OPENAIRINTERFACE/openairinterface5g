@@ -2942,9 +2942,19 @@ e2_agent_args_t RCconfig_E2agent(void)
     LOG_W(GNB_APP, "configuration file does not contain a \"%s\" section, applying default parameters\n", CONFIG_STRING_E2AGENT);
     return (e2_agent_args_t) {0}; 
   }
+
+  bool enabled = config_isparamset(e2agent_params, E2AGENT_CONFIG_SMDIR_IDX)
+              && config_isparamset(e2agent_params, E2AGENT_CONFIG_IP_IDX);
+  if (!enabled) {
+    LOG_W(GNB_APP, "E2 agent is DISABLED (for activation, define .%s.{%s,%s} parameters)\n", CONFIG_STRING_E2AGENT, E2AGENT_CONFIG_IP, E2AGENT_CONFIG_SMDIR);
+    return (e2_agent_args_t) {
+      .enabled = false,
+    };
+  }
+
   return (e2_agent_args_t) {
+    .enabled = true,
     .ip = *e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr,
-    .port = *e2agent_params[E2AGENT_CONFIG_PORT_IDX].u16ptr,
     .sm_dir = *e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr,
   };
 }

@@ -35,20 +35,16 @@
 #include <malloc.h>
 #include "assertions.h"
 #include "common/utils/LOG/log.h"
-#define LDPC_LOADER
 #include "PHY/CODING/nrLDPC_extern.h"
-#include "common/config/config_userapi.h" 
-#include "common/utils/load_module_shlib.h" 
-
-
-/* function description array, to be used when loading the encoding/decoding shared lib */
-static loader_shlibfunc_t shlib_fdesc[3];
+#include "common/config/config_userapi.h"
+#include "common/utils/load_module_shlib.h"
 
 /* arguments used when called from phy simulators exec's which do not use the config module */
 /* arg is used to initialize the config module so that the loader works as expected */
 char *arg[64]={"ldpctest",NULL};
 
-int load_nrLDPClib(char *version) {
+int load_LDPClib(char *version, ldpc_interface_t *itf)
+{
   char *ptr = (char *)config_get_if();
   char libname[64] = "ldpc";
 
@@ -56,76 +52,25 @@ int load_nrLDPClib(char *version) {
     uniqCfg = load_configmodule(1, arg, CONFIG_ENABLECMDLINEONLY);
     logInit();
   }
-  shlib_fdesc[0].fname = "nrLDPC_decod";
-  shlib_fdesc[1].fname = "nrLDPC_encod";
-  shlib_fdesc[2].fname = "nrLDPC_initcall";
+  /* function description array, to be used when loading the encoding/decoding shared lib */
+  loader_shlibfunc_t shlib_fdesc[] = {{.fname = "LDPCinit"},
+                                      {.fname = "LDPCshutdown"},
+                                      {.fname = "LDPCdecoder"},
+                                      {.fname = "LDPCencoder"}};
   int ret;
   ret = load_module_version_shlib(libname, version, shlib_fdesc, sizeofArray(shlib_fdesc), NULL);
   AssertFatal((ret >= 0), "Error loading ldpc decoder");
-  nrLDPC_decoder = (nrLDPC_decoderfunc_t)shlib_fdesc[0].fptr;
-  nrLDPC_encoder = (nrLDPC_encoderfunc_t)shlib_fdesc[1].fptr;
-  nrLDPC_initcall = (nrLDPC_initcallfunc_t)shlib_fdesc[2].fptr;
-  return 0;
-}
+  itf->LDPCinit = (LDPC_initfunc_t *)shlib_fdesc[0].fptr;
+  itf->LDPCshutdown = (LDPC_shutdownfunc_t *)shlib_fdesc[1].fptr;
+  itf->LDPCdecoder = (LDPC_decoderfunc_t *)shlib_fdesc[2].fptr;
+  itf->LDPCencoder = (LDPC_encoderfunc_t *)shlib_fdesc[3].fptr;
 
-int load_nrLDPClib_offload(void) {
-     loader_shlibfunc_t shlib_decoffload_fdesc; 
-     
-     shlib_decoffload_fdesc.fname = "nrLDPC_decod_offload";
-     int ret=load_module_shlib("ldpc_t1",&shlib_decoffload_fdesc,1,NULL);
-     AssertFatal( (ret >= 0),"Error loading ldpc decoder offload");
-     nrLDPC_decoder_offload = (nrLDPC_decoffloadfunc_t)shlib_decoffload_fdesc.fptr;
-
-  t_nrLDPC_dec_params decParams;
-  t_nrLDPC_dec_params* p_decParams    = &decParams;
-  int8_t   l[68*384];
-  int8_t llrProcBuf[22*384];
-
-  p_decParams->Z = 384;
-  p_decParams->BG = 1;
-
-  AssertFatal(nrLDPC_decoder_offload(p_decParams,0, 0,
-				     1,
-				     0,
-				     0,
-				     25344,
-				     8,
-				     l, 
-				     llrProcBuf, 0)>=0,
-	      "error loading LDPC decoder offload library\n");
-
+  AssertFatal(itf->LDPCinit() == 0, "error starting LDPC library %s %s\n", libname, version);
 
   return 0;
 }
 
-int free_nrLDPClib_offload(void) {
-t_nrLDPC_dec_params decParams;
-  t_nrLDPC_dec_params* p_decParams    = &decParams;
-  int8_t   l[68*384];
-  int8_t llrProcBuf[22*384];
-
-  p_decParams->Z = 384;
-  p_decParams->BG = 1;
-
-  nrLDPC_decoder_offload(p_decParams,0,0,
-                        1,
-                        0,
-                        0,
-                        25344,
-                        8,
-                        l,
-                        llrProcBuf, 2);
-return 0;
+int free_LDPClib(ldpc_interface_t *ldpc_interface)
+{
+  return ldpc_interface->LDPCshutdown();
 }
-
-int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t * nrLDPC_encoder_ptr) {
-	loader_shlibfunc_t shlib_encoder_fdesc;
-
-     shlib_encoder_fdesc.fname = "nrLDPC_encod";
-     int ret=load_module_version_shlib("ldpc",libversion,&shlib_encoder_fdesc,1,NULL);
-     AssertFatal( (ret >= 0),"Error loading ldpc encoder %s\n",(libversion==NULL)?"":libversion);
-     *nrLDPC_encoder_ptr = (nrLDPC_encoderfunc_t)shlib_encoder_fdesc.fptr;
-return 0;
-}
-
-

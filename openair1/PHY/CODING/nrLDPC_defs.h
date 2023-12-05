@@ -47,7 +47,7 @@ typedef struct {
   time_stats_t *toutput;
   int Kr;
   uint32_t Kb;
-  uint32_t *Zc;
+  uint32_t Zc;
   void *harq;
   /// Encoder BG
   uint8_t BG;
@@ -57,13 +57,16 @@ typedef struct {
   uint32_t K;
   /// Number of "Filler" bits
   uint32_t F;
-  /// LDPC-code outputs
-  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS];
+  /// Modulation order
+  uint8_t Qm;
+  uint32_t E;
+  unsigned int G;
+  // Redundancy version index
+  uint8_t rv;
 } encoder_implemparams_t;
-#define INIT0_LDPCIMPLEMPARAMS {0,0,0,NULL,NULL,NULL,NULL}
-typedef void(*nrLDPC_initcallfunc_t)(t_nrLDPC_dec_params *p_decParams, int8_t *p_llr, int8_t *p_out);
-typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,short, short, encoder_implemparams_t *);
-//============================================================================================================================
+
+typedef int32_t(LDPC_initfunc_t)(void);
+typedef int32_t(LDPC_shutdownfunc_t)(void);
 // decoder interface
 /**
    \brief LDPC decoder API type definition
@@ -73,8 +76,14 @@ typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,sho
    \param p_profiler LDPC profiler statistics
 */
 
-typedef int32_t (*nrLDPC_decoderfunc_t)(t_nrLDPC_dec_params *, int8_t *, int8_t *, t_nrLDPC_time_stats *, decode_abort_t *ab);
-typedef int32_t(*nrLDPC_decoffloadfunc_t)(t_nrLDPC_dec_params* , uint8_t, uint8_t, uint8_t , uint8_t, uint16_t, uint32_t, uint8_t, int8_t*, int8_t* ,uint8_t);
-typedef int32_t(*nrLDPC_dectopfunc_t)(void);
+typedef int32_t(LDPC_decoderfunc_t)(t_nrLDPC_dec_params *p_decParams,
+                                    uint8_t harq_pid,
+                                    uint8_t ulsch_id,
+                                    uint8_t C,
+                                    int8_t *p_llr,
+                                    int8_t *p_out,
+                                    t_nrLDPC_time_stats *,
+                                    decode_abort_t *ab);
+typedef int32_t(LDPC_encoderfunc_t)(uint8_t **, uint8_t **, encoder_implemparams_t *);
 
 #endif

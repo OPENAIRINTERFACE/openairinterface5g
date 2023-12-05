@@ -1801,7 +1801,7 @@ void cucp_task_send_sctp_init_req(instance_t instance, char *my_addr) {
 void e1_task_handle_sctp_association_ind(E1_t type, instance_t instance, sctp_new_association_ind_t *sctp_new_ind)
 {
   if (!getCxtE1(instance))
-    createE1inst(type, instance, NULL, NULL);
+    createE1inst(type, instance, 0, NULL, NULL);
   e1ap_upcp_inst_t *inst = getCxtE1(instance);
   inst->sockState = SCTP_STATE_ESTABLISHED;
   if (type == UPtype)
@@ -1897,7 +1897,7 @@ void *E1AP_CUUP_task(void *arg) {
     switch (msgType) {
       case E1AP_REGISTER_REQ: {
         e1ap_register_req_t *reg_req = &E1AP_REGISTER_REQ(msg);
-        createE1inst(UPtype, myInstance, &reg_req->net_config, &reg_req->setup_req);
+        createE1inst(UPtype, myInstance, reg_req->gnb_id, &reg_req->net_config, &reg_req->setup_req);
         e1_task_send_sctp_association_req(TASK_CUUP_E1, myInstance, &reg_req->net_config);
       } break;
 

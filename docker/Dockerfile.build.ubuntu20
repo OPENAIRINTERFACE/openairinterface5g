@@ -26,6 +26,7 @@
 #---------------------------------------------------------------------
 
 FROM ran-base:latest as ran-build
+ARG BUILD_OPTION
 
 RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
@@ -35,4 +36,12 @@ COPY . .
 RUN /bin/sh oaienv && \
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --eNB --gNB --RU --UE --nrUE --ninja --build-lib "telnetsrv enbscope uescope nrscope nrqtscope" -w USRP -t Ethernet --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror
+    ./build_oai -c --ninja \
+      --eNB --gNB --RU --UE --nrUE \
+      --build-lib "telnetsrv enbscope uescope nrscope nrqtscope" \
+      -w USRP -t Ethernet \
+      --build-e2 --cmake-opt -DXAPP_MULTILANGUAGE=OFF \
+      --noavx512 \
+      --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror $BUILD_OPTION && \
+    # Mainly to see if the sanitize option was perfectly executed
+    ldd ran_build/build/nr-softmodem

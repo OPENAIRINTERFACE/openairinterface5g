@@ -58,7 +58,7 @@ import cls_oaicitest
 # Helper functions used here and in other classes
 # (e.g., cls_cluster.py)
 #-----------------------------------------------------------
-IMAGES = ['oai-enb', 'oai-lte-ru', 'oai-lte-ue', 'oai-gnb', 'oai-nr-cuup', 'oai-gnb-aw2s', 'oai-nr-ue']
+IMAGES = ['oai-enb', 'oai-lte-ru', 'oai-lte-ue', 'oai-gnb', 'oai-nr-cuup', 'oai-gnb-aw2s', 'oai-nr-ue', 'oai-gnb-asan', 'oai-nr-ue-asan', 'oai-nr-cuup-asan']
 
 def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTargetBranch, ranAllowMerge):
 	if ranCommitID == '':
@@ -364,25 +364,30 @@ class Containerize():
 			self.cliBuildOptions = '--no-cache --disable-compression'
 
 		# we always build the ran-build image with all targets
-		imageNames = [('ran-build', 'build')]
+		# Creating a tupple with the imageName, the DockerFile prefix pattern, targetName and sanitized option
+		imageNames = [('ran-build', 'build', 'ran-build', '')]
 		result = re.search('eNB', self.imageKind)
-		# Creating a tupple with the imageName and the DockerFile prefix pattern on obelix
 		if result is not None:
-			imageNames.append(('oai-enb', 'eNB'))
+			imageNames.append(('oai-enb', 'eNB', 'oai-enb', ''))
 		result = re.search('gNB', self.imageKind)
 		if result is not None:
-			imageNames.append(('oai-gnb', 'gNB'))
+			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
 		result = re.search('all', self.imageKind)
 		if result is not None:
-			imageNames.append(('oai-enb', 'eNB'))
-			imageNames.append(('oai-gnb', 'gNB'))
-			imageNames.append(('oai-nr-cuup', 'nr-cuup'))
-			imageNames.append(('oai-lte-ue', 'lteUE'))
-			imageNames.append(('oai-nr-ue', 'nrUE'))
+			imageNames.append(('oai-enb', 'eNB', 'oai-enb', ''))
+			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
+			imageNames.append(('oai-nr-cuup', 'nr-cuup', 'oai-nr-cuup', ''))
+			imageNames.append(('oai-lte-ue', 'lteUE', 'oai-lte-ue', ''))
+			imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue', ''))
 			if self.host == 'Red Hat':
-				imageNames.append(('oai-physim', 'phySim'))
+				imageNames.append(('oai-physim', 'phySim', 'oai-physim', ''))
 			if self.host == 'Ubuntu':
-				imageNames.append(('oai-lte-ru', 'lteRU'))
+				imageNames.append(('oai-lte-ru', 'lteRU', 'oai-lte-ru', ''))
+				# Building again the 5G images with Address Sanitizer
+				imageNames.append(('ran-build', 'build', 'ran-build-asan', '--build-arg "BUILD_OPTION=--sanitize"'))
+				imageNames.append(('oai-gnb', 'gNB', 'oai-gnb-asan', '--build-arg "BUILD_OPTION=--sanitize"'))
+				imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue-asan', '--build-arg "BUILD_OPTION=--sanitize"'))
+				imageNames.append(('oai-nr-cuup', 'nr-cuup', 'oai-nr-cuup-asan', '--build-arg "BUILD_OPTION=--sanitize"'))
 		result = re.search('build_cross_arm64', self.imageKind)
 		if result is not None:
 			self.dockerfileprefix = '.ubuntu20.cross-arm64'
@@ -421,8 +426,8 @@ class Containerize():
 		cmd.run(f"{self.cli} image prune --force")
 		if forceBaseImageBuild:
 			cmd.run(f"{self.cli} image rm {baseImage}:{baseTag}")
-		for image,pattern in imageNames:
-			cmd.run(f"{self.cli} image rm {image}:{imageTag}")
+		for image,pattern,name,option in imageNames:
+			cmd.run(f"{self.cli} image rm {name}:{imageTag}")
 
 		# Build the base image only on Push Events (not on Merge Requests)
 		# On when the base image docker file is being modified.
@@ -460,46 +465,50 @@ class Containerize():
 		# Build the target image(s)
 		status = True
 		attemptedImages = ['ran-base']
-		for image,pattern in imageNames:
-			attemptedImages += [image]
+		for image,pattern,name,option in imageNames:
+			attemptedImages += [name]
 			# the archived Dockerfiles have "ran-base:latest" as base image
 			# we need to update them with proper tag
+			cmd.run(f'git checkout -- docker/Dockerfile.{pattern}{self.dockerfileprefix}')
 			cmd.run(f'sed -i -e "s#{baseImage}:latest#{baseImage}:{baseTag}#" docker/Dockerfile.{pattern}{self.dockerfileprefix}')
-			if image != 'ran-build':
+			# target images should use the proper ran-build image
+			if image != 'ran-build' and "-asan" in name:
+				cmd.run(f'sed -i -e "s#ran-build:latest#ran-build-asan:{imageTag}#" docker/Dockerfile.{pattern}{self.dockerfileprefix}')
+			elif image != 'ran-build':
 				cmd.run(f'sed -i -e "s#ran-build:latest#ran-build:{imageTag}#" docker/Dockerfile.{pattern}{self.dockerfileprefix}')
-			ret = cmd.run(f'{self.cli} build {self.cliBuildOptions} --target {image} --tag {image}:{imageTag} --file docker/Dockerfile.{pattern}{self.dockerfileprefix} . > cmake_targets/log/{image}.log 2>&1', timeout=1200)
+			ret = cmd.run(f'{self.cli} build {self.cliBuildOptions} --target {image} --tag {name}:{imageTag} --file docker/Dockerfile.{pattern}{self.dockerfileprefix} {option} . > cmake_targets/log/{name}.log 2>&1', timeout=1200)
 			if image == 'ran-build' and ret.returncode == 0:
-				cmd.run(f"docker run --name test-log -d {image}:{imageTag} /bin/true")
-				cmd.run(f"docker cp test-log:/oai-ran/cmake_targets/log/ cmake_targets/log/{image}/")
+				cmd.run(f"docker run --name test-log -d {name}:{imageTag} /bin/true")
+				cmd.run(f"docker cp test-log:/oai-ran/cmake_targets/log/ cmake_targets/log/{name}/")
 				cmd.run(f"docker rm -f test-log")
 			else:
-				cmd.run(f"mkdir -p cmake_targets/log/{image}")
+				cmd.run(f"mkdir -p cmake_targets/log/{name}")
 			# check the status of the build
-			ret = cmd.run(f"{self.cli} image inspect --format=\'Size = {{{{.Size}}}} bytes\' {image}:{imageTag}")
+			ret = cmd.run(f"{self.cli} image inspect --format=\'Size = {{{{.Size}}}} bytes\' {name}:{imageTag}")
 			if ret.returncode != 0:
-				logging.error('\u001B[1m Could not build properly ' + image + '\u001B[0m')
+				logging.error('\u001B[1m Could not build properly ' + name + '\u001B[0m')
 				status = False
 				# Here we should check if the last container corresponds to a failed command and destroy it
 				cmd.run(f"{self.cli} ps --quiet --filter \"status=exited\" -n1 | xargs --no-run-if-empty {self.cli} rm -f")
-				allImagesSize[image] = 'N/A -- Build Failed'
+				allImagesSize[name] = 'N/A -- Build Failed'
 				break
 			else:
 				result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', cmd.getBefore())
 				if result is not None:
 					size = float(result.group("size")) / 1000000 # convert to MB
 					imageSizeStr = f'{size:.1f}'
-					logging.debug(f'\u001B[1m   {image} size is {imageSizeStr} Mbytes\u001B[0m')
-					allImagesSize[image] = f'{imageSizeStr} Mbytes'
+					logging.debug(f'\u001B[1m   {name} size is {imageSizeStr} Mbytes\u001B[0m')
+					allImagesSize[name] = f'{imageSizeStr} Mbytes'
 				else:
-					logging.debug(f'{image} size is unknown')
-					allImagesSize[image] = 'unknown'
+					logging.debug(f'{name} size is unknown')
+					allImagesSize[name] = 'unknown'
 			# Now pruning dangling images in between target builds
 			cmd.run(f"{self.cli} image prune --force")
 
 		# Remove all intermediate build images and clean up
 		if self.ranAllowMerge and forceBaseImageBuild:
 			cmd.run(f"{self.cli} image rm {baseImage}:{baseTag}")
-		cmd.run(f"{self.cli} image rm ran-build:{imageTag}")
+		cmd.run(f"{self.cli} image rm ran-build:{imageTag} ran-build-asan:{imageTag}")
 		cmd.run(f"{self.cli} volume prune --force")
 
 		# create a zip with all logs
@@ -698,10 +707,11 @@ class Containerize():
 		orgTag = 'develop'
 		if self.ranAllowMerge:
 			orgTag = 'ci-temp'
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
-		for image in imageNames:
+		for image in IMAGES:
 			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
 			mySSH.command(f'docker image tag {image}:{orgTag} {imagePrefix}/{tagToUse}', '\$', 5)
+			if re.search('Error response from daemon: No such image:', mySSH.getBefore()) is not None:
+				continue
 			mySSH.command(f'docker push {imagePrefix}/{tagToUse}', '\$', 120)
 			if re.search(': digest:', mySSH.getBefore()) is None:
 				logging.debug(mySSH.getBefore())
@@ -1061,6 +1071,16 @@ class Containerize():
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			# In the scenario, for 5G images, we have the choice of either pulling normal images
+			# or -asan images. We need to detect which kind we did pull.
+			if image == 'oai-gnb' or image == 'oai-nr-ue' or image == 'oai-nr-cuup':
+				ret = myCmd.run(f'docker image inspect oai-ci/{tagToUse}', reportNonZero=False, silent=self.displayedNewTags)
+				if ret.returncode != 0:
+					tagToUse = tagToUse.replace('oai-gnb', 'oai-gnb-asan')
+					tagToUse = tagToUse.replace('oai-nr-ue', 'oai-nr-ue-asan')
+					tagToUse = tagToUse.replace('oai-nr-cuup', 'oai-nr-cuup-asan')
+					if not self.displayedNewTags:
+						logging.debug(f'\u001B[1m Using sanitized version of {image} with {tagToUse}\u001B[0m')
 			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@oai-ci/{tagToUse}@" docker-compose-ci.yml'
 			myCmd.run(cmd, silent=self.displayedNewTags)
 		self.displayedNewTags = True
@@ -1199,12 +1219,7 @@ class Containerize():
 		logPath = '../cmake_targets/log/' + ymlPath[1]
 		myCmd = cls_cmd.LocalCmd(d = self.yamlPath[0])
 		cmd = 'cp docker-compose.y*ml docker-compose-ci.yml'
-		myCmd.run(cmd, silent=self.displayedNewTags)
-		for image in IMAGES:
-			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
-			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@oai-ci/{tagToUse}@" docker-compose-ci.yml'
-			myCmd.run(cmd, silent=self.displayedNewTags)
-		self.displayedNewTags = True
+		myCmd.run(cmd)
 
 		# check which containers are running for log recovery later
 		cmd = 'docker-compose -f docker-compose-ci.yml ps --all'

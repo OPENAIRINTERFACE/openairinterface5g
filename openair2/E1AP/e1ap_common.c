@@ -37,12 +37,13 @@ e1ap_upcp_inst_t *getCxtE1(instance_t instance)
   return e1ap_inst[instance];
 }
 
-void createE1inst(E1_t type, instance_t instance, e1ap_net_config_t *nc, e1ap_setup_req_t *req)
+void createE1inst(E1_t type, instance_t instance, uint64_t gnb_id, e1ap_net_config_t *nc, e1ap_setup_req_t *req)
 {
   AssertFatal(e1ap_inst[instance] == NULL, "Double call to E1 instance %d\n", (int)instance);
   e1ap_inst[instance] = calloc(1, sizeof(e1ap_upcp_inst_t));
   e1ap_inst[instance]->type = type;
   e1ap_inst[instance]->instance = instance;
+  e1ap_inst[instance]->gnb_id = gnb_id;
   e1ap_inst[instance]->cuup.assoc_id = -1;
   if (nc)
     memcpy(&e1ap_inst[instance]->net_config, nc, sizeof(*nc));

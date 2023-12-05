@@ -85,24 +85,27 @@ typedef struct nrLDPC_dec_params {
     uint8_t BG; /**< Base graph */
     uint16_t Z; /**< Lifting size */
     uint8_t R; /**< Decoding rate: Format 15,13,... for code rates 1/5, 1/3,... */
+    uint16_t F; /**< Filler bits */
+    uint8_t Qm; /**< Modulation */
+    uint8_t rv;
     uint8_t numMaxIter; /**< Maximum number of iterations */
-    int block_length;
+    int E;
     e_nrLDPC_outMode outMode; /**< Output format */
     int crc_type;
+    int (*check_crc)(uint8_t* decoded_bytes, uint32_t n, uint8_t crc_type);
+    uint8_t setCombIn;
 } t_nrLDPC_dec_params;
 
-/**
-   Structure containing LDPC decoder parameters.
- */
 typedef struct nrLDPCoffload_params {
     uint8_t BG; /**< Base graph */
-    uint16_t Z; 
-    uint16_t Kr;  
+    uint16_t Z;
+    uint16_t Kr;
     uint8_t rv;
     uint32_t E;
     uint16_t n_cb;
     uint16_t F; /**< Filler bits */
     uint8_t Qm; /**< Modulation */
+    uint8_t setCombIn;
 } t_nrLDPCoffload_params;
 
 /**

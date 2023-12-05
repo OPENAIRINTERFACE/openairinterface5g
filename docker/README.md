@@ -46,16 +46,15 @@ For all platforms, the strategy for building docker/podman images is the same:
    -  Some tools (such as `ping`, `ifconfig`)
 
 Note that on every push to develop (i.e., typically after integrating merge
-requests), we build all images and push them to [Docker
-Hub](https://hub.docker.com/u/oaisoftwarealliance). To pull them, do
+requests), we build all images and push them to [Docker Hub](https://hub.docker.com/u/oaisoftwarealliance). To pull them, do
+
 ```
 docker pull oaisoftwarealliance/oai-gnb:develop
 docker pull oaisoftwarealliance/oai-nr-ue:develop
 docker pull oaisoftwarealliance/oai-enb:develop
 docker pull oaisoftwarealliance/oai-lte-ue:develop
 ```
-Have a look at [this
-README](../ci-scripts/yaml_files/5g_rfsimulator/README.md) to get some
+Have a look at [this README](../ci-scripts/yaml_files/5g_rfsimulator/README.md) to get some
 information on how to use the images.
 
 # 2. File organization #
@@ -114,6 +113,34 @@ ran-base            latest              5c9c02a5b4a8        1 minute ago        
 
 Note that the steps are identical for `rocky-linux`.
 
+### 3.2.1. Additional build otions
+
+This is only available for the Ubuntu-20 version.
+
+You can, for example, create a `sanitizer` version of the ran-build image.
+
+```bash
+docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.ubuntu20 --build-arg "BUILD_OPTION=--sanitize" .
+```
+
+Currently the `--sanitize` option for `build_oai` enables:
+
+* [Address Sanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizer)
+* [Undefined Behavior Sanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html)
+
+After building:
+
+```bash
+docker image ls
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+ran-build           latest              f2633a7f5102        1 minute ago        8.78GB
+...
+```
+
+Note that the image is much bigger.
+
+You can also use this docker build arguments to pass any available option(s) on the `build-oai` script.
+
 ## 3.3. Building any target image ##
 
 For example, the eNB:
@@ -140,6 +167,14 @@ docker image prune --force
 ```
 
 Note that the steps are identical for `rocky-linux`.
+
+If you have used the sanitizer option, then you should also pass it when building the target image:
+
+```bash
+docker build --target oai-gnb --tag oai-gnb:latest --file docker/Dockerfile.gNB.ubuntu20 --build-arg "BUILD_OPTION=--sanitize" .
+```
+
+Normally the target image will be around 200 Mbytes bigger.
 
 # 4. Building using `podman` under Red Hat Entreprise Linux 8.2 #
 

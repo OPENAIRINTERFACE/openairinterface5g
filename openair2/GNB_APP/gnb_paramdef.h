@@ -127,15 +127,21 @@ typedef enum {
 #define GNB_CONFIG_STRING_UMONDEFAULTDRB                "um_on_default_drb"
 #define GNB_CONFIG_STRING_FORCE256QAMOFF                "force_256qam_off"
 #define GNB_CONFIG_STRING_ENABLE_SDAP                   "enable_sdap"
+#define GNB_CONFIG_STRING_DRBS                          "drbs"
+#define GNB_CONFIG_STRING_GNB_DU_ID "gNB_DU_ID"
+#define GNB_CONFIG_STRING_GNB_CU_UP_ID "gNB_CU_UP_ID"
+
 #define GNB_CONFIG_HLP_STRING_ENABLE_SDAP               "enable the SDAP layer\n"
 #define GNB_CONFIG_HLP_FORCE256QAMOFF                   "suppress activation of 256 QAM despite UE support"
-#define GNB_CONFIG_STRING_DRBS                          "drbs"
 #define GNB_CONFIG_HLP_STRING_DRBS                      "Number of total DRBs to establish, including the mandatory for PDU SEssion (default=1)\n"
+#define GNB_CONFIG_HLP_GNB_DU_ID "defines the gNB-DU ID (only applicable for DU)"
+#define GNB_CONFIG_HLP_GNB_CU_UP_ID "defines the gNB-CU-UP ID (only applicable for CU-UP)"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
+// clang-format off
 #define GNBPARAMS_DESC {\
 {GNB_CONFIG_STRING_GNB_ID,                       NULL,   0,           .uptr=NULL,   .defintval=0,                 TYPE_UINT,      0},  \
 {GNB_CONFIG_STRING_CELL_TYPE,                    NULL,   0,           .strptr=NULL, .defstrval="CELL_MACRO_GNB",  TYPE_STRING,    0},  \
@@ -165,7 +171,11 @@ typedef enum {
 {GNB_CONFIG_STRING_FORCE256QAMOFF, GNB_CONFIG_HLP_FORCE256QAMOFF, PARAMFLAG_BOOL, .iptr=NULL, .defintval=0,        TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_ENABLE_SDAP, GNB_CONFIG_HLP_STRING_ENABLE_SDAP, PARAMFLAG_BOOL,.iptr=NULL, .defintval=0,       TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_DRBS, GNB_CONFIG_HLP_STRING_DRBS,     0,            .iptr=NULL,  .defintval=1,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_GNB_DU_ID, GNB_CONFIG_HLP_GNB_DU_ID,   0,          .u64ptr=NULL, .defint64val=1,               TYPE_UINT64,    0},  \
+{GNB_CONFIG_STRING_GNB_CU_UP_ID, GNB_CONFIG_HLP_GNB_CU_UP_ID, 0,      .u64ptr=NULL, .defint64val=1,               TYPE_UINT64,    0},  \
 }
+// clang-format on
+
 
 #define GNB_GNB_ID_IDX                  0
 #define GNB_CELL_TYPE_IDX               1
@@ -195,6 +205,8 @@ typedef enum {
 #define GNB_FORCE256QAMOFF_IDX          25
 #define GNB_ENABLE_SDAP_IDX             26
 #define GNB_DRBS                        27
+#define GNB_GNB_DU_ID_IDX 28
+#define GNB_GNB_CU_UP_ID_IDX 29
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \

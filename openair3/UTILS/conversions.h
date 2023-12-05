@@ -110,10 +110,10 @@ do {                            \
 /* Convert an array of char containing vALUE to x */
 #define BUFFER_TO_INT32(buf, x) \
 do {                            \
-    x = ((buf)[0] << 24) |      \
-        ((buf)[1] << 16) |      \
-        ((buf)[2] << 8)  |      \
-        ((buf)[3]);             \
+    x = (((uint32_t)(buf)[0]) << 24) |      \
+        (((uint32_t)(buf)[1]) << 16) |      \
+        (((uint32_t)(buf)[2]) << 8)  |      \
+        (((uint32_t)(buf)[3]));             \
 } while(0)
 
 /* Convert an array of char containing vALUE to x */
@@ -427,10 +427,10 @@ do {                                                    \
 do {                                                                    \
     DevCheck((bITsTRING)->size == 4, (bITsTRING)->size, 4, 0);          \
     DevCheck((bITsTRING)->bits_unused == 0, (bITsTRING)->bits_unused, 0, 0); \
-    mACRO = ((bITsTRING)->buf[3] << 24) +                               \
-            ((bITsTRING)->buf[2] << 16) +                               \
-            ((bITsTRING)->buf[1] << 8) +                                \
-            ((bITsTRING)->buf[0]);                                      \
+    mACRO = (((uint32_t) (bITsTRING)->buf[3]) << 24) +                               \
+            (((uint32_t) (bITsTRING)->buf[2]) << 16) +                               \
+            (((uint32_t) (bITsTRING)->buf[1]) << 8) +                                \
+            (((uint32_t) (bITsTRING)->buf[0]));                                      \
 } while (0)
 
 

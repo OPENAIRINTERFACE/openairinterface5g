@@ -61,6 +61,7 @@ ForEachMacros:
   - Q_FOREACH
   - BOOST_FOREACH
   - RB_FOREACH
+  - UE_iterator
 IncludeBlocks:   Preserve
 IncludeCategories:
   - Regex:           '^<ext/.*\.h>'

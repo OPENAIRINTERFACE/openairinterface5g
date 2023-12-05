@@ -1,3 +1,24 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
 #include "ran_func_kpm.h"
 #include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_kpm.h"
 #include "openair2/E2AP/flexric/src/util/time_now_us.h"
@@ -14,93 +35,77 @@
 
 
 typedef struct {
-    NR_UE_info_t *ue_list;
-    size_t num_ues;
+  NR_UE_info_t* ue_list[MAX_MOBILES_PER_GNB];
+  size_t num_ues;
 } matched_ues_mac_t;
 
-
-static
-matched_ues_mac_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const condition, int64_t const value)
+static bool nssai_matches(nssai_t a_nssai, uint8_t b_sst, const uint32_t *b_sd)
 {
-  matched_ues_mac_t matched_ues = {.num_ues = 0, .ue_list = calloc(MAX_MOBILES_PER_GNB, sizeof(NR_UE_info_t)) };
-  assert(matched_ues.ue_list != NULL && "Memory exhausted");
+  AssertFatal(b_sd == NULL || *b_sd <= 0xffffff, "illegal SD %d\n", *b_sd);
+  if (b_sd == NULL) {
+    return a_nssai.sst == b_sst && a_nssai.sd == 0xffffff;
+  } else {
+    return a_nssai.sst == b_sst && a_nssai.sd == *b_sd;
+  }
+}
 
-  /* IMPORTANT: in the case of gNB-DU, it is not possible to filter UEs by S-NSSAI as the ngap context is stored in gNB-CU
-                instead, we take all connected UEs*/
+static size_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const condition,
+                                                        uint8_t sst,
+                                                        const uint32_t *sd,
+                                                        matched_ues_mac_t* matches)
+{
+  DevAssert(matches != NULL);
+  AssertFatal(condition == EQUAL_TEST_COND, "Condition %d not yet implemented", condition);
 
   // Take MAC info
-  UE_iterator(RC.nrmac[0]->UE_info.list, ue)
-  {
-    if (ue)
-    {
-      ngap_gNB_ue_context_t *ngap_ue_context_list = NULL;
-
-      // Filter connected UEs by S-NSSAI test condition to get list of matched UEs 
-      // note: not possible to filter 
-      switch (condition)
-      {
-      case EQUAL_TEST_COND:
-      {
-        if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type))
-        {
-          rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], ue->rnti);
-          ngap_ue_context_list = ngap_get_ue_context(rrc_ue_context_list->ue_context.rrc_ue_id);
-          assert(ngap_ue_context_list->gNB_instance[0].s_nssai[0][0].sST == value && "Please, check the condition for S-NSSAI. At the moment, OAI supports eMBB");
-        }
-          matched_ues.ue_list[matched_ues.num_ues] = *ue;
-          matched_ues.num_ues++;
-          break;
-        }
-      
-    
-      default:
-        assert(false && "Condition not yet implemented");
+  size_t i = 0;
+  UE_iterator (RC.nrmac[0]->UE_info.list, ue) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &ue->UE_sched_ctrl;
+    // UE matches if any of its DRBs matches
+    for (int l = 0; l < sched_ctrl->dl_lc_num; ++l) {
+      long lcid = sched_ctrl->dl_lc_ids[l];
+      if (nssai_matches(sched_ctrl->dl_lc_nssai[lcid], sst, sd)) {
+        matches->ue_list[i++] = ue;
+        break;
       }
-      
-    }    
+    }
+    AssertFatal(i < MAX_MOBILES_PER_GNB, "cannot have more UEs than global UE number maximum\n");
   }
 
-  assert(matched_ues.num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
-
-  return matched_ues;
+  matches->num_ues = i;
+  assert(matches->num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
+  return i;
 }
 
 
 typedef struct {
-  f1_ue_data_t * rrc_ue_id_list;  // list of matched UEs on RRC level containing only rrc_ue_id (gNB CU UE ID)
+  uint32_t rrc_ue_id_list[MAX_MOBILES_PER_GNB]; // list of matched UEs on RRC level containing only rrc_ue_id (gNB CU UE ID)
   size_t num_ues;
 
 } matched_ues_rrc_t;
 
-static
-matched_ues_rrc_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, int64_t const value)
+static size_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, uint8_t sst, const uint32_t *sd, matched_ues_rrc_t* matches)
 {
-  matched_ues_rrc_t matched_ues = {.num_ues = 0, .rrc_ue_id_list = calloc(MAX_MOBILES_PER_GNB, sizeof(f1_ue_data_t)) };
-  assert(matched_ues.rrc_ue_id_list != NULL && "Memory exhausted");
-
+  DevAssert(matches != NULL);
+  AssertFatal(condition == EQUAL_TEST_COND, "Condition %d not yet implemented\n", condition);
 
   struct rrc_gNB_ue_context_s *ue_context_p1 = NULL;
+  size_t i = 0;
   RB_FOREACH(ue_context_p1, rrc_nr_ue_tree_s, &RC.nrrrc[0]->rrc_ue_head) {
-    
-    ngap_gNB_ue_context_t *ngap_ue_context_list = ngap_get_ue_context(ue_context_p1->ue_context.rrc_ue_id);
-    
-    // Filter connected UEs by S-NSSAI test condition to get list of matched UEs 
-    switch (condition)
-    {
-    case EQUAL_TEST_COND:
-      assert(ngap_ue_context_list->gNB_instance[0].s_nssai[0][0].sST == value && "Please, check the condition for S-NSSAI. At the moment, OAI supports eMBB");
-      matched_ues.rrc_ue_id_list[matched_ues.num_ues].secondary_ue = ue_context_p1->ue_context.rrc_ue_id;
-      matched_ues.num_ues++;
-      break;
-    
-    default:
-      assert(false && "Condition not yet implemented");
+    gNB_RRC_UE_t *ue = &ue_context_p1->ue_context;
+    for (int p = 0; p < ue->nb_of_pdusessions; ++p) {
+      pdusession_t *pdu = &ue->pduSession[0].param;
+      if (nssai_matches(pdu->nssai, sst, sd)) {
+        matches->rrc_ue_id_list[i++] = ue_context_p1->ue_context.rrc_ue_id;
+        break;
+      }
     }
+    AssertFatal(i < MAX_MOBILES_PER_GNB, "cannot have more UEs than global UE number maximum\n");
   }
-  
-  assert(matched_ues.num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
-  
-  return matched_ues;
+
+  matches->num_ues = i;
+  assert(matches->num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
+  return i;
 }
 
 static
@@ -398,8 +403,8 @@ kpm_ind_msg_format_1_t fill_kpm_ind_msg_frm_1_in_du(const NR_UE_info_t* UE, cons
   return msg_frm_1;
 }
 
-static
-kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_du(const matched_ues_mac_t matched_ues, const kpm_act_def_format_1_t * act_def_fr_1)
+static kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_du(const matched_ues_mac_t* matched_ues,
+                                                           const kpm_act_def_format_1_t* act_def_fr_1)
 {
   assert(act_def_fr_1 != NULL);
 
@@ -407,20 +412,20 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_du(const matched_ues_mac_t matc
   kpm_ind_msg_format_3_t msg_frm_3 = {0};
 
   // Fill UE Measurement Reports
-  
-  msg_frm_3.ue_meas_report_lst_len = matched_ues.num_ues;
+
+  msg_frm_3.ue_meas_report_lst_len = matched_ues->num_ues;
   msg_frm_3.meas_report_per_ue = calloc(msg_frm_3.ue_meas_report_lst_len, sizeof(meas_report_per_ue_t));
   assert(msg_frm_3.meas_report_per_ue != NULL && "Memory exhausted");
 
   for (size_t i = 0; i<msg_frm_3.ue_meas_report_lst_len; i++)
   {
     // Fill UE ID data
-    f1_ue_data_t rrc_ue_id = du_get_f1_ue_data(matched_ues.ue_list[i].rnti);  // get gNB CU UE ID as rrc_ue_id
+    f1_ue_data_t rrc_ue_id = du_get_f1_ue_data(matched_ues->ue_list[i]->rnti); // get gNB CU UE ID as rrc_ue_id
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_DU_UE_ID_E2SM;
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb_du = fill_gnb_du_data(&rrc_ue_id);
       
     // Fill UE related info
-    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_du(&matched_ues.ue_list[i], i, act_def_fr_1);
+    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_du(matched_ues->ue_list[i], i, act_def_fr_1);
   }
 
 
@@ -481,8 +486,8 @@ kpm_ind_msg_format_1_t fill_kpm_ind_msg_frm_1_in_cu(const uint32_t rrc_ue_id, co
   return msg_frm_1;
 }
 
-static
-kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_cu(const matched_ues_rrc_t matched_ues, const kpm_act_def_format_1_t * act_def_fr_1)
+static kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_cu(const matched_ues_rrc_t* matched_ues,
+                                                           const kpm_act_def_format_1_t* act_def_fr_1)
 {
   assert(act_def_fr_1 != NULL);
 
@@ -490,20 +495,21 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_cu(const matched_ues_rrc_t matc
   kpm_ind_msg_format_3_t msg_frm_3 = {0};
 
   // Fill UE Measurement Reports
-  
-  msg_frm_3.ue_meas_report_lst_len = matched_ues.num_ues;
+
+  msg_frm_3.ue_meas_report_lst_len = matched_ues->num_ues;
   msg_frm_3.meas_report_per_ue = calloc(msg_frm_3.ue_meas_report_lst_len, sizeof(meas_report_per_ue_t));
   assert(msg_frm_3.meas_report_per_ue != NULL && "Memory exhausted");
 
   for (size_t i = 0; i<msg_frm_3.ue_meas_report_lst_len; i++)
   {
     // Fill UE ID data
-    rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context(RC.nrrrc[0], matched_ues.rrc_ue_id_list[i].secondary_ue);
+    rrc_gNB_ue_context_t* rrc_ue_context_list = rrc_gNB_get_ue_context(RC.nrrrc[0], matched_ues->rrc_ue_id_list[i]);
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_UE_ID_E2SM;
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb = fill_gnb_data(rrc_ue_context_list);
 
     // Fill UE related info
-    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_cu(matched_ues.rrc_ue_id_list[i].secondary_ue, i, act_def_fr_1);
+    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 =
+        fill_kpm_ind_msg_frm_1_in_cu(matched_ues->rrc_ue_id_list[i], i, act_def_fr_1);
   }
 
   return msg_frm_3;
@@ -571,8 +577,8 @@ kpm_ind_msg_format_1_t fill_kpm_ind_msg_frm_1_in_monolithic(const NR_UE_info_t* 
   return msg_frm_1;
 }
 
-static
-kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_mac_t matched_ues, const kpm_act_def_format_1_t * act_def_fr_1)
+static kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_mac_t* matched_ues,
+                                                                   const kpm_act_def_format_1_t* act_def_fr_1)
 {
   assert(act_def_fr_1 != NULL);
 
@@ -580,8 +586,8 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_ma
   kpm_ind_msg_format_3_t msg_frm_3 = {0};
 
   // Fill UE Measurement Reports
-  
-  msg_frm_3.ue_meas_report_lst_len = matched_ues.num_ues;
+
+  msg_frm_3.ue_meas_report_lst_len = matched_ues->num_ues;
   msg_frm_3.meas_report_per_ue = calloc(msg_frm_3.ue_meas_report_lst_len, sizeof(meas_report_per_ue_t));
   assert(msg_frm_3.meas_report_per_ue != NULL && "Memory exhausted");
 
@@ -589,12 +595,13 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_monolithic(const matched_ues_ma
   for (size_t i = 0; i<msg_frm_3.ue_meas_report_lst_len; i++)
   {
     // Fill UE ID data
-    rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], matched_ues.ue_list[i].rnti);
+    rrc_gNB_ue_context_t* rrc_ue_context_list = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[0], matched_ues->ue_list[i]->rnti);
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_UE_ID_E2SM;
     msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb = fill_gnb_data(rrc_ue_context_list);
       
     // Fill UE related info
-    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_monolithic(&matched_ues.ue_list[i], i, rrc_ue_context_list->ue_context.rrc_ue_id, act_def_fr_1);
+    msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 =
+        fill_kpm_ind_msg_frm_1_in_monolithic(matched_ues->ue_list[i], i, rrc_ue_context_list->ue_context.rrc_ue_id, act_def_fr_1);
   }
 
   return msg_frm_3;
@@ -674,6 +681,39 @@ kpm_ind_hdr_t kpm_ind_hdr(void)
   return hdr;
 }
 
+static void capture_sst_sd(test_info_lst_t* test, uint8_t *sst, uint32_t **sd)
+{
+  DevAssert(test != NULL && test->test_cond_value != NULL);
+  DevAssert(sst != NULL);
+  DevAssert(sd != NULL);
+
+  // we made a mistake in the past: NSSAI is supposed to be an OCTET_STRING,
+  // but earlier version of the RAN function and the xApp used integer, so
+  // handle this gracefully by accepting integer as well
+  switch (*test->test_cond_value) {
+    case INTEGER_TEST_COND_VALUE:
+      AssertFatal(*test->int_value <= 0xff, "illegal SST %ld\n", *test->int_value);
+      *sst = *test->int_value;
+      *sd = NULL;
+      break;
+    case OCTET_STRING_TEST_COND_VALUE:
+      if (test->octet_string_value->len == 1) {
+        *sst = test->octet_string_value->buf[0];
+        *sd = NULL;
+      } else {
+        DevAssert(test->octet_string_value->len == 4);
+        uint8_t *buf = test->octet_string_value->buf;
+        *sst = buf[0];
+        *sd = malloc(**sd);
+        **sd = buf[1] << 16 | buf[2] << 8 | buf[3];
+      }
+      break;
+    default:
+      AssertFatal(false, "test condition value %d impossible\n", *test->test_cond_value);
+      break;
+  }
+}
+
 void read_kpm_sm(void* data)
 {
   assert(data != NULL);
@@ -749,20 +789,26 @@ void read_kpm_sm(void* data)
             assert(frm_4->matching_cond_lst[i].test_info_lst.int_value != NULL && "Even though is optional..");
 
             test_cond_e const test_cond = *frm_4->matching_cond_lst[i].test_info_lst.test_cond;
-            int64_t const value = *frm_4->matching_cond_lst[i].test_info_lst.int_value;
+            uint8_t sst = 0;
+            uint32_t *sd = NULL;
+            capture_sst_sd(&frm_4->matching_cond_lst[i].test_info_lst, &sst, &sd);
             // Check E2 Node NG-RAN Type
             if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-              matched_ues_mac_t matched_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value);
-              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_du(matched_ues, &frm_4->action_def_format_1);
+              matched_ues_mac_t matched_ues = {0};
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, sst, sd, &matched_ues);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_du(&matched_ues, &frm_4->action_def_format_1);
             } else if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-              matched_ues_rrc_t matched_ues = filter_ues_by_s_nssai_in_cu(test_cond, value);
-              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_cu(matched_ues, &frm_4->action_def_format_1);
+              matched_ues_rrc_t matched_ues = {0};
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_cu(test_cond, sst, sd, &matched_ues);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_cu(&matched_ues, &frm_4->action_def_format_1);
             } else if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type)) {
-              matched_ues_mac_t matched_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, value);
-              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_monolithic(matched_ues, &frm_4->action_def_format_1);
+              matched_ues_mac_t matched_ues = {0};
+              matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, sst, sd, &matched_ues);
+              kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_monolithic(&matched_ues, &frm_4->action_def_format_1);
             } else {
               assert(false && "NG-RAN Type not implemented");
             }
+            free(sd); // if NULL, nothing happens
 
             break;
           }

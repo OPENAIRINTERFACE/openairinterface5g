@@ -252,10 +252,10 @@ static void nr_processDLSegment(void *arg)
     }
 
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_IN);
-    p_decoderParms->block_length = lenWithCrc(harq_process->C, A);
+    p_decoderParms->E = lenWithCrc(harq_process->C, A);
     p_decoderParms->crc_type = crcType(harq_process->C, A);
-    nrLDPC_initcall(p_decoderParms, (int8_t *)&pl[0], LDPCoutput);
-    rdata->decodeIterations = nrLDPC_decoder(p_decoderParms, (int8_t *)&pl[0], LDPCoutput, &procTime, &harq_process->abort_decode);
+    rdata->decodeIterations =
+        ldpc_interface.LDPCdecoder(p_decoderParms, 0, 0, 0, l, LDPCoutput, &procTime, &harq_process->abort_decode);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_OUT);
 
     if (rdata->decodeIterations <= dlsch->max_ldpc_iterations)
@@ -281,7 +281,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t ret,offset;
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes;
   t_nrLDPC_dec_params decParams;
-  t_nrLDPC_dec_params *p_decParams = &decParams;
+  decParams.check_crc = check_crc;
 
   if (!harq_process) {
     LOG_E(PHY,"dlsch_decoding.c: NULL harq_process pointer\n");
@@ -348,8 +348,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   LOG_D(PHY,"%d.%d DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d length dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d Qm %d Coderate %f\n",
         frame,nr_slot_rx,harq_pid,A,A/8,G, nb_re_dmrs, dmrs_length, dlsch->dlsch_config.mcs, dlsch->Nl, nb_symb_sch, nb_rb, dlsch->dlsch_config.qamModOrder, Coderate);
-  p_decParams->BG = get_BG(A, dlsch->dlsch_config.targetCodeRate);
-  unsigned int kc = p_decParams->BG == 2 ? 52 : 68;
+  decParams.BG = get_BG(A, dlsch->dlsch_config.targetCodeRate);
+  unsigned int kc = decParams.BG == 2 ? 52 : 68;
 
   if (harq_process->first_rx == 1) {
     // This is a new packet, so compute quantities regarding segmentation
@@ -360,7 +360,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                     &harq_process->K,
                     &harq_process->Z, // [hna] Z is Zc
                     &harq_process->F,
-                    p_decParams->BG);
+                    decParams.BG);
 
     if (harq_process->C>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*dlsch->Nl) {
       LOG_E(PHY, "nr_segmentation.c: too many segments %d, A %d\n", harq_process->C, A);
@@ -375,11 +375,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_OUT);
-  p_decParams->Z = harq_process->Z;
-  //printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
-  //printf("coderate %f kc %d \n", Coderate, kc);
-  p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
-  p_decParams->outMode= 0;
+  decParams.Z = harq_process->Z;
+  decParams.numMaxIter = dlsch->max_ldpc_iterations;
+  decParams.outMode = 0;
   r_offset = 0;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*dlsch->Nl;  //number of segments to be allocated
 
@@ -396,7 +394,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD))
     LOG_I(PHY,"Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 
-  Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
+  Kr = harq_process->K;
   Kr_bytes = Kr>>3;
   offset = 0;
   notifiedFIFO_t nf;

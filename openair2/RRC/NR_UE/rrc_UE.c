@@ -689,8 +689,8 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(instance_t instance,
     switch (bcch_message->message.choice.c1->present) {
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
         LOG_D(NR_RRC, "[UE %ld] Decoding SIB1\n", instance);
-        if(SI_info->sib1)
-          ASN_STRUCT_FREE(asn_DEF_NR_SIB1, SI_info->sib1);
+        ASN_STRUCT_FREE(asn_DEF_NR_SIB1, SI_info->sib1);
+        SI_info->sib1 = NULL;
         NR_SIB1_t *sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
         if(!SI_info->sib1)
           SI_info->sib1 = calloc(1, sizeof(*SI_info->sib1));
@@ -745,7 +745,7 @@ static void nr_rrc_manage_rlc_bearers(const instance_t instance,
       if (rrc->active_RLC_entity[lcid]) {
         if (rlc_bearer->reestablishRLC)
           nr_rlc_reestablish_entity(rnti, lcid);
-        nr_rlc_reconfigure_entity(rnti, lcid, rlc_bearer->rlc_Config, rlc_bearer->mac_LogicalChannelConfig);
+        nr_rlc_reconfigure_entity(rnti, lcid, rlc_bearer->rlc_Config);
       } else {
         rrc->active_RLC_entity[lcid] = true;
         AssertFatal(rlc_bearer->servedRadioBearer, "servedRadioBearer mandatory in case of setup\n");

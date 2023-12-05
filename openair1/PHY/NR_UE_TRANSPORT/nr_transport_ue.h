@@ -45,8 +45,6 @@ typedef enum {
 } harq_result_t;
 
 typedef struct {
-  /// Indicator of first transmission
-  uint8_t first_tx;
   /// HARQ tx status
   harq_result_t tx_status;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
@@ -57,8 +55,6 @@ typedef struct {
   uint8_t O_ACK;
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
-  /// Last Ndi for this harq process
-  uint8_t ndi;
   /// pointer to pdu from MAC interface (TS 36.212 V15.4.0, Sec 5.1 p. 8)
   unsigned char *a;
   /// Pointer to the payload + CRC 

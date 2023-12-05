@@ -170,6 +170,7 @@ services:
         environment:
             TZ: Europe/Paris
             USE_ADDITIONAL_OPTIONS: --sa --nfapi VNF --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-spgwu
             - oai-amf
@@ -206,6 +207,7 @@ services:
             TZ: Europe/Paris
             OPENAIR_DIR: /opt/oai-nr-ue
             USE_ADDITIONAL_OPTIONS: --nfapi STANDALONE_PNF --node-number 2 --sa --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
+            ASAN_OPTIONS: detect_leaks=0
         volumes:
             - ../../conf_files/nrue.band78.106prb.l2sim.conf:/opt/oai-nr-ue/etc/nr-ue.conf
             - ../../../openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results:/opt/oai-nr-ue/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results

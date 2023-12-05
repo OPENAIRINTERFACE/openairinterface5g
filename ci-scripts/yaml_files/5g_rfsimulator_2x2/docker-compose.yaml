@@ -168,6 +168,7 @@ services:
         container_name: rfsim5g-oai-gnb
         environment:
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-ext-dn
         networks:
@@ -187,6 +188,7 @@ services:
         container_name: rfsim5g-oai-nr-ue
         environment:
             USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 --band 78 -C 3319680000 --ue-nb-ant-tx 2 --uicc0.imsi 208990100001100 --ue-nb-ant-rx 2 --uecap_file /opt/oai-nr-ue/etc/uecap.xml --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-gnb
         networks:

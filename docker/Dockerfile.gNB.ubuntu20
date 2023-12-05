@@ -32,6 +32,7 @@ FROM ran-build:latest AS gnb-build
 
 #start from scratch for target executable
 FROM ubuntu:focal as oai-gnb
+ARG BUILD_OPTION
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe
 
@@ -56,6 +57,11 @@ RUN apt-get update && \
         python3-six \
         python3-requests \
         libusb-1.0-0 && \
+# if the --sanitize option was used to build, additional packages are required
+    /bin/bash -c 'if [[ "$BUILD_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        libasan5 \
+        libubsan1 \
+        liblapacke; fi' && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/oai-gnb/bin
@@ -91,7 +97,8 @@ COPY --from=gnb-base \
     /usr/lib/x86_64-linux-gnu/
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
-    ldconfig
+    ldconfig && \
+    ldd /opt/oai-gnb/bin/nr-softmodem
 
 WORKDIR /opt/oai-gnb
 #EXPOSE 2152/udp  # S1U, GTP/UDP

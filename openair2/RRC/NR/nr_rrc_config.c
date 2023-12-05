@@ -252,11 +252,19 @@ static uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc)
   return bitmap;
 }
 
-static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int id, int nb_slots_per_period, int nb_dl_slots_period)
+static int set_ideal_period(const int n_slots_period, const int n_ul_slots_period)
+{
+  return MAX_MOBILES_PER_GNB * 2 * n_slots_period / n_ul_slots_period; // 2 reports per UE
+}
+
+static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0,
+                                  int id,
+                                  int ideal_period,
+                                  int nb_slots_per_period,
+                                  int nb_dl_slots_period)
 {
   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
   // TODO ideal period to be set according to estimation by the gNB on how fast the channel changes
-  const int ideal_period = 320;
   const int offset = nb_slots_per_period * id;
 
   if (ideal_period < 5) {
@@ -327,8 +335,10 @@ static void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigco
                                         &servingcellconfigcommon->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
 
     const int n_slots_frame = slotsperframe[*servingcellconfigcommon->ssbSubcarrierSpacing];
-    int nb_slots_per_period = tdd ? n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity): n_slots_frame;
-    int nb_dl_slots_period = tdd ? tdd->nrofDownlinkSlots : n_slots_frame;
+    const int nb_slots_per_period = tdd ? n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity): n_slots_frame;
+    const int nb_dl_slots_period = tdd ? tdd->nrofDownlinkSlots : n_slots_frame;
+    const int n_ul_slots_period = tdd ? (tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0)) : n_slots_frame;
+    const int ideal_period = set_ideal_period(nb_slots_per_period, n_ul_slots_period); // same periodicity as CSI measurement report
 
     if(!csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList)
       csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
@@ -378,7 +388,7 @@ static void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigco
     nzpcsi0->powerControlOffsetSS = calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
     *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
     nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
-    set_csirs_periodicity(nzpcsi0, id, nb_slots_per_period, nb_dl_slots_period);
+    set_csirs_periodicity(nzpcsi0, id, ideal_period, nb_slots_per_period, nb_dl_slots_period);
     nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS));
     *nzpcsi0->qcl_InfoPeriodicCSI_RS = 0;
     asn1cSeqAdd(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
@@ -1458,7 +1468,7 @@ static void set_csi_meas_periodicity(const NR_ServingCellConfigCommon_t *scc, NR
   const int n_slots_frame = slotsperframe[*scc->ssbSubcarrierSpacing];
   const int n_ul_slots_period = tdd ? (tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0)) : n_slots_frame;
   const int n_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
-  const int ideal_period = MAX_MOBILES_PER_GNB * 2 * n_slots_period / n_ul_slots_period; // 2 reports per UE
+  const int ideal_period = set_ideal_period(n_slots_period, n_ul_slots_period);
   const int first_ul_slot_period = tdd ? get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols) : 0;
   const int idx = (uid << 1) + is_rsrp;
   const int offset = first_ul_slot_period + idx % n_ul_slots_period + (idx / n_ul_slots_period) * n_slots_period;

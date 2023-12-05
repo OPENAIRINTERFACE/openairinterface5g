@@ -796,7 +796,7 @@ int main(int argc, char *argv[])
 
   ulsch_input_buffer[0] = 0x31;
   for (i = 1; i < TBS/8; i++) {
-    ulsch_input_buffer[i] = (unsigned char) uniformrandom();
+    ulsch_input_buffer[i] = (uint8_t)rand();
   }
 
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
@@ -1117,7 +1117,7 @@ int main(int argc, char *argv[])
         pusch_config_pdu->target_code_rate = code_rate;
         pusch_config_pdu->tbslbrm = tbslbrm;
         pusch_config_pdu->pusch_data.tb_size = TBS / 8;
-        pusch_config_pdu->pusch_data.new_data_indicator = trial & 0x1;
+        pusch_config_pdu->pusch_data.new_data_indicator = round == 0 ? true : false;
         pusch_config_pdu->pusch_data.rv_index = rv_index;
         pusch_config_pdu->pusch_data.harq_process_id = harq_pid;
         pusch_config_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
@@ -1612,7 +1612,7 @@ int main(int argc, char *argv[])
 
   free_MIB_NR(mib);
   if (gNB->ldpc_offload_flag)
-    free_nrLDPClib_offload();
+    free_LDPClib(&ldpc_interface_offload);
 
   if (output_fd)
     fclose(output_fd);

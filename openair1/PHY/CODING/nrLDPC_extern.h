@@ -18,28 +18,29 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+#ifndef _NRLDPC_EXTERN_H__
+#define _NRLDPC_EXTERN_H__
 #include "openair1/PHY/CODING/nrLDPC_defs.h"
 
-#ifdef LDPC_LOADER
-nrLDPC_decoderfunc_t nrLDPC_decoder;
-nrLDPC_encoderfunc_t nrLDPC_encoder;
-nrLDPC_initcallfunc_t nrLDPC_initcall;
-nrLDPC_decoffloadfunc_t nrLDPC_decoder_offload;
-nrLDPC_dectopfunc_t top_testsuite;
-#else
+/* ldpc coder/decoder API*/
+typedef struct ldpc_interface_s {
+  LDPC_initfunc_t *LDPCinit;
+  LDPC_shutdownfunc_t *LDPCshutdown;
+  LDPC_decoderfunc_t *LDPCdecoder;
+  LDPC_encoderfunc_t *LDPCencoder;
+} ldpc_interface_t;
+
+// Global var to limit the rework of the dirty legacy code
+extern ldpc_interface_t ldpc_interface, ldpc_interface_offload;
+
 /* functions to load the LDPC shared lib, implemented in openair1/PHY/CODING/nrLDPC_load.c */
-int load_nrLDPClib(char *version);
-int load_nrLDPClib_offload(void);
-int free_nrLDPClib_offload(void);
-int load_nrLDPClib_ref(char *libversion, nrLDPC_encoderfunc_t *nrLDPC_encoder_ptr); // for ldpctest
-/* ldpc coder/decoder functions, as loaded by load_nrLDPClib(). */
-extern nrLDPC_initcallfunc_t nrLDPC_initcall;
+int load_LDPClib(char *version, ldpc_interface_t *);
+int free_LDPClib(ldpc_interface_t *ldpc_interface);
 
-extern nrLDPC_decoderfunc_t nrLDPC_decoder;
-extern nrLDPC_encoderfunc_t nrLDPC_encoder;
-extern nrLDPC_decoffloadfunc_t nrLDPC_decoder_offload;
-
-extern nrLDPC_dectopfunc_t top_testsuite;
+LDPC_initfunc_t LDPCinit;
+LDPC_shutdownfunc_t LDPCshutdown;
+LDPC_decoderfunc_t LDPCdecoder;
+LDPC_encoderfunc_t LDPCencoder;
 
 // inline functions:
 #endif
