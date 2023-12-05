@@ -25,7 +25,7 @@
 *
 * MODULE      :  UE test bench for hard (hybrid repeat request acknowledgment)
 *
-* DESCRIPTION :  it allows unitary tests for uplink and downlink harq
+* DESCRIPTION :  it allows unitary tests for downlink harq
 *
 ************************************************************************/
 
@@ -38,65 +38,6 @@
 
 //#include "PHY/vars.h"
 //#include "LAYER2/MAC/vars.h"
-
-/*******************************************************************
-*
-* NAME :         test_harq_uplink
-*
-* PARAMETERS :   none
-*
-* RETURN :       none
-*
-* DESCRIPTION :  test of HARQ uplink feature
-*
-*********************************************************************/
-
-int test_harq_uplink(PHY_VARS_NR_UE *phy_vars_ue)
-{
-  int gNB_id = 0;
-  int thread_number = 0;
-  int code_word_idx = 0;
-  int harq_pid = 0;
-  int ndi = 1;
-  uint8_t rnti_type = _C_RNTI_;
-  int number_steps = 5;
-
-  printf("\nHARQ Uplink \n");
-
-  config_uplink_harq_process(phy_vars_ue , gNB_id, thread_number, code_word_idx, NR_DEFAULT_DLSCH_HARQ_PROCESSES);
-
-  NR_UE_ULSCH_t *ulsch_harq = phy_vars_ue->ulsch[gNB_id];
-
-  /* reach maximum number of retransmissions */
-  printf("First sequence ndi does not toggle \n");
-  for (int i = 0 ; i < number_steps; i++) {
-    uplink_harq_process(ulsch_harq, harq_pid, ndi, rnti_type);
-  }
-
-  harq_pid++; /* next harq */
-
-  /* new grant so new transmission each try */
-  printf("Second sequence ndi toggle each transmission \n");
-  for (int i = 0 ; i < number_steps; i++) {
-    uplink_harq_process(ulsch_harq, harq_pid, ndi, rnti_type);
-    ndi ^= 1; /* toogle ndi each try */
-  }
-
-  harq_pid++; /* next harq */
-
-  /* new grant so new transmission each try */
-  printf("Third sequence ndi toggle each two transmissions \n");
-  for (int i = 0 ; i < number_steps; i++) {
-    uplink_harq_process(ulsch_harq, harq_pid, ndi, rnti_type);
-    if (i & 0x1) {
-      ndi ^= 1; /* toogle ndi each try */
-    }
-  }
-
-  release_uplink_harq_process(phy_vars_ue , gNB_id, thread_number, code_word_idx);
-
-  return 0;
-}
 
 /*******************************************************************
 *
@@ -175,11 +116,7 @@ int test_harq(PHY_VARS_NR_UE *phy_vars_ue)
 {
   int result = -1;
 
-  result = test_harq_uplink(phy_vars_ue);
-
-  if (result == 0) {
-    result = test_harq_downlink(phy_vars_ue);
-  }
+  result = test_harq_downlink(phy_vars_ue);
 
   return (result);
 }
@@ -188,7 +125,7 @@ int test_harq(PHY_VARS_NR_UE *phy_vars_ue)
 *
 * NAME :         main
 *
-* DESCRIPTION :  test of uplink and downlink harq entities
+* DESCRIPTION :  test of downlink harq entities
 *
 *********************************************************************/
 

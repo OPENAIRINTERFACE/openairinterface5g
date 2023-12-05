@@ -1117,7 +1117,7 @@ int main(int argc, char *argv[])
         pusch_config_pdu->target_code_rate = code_rate;
         pusch_config_pdu->tbslbrm = tbslbrm;
         pusch_config_pdu->pusch_data.tb_size = TBS / 8;
-        pusch_config_pdu->pusch_data.new_data_indicator = trial & 0x1;
+        pusch_config_pdu->pusch_data.new_data_indicator = round == 0 ? true : false;
         pusch_config_pdu->pusch_data.rv_index = rv_index;
         pusch_config_pdu->pusch_data.harq_process_id = harq_pid;
         pusch_config_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
