@@ -20,7 +20,7 @@
  */
 
 #include <stdint.h>
-#include "openair2/COMMON/platform_types.h"
+#include "common/platform_types.h"
 
 #ifndef _NR_PDCP_H_
 #define _NR_PDCP_H_

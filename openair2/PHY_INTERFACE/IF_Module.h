@@ -36,10 +36,9 @@
 #include <sched.h>
 //#include "openair1/PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "nfapi_interface.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include <common/utils/threadPool/thread-pool.h>
 #include <radio/COMMON/common_lib.h>
-
 
 #define MAX_NUM_DL_PDU 100
 #define MAX_NUM_UL_PDU 100
@@ -53,37 +52,37 @@
 #define MAX_NUM_RACH_IND 100
 #define MAX_NUM_SRS_IND 100
 
-typedef struct {
-  /// Module ID
-  module_id_t module_id;
-  /// CC ID
-  int CC_id;
-  /// frame
-  frame_t frame;
-  /// subframe
-  sub_frame_t subframe;
+ typedef struct {
+   /// Module ID
+   module_id_t module_id;
+   /// CC ID
+   int CC_id;
+   /// frame
+   frame_t frame;
+   /// subframe
+   sub_frame_t subframe;
 
-  /// harq indication list
-  nfapi_harq_indication_t harq_ind;
+   /// harq indication list
+   nfapi_harq_indication_t harq_ind;
 
-  /// crc indication list
-  nfapi_crc_indication_t crc_ind;
+   /// crc indication list
+   nfapi_crc_indication_t crc_ind;
 
-  /// SR indication list
-  nfapi_sr_indication_t sr_ind;
+   /// SR indication list
+   nfapi_sr_indication_t sr_ind;
 
-  /// CQI indication list
-  nfapi_cqi_indication_t cqi_ind;
+   /// CQI indication list
+   nfapi_cqi_indication_t cqi_ind;
 
-  /// RACH indication list
-  nfapi_rach_indication_t rach_ind;
-  /// RACH indication list for BR UEs
-  nfapi_rach_indication_t rach_ind_br;
-  /// SRS indication list
-  nfapi_srs_indication_body_t srs_ind;
+   /// RACH indication list
+   nfapi_rach_indication_t rach_ind;
+   /// RACH indication list for BR UEs
+   nfapi_rach_indication_t rach_ind_br;
+   /// SRS indication list
+   nfapi_srs_indication_body_t srs_ind;
 
-  /// RX indication
-  nfapi_rx_indication_t rx_ind;
+   /// RX indication
+   nfapi_rx_indication_t rx_ind;
 
 } UL_IND_t;
 

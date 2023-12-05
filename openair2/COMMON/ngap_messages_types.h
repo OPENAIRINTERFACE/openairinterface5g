@@ -29,6 +29,8 @@
 
 #ifndef NGAP_MESSAGES_TYPES_H_
 #define NGAP_MESSAGES_TYPES_H_
+#include "common/platform_constants.h"
+#include "common/platform_types.h"
 #include "common/ngran_types.h"
 #include "LTE_asn_constant.h"
 //-------------------------------------------------------------------------------------------//

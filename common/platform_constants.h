@@ -89,7 +89,9 @@
 #define NUM_MAX_CBA_GROUP 4
 
 #define printk printf
-
+#define RETURNok (0)
+#define RETURNerror (-1)
+#define DEFAULT_NAS_PATH "PWD"
 #define UNUSED_VARIABLE(vARIABLE) (void)(vARIABLE)
 
 #endif /* __PLATFORM_CONSTANTS_H__ */

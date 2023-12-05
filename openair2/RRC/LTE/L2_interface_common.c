@@ -28,7 +28,7 @@
  * \email: raymond.knopp@eurecom.fr
  */
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
 #include "common/utils/LOG/log.h"

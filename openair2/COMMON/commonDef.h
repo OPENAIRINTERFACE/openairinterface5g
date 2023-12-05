@@ -42,35 +42,8 @@ Description Contains global common definitions
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-
-#define NAS_UE_ID_FMT "0x%06x"
-
-/****************************************************************************/
-/*********************  G L O B A L    C O N S T A N T S  *******************/
-/****************************************************************************/
-
-#define RETURNok        (0)
-#define RETURNerror     (-1)
-
-/*
- * Name of the environment variable which defines the default directory
- * where the NAS application is executed and where are located files
- * where non-volatile data are stored
- */
-#define DEFAULT_NAS_PATH    "PWD"
-
-/****************************************************************************/
-/************************  G L O B A L    T Y P E S  ************************/
-/****************************************************************************/
-
-/*
------------------------------------------------------------------------------
-            Standard data type definitions
------------------------------------------------------------------------------
-*/
-typedef int8_t      SByte_t;    /* 8 bit  signed integer     */
+#include "common/platform_constants.h"
 typedef uint8_t     Byte_t;     /* 8 bit unsigned integer   */
-
 
 /*
 -----------------------------------------------------------------------------

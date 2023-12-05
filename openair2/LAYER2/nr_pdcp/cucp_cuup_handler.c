@@ -23,7 +23,7 @@
 
 #include "NR_DRB-ToAddModList.h"
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "intertask_interface.h"
 #include "openair2/COMMON/e1ap_messages_types.h"
 #include "openair3/ocp-gtpu/gtp_itf.h"

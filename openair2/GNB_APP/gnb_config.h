@@ -35,7 +35,7 @@
 #include <libconfig.h>
 
 #include "commonDef.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "common/platform_constants.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"

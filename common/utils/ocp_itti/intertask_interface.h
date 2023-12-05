@@ -26,9 +26,8 @@
 #include <stdint.h>
 #include <sys/epoll.h>
 
-#include <mem_block.h>
 #include <assertions.h>
-
+#include "common/utils/mem/oai_memory.h"
 
 typedef enum timer_type_s {
   TIMER_PERIODIC,
@@ -61,7 +60,6 @@ typedef struct itti_lte_time_s {
   uint32_t frame;
   uint8_t slot;
 } itti_lte_time_t;
-
 
 typedef struct IttiMsgEmpty_s {
   // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
@@ -552,7 +550,6 @@ void itti_set_task_real_time(task_id_t task_id);
 void itti_send_terminate_message(task_id_t task_id);
 
 void *itti_malloc(task_id_t origin_task_id, task_id_t destination_task_id, ssize_t size);
-int memory_read(const char *datafile, void *data, size_t size);
 int itti_free(task_id_t task_id, void *ptr);
 
 int itti_init(task_id_t task_max, const task_info_t *tasks_info);

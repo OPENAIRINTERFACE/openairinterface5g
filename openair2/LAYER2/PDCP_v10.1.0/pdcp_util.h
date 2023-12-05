@@ -29,7 +29,7 @@
 #define PDCP_UTIL_H
 
 #include "common/utils/LOG/log.h"
-#include "../../COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "pdcp.h"
 
 /*

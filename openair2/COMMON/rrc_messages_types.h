@@ -28,7 +28,7 @@
 
 #ifndef RRC_MESSAGES_TYPES_H_
 #define RRC_MESSAGES_TYPES_H_
-
+#include "common/utils/mem/oai_memory.h"
 #include "as_message.h"
 #include "rrc_types.h"
 #include "s1ap_messages_types.h"
@@ -43,6 +43,7 @@
 #include "NR_RACH-ConfigCommon.h"
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_ServingCellConfig.h"
+
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
 #if defined(DISABLE_ITTI_XER_PRINT)
@@ -417,7 +418,7 @@ typedef struct NRRrcConfigurationReq_s {
 
 typedef struct NRDuDlReq_s {
   rnti_t rnti;
-  mem_block_t * buf;
+  uint8_t *buf;
   uint64_t srb_id;
 }  NRDuDlReq_t; 
 

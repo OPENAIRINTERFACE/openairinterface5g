@@ -24,7 +24,7 @@
 
 #include "nr_pdcp_entity.h"
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 
 typedef void nr_pdcp_ue_manager_t;
 

@@ -45,7 +45,7 @@
 #include "NR_UE-NR-Capability.h"
 
 #include "common/platform_constants.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "openair2/RRC/common.h"

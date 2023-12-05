@@ -17,7 +17,7 @@
 //#include "PHY/defs_nb_iot.h"
 #include "PHY/LTE_TRANSPORT/dci_NB_IoT.h"
 #include "PHY/impl_defs_lte_NB_IoT.h"
-#include "openair2/COMMON/platform_types.h"
+#include "common/platform_types.h"
 //#include "dci.h"
 #include "PHY/LTE_TRANSPORT/uci_NB_IoT.h"
 //#include "dci.h"

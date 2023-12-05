@@ -37,6 +37,9 @@ Description Defines the EPS Mobility Management procedure call manager,
 
 *****************************************************************************/
 
+#include <string.h> // memset, memcpy, strlen
+#include <stdio.h> // sprintf
+#include <stdlib.h> // malloc, free
 #include "emm_main.h"
 #include "nas_log.h"
 #include "utils.h"
@@ -44,13 +47,9 @@ Description Defines the EPS Mobility Management procedure call manager,
 #include "MobileIdentity.h"
 #include "emm_proc_defs.h"
 
-#include "memory.h"
 #include "usim_api.h"
 #include "IdleMode.h"
-
-#include <string.h> // memset, memcpy, strlen
-#include <stdio.h>  // sprintf
-#include <stdlib.h> // malloc, free
+#include "common/utils/mem/oai_memory.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/

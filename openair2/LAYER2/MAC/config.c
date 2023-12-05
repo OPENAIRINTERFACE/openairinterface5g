@@ -28,7 +28,7 @@
  * @ingroup _mac
  */
 
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "common/platform_constants.h"
 #include "LTE_SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"

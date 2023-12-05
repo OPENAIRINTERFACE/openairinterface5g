@@ -35,12 +35,12 @@
 #ifndef __RLC_H__
 #    define __RLC_H__
 
-#    include "platform_types.h"
+#include "common/platform_types.h"
 #include "common/platform_constants.h"
 #    include "hashtable.h"
 #    include "LTE_asn_constant.h"
 #    include "common/utils/LOG/log.h"
-#    include "mem_block.h"
+#include "intertask_interface.h"
 //#    include "PHY/defs.h"
 #    include "LTE_RLC-Config.h"
 #    include "LTE_DRB-ToAddMod.h"
@@ -70,26 +70,6 @@ typedef enum rlc_confirm_e {
   RLC_SDU_CONFIRM_NO    = 0,
   RLC_SDU_CONFIRM_YES   = 1,
 } rlc_confirm_t;
-
-typedef enum rlc_mode_e {
-  RLC_MODE_NONE    = 0,
-  RLC_MODE_AM      = 1,
-  RLC_MODE_UM      = 2,
-  RLC_MODE_TM      = 4
-} rlc_mode_t;
-
-/*! \struct  mac_rlc_status_resp_t
-* \brief Primitive exchanged between RLC and MAC informing about the buffer occupancy of the RLC protocol instance.
-*/
-typedef  struct {
-  rlc_buffer_occupancy_t       bytes_in_buffer; /*!< \brief Bytes buffered in RLC protocol instance. */
-  rlc_buffer_occupancy_t       pdus_in_buffer;  /*!< \brief Number of PDUs buffered in RLC protocol instance (OBSOLETE). */
-  frame_t                      head_sdu_creation_time;           /*!< \brief Head SDU creation time. */
-  sdu_size_t                   head_sdu_remaining_size_to_send;  /*!< \brief remaining size of sdu: could be the total size or the remaining size of already segmented sdu */
-  bool                         head_sdu_is_segmented;     /*!< \brief 0 if head SDU has not been segmented, 1 if already segmented */
-} mac_rlc_status_resp_t;
-
-
 
 //-----------------------------------------------------------------------------
 //   PRIVATE INTERNALS OF RLC
@@ -284,39 +264,35 @@ void rlc_util_print_hex_octets(
 * \param[in]  muiP             Message Unit identifier.
 * \param[in]  confirmP         Boolean, is confirmation requested.
 * \param[in]  sdu_sizeP        Size of SDU in bytes.
-* \param[in]  sduP             SDU.
-* \return     A status about the processing, OK or error code.
-*/
-rlc_op_status_t rlc_data_req     (
-  const protocol_ctxt_t *const,
-  const  srb_flag_t,
-  const  MBMS_flag_t,
-  const  rb_id_t,
-  const  mui_t,
-  const confirm_t,
-  const sdu_size_t,
-  mem_block_t *const,
-  const uint32_t *const,
-  const uint32_t *const
-);
+ * \param[in]  sduP             SDU.
+ * \return     A status about the processing, OK or error code.
+ */
+rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const,
+                             const srb_flag_t,
+                             const MBMS_flag_t,
+                             const rb_id_t,
+                             const mui_t,
+                             const confirm_t,
+                             const sdu_size_t,
+                             uint8_t *const,
+                             const uint32_t *const,
+                             const uint32_t *const);
 
 /*! \fn void rlc_data_ind     (const protocol_ctxt_t* const ctxtP, const  srb_flag_t srb_flagP, const  MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP, const sdu_size_t sdu_sizeP, mem_block_t* sduP) {
 * \brief    Interface with higher layers, route SDUs coming from RLC protocol instances to upper layer instance.
 * \param[in]  ctxtP            Running context.
 * \param[in]  srb_flagP        Flag to indicate SRB (1) or DRB (0)
 * \param[in]  MBMS_flagP       Flag to indicate whether this is the MBMS service (1) or not (0)
-* \param[in]  rb_idP           Radio bearer identifier.
-* \param[in]  sdu_sizeP        Size of SDU in bytes.
-* \param[in]  sduP             SDU.
-*/
-void rlc_data_ind(
-  const protocol_ctxt_t *const,
-  const srb_flag_t,
-  const MBMS_flag_t,
-  const rb_id_t,
-  const sdu_size_t,
-  mem_block_t *const);
-
+ * \param[in]  rb_idP           Radio bearer identifier.
+ * \param[in]  sdu_sizeP        Size of SDU in bytes.
+ * \param[in]  sduP             SDU.
+ */
+void rlc_data_ind(const protocol_ctxt_t *const,
+                  const srb_flag_t,
+                  const MBMS_flag_t,
+                  const rb_id_t,
+                  const sdu_size_t,
+                  uint8_t *const);
 
 /*! \fn void rlc_data_conf     (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const  rb_id_t rb_idP, const mui_t muiP, const rlc_tx_status_t statusP)
 * \brief    Interface with higher layers, confirm to upper layer the transmission status for a SDU stamped with a MUI, scheduled for transmission.
@@ -435,18 +411,9 @@ rlc_op_status_t rlc_stat_req     (
   unsigned int *const stat_timer_status_prohibit_timed_out);
 
 /*! \fn int rlc_module_init(int enb_flag)
-* \brief    RAZ the memory of the RLC layer, initialize the memory pool manager (mem_block_t structures mainly used in RLC module).
-*/
+ * \brief    RAZ the memory of the RLC layer, initialize the memory pool manager (uint8_t structures mainly used in RLC module).
+ */
 int rlc_module_init(int enb_flag);
-
-void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
-                     const srb_flag_t   srb_flagP,
-                     const MBMS_flag_t  MBMS_flagP,
-                     const rb_id_t      rb_idP,
-                     const mui_t        muiP,
-                     confirm_t    confirmP,
-                     sdu_size_t   sdu_sizeP,
-                     mem_block_t *sdu_pP);
 /** @} */
 
 #define RLC_FG_COLOR_BLACK            "\e[0;30m"

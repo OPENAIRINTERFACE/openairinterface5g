@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "commonDef.h"
-#include "memory.h"
+#include "common/utils/mem/oai_memory.h"
 #include "fs.h"
 #include "conf_user_data.h"
 

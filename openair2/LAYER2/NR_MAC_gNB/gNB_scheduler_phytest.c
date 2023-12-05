@@ -33,6 +33,7 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "executables/nr-softmodem.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
+#include "LAYER2/RLC/rlc.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
 

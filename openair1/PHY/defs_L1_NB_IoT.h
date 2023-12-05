@@ -119,7 +119,7 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/CODING/defs_NB_IoT.h"
 #include "openair2/PHY_INTERFACE/IF_Module_NB_IoT.h"
 //#include "PHY/TOOLS/defs.h"
-//#include "platform_types.h"
+#include "common/platform_types.h"
 ///#include "openair1/PHY/LTE_TRANSPORT/defs_nb_iot.h"
 
 ////////////////////////////////////////////////////////////////////#ifdef OPENAIR_LTE    (check if this is required)

@@ -19,42 +19,11 @@
  *      contact@openairinterface.org
  */
 
-/*****************************************************************************
-Source    memory.c
-
-Version   0.1
-
-Date    2012/10/09
-
-Product   NAS stack
-
-Subsystem Utilities
-
-Author    Frederic Maurel
-
-Description Memory access utilities
-
-*****************************************************************************/
-
-#include "memory.h"
-#include "commonDef.h"
-#include "nas_log.h"
-
-#include <stdio.h>  // fopen, fread, fclose
-#include <stdlib.h> // getenv, malloc, free
-#include <string.h> // strlen
-
-/****************************************************************************/
-/****************  E X T E R N A L    D E F I N I T I O N S  ****************/
-/****************************************************************************/
-
-/****************************************************************************/
-/*******************  L O C A L    D E F I N I T I O N S  *******************/
-/****************************************************************************/
-
-/****************************************************************************/
-/******************  E X P O R T E D    F U N C T I O N S  ******************/
-/****************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "common/utils/mem/oai_memory.h"
+#include "common/utils/LOG/log.h"
 
 /****************************************************************************
  **                                                                        **
@@ -85,13 +54,12 @@ char* memory_get_path(const char* dirname, const char* filename)
   }
 
   if (path == NULL) {
-    LOG_TRACE(WARNING, "MEMORY  - %s and %s environment variables are not defined trying local directory", dirname, DEFAULT_NAS_PATH);
     path = ".";
   }
 
   /* Append non-volatile data file name */
   size_t size = strlen(path) + strlen(filename) + 1;
-  char* data_filename = (char*)malloc(size+1);
+  char* data_filename = (char*)malloc(size + 1);
 
   if (data_filename != NULL) {
     if (size != sprintf(data_filename, "%s/%s", path, filename)) {
@@ -114,18 +82,16 @@ char* memory_get_path_from_ueid(const char* dirname, const char* filename, int u
   }
 
   if (path == NULL) {
-    LOG_TRACE(WARNING, "MEMORY  - %s and %s environment variables are not defined trying local directory", dirname, DEFAULT_NAS_PATH);
     path = ".";
   }
 
   /* Append non-volatile data file name */
-  if ( snprintf(buffer, sizeof(buffer), "%s/%s%d", path, filename, ueid) < 0 ) {
+  if (snprintf(buffer, sizeof(buffer), "%s/%s%d", path, filename, ueid) < 0) {
     return NULL;
   }
 
   return strdup(buffer);
 }
-
 
 /****************************************************************************
  **                                                                        **
@@ -201,8 +167,3 @@ int memory_write(const char* datafile, const void* data, size_t size)
 
   return (rc);
 }
-
-/****************************************************************************/
-/*********************  L O C A L    F U N C T I O N S  *********************/
-/****************************************************************************/
-

@@ -26,7 +26,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/sctp.h>
-#include "platform_types.h"
+#include "common/platform_types.h"
 
 struct e1ap_bearer_setup_req_s;
 struct e1ap_bearer_setup_resp_s;

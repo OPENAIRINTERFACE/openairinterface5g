@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
-#include <platform_types.h>
+#include "common/platform_types.h"
 #include "config_userapi.h"
 #include "config_common.h"
 #include "../utils/LOG/log.h"

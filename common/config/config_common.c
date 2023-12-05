@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <dlfcn.h>
 #include <arpa/inet.h>
-#include <platform_types.h>
+#include "common/platform_types.h"
 #include "config_common.h"
 #include "../utils/LOG/log.h"
 static int managed_ptr_sz(configmodule_interface_t *cfg, void *ptr)

@@ -23,7 +23,7 @@
 #define M2AP_TIMERS_H_
 
 #include <stdint.h>
-#include "platform_types.h"
+#include "common/platform_types.h"
 
 typedef struct {
   /* incremented every TTI (every millisecond when in realtime).

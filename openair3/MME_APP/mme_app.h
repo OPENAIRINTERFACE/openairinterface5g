@@ -31,8 +31,7 @@
 #define MME_APP_H_
 
 #include <stdint.h>
-#include "platform_types.h"
-
+#include "common/platform_types.h"
 
 void *MME_app_task(void *args_p);
 

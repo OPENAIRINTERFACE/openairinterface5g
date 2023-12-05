@@ -37,9 +37,9 @@
  *
  * In code:
  * ```
- * set_log(ASN1, OAI_INFO); // enable logging
+ * set_log(ASN1, OAILOG_INFO); // enable logging
  * // do your encoding here
- * set_log(ASN1, OAI_ERR);  // disable logging
+ * set_log(ASN1, OAILOG_ERR);  // disable logging
  * ```
  *
  * in gdb:

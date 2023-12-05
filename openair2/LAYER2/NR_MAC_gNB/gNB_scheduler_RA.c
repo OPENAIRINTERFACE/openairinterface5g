@@ -27,7 +27,7 @@
  * \version
  */
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "uper_decoder.h"
 
 /* MAC */
@@ -44,6 +44,7 @@
 
 /* rlc */
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include "openair2/LAYER2/RLC/rlc.h"
 
 #include <executables/softmodem-common.h>
 extern RAN_CONTEXT_t RC;

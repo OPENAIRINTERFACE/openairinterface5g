@@ -22,7 +22,7 @@
 #ifndef MAC_RRC_DL_H
 #define MAC_RRC_DL_H
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "f1ap_messages_types.h"
 
 typedef void (*f1_setup_response_func_t)(sctp_assoc_t assoc_id, const f1ap_setup_resp_t *resp);

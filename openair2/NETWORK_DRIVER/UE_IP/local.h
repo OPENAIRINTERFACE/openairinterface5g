@@ -52,7 +52,7 @@
 #include <net/ndisc.h>
 
 #include "constant.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "sap.h"
 
 typedef struct ue_ip_priv_s {

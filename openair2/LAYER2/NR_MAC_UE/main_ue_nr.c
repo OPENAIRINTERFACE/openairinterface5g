@@ -39,7 +39,7 @@
 #include "nr_rlc/nr_rlc_oai_api.h"
 #include "RRC/NR_UE/rrc_proto.h"
 #include <pthread.h>
-
+#include "openair2/LAYER2/RLC/rlc.h"
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
 void send_srb0_rrc(int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *data)
