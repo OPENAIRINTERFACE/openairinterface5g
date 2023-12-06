@@ -543,8 +543,8 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
     }
     LOG_D(PHY,"ULSCH %02d HARQPID %02d R %02d COMBIN %d RV %d NCB %05d \n", ulsch_id, harq_pid, r, p_offloadParams->setCombIn, p_offloadParams->rv, p_offloadParams->n_cb);
     ops[i]->ldpc_dec.code_block_mode = 1; // ldpc_dec->code_block_mode;
-    ops[i]->ldpc_dec.harq_combined_input.offset = ulsch_id * (32 * 1024 * 1024) + harq_pid * (2 * 1024 * 1024) + r * (1024 * 32);
-    ops[i]->ldpc_dec.harq_combined_output.offset = ulsch_id * (32 * 1024 * 1024) + harq_pid * (2 * 1024 * 1024) + r * (1024 * 32);
+    ops[i]->ldpc_dec.harq_combined_input.offset = ulsch_id * 64 * LDPC_MAX_CB_SIZE + r * LDPC_MAX_CB_SIZE;
+    ops[i]->ldpc_dec.harq_combined_output.offset = ulsch_id * 64 * LDPC_MAX_CB_SIZE  + r * LDPC_MAX_CB_SIZE;
     if (bufs->hard_outputs != NULL)
       ops[i]->ldpc_dec.hard_output = bufs->hard_outputs[start_idx + i];
     if (bufs->inputs != NULL)
@@ -968,7 +968,7 @@ int32_t LDPCinit()
 
   int socket_id = GET_SOCKET(info.socket_id);
   int out_max_sz = 8448; // max code block size (for BG1), 22 * 384
-  int in_max_sz = 25344; // max number of encoded bits (for BG1), 66 * 384
+  int in_max_sz = LDPC_MAX_CB_SIZE; // max number of encoded bits (for BG2 and MCS0)
   int num_ops = 1;
   int f_ret = create_mempools(ad, socket_id, num_ops, out_max_sz, in_max_sz);
   if (f_ret != TEST_SUCCESS) {
