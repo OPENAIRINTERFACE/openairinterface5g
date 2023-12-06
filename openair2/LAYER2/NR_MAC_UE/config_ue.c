@@ -605,8 +605,9 @@ void modlist_coreset(NR_ControlResourceSet_t *source, NR_ControlResourceSet_t *t
 {
   target->controlResourceSetId = source->controlResourceSetId;
   target->frequencyDomainResources.size = source->frequencyDomainResources.size;
-  target->frequencyDomainResources.buf = calloc(target->frequencyDomainResources.size,
-                                                sizeof(*target->frequencyDomainResources.buf));
+  if (!target->frequencyDomainResources.buf)
+    target->frequencyDomainResources.buf = calloc(target->frequencyDomainResources.size,
+                                                  sizeof(*target->frequencyDomainResources.buf));
   for (int i = 0; i < source->frequencyDomainResources.size; i++)
     target->frequencyDomainResources.buf[i] = source->frequencyDomainResources.buf[i];
   target->duration = source->duration;
@@ -649,9 +650,19 @@ void modlist_coreset(NR_ControlResourceSet_t *source, NR_ControlResourceSet_t *t
     }
   }
   if (source->tci_StatesPDCCH_ToAddList) {
-    if (target->tci_StatesPDCCH_ToAddList)
-      for (int i = 0; source->tci_StatesPDCCH_ToAddList->list.count; i++)
-        ASN_SEQUENCE_ADD(&target->tci_StatesPDCCH_ToAddList->list, source->tci_StatesPDCCH_ToAddList->list.array[i]);
+    if (target->tci_StatesPDCCH_ToAddList) {
+      for (int i = 0; i < source->tci_StatesPDCCH_ToAddList->list.count; i++) {
+        long id = *source->tci_StatesPDCCH_ToAddList->list.array[i];
+        int j;
+        for (j = 0; j < target->tci_StatesPDCCH_ToAddList->list.count; j++) {
+          if(id == *target->tci_StatesPDCCH_ToAddList->list.array[j])
+            break;
+        }
+        if (j == target->tci_StatesPDCCH_ToAddList->list.count)
+          ASN_SEQUENCE_ADD(&target->tci_StatesPDCCH_ToAddList->list,
+                           source->tci_StatesPDCCH_ToAddList->list.array[i]);
+      }
+    }
     else
       updateMACie(target->tci_StatesPDCCH_ToAddList,
                   source->tci_StatesPDCCH_ToAddList,
@@ -845,8 +856,11 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
               AssertFatal(1 == 0, "The logical id %d is not a valid SRB id %li\n", lc_identity, srb_id);
           }
         } else { /* DRB */
-          mac_lc_config = rlc_bearer->mac_LogicalChannelConfig;
-          AssertFatal(mac_lc_config != NULL, "For DRB, it should be mandatorily present\n");
+          AssertFatal(rlc_bearer->mac_LogicalChannelConfig,
+                      "When establishing a DRB, LogicalChannelConfig should be mandatorily present\n");
+          updateMACie(mac_lc_config,
+                      rlc_bearer->mac_LogicalChannelConfig,
+                      NR_LogicalChannelConfig_t);
         }
       } else {
         /* LC is already established, reconfiguring the LC */
@@ -855,13 +869,12 @@ void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
           updateMACie(mac_lc_config,
                       rlc_bearer->mac_LogicalChannelConfig,
                       NR_LogicalChannelConfig_t);
-        } else {
-          /* Need M - Maintains current value */
-          continue;
         }
       }
-      mac->lc_ordered_info[i].logicalChannelConfig_ordered = mac_lc_config;
-      nr_configure_mac_config_logicalChannelBearer(module_id, lc_identity, mac_lc_config);
+      if (mac_lc_config) {
+        mac->lc_ordered_info[i].logicalChannelConfig_ordered = mac_lc_config;
+        nr_configure_mac_config_logicalChannelBearer(module_id, lc_identity, mac_lc_config);
+      }
     }
 
     // reorder the logical channels as per its priority
@@ -1773,11 +1786,6 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
   if (!get_softmodem_params()->emulate_l1)
     mac->if_module->phy_config_request(&mac->phy_config);
   mac->phy_config_request_sent = true;
-
-  ASN_STRUCT_FREE(asn_DEF_NR_SI_SchedulingInfo,
-                  si_SchedulingInfo);
-  ASN_STRUCT_FREE(asn_DEF_NR_ServingCellConfigCommonSIB,
-                  scc);
 }
 
 void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
@@ -1903,6 +1911,56 @@ void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroupConfig_
   }
 }
 
+static void configure_csi_resourcemapping(NR_CSI_RS_ResourceMapping_t *target,
+                                          NR_CSI_RS_ResourceMapping_t *source)
+{
+  target->frequencyDomainAllocation.present = source->frequencyDomainAllocation.present;
+  switch (source->frequencyDomainAllocation.present) {
+    case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row1 :
+      target->frequencyDomainAllocation.choice.row1.size = source->frequencyDomainAllocation.choice.row1.size;
+      target->frequencyDomainAllocation.choice.row1.bits_unused = source->frequencyDomainAllocation.choice.row1.bits_unused;
+      if (!target->frequencyDomainAllocation.choice.row1.buf)
+        target->frequencyDomainAllocation.choice.row1.buf = calloc(target->frequencyDomainAllocation.choice.row1.size, sizeof(uint8_t));
+      for (int i = 0; i < target->frequencyDomainAllocation.choice.row1.size; i++)
+        target->frequencyDomainAllocation.choice.row1.buf[i] = source->frequencyDomainAllocation.choice.row1.buf[i];
+      break;
+    case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2 :
+      target->frequencyDomainAllocation.choice.row2.size = source->frequencyDomainAllocation.choice.row2.size;
+      target->frequencyDomainAllocation.choice.row2.bits_unused = source->frequencyDomainAllocation.choice.row2.bits_unused;
+      if (!target->frequencyDomainAllocation.choice.row2.buf)
+        target->frequencyDomainAllocation.choice.row2.buf = calloc(target->frequencyDomainAllocation.choice.row2.size, sizeof(uint8_t));
+      for (int i = 0; i < target->frequencyDomainAllocation.choice.row2.size; i++)
+        target->frequencyDomainAllocation.choice.row2.buf[i] = source->frequencyDomainAllocation.choice.row2.buf[i];
+      break;
+    case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4 :
+      target->frequencyDomainAllocation.choice.row4.size = source->frequencyDomainAllocation.choice.row4.size;
+      target->frequencyDomainAllocation.choice.row4.bits_unused = source->frequencyDomainAllocation.choice.row4.bits_unused;
+      if (!target->frequencyDomainAllocation.choice.row4.buf)
+        target->frequencyDomainAllocation.choice.row4.buf = calloc(target->frequencyDomainAllocation.choice.row4.size, sizeof(uint8_t));
+      for (int i = 0; i < target->frequencyDomainAllocation.choice.row4.size; i++)
+        target->frequencyDomainAllocation.choice.row4.buf[i] = source->frequencyDomainAllocation.choice.row4.buf[i];
+      break;
+    case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other :
+      target->frequencyDomainAllocation.choice.other.size = source->frequencyDomainAllocation.choice.other.size;
+      target->frequencyDomainAllocation.choice.other.bits_unused = source->frequencyDomainAllocation.choice.other.bits_unused;
+      if (!target->frequencyDomainAllocation.choice.other.buf)
+        target->frequencyDomainAllocation.choice.other.buf = calloc(target->frequencyDomainAllocation.choice.other.size, sizeof(uint8_t));
+      for (int i = 0; i < target->frequencyDomainAllocation.choice.other.size; i++)
+        target->frequencyDomainAllocation.choice.other.buf[i] = source->frequencyDomainAllocation.choice.other.buf[i];
+      break;
+    default:
+      AssertFatal(false , "Invalid entry\n");
+  }
+  target->nrofPorts = source->nrofPorts;
+  target->firstOFDMSymbolInTimeDomain = source->firstOFDMSymbolInTimeDomain;
+  updateMACie(target->firstOFDMSymbolInTimeDomain2,
+              source->firstOFDMSymbolInTimeDomain2,
+              long);
+  target->cdm_Type = source->cdm_Type;
+  target->density = source->density;
+  target->freqBand = source->freqBand;
+}
+
 static void configure_csiconfig(NR_UE_ServingCell_Info_t *sc_info,
                                 struct NR_SetupRelease_CSI_MeasConfig *csi_MeasConfig_sr)
 {
@@ -1963,7 +2021,7 @@ static void configure_csiconfig(NR_UE_ServingCell_Info_t *sc_info,
             }
             if (j < target->nzp_CSI_RS_ResourceToAddModList->list.count) { // modify
               NR_NZP_CSI_RS_Resource_t *mac_res = target->nzp_CSI_RS_ResourceToAddModList->list.array[j];
-              mac_res->resourceMapping = res->resourceMapping;
+              configure_csi_resourcemapping(&mac_res->resourceMapping, &res->resourceMapping);
               mac_res->powerControlOffset = res->powerControlOffset;
               updateMACie(mac_res->powerControlOffsetSS,
                           res->powerControlOffsetSS,
