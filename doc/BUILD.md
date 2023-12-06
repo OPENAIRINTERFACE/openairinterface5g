@@ -184,6 +184,7 @@ Some libraries have further dependencies and might not build on every system:
 - `nrqtscope`: Qt5
 - `ldpc_cuda`: CUDA
 - `websrv`: npm and others
+- `ldpc_t2`: DPDK with patch
 
 # Running `cmake` directly
 

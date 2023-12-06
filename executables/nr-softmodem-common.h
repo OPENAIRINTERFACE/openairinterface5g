@@ -98,7 +98,6 @@
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
 #define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
-#define CONFIG_HLP_LDPC_OFFLOAD  "enable LDPC offload to AMD Xilinx T2 card\n"
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
 #define CONFIG_HLP_TX_SUBDEV     "set the arguments to select tx_subdev (same syntax as in UHD)\n"
 #define CONFIG_HLP_RX_SUBDEV     "set the arguments to select rx_subdev (same syntax as in UHD)\n"
