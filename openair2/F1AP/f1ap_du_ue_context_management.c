@@ -893,11 +893,99 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
               (F1AP_QoSInformation_ExtIEs_t *)drbs_tobesetupmod_item_p->qoSInformation.choice.choice_extension;
           if (ie->id == F1AP_ProtocolIE_ID_id_DRB_Information && ie->criticality == F1AP_Criticality_reject
               && ie->value.present == F1AP_QoSInformation_ExtIEs__value_PR_DRB_Information) {
-            F1AP_DRB_Information_t *DRB_Information = &ie->value.choice.DRB_Information;
+            F1AP_DRB_Information_t *dRB_Info = &ie->value.choice.DRB_Information;
+            f1ap_drb_information_t *drb_info = &f1ap_ue_context_modification_req->drbs_to_be_setup->drb_info;
+
+            /* 12.1.2.1 dRB_QoS */
+            {
+              /* QoS-Flow-Level-QoS-Parameters */
+              f1ap_qos_flow_level_qos_parameters_t *drb_qos = &drb_info->drb_qos;
+              F1AP_QoSFlowLevelQoSParameters_t *dRB_QoS = &dRB_Info->dRB_QoS;
+              {
+                /* QoS Characteristics*/
+                f1ap_qos_characteristics_t *drb_qos_char = &drb_qos->qos_characteristics;
+                F1AP_QoS_Characteristics_t *dRB_QoS_Char = &dRB_QoS->qoS_Characteristics;
+
+                if (dRB_QoS_Char->present == F1AP_QoS_Characteristics_PR_non_Dynamic_5QI) {
+                  drb_qos_char->qos_type = non_dynamic;
+                  drb_qos_char->non_dynamic.fiveqi = dRB_QoS_Char->choice.non_Dynamic_5QI->fiveQI;
+                  drb_qos_char->non_dynamic.qos_priority_level = (dRB_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel != NULL)
+                                                                     ? *dRB_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel
+                                                                     : -1;
+                } else {
+                  drb_qos_char->qos_type = dynamic;
+                  drb_qos_char->dynamic.fiveqi =
+                      (dRB_QoS_Char->choice.dynamic_5QI->fiveQI != NULL) ? *dRB_QoS_Char->choice.dynamic_5QI->fiveQI : -1;
+                  drb_qos_char->dynamic.qos_priority_level = dRB_QoS_Char->choice.dynamic_5QI->qoSPriorityLevel;
+                  drb_qos_char->dynamic.packet_delay_budget = dRB_QoS_Char->choice.dynamic_5QI->packetDelayBudget;
+                  drb_qos_char->dynamic.packet_error_rate.per_scalar = dRB_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Scalar;
+                  drb_qos_char->dynamic.packet_error_rate.per_exponent =
+                      dRB_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Exponent;
+                }
+              }
+
+              /* nGRANallocationRetentionPriority */
+              drb_qos->alloc_reten_priority.priority_level = dRB_QoS->nGRANallocationRetentionPriority.priorityLevel;
+              drb_qos->alloc_reten_priority.preemption_vulnerability =
+                  dRB_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
+              drb_qos->alloc_reten_priority.preemption_capability =
+                  dRB_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
+            } // dRB_QoS
+
+            // 12.1.2.4 flows_Mapped_To_DRB_List
+            drb_info->flows_to_be_setup_length = dRB_Info->flows_Mapped_To_DRB_List.list.count;
+            drb_info->flows_mapped_to_drb = calloc(drb_info->flows_to_be_setup_length, sizeof(f1ap_flows_mapped_to_drb_t));
+            AssertFatal(drb_info->flows_mapped_to_drb, "could not allocate memory for drb_p->drb_info.flows_mapped_to_drb\n");
+
+            for (int k = 0; k < drb_p->drb_info.flows_to_be_setup_length; k++) {
+              f1ap_flows_mapped_to_drb_t *flows_mapped_to_drb = drb_info->flows_mapped_to_drb + k;
+              F1AP_Flows_Mapped_To_DRB_Item_t *flows_Mapped_To_Drb = dRB_Info->flows_Mapped_To_DRB_List.list.array[0] + k;
+
+              flows_mapped_to_drb->qfi = flows_Mapped_To_Drb->qoSFlowIdentifier;
+
+              /* QoS-Flow-Level-QoS-Parameters */
+              {
+                f1ap_qos_flow_level_qos_parameters_t *flow_qos = &flows_mapped_to_drb->qos_params;
+                F1AP_QoSFlowLevelQoSParameters_t *Flow_QoS = &flows_Mapped_To_Drb->qoSFlowLevelQoSParameters;
+
+                /* QoS Characteristics*/
+                {
+                  f1ap_qos_characteristics_t *flow_qos_char = &flow_qos->qos_characteristics;
+                  F1AP_QoS_Characteristics_t *Flow_QoS_Char = &Flow_QoS->qoS_Characteristics;
+
+                  if (Flow_QoS_Char->present == F1AP_QoS_Characteristics_PR_non_Dynamic_5QI) {
+                    flow_qos_char->qos_type = non_dynamic;
+                    flow_qos_char->non_dynamic.fiveqi = Flow_QoS_Char->choice.non_Dynamic_5QI->fiveQI;
+                    flow_qos_char->non_dynamic.qos_priority_level =
+                        (Flow_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel != NULL)
+                            ? *Flow_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel
+                            : -1;
+                  } else {
+                    flow_qos_char->qos_type = dynamic;
+                    flow_qos_char->dynamic.fiveqi =
+                        (Flow_QoS_Char->choice.dynamic_5QI->fiveQI != NULL) ? *Flow_QoS_Char->choice.dynamic_5QI->fiveQI : -1;
+                    flow_qos_char->dynamic.qos_priority_level = Flow_QoS_Char->choice.dynamic_5QI->qoSPriorityLevel;
+                    flow_qos_char->dynamic.packet_delay_budget = Flow_QoS_Char->choice.dynamic_5QI->packetDelayBudget;
+                    flow_qos_char->dynamic.packet_error_rate.per_scalar =
+                        Flow_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Scalar;
+                    flow_qos_char->dynamic.packet_error_rate.per_exponent =
+                        Flow_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Exponent;
+                  }
+                }
+
+                /* nGRANallocationRetentionPriority */
+                flow_qos->alloc_reten_priority.priority_level = Flow_QoS->nGRANallocationRetentionPriority.priorityLevel;
+                flow_qos->alloc_reten_priority.preemption_vulnerability =
+                    Flow_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
+                flow_qos->alloc_reten_priority.preemption_capability =
+                    Flow_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
+              }
+            }
+
             /* S-NSSAI */
-            OCTET_STRING_TO_INT8(&DRB_Information->sNSSAI.sST, drb_p->nssai.sst);
-            if (DRB_Information->sNSSAI.sD != NULL)
-              memcpy((uint8_t *)&drb_p->nssai.sd, DRB_Information->sNSSAI.sD->buf, 3);
+            OCTET_STRING_TO_INT8(&dRB_Info->sNSSAI.sST, drb_p->nssai.sst);
+            if (dRB_Info->sNSSAI.sD != NULL)
+              memcpy((uint8_t *)&drb_p->nssai.sd, dRB_Info->sNSSAI.sD->buf, 3);
             else
               drb_p->nssai.sd = 0xffffff;
           }
