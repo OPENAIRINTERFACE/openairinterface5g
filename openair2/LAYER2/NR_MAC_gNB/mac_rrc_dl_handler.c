@@ -607,8 +607,9 @@ void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
     AssertFatal(*dl_rrc->old_gNB_DU_ue_id != dl_rrc->gNB_DU_ue_id,
                 "logic bug: current and old gNB DU UE ID cannot be the same\n");
     /* 38.401 says: "Find UE context based on old gNB-DU UE F1AP ID, replace
-     * old C-RNTI/PCI with new C-RNTI/PCI". So we delete the new contexts
-     * below, then change the C-RNTI of the old one to the new one */
+     * old C-RNTI/PCI with new C-RNTI/PCI". Below, we do the inverse: we keep
+     * the new UE context (with new C-RNTI), but set up everything to reuse the
+     * old config. */
     NR_UE_info_t *oldUE = find_nr_UE(&mac->UE_info, *dl_rrc->old_gNB_DU_ue_id);
     DevAssert(oldUE);
     pthread_mutex_lock(&mac->sched_lock);
@@ -618,6 +619,9 @@ void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
     UE->CellGroup->spCellConfig = NULL;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
+    uid_t temp_uid = UE->uid;
+    UE->uid = oldUE->uid;
+    oldUE->uid = temp_uid;
     configure_UE_BWP(mac, scc, sched_ctrl, NULL, UE, -1, -1);
 
     nr_mac_prepare_cellgroup_update(mac, UE, oldUE->CellGroup);
