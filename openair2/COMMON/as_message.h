@@ -464,6 +464,13 @@ typedef ul_info_transfer_cnf_t dl_info_transfer_cnf_t;
  */
 typedef ul_info_transfer_ind_t dl_info_transfer_ind_t;
 
+typedef struct nas_pdu_session_req_s {
+  int pdusession_id;
+  int pdusession_type;
+  int sst;
+  int sd;
+} nas_pdu_session_req_t;
+
 /*
  * --------------------------------------------------------------------------
  *          Radio Access Bearer establishment

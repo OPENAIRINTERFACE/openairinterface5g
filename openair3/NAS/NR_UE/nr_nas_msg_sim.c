@@ -52,12 +52,14 @@
 #include <openair1/SIMULATION/ETH_TRANSPORT/proto.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 #include "openair3/SECU/nas_stream_eia2.h"
+#include "openair3/UTILS/conversions.h"
 
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
 extern char *baseNetAddress;
 extern uint16_t NB_UE_INST;
 static nr_ue_nas_t nr_ue_nas = {0};
+static nr_nas_msg_snssai_t nas_allowed_nssai[8];
 
 static int nas_protected_security_header_encode(
   char                                       *buffer,
@@ -778,7 +780,7 @@ static void generateDeregistrationRequest(nr_ue_nas_t *nas, as_nas_info_t *initi
     initialNasMsg->data[2 + i] = mac[i];
 }
 
-static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *initialNasMsg)
+static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *initialNasMsg, nas_pdu_session_req_t *pdu_req)
 {
   //wait send RegistrationComplete
   usleep(100*150);
@@ -790,11 +792,11 @@ static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *
   uint8_t *req_buffer = malloc(req_length);
   pdu_session_establishment_request_msg pdu_session_establish;
   pdu_session_establish.protocoldiscriminator = FGS_SESSION_MANAGEMENT_MESSAGE;
-  pdu_session_establish.pdusessionid = 10;
+  pdu_session_establish.pdusessionid = pdu_req->pdusession_id;
   pdu_session_establish.pti = 1;
   pdu_session_establish.pdusessionestblishmsgtype = FGS_PDU_SESSION_ESTABLISHMENT_REQ;
   pdu_session_establish.maxdatarate = 0xffff;
-  pdu_session_establish.pdusessiontype = 0x91;
+  pdu_session_establish.pdusessiontype = pdu_req->pdusession_type;
   encode_pdu_session_establishment_request(&pdu_session_establish, req_buffer);
 
 
@@ -827,22 +829,19 @@ static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *
   mm_msg->uplink_nas_transport.fgspayloadcontainer.payloadcontainercontents.length = req_length;
   mm_msg->uplink_nas_transport.fgspayloadcontainer.payloadcontainercontents.value = req_buffer;
   size += (2+req_length);
-  mm_msg->uplink_nas_transport.pdusessionid = 10;
+  mm_msg->uplink_nas_transport.pdusessionid = pdu_req->pdusession_id;
   mm_msg->uplink_nas_transport.requesttype = 1;
   size += 3;
-  const bool has_nssai_sd = nas->uicc->nssai_sd != 0xffffff; // 0xffffff means "no SD", TS 23.003
+  const bool has_nssai_sd = pdu_req->sd != 0xffffff; // 0xffffff means "no SD", TS 23.003
   const size_t nssai_len = has_nssai_sd ? 4 : 1;
   mm_msg->uplink_nas_transport.snssai.length = nssai_len;
   //Fixme: it seems there are a lot of memory errors in this: this value was on the stack, 
   // but pushed  in a itti message to another thread
   // this kind of error seems in many places in 5G NAS
   mm_msg->uplink_nas_transport.snssai.value = calloc(1, nssai_len);
-  mm_msg->uplink_nas_transport.snssai.value[0] = nas->uicc->nssai_sst;
-  if (has_nssai_sd) {
-    mm_msg->uplink_nas_transport.snssai.value[1] = (nas->uicc->nssai_sd >> 16) & 0xFF;
-    mm_msg->uplink_nas_transport.snssai.value[2] = (nas->uicc->nssai_sd >> 8)  & 0xFF;
-    mm_msg->uplink_nas_transport.snssai.value[3] = (nas->uicc->nssai_sd)       & 0xFF;
-  }
+  mm_msg->uplink_nas_transport.snssai.value[0] = pdu_req->sst;
+  if (has_nssai_sd)
+    INT24_TO_BUFFER(pdu_req->sd, &mm_msg->uplink_nas_transport.snssai.value[1]);
   size += 1 + 1 + nssai_len;
   int dnnSize=strlen(nas->uicc->dnnStr);
   mm_msg->uplink_nas_transport.dnn.value=calloc(1,dnnSize+1);
@@ -912,6 +911,120 @@ static void send_nas_uplink_data_req(instance_t instance, const as_nas_info_t *i
   itti_send_msg_to_task(TASK_RRC_NRUE, instance, msg);
 }
 
+static void parse_allowed_nssai(nr_nas_msg_snssai_t nssaiList[8], const uint8_t *buf, const uint32_t len)
+{
+  int nssai_cnt = 0;
+  const uint8_t *end = buf + len;
+  while (buf < end) {
+    const int length = *buf++;
+    nr_nas_msg_snssai_t *nssai = nssaiList + nssai_cnt;
+    nssai->sd = 0xffffff;
+
+    switch (length) {
+      case 1:
+        nssai->sst = *buf++;
+        nssai_cnt++;
+        break;
+
+      case 2:
+        nssai->sst = *buf++;
+        nssai->hplmn_sst = *buf++;
+        nssai_cnt++;
+        break;
+
+      case 4:
+        nssai->sst = *buf++;
+        nssai->sd = 0xffffff & ntoh_int24_buf(buf);
+        buf += 3;
+        nssai_cnt++;
+        break;
+
+      case 5:
+        nssai->sst = *buf++;
+        nssai->sd = 0xffffff & ntoh_int24_buf(buf);
+        buf += 3;
+        nssai->hplmn_sst = *buf++;
+        nssai_cnt++;
+        break;
+
+      case 8:
+        nssai->sst = *buf++;
+        nssai->sd = 0xffffff & ntoh_int24_buf(buf);
+        buf += 3;
+        nssai->hplmn_sst = *buf++;
+        nssai->hplmn_sd = 0xffffff & ntoh_int24_buf(buf);
+        buf += 3;
+        nssai_cnt++;
+        break;
+
+      default:
+        LOG_E(NAS, "UE received unknown length in an allowed S-NSSAI\n");
+        break;
+    }
+  }
+}
+
+/* Extract Allowed NSSAI from Regestration Accept according to
+   3GPP TS 24.501 Table 8.2.7.1.1
+*/
+static void get_allowed_nssai(nr_nas_msg_snssai_t nssai[8], const uint8_t *pdu_buffer, const uint32_t pdu_length)
+{
+  if ((pdu_buffer == NULL) || (pdu_length <= 0))
+    return;
+
+  const uint8_t *end = pdu_buffer + pdu_length;
+  if (((nas_msg_header_t *)(pdu_buffer))->choice.security_protected_nas_msg_header_t.security_header_type > 0) {
+    pdu_buffer += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+  }
+
+  pdu_buffer += 1 + 1 + 1 + 2; // Mandatory fields offset
+  /* optional fields */
+  while (pdu_buffer < end) {
+    const int type = *pdu_buffer++;
+    int length = 0;
+    switch (type) {
+      case 0x77: // 5GS mobile identity
+        pdu_buffer += ntoh_int16_buf(pdu_buffer) + sizeof(uint16_t);
+        break;
+
+      case 0x4A: // PLMN list
+      case 0x54: // 5GS tracking area identity
+        pdu_buffer += *pdu_buffer + 1; // offset length + 1 byte which contains the length
+        break;
+
+      case 0x15: // allowed NSSAI
+        length = *pdu_buffer++;
+        parse_allowed_nssai(nssai, pdu_buffer, length);
+        break;
+
+      default:
+        LOG_W(NAS, "This NAS IEI is not handled when extracting list of allowed NSSAI\n");
+        pdu_buffer = end;
+        break;
+    }
+  }
+}
+
+static void request_default_pdusession(int instance, int nssai_idx)
+{
+  MessageDef *message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_PDU_SESSION_REQ);
+  NAS_PDU_SESSION_REQ(message_p).pdusession_id = 10; /* first or default pdu session */
+  NAS_PDU_SESSION_REQ(message_p).pdusession_type = 0x91;
+  NAS_PDU_SESSION_REQ(message_p).sst = nas_allowed_nssai[nssai_idx].sst;
+  NAS_PDU_SESSION_REQ(message_p).sd = nas_allowed_nssai[nssai_idx].sd;
+  itti_send_msg_to_task(TASK_NAS_NRUE, instance, message_p);
+}
+
+static int get_user_nssai_idx(const nr_nas_msg_snssai_t allowed_nssai[8], const nr_ue_nas_t *nas)
+{
+  for (int i = 0; i < 8; i++) {
+    const nr_nas_msg_snssai_t *nssai = allowed_nssai + i;
+    if ((nas->uicc->nssai_sst == nssai->sst) && (nas->uicc->nssai_sd == nssai->sd))
+      return i;
+  }
+  return -1;
+}
+
 void *nas_nrue_task(void *args_p)
 {
   nr_ue_nas.uicc = checkUicc(0);
@@ -975,6 +1088,18 @@ void *nas_nrue(void *args_p)
         /* TODO not processed by NAS currently */
         break;
 
+      case NAS_PDU_SESSION_REQ: {
+        as_nas_info_t pduEstablishMsg = {0};
+        nas_pdu_session_req_t *pduReq = &NAS_PDU_SESSION_REQ(msg_p);
+        nr_ue_nas_t *nas = get_ue_nas_info(0);
+        generatePduSessionEstablishRequest(nas, &pduEstablishMsg, pduReq);
+        if (pduEstablishMsg.length > 0) {
+          send_nas_uplink_data_req(instance, &pduEstablishMsg);
+          LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+        }
+        break;
+      }
+
       case NAS_CONN_ESTABLI_CNF: {
         LOG_I(NAS,
               "[UE %ld] Received %s: errCode %u, length %u\n",
@@ -990,6 +1115,7 @@ void *nas_nrue(void *args_p)
           LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
           nr_ue_nas_t *nas = get_ue_nas_info(0);
           decodeRegistrationAccept(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length, nas);
+          get_allowed_nssai(nas_allowed_nssai, pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
 
           as_nas_info_t initialNasMsg = {0};
           generateRegistrationComplete(nas, &initialNasMsg, NULL);
@@ -998,11 +1124,11 @@ void *nas_nrue(void *args_p)
             LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
           }
 
-          as_nas_info_t pduEstablishMsg = {0};
-          generatePduSessionEstablishRequest(nas, &pduEstablishMsg);
-          if (pduEstablishMsg.length > 0) {
-            send_nas_uplink_data_req(instance, &pduEstablishMsg);
-            LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+          const int nssai_idx = get_user_nssai_idx(nas_allowed_nssai, nas);
+          if (nssai_idx < 0) {
+            LOG_E(NAS, "NSSAI parameters not match with allowed NSSAI. Couldn't request PDU session.\n");
+          } else {
+            request_default_pdusession(instance, nssai_idx);
           }
         } else if (msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC) {
           capture_pdu_session_establishment_accept_msg(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
@@ -1081,12 +1207,11 @@ void *nas_nrue(void *args_p)
               send_nas_uplink_data_req(instance, &initialNasMsg);
               LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
             }
-
-            as_nas_info_t pduEstablishMsg = {0};
-            generatePduSessionEstablishRequest(nas, &pduEstablishMsg);
-            if (pduEstablishMsg.length > 0) {
-              send_nas_uplink_data_req(instance, &pduEstablishMsg);
-              LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+            const int nssai_idx = get_user_nssai_idx(nas_allowed_nssai, nas);
+            if (nssai_idx < 0) {
+              LOG_E(NAS, "NSSAI parameters not match with allowed NSSAI. Couldn't request PDU session.\n");
+            } else {
+              request_default_pdusession(instance, nssai_idx);
             }
             break;
           case FGS_DEREGISTRATION_ACCEPT:
