@@ -150,6 +150,10 @@ int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
                                 uint8_t *pduP,
                                 uint32_t pdu_len);
 
+void release_dl_BWP(NR_UE_MAC_INST_t *mac, int index);
+void release_ul_BWP(NR_UE_MAC_INST_t *mac, int index);
+void nr_release_mac_config_logicalChannelBearer(NR_UE_MAC_INST_t *mac, long channel_identity);
+
 void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
                                                    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
                                                    struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list);

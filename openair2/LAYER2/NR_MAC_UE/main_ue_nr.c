@@ -64,7 +64,6 @@ void nr_ue_init_mac(module_id_t module_idP)
 {
   LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
-  nr_ue_mac_default_configs(mac);
   mac->first_sync_frame = -1;
   mac->get_sib1 = false;
   mac->get_otherSI = false;
@@ -73,6 +72,8 @@ void nr_ue_init_mac(module_id_t module_idP)
   mac->state = UE_NOT_SYNC;
   mac->si_window_start = -1;
   mac->servCellIndex = 0;
+  mac->harq_ACK_SpatialBundlingPUCCH = false;
+  mac->harq_ACK_SpatialBundlingPUSCH = false;
 }
 
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
@@ -112,12 +113,13 @@ NR_UE_MAC_INST_t *nr_l2_init_ue()
   //init mac here
   nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(NB_NR_UE_MAC_INST, sizeof(NR_UE_MAC_INST_t));
 
-  for (int j = 0; j < NB_NR_UE_MAC_INST; j++)
+  for (int j = 0; j < NB_NR_UE_MAC_INST; j++) {
     nr_ue_init_mac(j);
-
-  if (get_softmodem_params()->sa)
-    ue_init_config_request(nr_ue_mac_inst, get_softmodem_params()->numerology);
-
+    NR_UE_MAC_INST_t *mac = get_mac_inst(j);
+    nr_ue_mac_default_configs(mac);
+    if (get_softmodem_params()->sa)
+      ue_init_config_request(mac, get_softmodem_params()->numerology);
+  }
   int rc = rlc_module_init(0);
   AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
 
@@ -182,17 +184,35 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
 void release_mac_configuration(NR_UE_MAC_INST_t *mac)
 {
   asn1cFreeStruc(asn_DEF_NR_MIB, mac->mib);
-  for (int i = 0; i < 5; i++) {
-    NR_BWP_PDCCH_t *pdcch = &mac->config_BWP_PDCCH[5];
-    release_common_ss_cset(pdcch);
-    for (int j = 0; j < pdcch->list_Coreset.count; j++)
-      asn_sequence_del(&pdcch->list_Coreset, j, 1);
-    for (int j = 0; j < pdcch->list_SS.count; j++)
-      asn_sequence_del(&pdcch->list_SS, j, 1);    
+  asn1cFreeStruc(asn_DEF_NR_SI_SchedulingInfo, mac->si_SchedulingInfo);
+  asn1cFreeStruc(asn_DEF_NR_TDD_UL_DL_ConfigCommon, mac->tdd_UL_DL_ConfigurationCommon);
+  NR_UE_ServingCell_Info_t *sc = &mac->sc_info;
+  asn1cFreeStruc(asn_DEF_NR_CrossCarrierSchedulingConfig, sc->crossCarrierSchedulingConfig);
+  asn1cFreeStruc(asn_DEF_NR_SRS_CarrierSwitching, sc->carrierSwitching);
+  asn1cFreeStruc(asn_DEF_NR_UplinkConfig, sc->supplementaryUplink);
+  asn1cFreeStruc(asn_DEF_NR_PDSCH_CodeBlockGroupTransmission, sc->pdsch_CGB_Transmission);
+  asn1cFreeStruc(asn_DEF_NR_PUSCH_CodeBlockGroupTransmission, sc->pusch_CGB_Transmission);
+  asn1cFreeStruc(asn_DEF_NR_CSI_MeasConfig, sc->csi_MeasConfig);
+  asn1cFreeStruc(asn_DEF_NR_CSI_AperiodicTriggerStateList, sc->aperiodicTriggerStateList);
+  free(sc->xOverhead_PDSCH);
+  free(sc->nrofHARQ_ProcessesForPDSCH);
+  free(sc->rateMatching_PUSCH);
+  free(sc->xOverhead_PUSCH);
+  free(sc->maxMIMO_Layers_PUSCH);
+  memset(&mac->sc_info, 0, sizeof(mac->sc_info));
+
+  for (int i = 0; i < mac->dl_BWPs.count; i++)
+    release_dl_BWP(mac, i);
+  for (int i = 0; i < mac->ul_BWPs.count; i++)
+    release_ul_BWP(mac, i);
+  mac->current_DL_BWP = NULL;
+  mac->current_UL_BWP = NULL;
+
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+    nr_release_mac_config_logicalChannelBearer(mac, i + 1);
+    memset(&mac->lc_ordered_info[i], 0, sizeof(nr_lcordered_info_t));
   }
 
-  memset(&mac->current_DL_BWP, 0, sizeof(mac->current_DL_BWP));
-  memset(&mac->current_UL_BWP, 0, sizeof(mac->current_UL_BWP));
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->csirs_measurements, 0, sizeof(mac->csirs_measurements));
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
