@@ -34,6 +34,7 @@
 #define __LAYER2_MAC_UE_PROTO_H__
 
 #include "mac_defs.h"
+#include "oai_asn1.h"
 #include "RRC/NR_UE/rrc_defs.h"
 
 #define NR_DL_MAX_DAI                            (4)                      /* TS 38.213 table 9.1.3-1 Value of counter DAI for DCI format 1_0 and 1_1 */
@@ -49,8 +50,7 @@
 #define HANDLE_SETUPRELEASE_DIRECT(DESTINATION, ORIGIN, TYPE, ASN_DEF) \
   do {                                                                 \
     if (ORIGIN->present == 1) {                                        \
-      ASN_STRUCT_FREE(ASN_DEF, DESTINATION);                           \
-      DESTINATION = NULL;                                              \
+      asn1cFreeStruc(ASN_DEF, DESTINATION);                            \
     }                                                                  \
     if (ORIGIN->present == 2)                                          \
       UPDATE_MAC_IE(DESTINATION, ORIGIN->choice.setup, TYPE);          \
@@ -59,8 +59,7 @@
 #define HANDLE_SETUPRELEASE_IE(DESTINATION, ORIGIN, TYPE, ASN_DEF)          \
   do {                                                                      \
     if (ORIGIN->present == 1) {                                             \
-      ASN_STRUCT_FREE(ASN_DEF, DESTINATION);                                \
-      DESTINATION = NULL;                                                   \
+      asn1cFreeStruc(ASN_DEF, DESTINATION);                                 \
     }                                                                       \
     if (ORIGIN->present == 2) {                                             \
       if (!DESTINATION)                                                     \
@@ -122,7 +121,6 @@
            SOURCE->list.array[iI]);                                     \
     }                                                                   \
   } while (0)
-
 
 /**\brief initialize the field in nr_mac instance
    \param module_id      module id */

@@ -117,5 +117,11 @@ static inline uint64_t BIT_STRING_to_uint64(BIT_STRING_t *asn) {
 #define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
   TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
   asn1cSeqAdd(&VaR,lOcPtr)
+#define asn1cFreeStruc(ASN_DEF, STRUCT) \
+  do {                                  \
+    ASN_STRUCT_RESET(ASN_DEF, STRUCT);  \
+    free(STRUCT);                       \
+    STRUCT = NULL;                      \
+  } while (0)
 
 #endif

@@ -181,10 +181,7 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
 
 void release_mac_configuration(NR_UE_MAC_INST_t *mac)
 {
-  if(mac->mib) {
-    ASN_STRUCT_FREE(asn_DEF_NR_MIB, mac->mib);
-    mac->mib = NULL;
-  }
+  asn1cFreeStruc(asn_DEF_NR_MIB, mac->mib);
   for (int i = 0; i < 5; i++) {
     NR_BWP_PDCCH_t *pdcch = &mac->config_BWP_PDCCH[5];
     release_common_ss_cset(pdcch);
@@ -204,6 +201,6 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac)
 void reset_ra(RA_config_t *ra)
 {
   if(ra->rach_ConfigDedicated)
-    ASN_STRUCT_FREE(asn_DEF_NR_RACH_ConfigDedicated, ra->rach_ConfigDedicated);
+    asn1cFreeStruc(asn_DEF_NR_RACH_ConfigDedicated, ra->rach_ConfigDedicated);
   memset(ra, 0, sizeof(RA_config_t));
 }

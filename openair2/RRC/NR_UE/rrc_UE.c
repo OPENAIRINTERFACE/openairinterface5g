@@ -688,8 +688,7 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(instance_t instance,
     switch (bcch_message->message.choice.c1->present) {
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
         LOG_D(NR_RRC, "[UE %ld] Decoding SIB1\n", instance);
-        ASN_STRUCT_FREE(asn_DEF_NR_SIB1, SI_info->sib1);
-        SI_info->sib1 = NULL;
+        asn1cFreeStruc(asn_DEF_NR_SIB1, SI_info->sib1);
         NR_SIB1_t *sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
         if(!SI_info->sib1)
           SI_info->sib1 = calloc(1, sizeof(*SI_info->sib1));
@@ -1938,70 +1937,26 @@ void nr_rrc_going_to_IDLE(instance_t instance,
     }
   }
 
-  if(rrc->meas_config) {
-    ASN_STRUCT_FREE(asn_DEF_NR_MeasConfig, rrc->meas_config);
-    rrc->meas_config = NULL;
-  }
+  asn1cFreeStruc(asn_DEF_NR_MeasConfig, rrc->meas_config);
+  rrc->meas_config = NULL;
 
   for (int i = 0; i < NB_CNX_UE; i++) {
     rrcPerNB_t *nb = &rrc->perNB[i];
     NR_UE_RRC_SI_INFO *SI_info = &nb->SInfo;
-    if(SI_info->sib1) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB1, SI_info->sib1);
-      SI_info->sib1 = NULL;
-    }
-    if(SI_info->sib2) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB2, SI_info->sib2);
-      SI_info->sib2 = NULL;
-    }
-    if(SI_info->sib3) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB3, SI_info->sib3);
-      SI_info->sib3 = NULL;
-    }
-    if(SI_info->sib4) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB4, SI_info->sib4);
-      SI_info->sib4 = NULL;
-    }
-    if(SI_info->sib5) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB5, SI_info->sib5);
-      SI_info->sib5 = NULL;
-    }
-    if(SI_info->sib6) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB6, SI_info->sib6);
-      SI_info->sib6 = NULL;
-    }
-    if(SI_info->sib7) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB7, SI_info->sib7);
-      SI_info->sib7 = NULL;
-    }
-    if(SI_info->sib8) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB8, SI_info->sib8);
-      SI_info->sib8 = NULL;
-    }
-    if(SI_info->sib9) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB9, SI_info->sib9);
-      SI_info->sib9 = NULL;
-    }
-    if(SI_info->sib10) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB10_r16, SI_info->sib10);
-      SI_info->sib10 = NULL;
-    }
-    if(SI_info->sib11) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB11_r16, SI_info->sib11);
-      SI_info->sib11 = NULL;
-    }
-    if(SI_info->sib12) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB12_r16, SI_info->sib12);
-      SI_info->sib12 = NULL;
-    }
-    if(SI_info->sib13) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB13_r16, SI_info->sib13);
-      SI_info->sib13 = NULL;
-    }
-    if(SI_info->sib14) {
-      ASN_STRUCT_FREE(asn_DEF_NR_SIB14_r16, SI_info->sib14);
-      SI_info->sib14 = NULL;
-    }
+    asn1cFreeStruc(asn_DEF_NR_SIB1, SI_info->sib1);
+    asn1cFreeStruc(asn_DEF_NR_SIB2, SI_info->sib2);
+    asn1cFreeStruc(asn_DEF_NR_SIB3, SI_info->sib3);
+    asn1cFreeStruc(asn_DEF_NR_SIB4, SI_info->sib4);
+    asn1cFreeStruc(asn_DEF_NR_SIB5, SI_info->sib5);
+    asn1cFreeStruc(asn_DEF_NR_SIB6, SI_info->sib6);
+    asn1cFreeStruc(asn_DEF_NR_SIB7, SI_info->sib7);
+    asn1cFreeStruc(asn_DEF_NR_SIB8, SI_info->sib8);
+    asn1cFreeStruc(asn_DEF_NR_SIB9, SI_info->sib9);
+    asn1cFreeStruc(asn_DEF_NR_SIB10_r16, SI_info->sib10);
+    asn1cFreeStruc(asn_DEF_NR_SIB11_r16, SI_info->sib11);
+    asn1cFreeStruc(asn_DEF_NR_SIB12_r16, SI_info->sib12);
+    asn1cFreeStruc(asn_DEF_NR_SIB13_r16, SI_info->sib13);
+    asn1cFreeStruc(asn_DEF_NR_SIB14_r16, SI_info->sib14);
   }
 
   // reset MAC
