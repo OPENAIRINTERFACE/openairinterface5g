@@ -182,6 +182,7 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
   mac->scheduling_info.SR_COUNTER = 0;
   mac->scheduling_info.sr_ProhibitTimer = 0;
   mac->scheduling_info.sr_ProhibitTimer_Running = 0;
+  mac->scheduling_info.sr_id = -1; // invalid init value
 
   // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value
   // configured by the NW.
@@ -2424,32 +2425,34 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *p
   return sr_count > 0 ? true : false;
 }
 
-int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
+int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot)
+{
   // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
   DevCheck(module_idP < NB_NR_UE_MAC_INST, module_idP, NB_NR_UE_MAC_INST, 0);
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
-  DSR_TRANSMAX_t dsr_TransMax = sr_n64; // todo
-  LOG_D(NR_MAC, "[UE %d] Frame %d slot %d send SR indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",
+  NR_UE_SCHEDULING_INFO *si = &mac->scheduling_info;
+  int max_sr_transmissions = (1 << (2 + si->sr_TransMax));
+  LOG_D(NR_MAC, "[UE %d] Frame %d slot %d send SR indication (SR_COUNTER/sr_TransMax %d/%d), SR_pending %d\n",
         module_idP, frameP, slot,
-        mac->scheduling_info.SR_COUNTER,
-        (1 << (2 + dsr_TransMax)),
-        mac->scheduling_info.SR_pending); // todo
+        si->SR_COUNTER,
+        max_sr_transmissions,
+        si->SR_pending); // todo
 
-  if ((mac->scheduling_info.SR_pending == 1) &&
-      (mac->scheduling_info.SR_COUNTER < (1 << (2 + dsr_TransMax)))) {
-    LOG_D(NR_MAC, "[UE %d] Frame %d slot %d PHY asks for SR (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d, increment SR_COUNTER\n",
+  if ((si->SR_pending == 1) &&
+      (si->SR_COUNTER < max_sr_transmissions)) {
+    LOG_D(NR_MAC, "[UE %d] Frame %d slot %d PHY asks for SR (SR_COUNTER/sr_TransMax %d/%d), SR_pending %d, increment SR_COUNTER\n",
           module_idP, frameP, slot,
-          mac->scheduling_info.SR_COUNTER,
-          (1 << (2 + dsr_TransMax)),
-          mac->scheduling_info.SR_pending); // todo
-    mac->scheduling_info.SR_COUNTER++;
+          si->SR_COUNTER,
+          max_sr_transmissions,
+          si->SR_pending); // todo
+    si->SR_COUNTER++;
 
     // start the sr-prohibittimer : rel 9 and above
-    if (mac->scheduling_info.sr_ProhibitTimer > 0) { // timer configured
-      mac->scheduling_info.sr_ProhibitTimer--;
-      mac->scheduling_info.sr_ProhibitTimer_Running = 1;
+    if (si->sr_ProhibitTimer > 0) { // timer configured
+      si->sr_ProhibitTimer--;
+      si->sr_ProhibitTimer_Running = 1;
     } else {
-      mac->scheduling_info.sr_ProhibitTimer_Running = 0;
+      si->sr_ProhibitTimer_Running = 0;
     }
     //mac->ul_active =1;
     return (1);   //instruct phy to signal SR
@@ -2457,7 +2460,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
     // notify RRC to relase PUCCH/SRS
     // clear any configured dl/ul
     // initiate RA
-    if (mac->scheduling_info.SR_pending) {
+    if (si->SR_pending) {
       // release all pucch resource
       //mac->physicalConfigDedicated = NULL; // todo
       //mac->ul_active = 0; // todo
@@ -2465,9 +2468,8 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
         NR_BSR_TRIGGER_NONE;
       LOG_I(NR_MAC, "[UE %d] Release all SRs \n", module_idP);
     }
-
-    mac->scheduling_info.SR_pending = 0;
-    mac->scheduling_info.SR_COUNTER = 0;
+    si->SR_pending = 0;
+    si->SR_COUNTER = 0;
     return (0);
   }
 }

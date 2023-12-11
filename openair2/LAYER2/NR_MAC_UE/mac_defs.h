@@ -196,8 +196,6 @@ typedef struct {
   NR_LC_SCHEDULING_INFO lc_sched_info[NR_MAX_NUM_LCID];
   // lcg scheduling info
   NR_LCG_SCHEDULING_INFO lcg_sched_info[NR_MAX_NUM_LCGID];
-  /// sum of all lcid buffer size
-  uint16_t All_lcid_buffer_size_lastTTI;
   /// SR pending as defined in 38.321
   uint8_t  SR_pending;
   /// SR_COUNTER as defined in 38.321
@@ -214,14 +212,9 @@ typedef struct {
   uint16_t sr_ProhibitTimer;
   /// sr ProhibitTime running
   uint8_t sr_ProhibitTimer_Running;
-  ///  default value to n5
-  uint16_t maxHARQ_Tx;
-  /// default value is false
-  uint16_t ttiBundling;
-  /// default value is release
-  struct DRX_Config *drx_config;
-  /// default value is release
-  struct MAC_MainConfig__phr_Config *phr_config;
+  // Maximum number of SR transmissions
+  uint32_t sr_TransMax;
+  int sr_id;
   ///timer before triggering a periodic PHR
   uint16_t periodicPHR_Timer;
   ///timer before triggering a prohibit PHR
@@ -234,7 +227,6 @@ typedef struct {
   int16_t prohibitPHR_SF;
   ///DL Pathloss Change in db
   uint16_t PathlossChange_db;
-
   /// default value is false
   uint16_t extendedBSR_Sizes_r10;
   /// default value is false
