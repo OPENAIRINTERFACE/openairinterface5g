@@ -112,7 +112,7 @@ struct nrPolar_params {
 
   const uint8_t **crc_generator_matrix; // G_P
   const uint8_t **G_N;
-  uint64_t **G_N_tab;
+  fourDimArray_t *G_N_tab;
   int groupsize;
   int *rm_tab;
   uint64_t cprime_tab0[32][256];
@@ -219,9 +219,7 @@ uint32_t nr_polar_output_length(uint16_t K,
                                 uint16_t E,
                                 uint8_t n_max);
 
-void nr_polar_channel_interleaver_pattern(uint16_t *cip,
-    uint8_t I_BIL,
-    uint16_t E);
+void nr_polar_channel_interleaver_pattern(uint16_t *cip, const uint8_t I_BIL, const uint16_t E);
 
 void nr_polar_rate_matching_pattern(uint16_t *rmp,
                                     uint16_t *J,
@@ -258,7 +256,7 @@ void nr_polar_info_bit_pattern(uint8_t *ibp,
                                const uint16_t *Q_0_Nminus1,
                                uint16_t K,
                                uint16_t N,
-                               uint16_t E,
+                               const uint16_t E,
                                uint8_t n_PC,
                                uint8_t n_pc_wm);
 
@@ -284,7 +282,7 @@ void nr_polar_generate_u(uint64_t *u,
                          uint16_t N,
                          uint8_t n_pc);
 
-void nr_polar_uxG(uint64_t *D, const uint64_t *u, const uint64_t **G_N_tab, uint16_t N);
+void nr_polar_uxG(uint64_t *D, const uint64_t *u, const fourDimArray_t *G_N_tab, uint16_t N);
 
 void nr_polar_info_extraction_from_u(uint64_t *Cprime,
                                      const uint8_t *u,
