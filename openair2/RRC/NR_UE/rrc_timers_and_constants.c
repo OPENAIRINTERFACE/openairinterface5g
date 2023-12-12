@@ -101,7 +101,15 @@ void nr_rrc_SI_timers(NR_UE_RRC_SI_INFO *SInfo)
 void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc, instance_t instance)
 {
   NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
-  // T304
+
+  if (timers->T300_active == true) {
+    timers->T300_cnt += 10;
+    if(timers->T300_cnt >= timers->T300_k) {
+      timers->T300_active = false;
+      timers->T300_cnt = 0;
+      handle_t300_expiry(instance);
+    }
+  }
   if (timers->T304_active == true) {
     timers->T304_cnt += 10;
     if(timers->T304_cnt >= timers->T304_k) {

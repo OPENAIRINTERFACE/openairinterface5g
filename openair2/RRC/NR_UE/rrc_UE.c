@@ -143,7 +143,7 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
                                                 rnti_t rnti,
                                                 rrcPerNB_t *rrcNB,
                                                 NR_RadioBearerConfig_t *const radioBearerConfig);
-static void nr_rrc_ue_generate_RRCSetupRequest(rnti_t rnti);
+static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc, rnti_t rnti);
 static void nr_rrc_ue_generate_rrcReestablishmentComplete(NR_RRCReestablishment_t *rrcReestablishment);
 static void process_lte_nsa_msg(NR_UE_RRC_INST_t *rrc, nsa_msg_t *msg, int msg_len);
 static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
@@ -575,12 +575,12 @@ static int nr_decode_SI(NR_UE_RRC_SI_INFO *SI_info, NR_SystemInformation_t *si)
   return 0;
 }
 
-void nr_rrc_ue_generate_ra_msg(instance_t instance, RA_trigger_t trigger, rnti_t rnti)
+void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, rnti_t rnti)
 {
   switch (trigger) {
     case INITIAL_ACCESS_FROM_RRC_IDLE:
       // After SIB1 is received, prepare RRCConnectionRequest
-      nr_rrc_ue_generate_RRCSetupRequest(rnti);
+      nr_rrc_ue_generate_RRCSetupRequest(rrc, rnti);
       break;
     case RRC_CONNECTION_REESTABLISHMENT:
       AssertFatal(1==0, "ra_trigger not implemented yet!\n");
@@ -609,8 +609,9 @@ void nr_rrc_ue_generate_ra_msg(instance_t instance, RA_trigger_t trigger, rnti_t
   }
 }
 
-static void nr_rrc_ue_generate_RRCSetupRequest(rnti_t rnti)
+static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc, rnti_t rnti)
 {
+  LOG_D(NR_RRC, "Generation of RRCSetupRequest\n");
   uint8_t rv[6];
   // Get RRCConnectionRequest, fill random for now
   // Generate random byte stream for contention resolution
@@ -625,6 +626,10 @@ static void nr_rrc_ue_generate_RRCSetupRequest(rnti_t rnti)
 
   uint8_t buf[1024];
   int len = do_RRCSetupRequest(buf, sizeof(buf), rv);
+
+  // start timer T300
+  NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
+  tac->T300_active = true;
 
   /* convention: RNTI for SRB0 is zero, as it changes all the time */
   nr_rlc_srb_recv_sdu(rnti, 0, buf, len);
@@ -1476,7 +1481,7 @@ void *rrc_nrue(void *notUsed)
     break;
     
   case NR_RRC_MAC_MSG3_IND:
-    nr_rrc_ue_generate_ra_msg(instance, INITIAL_ACCESS_FROM_RRC_IDLE, NR_RRC_MAC_MSG3_IND(msg_p).rnti);
+    nr_rrc_ue_generate_ra_msg(rrc, INITIAL_ACCESS_FROM_RRC_IDLE, NR_RRC_MAC_MSG3_IND(msg_p).rnti);
     break;
     
   case NR_RRC_MAC_RA_IND:
@@ -1979,6 +1984,15 @@ void nr_rrc_going_to_IDLE(instance_t instance,
   MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NR_NAS_CONN_RELEASE_IND);
   NR_NAS_CONN_RELEASE_IND(msg_p).cause = release_cause;
   itti_send_msg_to_task(TASK_NAS_NRUE, instance, msg_p);
+}
+
+void handle_t300_expiry(instance_t instance)
+{
+  // reset MAC, release the MAC configuration
+  NR_UE_MAC_reset_cause_t cause = T300_EXPIRY;
+  nr_rrc_mac_config_req_reset(instance, cause);
+  // TODO handle connEstFailureControl
+  // TODO inform upper layers about the failure to establish the RRC connection
 }
 
 void nr_ue_rrc_timer_trigger(int instance, int frame, int gnb_id)
