@@ -150,14 +150,14 @@ typedef enum ngap_priority_level_s {
 } ngap_priority_level_t;
 
 typedef enum ngap_pre_emp_capability_e {
-  NGAP_PRE_EMPTION_CAPABILITY_ENABLED  = 0,
-  NGAP_PRE_EMPTION_CAPABILITY_DISABLED = 1,
+  NGAP_PRE_EMPTION_CAPABILITY_SHALL_NOT_TRIGGER_PREEMPTION = 0,
+  NGAP_PRE_EMPTION_CAPABILITY_MAY_TRIGGER_PREEMPTION = 1,
   NGAP_PRE_EMPTION_CAPABILITY_MAX,
 } ngap_pre_emp_capability_t;
 
 typedef enum ngap_pre_emp_vulnerability_e {
-  NGAP_PRE_EMPTION_VULNERABILITY_ENABLED  = 0,
-  NGAP_PRE_EMPTION_VULNERABILITY_DISABLED = 1,
+  NGAP_PRE_EMPTION_VULNERABILITY_NOT_PREEMPTABLE = 0,
+  NGAP_PRE_EMPTION_VULNERABILITY_PREEMPTABLE = 1,
   NGAP_PRE_EMPTION_VULNERABILITY_MAX,
 } ngap_pre_emp_vulnerability_t;
 
@@ -202,6 +202,7 @@ typedef struct nssai_s {
 typedef struct pdusession_level_qos_parameter_s {
   uint8_t qfi;
   uint64_t fiveQI;
+  uint64_t qos_priority;
   fiveQI_type_t fiveQI_type;
   ngap_allocation_retention_priority_t allocation_retention_priority;
 } pdusession_level_qos_parameter_t;

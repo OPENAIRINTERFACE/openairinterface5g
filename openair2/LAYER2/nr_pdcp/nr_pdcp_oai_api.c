@@ -1093,12 +1093,11 @@ void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering)
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, long t_Reordering)
+void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_config, NR_SDAP_Config_t *sdap_config)
 {
-  /* The enabling/disabling of ciphering or integrity protection
-   * can be changed only by releasing and adding the DRB
-   * (so not by reconfiguring).
-   */
+  // The enabling/disabling of ciphering or integrity protection
+  // can be changed only by releasing and adding the DRB
+  // (so not by reconfiguring).
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
   nr_pdcp_entity_t *drb = nr_pdcp_get_rb(ue, drb_id, false);
@@ -1107,8 +1106,33 @@ void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, long t_Reordering)
     nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
     return;
   }
-  int decoded_t_reordering = decode_t_reordering(t_Reordering);
-  drb->t_reordering = decoded_t_reordering;
+  if (pdcp_config) {
+    if (pdcp_config->t_Reordering)
+      drb->t_reordering = decode_t_reordering(*pdcp_config->t_Reordering);
+    else
+      drb->t_reordering = -1;
+    struct NR_PDCP_Config__drb *drb_config = pdcp_config->drb;
+    if (drb_config) {
+      if (drb_config->discardTimer)
+        drb->discard_timer = decode_discard_timer(*drb_config->discardTimer);
+      bool size_set = false;
+      if (drb_config->pdcp_SN_SizeUL) {
+        drb->sn_size = decode_sn_size_ul(*drb_config->pdcp_SN_SizeUL);
+        size_set = true;
+      }
+      if (drb_config->pdcp_SN_SizeDL) {
+        int size = decode_sn_size_dl(*drb_config->pdcp_SN_SizeDL);
+        AssertFatal(!size_set || (size == drb->sn_size),
+                    "SN sizes must be the same. dl=%d, ul=%d",
+                    size, drb->sn_size);
+        drb->sn_size = size;
+      }
+    }
+  }
+  if (sdap_config) {
+    // nr_reconfigure_sdap_entity
+    AssertFatal(false, "Function to reconfigure SDAP entity not implemented yet\n");
+  }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
@@ -1131,6 +1155,7 @@ void nr_pdcp_release_drb(ue_id_t ue_id, int drb_id)
   nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
   nr_pdcp_entity_t *drb = ue->drb[drb_id - 1];
   if (drb) {
+    nr_sdap_release_drb(ue_id, drb_id, drb->pdusession_id);
     drb->release_entity(drb);
     drb->delete_entity(drb);
     ue->drb[drb_id - 1] = NULL;

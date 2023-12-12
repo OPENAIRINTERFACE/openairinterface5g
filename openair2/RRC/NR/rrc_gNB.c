@@ -2035,6 +2035,17 @@ unsigned int mask_flip(unsigned int x) {
   return((((x>>8) + (x<<8))&0xffff)>>6);
 }
 
+static pdusession_level_qos_parameter_t *get_qos_characteristics(const int qfi, rrc_pdu_session_param_t *pduSession)
+{
+  pdusession_t *pdu = &pduSession->param;
+  for (int i = 0; i < pdu->nb_qos; i++) {
+    if (qfi == pdu->qos[i].qfi)
+      return &pdu->qos[i];
+  }
+  AssertFatal(1 == 0, "The pdu session %d does not contain a qos flow with qfi = %d\n", pdu->pdusession_id, qfi);
+  return NULL;
+}
+
 void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp, instance_t instance)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -2068,12 +2079,34 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   rrc_pdu_session_param_t *RRC_pduSession = find_pduSession(UE, resp->pduSession[0].id, false);
   DevAssert(RRC_pduSession);
   for (int i = 0; i < nb_drb; i++) {
+    DRB_nGRAN_setup_t *drb_config = &resp->pduSession[0].DRBnGRanList[i];
     drbs[i].drb_id = resp->pduSession[0].DRBnGRanList[i].id;
     drbs[i].rlc_mode = rrc->configuration.um_on_default_drb ? RLC_MODE_UM : RLC_MODE_AM;
-    drbs[i].up_ul_tnl[0].tl_address = resp->pduSession[0].DRBnGRanList[i].UpParamList[0].tlAddress;
+    drbs[i].up_ul_tnl[0].tl_address = drb_config->UpParamList[0].tlAddress;
     drbs[i].up_ul_tnl[0].port = rrc->eth_params_s.my_portd;
-    drbs[i].up_ul_tnl[0].teid = resp->pduSession[0].DRBnGRanList[i].UpParamList[0].teId;
+    drbs[i].up_ul_tnl[0].teid = drb_config->UpParamList[0].teId;
     drbs[i].up_ul_tnl_length = 1;
+
+    /* pass QoS info to MAC */
+    int nb_qos_flows = drb_config->numQosFlowSetup;
+    drbs[i].drb_info.flows_to_be_setup_length = nb_qos_flows;
+    drbs[i].drb_info.flows_mapped_to_drb = (f1ap_flows_mapped_to_drb_t *)calloc(nb_qos_flows, sizeof(f1ap_flows_mapped_to_drb_t));
+    AssertFatal(drbs[i].drb_info.flows_mapped_to_drb, "could not allocate memory\n");
+    for (int j = 0; j < nb_qos_flows; j++) {
+      drbs[i].drb_info.flows_mapped_to_drb[j].qfi = drb_config->qosFlows[j].qfi;
+
+      pdusession_level_qos_parameter_t *in_qos_char = get_qos_characteristics(drb_config->qosFlows[j].qfi, RRC_pduSession);
+      f1ap_qos_characteristics_t *qos_char = &drbs[i].drb_info.flows_mapped_to_drb[j].qos_params.qos_characteristics;
+      if (in_qos_char->fiveQI_type == dynamic) {
+        qos_char->qos_type = dynamic;
+        qos_char->dynamic.fiveqi = in_qos_char->fiveQI;
+        qos_char->dynamic.qos_priority_level = in_qos_char->qos_priority;
+      } else {
+        qos_char->qos_type = non_dynamic;
+        qos_char->non_dynamic.fiveqi = in_qos_char->fiveQI;
+        qos_char->non_dynamic.qos_priority_level = in_qos_char->qos_priority;
+      }
+    }
     /* pass NSSAI info to MAC */
     drbs[i].nssai = RRC_pduSession->param.nssai;
   }
@@ -2269,7 +2302,11 @@ void *rrc_gnb_task(void *args_p) {
     itti_receive_msg(TASK_RRC_GNB, &msg_p);
     const char *msg_name_p = ITTI_MSG_NAME(msg_p);
     instance = ITTI_MSG_DESTINATION_INSTANCE(msg_p);
-    LOG_D(NR_RRC, "Received Msg %s\n", msg_name_p);
+    LOG_D(NR_RRC,
+          "RRC GNB Task Received %s for instance %ld from task %s\n",
+          ITTI_MSG_NAME(msg_p),
+          ITTI_MSG_DESTINATION_INSTANCE(msg_p),
+          ITTI_MSG_ORIGIN_NAME(msg_p));
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
         LOG_W(NR_RRC, " *** Exiting NR_RRC thread\n");

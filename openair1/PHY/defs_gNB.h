@@ -142,10 +142,6 @@ typedef struct {
 typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
-  /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
-  int32_t **txdataF;
-  /// Modulated symbols buffer
-  int32_t **mod_symbs;
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
   int32_t ***ue_spec_bf_weights;
   /// Active flag for baseband transmitter processing

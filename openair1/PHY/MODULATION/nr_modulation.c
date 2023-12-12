@@ -241,71 +241,74 @@ void nr_modulation(uint32_t *in,
   AssertFatal(false,"Invalid or unsupported modulation order %d\n",mod_order);
 }
 
-void nr_layer_mapping(int16_t **mod_symbs,
+void nr_layer_mapping(int nbCodes,
+                      int encoded_len,
+                      c16_t mod_symbs[nbCodes][encoded_len],
                       uint8_t n_layers,
+                      int layerSz,
                       uint32_t n_symbs,
-                      int16_t **tx_layers)
+                      c16_t tx_layers[n_layers][layerSz])
 {
   LOG_D(PHY,"Doing layer mapping for %d layers, %d symbols\n",n_layers,n_symbs);
 
   switch (n_layers) {
 
     case 1:
-      memcpy((void*)tx_layers[0], (void*)mod_symbs[0], (n_symbs<<1)*sizeof(int16_t));
-      break;
+    memcpy(tx_layers[0], mod_symbs[0], n_symbs * sizeof(**mod_symbs));
+    break;
 
     case 2:
     case 3:
     case 4:
-      for (int i=0; i<n_symbs/n_layers; i++)
-        for (int l=0; l<n_layers; l++) {
-          tx_layers[l][i<<1] = mod_symbs[0][(n_layers*i+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[0][((n_layers*i+l)<<1)+1];
-        }
+    for (int i = 0; i < n_symbs / n_layers; i++) {
+      const c16_t *base = mod_symbs[0] + n_layers * i;
+      for (int l = 0; l < n_layers; l++)
+        tx_layers[l][i] = base[l];
+    }
       break;
 
     case 5:
-      for (int i=0; i<n_symbs>>1; i++)
-        for (int l=0; l<2; l++) {
-          tx_layers[l][i<<1] = mod_symbs[0][((i<<1)+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[0][(((i<<1)+l)<<1)+1];
-        }
-      for (int i=0; i<n_symbs/3; i++)
-        for (int l=2; l<5; l++) {
-          tx_layers[l][i<<1] = mod_symbs[1][(3*i+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[1][((3*i+l)<<1)+1];
-        }
+      for (int i = 0; i < n_symbs; i += 2) {
+      const int txIdx = i / 2;
+      for (int l = 0; l < 2; l++)
+        tx_layers[l][txIdx] = mod_symbs[0][i + l];
+      }
+      for (int i = 0; i < n_symbs; i += 3) {
+      const int txIdx = i / 3;
+      for (int l = 2; l < 5; l++)
+        tx_layers[l][txIdx] = mod_symbs[1][i + l];
+      }
       break;
 
     case 6:
       for (int q=0; q<2; q++)
-        for (int i=0; i<n_symbs/3; i++)
-          for (int l=0; l<3; l++) {
-            tx_layers[l][i<<1] = mod_symbs[q][(3*i+l)<<1];
-            tx_layers[l][(i<<1)+1] = mod_symbs[q][((3*i+l)<<1)+1];
-          }
+      for (int i = 0; i < n_symbs; i += 3) {
+        const int txIdx = i / 3;
+        for (int l = 0; l < 3; l++)
+          tx_layers[l][txIdx] = mod_symbs[q][i + l];
+      }
       break;
 
     case 7:
-      for (int i=0; i<n_symbs/3; i++)
-        for (int l=0; l<3; l++) {
-          tx_layers[l][i<<1] = mod_symbs[1][(3*i+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[1][((3*i+l)<<1)+1];
-        }
-      for (int i=0; i<n_symbs/4; i++)
-        for (int l=3; l<7; l++) {
-          tx_layers[l][i<<1] = mod_symbs[0][((i<<2)+l)<<1];
-          tx_layers[l][(i<<1)+1] = mod_symbs[0][(((i<<2)+l)<<1)+1];
-        }
+      for (int i = 0; i < n_symbs; i += 3) {
+      const int txIdx = i / 3;
+      for (int l = 0; l < 3; l++)
+        tx_layers[l][txIdx] = mod_symbs[1][i + l];
+      }
+      for (int i = 0; i < n_symbs; i += 4) {
+      const int txIdx = i / 4;
+      for (int l = 3; l < 7; l++)
+        tx_layers[l][txIdx] = mod_symbs[0][i + l];
+      }
       break;
 
     case 8:
       for (int q=0; q<2; q++)
-        for (int i=0; i<n_symbs>>2; i++)
-          for (int l=0; l<3; l++) {
-            tx_layers[l][i<<1] = mod_symbs[q][((i<<2)+l)<<1];
-            tx_layers[l][(i<<1)+1] = mod_symbs[q][(((i<<2)+l)<<1)+1];
-          }
+      for (int i = 0; i < n_symbs; i += 4) {
+        const int txIdx = i / 4;
+        for (int l = 0; l < 3; l++)
+          tx_layers[l][txIdx] = mod_symbs[q][i + l];
+      }
       break;
 
     default:
@@ -694,17 +697,17 @@ int nr_layer_precoder(int16_t **datatx_F_precoding, const char *prec_matrix, uin
       ((int16_t *)precodatatx_F)[1] = (int16_t)((((int16_t *)precodatatx_F)[1]*ONE_OVER_SQRT2_Q15)>>15);*/
 }
 
-int nr_layer_precoder_cm(int16_t **datatx_F_precoding, int *prec_matrix, uint8_t n_layers, int32_t re_offset)
+c16_t nr_layer_precoder_cm(int n_layers,
+                           int n_symbols,
+                           int symSz,
+                           c16_t datatx_F_precoding[n_layers][n_symbols][symSz],
+                           c16_t *prec_matrix,
+                           int symbol,
+                           int offset)
 {
-  int32_t precodatatx_F = 0;
-  for (int al = 0; al<n_layers; al++) {
-    int16_t antenna_re = datatx_F_precoding[al][re_offset<<1];
-    int16_t antenna_im = datatx_F_precoding[al][(re_offset<<1) +1];
-    //printf("antenna precoding: %d %d\n",((int16_t *)&prec_matrix[al])[0],((int16_t *)&prec_matrix[al])[1]);
-    ((int16_t *) &precodatatx_F)[0] += (int16_t)(((int32_t)(antenna_re*(((int16_t *)&prec_matrix[al])[0])) - (int32_t)(antenna_im* (((int16_t *)&prec_matrix[al])[1])))>>15);
-    ((int16_t *) &precodatatx_F)[1] += (int16_t)(((int32_t)(antenna_re*(((int16_t *)&prec_matrix[al])[1])) + (int32_t)(antenna_im* (((int16_t *)&prec_matrix[al])[0])))>>15);
-  }
-
+  c16_t precodatatx_F = {0};
+  for (int al = 0; al < n_layers; al++)
+    precodatatx_F = c16maddShift(datatx_F_precoding[al][symbol][offset], prec_matrix[al], precodatatx_F, 15);
   return precodatatx_F;
 }
 

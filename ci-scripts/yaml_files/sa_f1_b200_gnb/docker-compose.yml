@@ -8,7 +8,7 @@ services:
         environment:
             USE_ADDITIONAL_OPTIONS: --sa --telnetsrv --telnetsrv.shrmod ci --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
-            - ../../conf_files/gnb-cu.sa.band78.106prb.usrpb200.conf:/opt/oai-gnb/etc/gnb.conf
+            - ../../conf_files/gnb-cu.sa.f1.conf:/opt/oai-gnb/etc/gnb.conf
         networks:
             public_net:
                 ipv4_address: 192.168.68.194
@@ -20,15 +20,15 @@ services:
             timeout: 5s
             retries: 5
 
-    gnb_du_tdd:
+    gnb_du_fdd:
         image: oai-gnb:latest
         privileged: true
         container_name: sa-du-b200-gnb
         environment:
             USE_B2XX: 'yes'
-            USE_ADDITIONAL_OPTIONS: --sa --RUs.[0].sdr_addrs serial=30C51D4 --continuous-tx -E --telnetsrv --telnetsrv.shrmod ci --log_config.global_log_options level,nocolor,time,line_num,function --gNBs.[0].min_rxtxtime 2 --gNBs.[0].do_CSIRS 1 --gNBs.[0].do_SRS 1 --RUs.[0].att_rx 18 --RUs.[0].att_tx 18
+            USE_ADDITIONAL_OPTIONS: --sa --RUs.[0].sdr_addrs serial=30C51D4 --telnetsrv --telnetsrv.shrmod ci --log_config.global_log_options level,nocolor,time,line_num,function --gNBs.[0].min_rxtxtime 2 --gNBs.[0].do_CSIRS 1 --gNBs.[0].do_SRS 0 --MACRLCs.[0].ul_max_mcs 28 --L1s.[0].max_ldpc_iterations 20
         volumes:
-            - ../../conf_files/gnb-du.sa.band78.106prb.usrpb200.conf:/opt/oai-gnb/etc/gnb.conf
+            - ../../conf_files/gnb-du.sa.band1.52prb.usrpb210.conf:/opt/oai-gnb/etc/gnb.conf
             - /dev:/dev
         networks:
             public_net:

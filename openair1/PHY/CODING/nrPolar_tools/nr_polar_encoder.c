@@ -359,15 +359,11 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
   AssertFatal(polarParams->K > 17, "K = %d < 18, is not possible\n",polarParams->K);
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   int bit_i,ip;
-  int numbytes = polarParams->K>>3;
-  int residue = polarParams->K&7;
-  int numbits;
-
-  if (residue>0) numbytes++;
+  const int numbytes = (polarParams->K+7)/8;
+  const int residue = polarParams->K&7;
 
   for (int byte=0; byte<numbytes; byte++) {
-    if (byte<(polarParams->K>>3)) numbits=8;
-    else numbits=residue;
+    int numbits = byte<(polarParams->K>>3) ? 8 : residue;
 
     for (int val=0; val<256; val++) {
       polarParams->cprime_tab0[byte][val] = 0;
@@ -388,16 +384,20 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
   AssertFatal(polarParams->N == 512 || polarParams->N == 256 || polarParams->N == 128 || polarParams->N == 64, "N = %d, not done yet\n", polarParams->N);
 
   // build G bit vectors for information bit positions and convert the bit as bytes tables in nr_polar_kronecker_power_matrices.c to
-  // 64 bit packed vectors.
-  polarParams->G_N_tab = (uint64_t **)calloc(polarParams->N, sizeof(int64_t *));
-
+  // 64 bit packed vectors. 
+  // Truncates id N%64 != 0
+  allocCast2D(pp, uint64_t, polarParams->G_N_tab, polarParams->N, polarParams->N / 64, false);
+  simde__m256i zeros = simde_mm256_setzero_si256();
+  // this code packs the one bit per byte of G_N into a packed bits G_N_tab
   for (int i = 0; i < polarParams->N; i++) {
-    polarParams->G_N_tab[i] = (uint64_t *)memalign(32, (polarParams->N / 64) * sizeof(uint64_t));
-    memset((void *)polarParams->G_N_tab[i], 0, (polarParams->N / 64) * sizeof(uint64_t));
-
-    for (int j = 0; j < polarParams->N; j++)
-      polarParams->G_N_tab[i][j / 64] |= ((uint64_t)polarParams->G_N[i][j]) << (j & 63);
-
+    for (int j = 0; j < polarParams->N; j += 64) {
+      const simde__m256i tmp1 = simde_mm256_cmpgt_epi8(*(simde__m256i *)&polarParams->G_N[i][j], zeros);
+      const simde__m256i tmp2 = simde_mm256_cmpgt_epi8(*(simde__m256i *)&polarParams->G_N[i][j + 32], zeros);
+      // cast directly to uint64_t from int32_t propagates the sign bit (in gcc)
+      const uint32_t part1 = simde_mm256_movemask_epi8(tmp1);
+      const uint32_t part2 = simde_mm256_movemask_epi8(tmp2);
+      pp[i][j / 64] = ((uint64_t)part2 << 32) | part1;
+    }
 #ifdef DEBUG_POLAR_ENCODER
     printf("Bit %d Selecting row %d of G : ", i, i);
 
@@ -519,17 +519,13 @@ void polar_encoder_fast(uint64_t *A,
   //int bitlen0=bitlen;
 
 #ifdef POLAR_CODING_DEBUG
-  int A_array = (bitlen + 63) >> 6;
   printf("\nTX\n");
   printf("a: ");
-  for (int n = 0; n < bitlen; n++) {
-    if (n % 4 == 0) {
-      printf(" ");
-    }
-    int n1 = n >> 6;
-    int n2 = n - (n1 << 6);
-    int alen = n1 == 0 ? bitlen - (A_array << 6) : 64;
-    printf("%lu", (A[A_array - 1 - n1] >> (alen - 1 - n2)) & 1);
+  for (int n = (bitlen + 63)/64 ; n >=0; n--) {
+    if (n % 4 == 0) 
+      printf(" "); 
+    if (n < bitlen) 
+      printf("%lu", (A[n/64] >> (n%64)) & 1);
   }
   printf("\n");
 #endif
@@ -692,7 +688,7 @@ void polar_encoder_fast(uint64_t *A,
 #endif
 
   uint64_t D[8] = {0};
-  nr_polar_uxG(D, u, (const uint64_t **)polarParams->G_N_tab, polarParams->N);
+  nr_polar_uxG(D, u, polarParams->G_N_tab, polarParams->N);
 
 #ifdef POLAR_CODING_DEBUG
   printf("d: ");

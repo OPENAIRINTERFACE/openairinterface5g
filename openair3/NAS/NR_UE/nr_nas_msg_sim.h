@@ -73,6 +73,14 @@
 #define PAYLOAD_CONTAINER_LENGTH_MIN                       3
 #define PAYLOAD_CONTAINER_LENGTH_MAX                       65537
 
+/* List of allowed NSSAI from NAS messaging. */
+typedef struct {
+  int sst;
+  int hplmn_sst;
+  int sd;
+  int hplmn_sd;
+} nr_nas_msg_snssai_t;
+
 /* Security Key for SA UE */
 typedef struct {
   uint8_t kausf[32];

@@ -655,24 +655,28 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_bearer_setup_req_t *const bear
 
       for (qos_flow_to_setup_t *k=j->qosFlows; k < j->qosFlows+j->numQosFlow2Setup; k++) {
         asn1cSequenceAdd(ieC6_1_1->qos_flow_Information_To_Be_Setup, E1AP_QoS_Flow_QoS_Parameter_Item_t, ieC6_1_1_1);
-        ieC6_1_1_1->qoS_Flow_Identifier = k->id;
+        ieC6_1_1_1->qoS_Flow_Identifier = k->qfi;
 
-        if (k->fiveQI_type == non_dynamic) { // non Dynamic 5QI
+        qos_characteristics_t *qos_char_in = &k->qos_params.qos_characteristics;
+        if (qos_char_in->qos_type == non_dynamic) { // non Dynamic 5QI
           ieC6_1_1_1->qoSFlowLevelQoSParameters.qoS_Characteristics.present = E1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
           asn1cCalloc(ieC6_1_1_1->qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI, non_Dynamic_5QI);
-          non_Dynamic_5QI->fiveQI = k->fiveQI;
+          non_Dynamic_5QI->fiveQI = qos_char_in->non_dynamic.fiveqi;
         } else { // dynamic 5QI
           ieC6_1_1_1->qoSFlowLevelQoSParameters.qoS_Characteristics.present = E1AP_QoS_Characteristics_PR_dynamic_5QI;
           asn1cCalloc(ieC6_1_1_1->qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI, dynamic_5QI);
-          dynamic_5QI->qoSPriorityLevel = k->qoSPriorityLevel;
-          dynamic_5QI->packetDelayBudget = k->packetDelayBudget;
-          dynamic_5QI->packetErrorRate.pER_Scalar = k->packetError_scalar;
-          dynamic_5QI->packetErrorRate.pER_Exponent = k->packetError_exponent;
+          dynamic_5QI->qoSPriorityLevel = qos_char_in->dynamic.qos_priority_level;
+          dynamic_5QI->packetDelayBudget = qos_char_in->dynamic.packet_delay_budget;
+          dynamic_5QI->packetErrorRate.pER_Scalar = qos_char_in->dynamic.packet_error_rate.per_scalar;
+          dynamic_5QI->packetErrorRate.pER_Exponent = qos_char_in->dynamic.packet_error_rate.per_exponent;
         }
 
-        ieC6_1_1_1->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel = k->priorityLevel;
-        ieC6_1_1_1->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability = k->pre_emptionCapability;
-        ieC6_1_1_1->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability = k->pre_emptionVulnerability;
+        ngran_allocation_retention_priority_t *rent_priority_in = &k->qos_params.alloc_reten_priority;
+        ieC6_1_1_1->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel = rent_priority_in->priority_level;
+        ieC6_1_1_1->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability =
+            rent_priority_in->preemption_capability;
+        ieC6_1_1_1->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability =
+            rent_priority_in->preemption_vulnerability;
       }
     }
   }
@@ -775,7 +779,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(const e1ap_bearer_setup_resp_t *r
 
         for (const qos_flow_setup_t *k=j->qosFlows; k < j->qosFlows+j->numQosFlowSetup; k++) {
           asn1cSequenceAdd(ieC3_1_1->flow_Setup_List.list, E1AP_QoS_Flow_Item_t, ieC3_1_1_1);
-          ieC3_1_1_1->qoS_Flow_Identifier = k->id;
+          ieC3_1_1_1->qoS_Flow_Identifier = k->qfi;
         }
       }
 
@@ -953,27 +957,32 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
             E1AP_QoS_Flow_QoS_Parameter_List_t *qos2SetupList = &drb2Setup->qos_flow_Information_To_Be_Setup;
             drb->numQosFlow2Setup = qos2SetupList->list.count;
             for (int k=0; k < qos2SetupList->list.count; k++) {
-              qos_flow_to_setup_t *qos = drb->qosFlows + k;
+              qos_flow_to_setup_t *qos_flow = drb->qosFlows + k;
               E1AP_QoS_Flow_QoS_Parameter_Item_t *qos2Setup = qos2SetupList->list.array[k];
 
-              qos->id = qos2Setup->qoS_Flow_Identifier;
+              qos_flow->qfi = qos2Setup->qoS_Flow_Identifier;
 
+              qos_characteristics_t *qos_char = &qos_flow->qos_params.qos_characteristics;
               if (qos2Setup->qoSFlowLevelQoSParameters.qoS_Characteristics.present ==
                   E1AP_QoS_Characteristics_PR_non_Dynamic_5QI) {
-                qos->fiveQI_type = non_dynamic;
-                qos->fiveQI = qos2Setup->qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->fiveQI;
+                qos_char->qos_type = non_dynamic;
+                qos_char->non_dynamic.fiveqi =
+                    qos2Setup->qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->fiveQI;
               } else {
                 E1AP_Dynamic5QIDescriptor_t *dynamic5QI = qos2Setup->qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI;
-                qos->fiveQI_type = dynamic;
-                qos->qoSPriorityLevel = dynamic5QI->qoSPriorityLevel;
-                qos->packetDelayBudget = dynamic5QI->packetDelayBudget;
-                qos->packetError_scalar = dynamic5QI->packetErrorRate.pER_Scalar;
-                qos->packetError_exponent = dynamic5QI->packetErrorRate.pER_Exponent;
+                qos_char->qos_type = dynamic;
+                qos_char->dynamic.qos_priority_level = dynamic5QI->qoSPriorityLevel;
+                qos_char->dynamic.packet_delay_budget = dynamic5QI->packetDelayBudget;
+                qos_char->dynamic.packet_error_rate.per_scalar = dynamic5QI->packetErrorRate.pER_Scalar;
+                qos_char->dynamic.packet_error_rate.per_exponent = dynamic5QI->packetErrorRate.pER_Exponent;
               }
 
-              qos->priorityLevel = qos2Setup->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel;
-              qos->pre_emptionCapability = qos2Setup->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability;
-              qos->pre_emptionVulnerability = qos2Setup->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability;
+              ngran_allocation_retention_priority_t *rent_priority = &qos_flow->qos_params.alloc_reten_priority;
+              rent_priority->priority_level = qos2Setup->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel;
+              rent_priority->preemption_capability =
+                  qos2Setup->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability;
+              rent_priority->preemption_vulnerability =
+                  qos2Setup->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability;
             }
           }
         }
@@ -1075,6 +1084,14 @@ void extract_BEARER_CONTEXT_SETUP_RESPONSE(const E1AP_E1AP_PDU_t *pdu,
               } else {
                 AssertFatal(false, "gTPTunnel information in required\n");
               }
+            }
+
+            // Qos Flow Information
+            drbSetup->numQosFlowSetup = drb->flow_Setup_List.list.count;
+            for (int q = 0; q < drb->flow_Setup_List.list.count; q++) {
+              qos_flow_setup_t *qosflowSetup = &drbSetup->qosFlows[q];
+              E1AP_QoS_Flow_Item_t *in_qosflowSetup = drb->flow_Setup_List.list.array[q];
+              qosflowSetup->qfi = in_qosflowSetup->qoS_Flow_Identifier;
             }
           }
         }
