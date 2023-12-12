@@ -1256,8 +1256,9 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
       if (rrcNB->status_DRBs[DRB_id] == RB_ESTABLISHED) {
         AssertFatal(drb->reestablishPDCP == NULL, "reestablishPDCP not yet implemented\n");
         AssertFatal(drb->recoverPDCP == NULL, "recoverPDCP not yet implemented\n");
-        if (drb->pdcp_Config && drb->pdcp_Config->t_Reordering)
-          nr_pdcp_reconfigure_drb(rnti, DRB_id, *drb->pdcp_Config->t_Reordering);
+        NR_SDAP_Config_t *sdap_Config = drb->cnAssociation ? drb->cnAssociation->choice.sdap_Config : NULL;
+        if (drb->pdcp_Config || sdap_Config)
+          nr_pdcp_reconfigure_drb(rnti, DRB_id, drb->pdcp_Config, sdap_Config);
         if (drb->cnAssociation)
           AssertFatal(drb->cnAssociation->choice.sdap_Config == NULL, "SDAP reconfiguration not yet implemented\n");
       } else {
