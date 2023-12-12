@@ -877,6 +877,58 @@ static void rrc_ue_generate_RRCSetupComplete(instance_t instance, rnti_t rnti, c
   nr_pdcp_data_req_srb(rnti, srb_id, 0, size, buffer, deliver_pdu_srb_rlc, NULL);
 }
 
+static void nr_rrc_process_rrcsetup(const instance_t instance,
+                                    const rnti_t rnti,
+                                    const uint8_t gNB_index,
+                                    const NR_RRCSetup_t *rrcSetup)
+{
+  NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
+
+  // if the RRCSetup is received in response to an RRCReestablishmentRequest
+  // or RRCResumeRequest or RRCResumeRequest1
+  // TODO none of the procedures implemented yet
+
+  // perform the cell group configuration procedure in accordance with the received masterCellGroup
+  rrc->rnti = rnti;
+  nr_rrc_ue_process_masterCellGroup(instance,
+                                    rnti,
+                                    rrc->perNB + gNB_index,
+                                    &rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup,
+                                    NULL);
+  // perform the radio bearer configuration procedure in accordance with the received radioBearerConfig
+  nr_rrc_ue_process_RadioBearerConfig(rrc,
+                                      rnti,
+                                      rrc->perNB + gNB_index,
+                                      &rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+
+  // TODO (not handled) if stored, discard the cell reselection priority information provided by
+  // the cellReselectionPriorities or inherited from another RAT
+
+  // stop timer T300, T301 or T319 if running;
+  NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
+  timers->T300_active = false;
+  timers->T300_cnt = 0;
+  timers->T301_active = false;
+  timers->T301_cnt = 0;
+  timers->T319_active = false;
+  timers->T319_cnt = 0;
+  timers->T320_active = false;
+  timers->T320_cnt = 0;
+
+  // TODO if T390 and T302 are running (not implemented)
+
+  // if the RRCSetup is received in response to an RRCResumeRequest, RRCResumeRequest1 or RRCSetupRequest
+  // enter RRC_CONNECTED
+  rrc->nrRrcState = RRC_STATE_CONNECTED_NR;
+
+  // set the content of RRCSetupComplete message
+  // TODO procedues described in 5.3.3.4 seems more complex than what we actualy do
+  rrc_ue_generate_RRCSetupComplete(instance,
+                                   rnti,
+                                   rrcSetup->rrc_TransactionIdentifier,
+                                   rrc->selected_plmn_identity);
+}
+
 static int8_t nr_rrc_ue_decode_ccch(const instance_t instance,
                                     const rnti_t rnti,
                                     const NRRrcMacCcchDataInd *ind,
@@ -915,28 +967,7 @@ static int8_t nr_rrc_ue_decode_ccch(const instance_t instance,
 
        case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
          LOG_I(NR_RRC, "[UE%ld][RAPROC] Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n", instance, rnti);
-
-         // Get configuration
-         // Release T300 timer
-         rrc->timers_and_constants.T300_active = 0;
-         rrc->rnti = rnti;
-         nr_rrc_ue_process_masterCellGroup(
-             instance,
-             rnti,
-             rrc->perNB + gNB_index,
-             &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup,
-             NULL);
-         nr_rrc_ue_process_RadioBearerConfig(
-             rrc,
-             rnti,
-             rrc->perNB + gNB_index,
-             &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
-         rrc->nrRrcState = RRC_STATE_CONNECTED_NR;
-
-         rrc_ue_generate_RRCSetupComplete(instance,
-                                          rnti,
-                                          dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier,
-                                          rrc->selected_plmn_identity);
+         nr_rrc_process_rrcsetup(instance, rnti, gNB_index, dl_ccch_msg->message.choice.c1->choice.rrcSetup);
          rval = 0;
          break;
 
