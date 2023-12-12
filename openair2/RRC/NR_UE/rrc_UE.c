@@ -139,7 +139,7 @@ static void nr_rrc_manage_rlc_bearers(NR_UE_RRC_INST_t *rrc,
 
 static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
                                                 NR_RadioBearerConfig_t *const radioBearerConfig);
-static void nr_rrc_ue_generate_rrcReestablishmentComplete(NR_RRCReestablishment_t *rrcReestablishment);
+static void nr_rrc_ue_generate_rrcReestablishmentComplete(const NR_UE_RRC_INST_t *rrc, const NR_RRCReestablishment_t *rrcReestablishment);
 static void process_lte_nsa_msg(NR_UE_RRC_INST_t *rrc, nsa_msg_t *msg, int msg_len);
 static void nr_rrc_ue_process_rrcReconfiguration(NR_UE_RRC_INST_t *rrc,
                                                  int gNB_index,
@@ -1320,6 +1320,36 @@ static void nr_rrc_ue_generate_RRCReconfigurationComplete(NR_UE_RRC_INST_t *rrc,
   nr_pdcp_data_req_srb(rrc->ue_id, srb_id, 0, size, buffer, deliver_pdu_srb_rlc, NULL);
 }
 
+static void nr_rrc_ue_process_rrcReestablishment(NR_UE_RRC_INST_t *rrc,
+                                                 const int gNB_index,
+                                                 const NR_RRCReestablishment_t *rrcReestablishment)
+{
+  // implementign procedues as described in 38.331 section 5.3.7.5
+  // stop timer T301
+  NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
+  nr_timer_stop(&timers->T301);
+  // store the nextHopChainingCount value
+  NR_RRCReestablishment_IEs_t *ies = rrcReestablishment->criticalExtensions.choice.rrcReestablishment;
+  AssertFatal(ies, "Not expecting RRCReestablishment_IEs to be NULL\n");
+  int nh = rrcReestablishment->criticalExtensions.choice.rrcReestablishment->nextHopChainingCount;
+  // TODO update the K gNB key based on the current K gNB key or the NH, using the stored nextHopChainingCount value
+  // TODO derive the K RRCenc and K UPenc keys associated with the previously configured cipheringAlgorithm
+  // TODO derive the K RRCint and K UPint keys associated with the previously configured integrityProtAlgorithm
+  // TODO request lower layers to verify the integrity protection of the RRCReestablishment message
+  // TODO if the integrity protection check of the RRCReestablishment message fails -> go to IDLE
+  // TODO configure lower layers to resume integrity protection for SRB1
+  // TODO configure lower layers to resume ciphering for SRB1
+  // release the measurement gap configuration indicated by the measGapConfig, if configured
+  rrcPerNB_t *rrcNB = rrc->perNB + gNB_index;
+  asn1cFreeStruc(asn_DEF_NR_MeasGapConfig, rrcNB->measGapConfig);
+
+  // resetting the RA trigger state after receiving MSG4 with RRCReestablishment
+  rrc->ra_trigger = RA_NOT_RUNNING;
+
+  // submit the RRCReestablishmentComplete message to lower layers for transmission
+  nr_rrc_ue_generate_rrcReestablishmentComplete(rrc, rrcReestablishment);
+}
+
 static int nr_rrc_ue_decode_dcch(NR_UE_RRC_INST_t *rrc,
                                  const srb_id_t Srb_id,
                                  const uint8_t *const Buffer,
@@ -1375,7 +1405,7 @@ static int nr_rrc_ue_decode_dcch(NR_UE_RRC_INST_t *rrc,
 
         case NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment:
           LOG_I(NR_RRC, "Logical Channel DL-DCCH (SRB1), Received RRCReestablishment\n");
-          nr_rrc_ue_generate_rrcReestablishmentComplete(c1->choice.rrcReestablishment);
+          nr_rrc_ue_process_rrcReestablishment(rrc, gNB_indexP, c1->choice.rrcReestablishment);
           break;
 
         case NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer: {
@@ -1678,12 +1708,15 @@ void nr_rrc_initiate_rrcReestablishment(NR_UE_RRC_INST_t *rrc,
   nr_rrc_mac_config_req_reset(rrc->ue_id, RE_ESTABLISHMENT);
 }
 
-static void nr_rrc_ue_generate_rrcReestablishmentComplete(NR_RRCReestablishment_t *rrcReestablishment)
+static void nr_rrc_ue_generate_rrcReestablishmentComplete(const NR_UE_RRC_INST_t *rrc,
+                                                          const NR_RRCReestablishment_t *rrcReestablishment)
 {
   uint8_t buffer[RRC_BUFFER_SIZE] = {0};
   int size = do_RRCReestablishmentComplete(buffer, RRC_BUFFER_SIZE,
                                            rrcReestablishment->rrc_TransactionIdentifier);
   LOG_I(NR_RRC, "[RAPROC] Logical Channel UL-DCCH (SRB1), Generating RRCReestablishmentComplete (bytes %d)\n", size);
+  int srb_id = 1; // RRC re-establishment complete on SRB1
+  nr_pdcp_data_req_srb(rrc->ue_id, srb_id, 0, size, buffer, deliver_pdu_srb_rlc, NULL);
 }
 
 void *recv_msgs_from_lte_ue(void *args_p)
