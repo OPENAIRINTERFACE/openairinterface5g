@@ -193,6 +193,10 @@ extern "C" {
     };
   }
 
+  __attribute__((always_inline)) inline c16_t c16mulRealShift(const c16_t a, const int32_t b, const int Shift)
+  {
+    return (c16_t){.r = (int16_t)((a.r * b) >> Shift), .i = (int16_t)((a.i * b) >> Shift)};
+  }
   __attribute__((always_inline)) inline c16_t c16divShift(const c16_t a, const c16_t b, const int Shift) {
     return (c16_t) {
       .r = (int16_t)((a.r * b.r + a.i * b.i) >> Shift),
