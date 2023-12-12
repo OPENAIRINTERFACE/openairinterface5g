@@ -896,35 +896,43 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   else //FDD
     cfg->duplex_mode = duplex_mode_FDD;
 
+  cfg->configFilename = rf_config_file;
+
   cfg->Mod_id = 0;
   cfg->num_rb_dl=N_RB;
   cfg->tx_num_channels=ru->nb_tx;
   cfg->rx_num_channels=ru->nb_rx;
   LOG_I(PHY,"Setting RF config for N_RB %d, NB_RX %d, NB_TX %d\n",cfg->num_rb_dl,cfg->rx_num_channels,cfg->tx_num_channels);
+  LOG_I(PHY,"tune_offset %.0f Hz, sample_rate %.0f Hz\n",cfg->tune_offset,cfg->sample_rate);
 
   for (i=0; i<ru->nb_tx; i++) {
     if (ru->if_frequency == 0) {
       cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
-      cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
     } else if (ru->if_freq_offset) {
       cfg->tx_freq[i] = (double)(ru->if_frequency);
-      cfg->rx_freq[i] = (double)(ru->if_frequency + ru->if_freq_offset);
-      LOG_I(PHY, "Setting IF TX frequency to %lu Hz with IF RX frequency offset %d Hz\n", ru->if_frequency, ru->if_freq_offset);
+      LOG_I(PHY, "Setting IF TX frequency to %lu Hz with IF TX frequency offset %d Hz\n", ru->if_frequency, ru->if_freq_offset);
     } else {
       cfg->tx_freq[i] = (double)ru->if_frequency;
-      cfg->rx_freq[i] = (double)(ru->if_frequency+fp->ul_CarrierFreq-fp->dl_CarrierFreq);
     }
 
     cfg->tx_gain[i] = ru->att_tx;
+    LOG_I(PHY, "Channel %d: setting tx_gain offset %.0f, tx_freq %.0f Hz\n", 
+          i, cfg->tx_gain[i],cfg->tx_freq[i]);
+  }
+
+  for (i=0; i<ru->nb_rx; i++) {
+    if (ru->if_frequency == 0) {
+      cfg->rx_freq[i] = (double)fp->ul_CarrierFreq;
+    } else if (ru->if_freq_offset) {
+      cfg->rx_freq[i] = (double)(ru->if_frequency + ru->if_freq_offset);
+      LOG_I(PHY, "Setting IF RX frequency to %lu Hz with IF RX frequency offset %d Hz\n", ru->if_frequency, ru->if_freq_offset);
+    } else {
+      cfg->rx_freq[i] = (double)(ru->if_frequency+fp->ul_CarrierFreq-fp->dl_CarrierFreq);
+    }
+
     cfg->rx_gain[i] = ru->max_rxgain-ru->att_rx;
-    cfg->configFilename = rf_config_file;
-    LOG_I(PHY, "Channel %d: setting tx_gain offset %.0f, rx_gain offset %.0f, tx_freq %.0f Hz, rx_freq %.0f Hz, tune_offset %.0f Hz, sample_rate %.0f Hz\n",
-          i, cfg->tx_gain[i],
-          cfg->rx_gain[i],
-          cfg->tx_freq[i],
-          cfg->rx_freq[i],
-          cfg->tune_offset,
-          cfg->sample_rate);
+    LOG_I(PHY, "Channel %d: setting rx_gain offset %.0f, rx_freq %.0f Hz\n",
+          i,cfg->rx_gain[i],cfg->rx_freq[i]);
   }
 }
 
