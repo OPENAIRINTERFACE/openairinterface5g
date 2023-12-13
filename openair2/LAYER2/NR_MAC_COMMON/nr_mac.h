@@ -590,7 +590,7 @@ typedef struct NR_UE_UL_BWP {
   int max_fb_time;
 } NR_UE_UL_BWP_t;
 
-// non-BWP seving cell configuration
+// non-BWP serving cell configuration
 typedef struct {
   NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig;
   NR_SRS_CarrierSwitching_t *carrierSwitching;

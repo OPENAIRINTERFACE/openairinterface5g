@@ -3385,7 +3385,8 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         size += dci_pdu->dai[1].nbits;
       }
       // SRS resource indicator
-      dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(sc_info->maxMIMO_Layers_PUSCH, pusch_Config, srs_config, NULL, NULL);
+      dci_pdu->srs_resource_indicator.nbits =
+          compute_srs_resource_indicator(sc_info->maxMIMO_Layers_PUSCH, pusch_Config, srs_config, NULL, NULL);
       size += dci_pdu->srs_resource_indicator.nbits;
       LOG_D(NR_MAC, "dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
@@ -3555,7 +3556,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       // PUCCH resource indicator
       size += 3;
       // PDSCH to HARQ timing indicator
-      uint8_t I = pucch_Config->dl_DataToUL_ACK ? pucch_Config->dl_DataToUL_ACK->list.count : 8;
+      uint8_t I = (pucch_Config && pucch_Config->dl_DataToUL_ACK) ? pucch_Config->dl_DataToUL_ACK->list.count : 8;
       dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits = (int)ceil(log2(I));
       size += dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits;
       LOG_D(NR_MAC,"dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits %d\n",dci_pdu->pdsch_to_harq_feedback_timing_indicator.nbits);

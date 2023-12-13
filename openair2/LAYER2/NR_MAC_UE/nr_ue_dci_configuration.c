@@ -88,8 +88,7 @@ void fill_dci_search_candidates(const NR_SearchSpace_t *ss,
 
 NR_ControlResourceSet_t *ue_get_coreset(const NR_BWP_PDCCH_t *config, const int coreset_id)
 {
-  if (config->commonControlResourceSet &&
-      coreset_id == config->commonControlResourceSet->controlResourceSetId)
+  if (config->commonControlResourceSet && coreset_id == config->commonControlResourceSet->controlResourceSetId)
     return config->commonControlResourceSet;
   NR_ControlResourceSet_t *coreset = NULL;
   for (int i = 0; i < config->list_Coreset.count; i++) {
@@ -109,7 +108,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
                     const int slot,
                     const NR_SearchSpace_t *ss)
 {
-
   const NR_UE_DL_BWP_t *current_DL_BWP = mac->current_DL_BWP;
   const NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
   NR_BWP_Id_t dl_bwp_id = current_DL_BWP ? current_DL_BWP->bwp_id : 0;
@@ -188,33 +186,31 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
       // computing alternative size for padding
       dci_pdu_rel15_t temp_pdu;
       if(dci_format == NR_DL_DCI_FORMAT_1_0)
-        alt_size =
-            nr_dci_size(current_DL_BWP,
-                        current_UL_BWP,
-                        sc_info,
-                        mac->pdsch_HARQ_ACK_Codebook,
-                        &temp_pdu,
-                        NR_UL_DCI_FORMAT_0_0,
-                        rnti_type,
-                        coreset,
-                        dl_bwp_id,
-                        ss->searchSpaceType->present,
-                        mac->type0_PDCCH_CSS_config.num_rbs,
-                        0);
+        alt_size = nr_dci_size(current_DL_BWP,
+                               current_UL_BWP,
+                               sc_info,
+                               mac->pdsch_HARQ_ACK_Codebook,
+                               &temp_pdu,
+                               NR_UL_DCI_FORMAT_0_0,
+                               rnti_type,
+                               coreset,
+                               dl_bwp_id,
+                               ss->searchSpaceType->present,
+                               mac->type0_PDCCH_CSS_config.num_rbs,
+                               0);
       if(dci_format == NR_UL_DCI_FORMAT_0_0)
-        alt_size =
-            nr_dci_size(current_DL_BWP,
-                        current_UL_BWP,
-                        sc_info,
-                        mac->pdsch_HARQ_ACK_Codebook,
-                        &temp_pdu,
-                        NR_DL_DCI_FORMAT_1_0,
-                        rnti_type,
-                        coreset,
-                        dl_bwp_id,
-                        ss->searchSpaceType->present,
-                        mac->type0_PDCCH_CSS_config.num_rbs,
-                        0);
+        alt_size = nr_dci_size(current_DL_BWP,
+                               current_UL_BWP,
+                               sc_info,
+                               mac->pdsch_HARQ_ACK_Codebook,
+                               &temp_pdu,
+                               NR_DL_DCI_FORMAT_1_0,
+                               rnti_type,
+                               coreset,
+                               dl_bwp_id,
+                               ss->searchSpaceType->present,
+                               mac->type0_PDCCH_CSS_config.num_rbs,
+                               0);
     }
 
     rel15->dci_length_options[i] = nr_dci_size(current_DL_BWP,
@@ -488,10 +484,10 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
                                           mac->mib_ssb,
                                           1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
                                           ssb_offset_point_a);
-    if(pdcch_config->search_space_zero == NULL)
-      pdcch_config->search_space_zero = calloc(1,sizeof(*pdcch_config->search_space_zero));
-    if(pdcch_config->coreset0 == NULL)
-      pdcch_config->coreset0 = calloc(1,sizeof(*pdcch_config->coreset0));
+    if (pdcch_config->search_space_zero == NULL)
+      pdcch_config->search_space_zero = calloc(1, sizeof(*pdcch_config->search_space_zero));
+    if (pdcch_config->coreset0 == NULL)
+      pdcch_config->coreset0 = calloc(1, sizeof(*pdcch_config->coreset0));
     fill_coresetZero(pdcch_config->coreset0, &mac->type0_PDCCH_CSS_config);
     fill_searchSpaceZero(pdcch_config->search_space_zero, slots_per_frame, &mac->type0_PDCCH_CSS_config);
     if (is_ss_monitor_occasion(frame, slot, slots_per_frame, pdcch_config->search_space_zero)) {

@@ -1403,7 +1403,7 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg)
   }
 
   /* Additional DMRS positions 0 ,1 ,2 and 3 */
-  if(dmrs_arg[1] >= 0 && dmrs_arg[1] < 4) {
+  if (dmrs_arg[1] >= 0 && dmrs_arg[1] < 4) {
     add_pos = dmrs_arg[1];
   } else {
     AssertFatal(1==0,"Incorrect Additional Position, valid options 0-pos1, 1-pos1, 2-pos2, 3-pos3\n");
@@ -1463,16 +1463,16 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg)
       dmrs_config->dmrs_AdditionalPosition = calloc(1,sizeof(*dmrs_MappingtypeA->choice.setup->dmrs_AdditionalPosition));
     }
     switch (add_pos) {
-      case 0 :
+      case 0:
         *dmrs_config->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
         break;
-      case 1 :
+      case 1:
         *dmrs_config->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
         break;
-      case 3 :
+      case 3:
         *dmrs_config->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3;
         break;
-      default :
+      default:
         AssertFatal(false, "DMRS additional position %d not valid\n", add_pos);
     }
   } else { // if NULL, Value pos2

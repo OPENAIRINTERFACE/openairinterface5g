@@ -736,9 +736,7 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
     dlsch_pdu->TBS = current_harq->TBS;
   }
 
-  int bw_tbslbrm = current_DL_BWP?
-                   mac->sc_info.dl_bw_tbslbrm :
-                   dlsch_pdu->BWPSize;
+  int bw_tbslbrm = current_DL_BWP ? mac->sc_info.dl_bw_tbslbrm : dlsch_pdu->BWPSize;
   dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, 1);
 
   /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -765,7 +763,7 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
   dlsch_pdu->accumulated_delta_PUCCH = tcp[dci->tpc];
   // Sanity check for pucch_resource_indicator value received to check for false DCI.
   bool valid = false;
-  NR_PUCCH_Config_t *pucch_Config = mac->current_UL_BWP? mac->current_UL_BWP->pucch_Config : NULL;
+  NR_PUCCH_Config_t *pucch_Config = mac->current_UL_BWP ? mac->current_UL_BWP->pucch_Config : NULL;
 
   if (pucch_Config && pucch_Config->resourceSetToAddModList) {
     int pucch_res_set_cnt = pucch_Config->resourceSetToAddModList->list.count;

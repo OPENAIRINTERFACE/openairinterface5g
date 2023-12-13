@@ -2281,18 +2281,16 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
     pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(sched_pusch->tb_size<<3,sched_pusch->R);
 
     NR_UE_ServingCell_Info_t *sc_info = &UE->sc_info;
-    if(sc_info->rateMatching_PUSCH) {
+    if (sc_info->rateMatching_PUSCH) {
       // TBS_LBRM according to section 5.4.2.1 of 38.212
       long *maxMIMO_Layers = sc_info->maxMIMO_Layers_PUSCH;
       if (!maxMIMO_Layers)
         maxMIMO_Layers = current_BWP->pusch_Config->maxRank;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-      pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcs_table,
-                                                                           sc_info->ul_bw_tbslbrm,
-                                                                           *maxMIMO_Layers);
-    }
-    else
-     pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = 0;
+      pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes =
+          nr_compute_tbslbrm(current_BWP->mcs_table, sc_info->ul_bw_tbslbrm, *maxMIMO_Layers);
+    } else
+      pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = 0;
 
     LOG_D(NR_MAC,"PUSCH PDU : data_scrambling_identity %x, dmrs_scrambling_id %x\n",pusch_pdu->data_scrambling_id,pusch_pdu->ul_dmrs_scrambling_id);
     /* TRANSFORM PRECODING --------------------------------------------------------*/

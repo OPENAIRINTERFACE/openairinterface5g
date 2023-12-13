@@ -716,7 +716,11 @@ void config_uldci(const NR_UE_ServingCell_Info_t *sc_info,
           pusch_Config->txConfig != NULL) {
         AssertFatal(*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook,
                     "Non Codebook configuration non supported\n");
-        compute_srs_resource_indicator(sc_info->maxMIMO_Layers_PUSCH, pusch_Config, ul_bwp->srs_Config, srs_feedback, &dci_pdu_rel15->srs_resource_indicator.val);
+        compute_srs_resource_indicator(sc_info->maxMIMO_Layers_PUSCH,
+                                       pusch_Config,
+                                       ul_bwp->srs_Config,
+                                       srs_feedback,
+                                       &dci_pdu_rel15->srs_resource_indicator.val);
       }
       compute_precoding_information(pusch_Config,
                                     ul_bwp->srs_Config,
@@ -1099,8 +1103,8 @@ void prepare_dci(const NR_UE_ServingCell_Info_t *servingCellInfo,
         AssertFatal(1==0,"TCI in DCI currently not supported\n");
       //srs resource set
       if (servingCellInfo->carrierSwitching) {
-        if (servingCellInfo->carrierSwitching->srs_TPC_PDCCH_Group){
-          switch(servingCellInfo->carrierSwitching->srs_TPC_PDCCH_Group->present) {
+        if (servingCellInfo->carrierSwitching->srs_TPC_PDCCH_Group) {
+          switch (servingCellInfo->carrierSwitching->srs_TPC_PDCCH_Group->present) {
             case NR_SRS_CarrierSwitching__srs_TPC_PDCCH_Group_PR_NOTHING:
               dci_pdu_rel15->srs_request.val = 0;
               break;
@@ -1111,16 +1115,14 @@ void prepare_dci(const NR_UE_ServingCell_Info_t *servingCellInfo,
               AssertFatal(1==0,"SRS TPC PRCCH group type B currently not supported\n");
               break;
           }
-        }
-        else
+        } else
           dci_pdu_rel15->srs_request.val = 0;
-      }
-      else
+      } else
         dci_pdu_rel15->srs_request.val = 0;
     // CBGTI and CBGFI
-    if (servingCellInfo->pdsch_CGB_Transmission)
-      AssertFatal(1==0,"CBG transmission currently not supported\n");
-    break;
+      if (servingCellInfo->pdsch_CGB_Transmission)
+        AssertFatal(1 == 0, "CBG transmission currently not supported\n");
+      break;
   default :
     AssertFatal(1==0,"Prepare dci currently only implemented for 1_1 and 0_1 \n");
   }
@@ -2018,14 +2020,13 @@ void reset_sched_ctrl(NR_UE_sched_ctrl_t *sched_ctrl)
   sched_ctrl->srs_feedback.sri = 0;
 }
 
-int get_dlbw_tbslbrm(int scc_bwpsize,
-                     const NR_ServingCellConfig_t *servingCellConfig)
+int get_dlbw_tbslbrm(int scc_bwpsize, const NR_ServingCellConfig_t *servingCellConfig)
 {
   int bw = scc_bwpsize;
   if (servingCellConfig) {
-    if(servingCellConfig->downlinkBWP_ToAddModList) {
+    if (servingCellConfig->downlinkBWP_ToAddModList) {
       const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = servingCellConfig->downlinkBWP_ToAddModList;
-      for (int i=0; i<BWP_list->list.count; i++) {
+      for (int i = 0; i < BWP_list->list.count; i++) {
         NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
         int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
         if (curr_bw > bw)
@@ -2036,15 +2037,13 @@ int get_dlbw_tbslbrm(int scc_bwpsize,
   return bw;
 }
 
-int get_ulbw_tbslbrm(int scc_bwpsize,
-                     const NR_ServingCellConfig_t *servingCellConfig)
+int get_ulbw_tbslbrm(int scc_bwpsize, const NR_ServingCellConfig_t *servingCellConfig)
 {
   int bw = scc_bwpsize;
   if (servingCellConfig) {
-    if (servingCellConfig->uplinkConfig &&
-        servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList) {
+    if (servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList) {
       const struct NR_UplinkConfig__uplinkBWP_ToAddModList *BWP_list = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-      for (int i=0; i<BWP_list->list.count; i++) {
+      for (int i = 0; i < BWP_list->list.count; i++) {
         NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
         int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
         if (curr_bw > bw)
@@ -2193,8 +2192,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   DL_BWP->cyclicprefix = dl_genericParameters.cyclicPrefix;
   DL_BWP->BWPSize = NRRIV2BW(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   DL_BWP->BWPStart = NRRIV2PRBOFFSET(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  sc_info->initial_dl_BWPSize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  sc_info->initial_dl_BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  sc_info->initial_dl_BWPSize =
+      NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  sc_info->initial_dl_BWPStart =
+      NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   NR_BWP_t ul_genericParameters = (UL_BWP->bwp_id > 0 && ul_bwp) ?
     ul_bwp->bwp_Common->genericParameters:
@@ -2204,8 +2205,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   UL_BWP->cyclicprefix = ul_genericParameters.cyclicPrefix;
   UL_BWP->BWPSize = NRRIV2BW(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->BWPStart = NRRIV2PRBOFFSET(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  sc_info->initial_ul_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  sc_info->initial_ul_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  sc_info->initial_ul_BWPSize =
+      NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  sc_info->initial_ul_BWPStart =
+      NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   sc_info->dl_bw_tbslbrm = get_dlbw_tbslbrm(sc_info->initial_dl_BWPSize, servingCellConfig);
   sc_info->dl_bw_tbslbrm = get_ulbw_tbslbrm(sc_info->initial_ul_BWPSize, servingCellConfig);
@@ -2220,18 +2223,17 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
   if(UE) {
     if (servingCellConfig) {
-      if(servingCellConfig->csi_MeasConfig) {
+      if (servingCellConfig->csi_MeasConfig) {
         sc_info->csi_MeasConfig = servingCellConfig->csi_MeasConfig->choice.setup;
-        compute_csi_bitlen (sc_info->csi_MeasConfig, UE->csi_report_template);
+        compute_csi_bitlen(sc_info->csi_MeasConfig, UE->csi_report_template);
       }
-      if (servingCellConfig->pdsch_ServingCellConfig &&
-          servingCellConfig->pdsch_ServingCellConfig->choice.setup) {
+      if (servingCellConfig->pdsch_ServingCellConfig && servingCellConfig->pdsch_ServingCellConfig->choice.setup) {
         NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = servingCellConfig->pdsch_ServingCellConfig->choice.setup;
         sc_info->nrofHARQ_ProcessesForPDSCH = pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH;
         if (pdsch_servingcellconfig->ext1)
           sc_info->maxMIMO_Layers_PDSCH = pdsch_servingcellconfig->ext1->maxMIMO_Layers;
-        if (pdsch_servingcellconfig->codeBlockGroupTransmission &&
-            pdsch_servingcellconfig->codeBlockGroupTransmission->choice.setup)
+        if (pdsch_servingcellconfig->codeBlockGroupTransmission
+            && pdsch_servingcellconfig->codeBlockGroupTransmission->choice.setup)
           sc_info->pdsch_CGB_Transmission = pdsch_servingcellconfig->codeBlockGroupTransmission->choice.setup;
       }
       sc_info->crossCarrierSchedulingConfig = servingCellConfig->crossCarrierSchedulingConfig;
@@ -2239,14 +2241,15 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
       if (servingCellConfig->uplinkConfig) {
         if (servingCellConfig->uplinkConfig->carrierSwitching)
           sc_info->carrierSwitching = servingCellConfig->uplinkConfig->carrierSwitching->choice.setup;
-        if (servingCellConfig->uplinkConfig->pusch_ServingCellConfig &&
-            servingCellConfig->uplinkConfig->pusch_ServingCellConfig->choice.setup) {
-          NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig = servingCellConfig->uplinkConfig->pusch_ServingCellConfig->choice.setup;
+        if (servingCellConfig->uplinkConfig->pusch_ServingCellConfig
+            && servingCellConfig->uplinkConfig->pusch_ServingCellConfig->choice.setup) {
+          NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig =
+              servingCellConfig->uplinkConfig->pusch_ServingCellConfig->choice.setup;
           if (pusch_servingcellconfig->ext1)
             sc_info->maxMIMO_Layers_PUSCH = pusch_servingcellconfig->ext1->maxMIMO_Layers;
           sc_info->rateMatching_PUSCH = pusch_servingcellconfig->rateMatching;
-          if (pusch_servingcellconfig->codeBlockGroupTransmission &&
-              pusch_servingcellconfig->codeBlockGroupTransmission->choice.setup)
+          if (pusch_servingcellconfig->codeBlockGroupTransmission
+              && pusch_servingcellconfig->codeBlockGroupTransmission->choice.setup)
             sc_info->pusch_CGB_Transmission = pusch_servingcellconfig->codeBlockGroupTransmission->choice.setup;
         }
       }
@@ -2362,7 +2365,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
 
   // We will attach at the end, to mitigate race conditions
   // This is not good, but we will fix it progressively
-  NR_UE_info_t *UE = calloc(1,sizeof(NR_UE_info_t));
+  NR_UE_info_t *UE = calloc(1, sizeof(NR_UE_info_t));
   if(!UE) {
     LOG_E(NR_MAC,"want to add UE %04x but the fixed allocated size is full\n",rntiP);
     return NULL;
@@ -2396,9 +2399,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   sched_ctrl->sched_pusch.time_domain_allocation = -1;
 
   /* Set default BWPs */
-  AssertFatal(UE->sc_info.n_ul_bwp <= NR_MAX_NUM_BWP,
-              "uplinkBWP_ToAddModList has %d BWP!\n",
-              UE->sc_info.n_ul_bwp);
+  AssertFatal(UE->sc_info.n_ul_bwp <= NR_MAX_NUM_BWP, "uplinkBWP_ToAddModList has %d BWP!\n", UE->sc_info.n_ul_bwp);
 
   if (get_softmodem_params()->phy_test == 0) {
     UE->ra_timer = 12000 << UE->current_DL_BWP.scs; // 12000 ms is arbitrary and found to be a good timeout from experiments
@@ -2468,11 +2469,10 @@ void free_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl)
   free(sched_ctrl->sched_pucch);
 }
 
-void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
-                         const NR_UE_ServingCell_Info_t *sc_info)
+void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl, const NR_UE_ServingCell_Info_t *sc_info)
 {
-  const int nrofHARQ = sc_info && sc_info->nrofHARQ_ProcessesForPDSCH ?
-                       get_nrofHARQ_ProcessesForPDSCH(*sc_info->nrofHARQ_ProcessesForPDSCH) : 8;
+  const int nrofHARQ =
+      sc_info && sc_info->nrofHARQ_ProcessesForPDSCH ? get_nrofHARQ_ProcessesForPDSCH(*sc_info->nrofHARQ_ProcessesForPDSCH) : 8;
   // add all available DL HARQ processes for this UE
   AssertFatal(sched_ctrl->available_dl_harq.len == sched_ctrl->feedback_dl_harq.len
               && sched_ctrl->available_dl_harq.len == sched_ctrl->retrans_dl_harq.len,

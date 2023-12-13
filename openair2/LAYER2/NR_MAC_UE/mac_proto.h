@@ -39,37 +39,90 @@
 #define NR_DL_MAX_DAI                            (4)                      /* TS 38.213 table 9.1.3-1 Value of counter DAI for DCI format 1_0 and 1_1 */
 #define NR_DL_MAX_NB_CW                          (2)                      /* number of downlink code word */
 
-#define updateMACie(destination, origin, type) { \
-  type *tmp = origin; \
-  origin = destination; \
-  destination = tmp; \
-} \
+#define UPDATE_MAC_IE(DESTINATION, ORIGIN, TYPE) \
+  do {                                           \
+    TYPE *tmp = ORIGIN;                          \
+    ORIGIN = DESTINATION;                        \
+    DESTINATION = tmp;                           \
+  } while(0);                                    \
 
-#define handleMACsetuprelease(destination, origin, type, asn_DEF) { \
-  if (origin->present == 1) { \
-    ASN_STRUCT_FREE(asn_DEF, destination); \
-    destination = NULL; \
-  } \
-  if (origin->present == 2) \
-    updateMACie(destination, \
-                origin->choice.setup, \
-                type); \
-} \
+#define HANDLE_SETUPRELEASE_DIRECT(DESTINATION, ORIGIN, TYPE, ASN_DEF) \
+  do {                                                                 \
+    if (ORIGIN->present == 1) {                                        \
+      ASN_STRUCT_FREE(ASN_DEF, DESTINATION);                           \
+      DESTINATION = NULL;                                              \
+    }                                                                  \
+    if (ORIGIN->present == 2)                                          \
+      UPDATE_MAC_IE(DESTINATION, ORIGIN->choice.setup, TYPE);          \
+  } while(0);                                                          \
 
-#define handleMACsetupreleaseElement(destination, origin, type, asn_DEF) { \
-  if (origin->present == 1) { \
-    ASN_STRUCT_FREE(asn_DEF, destination); \
-    destination = NULL; \
-  } \
-  if (origin->present == 2) { \
-    if (!destination) \
-      destination = calloc(1, sizeof(*destination)); \
-    destination->present = origin->present; \
-    updateMACie(destination->choice.setup, \
-                origin->choice.setup, \
-                type); \
-  } \
-} \
+#define HANDLE_SETUPRELEASE_IE(DESTINATION, ORIGIN, TYPE, ASN_DEF)          \
+  do {                                                                      \
+    if (ORIGIN->present == 1) {                                             \
+      ASN_STRUCT_FREE(ASN_DEF, DESTINATION);                                \
+      DESTINATION = NULL;                                                   \
+    }                                                                       \
+    if (ORIGIN->present == 2) {                                             \
+      if (!DESTINATION)                                                     \
+        DESTINATION = calloc(1, sizeof(*DESTINATION));                      \
+      DESTINATION->present = ORIGIN->present;                               \
+      UPDATE_MAC_IE(DESTINATION->choice.setup, ORIGIN->choice.setup, TYPE); \
+    }                                                                       \
+  } while(0);                                                               \
+
+#define RELEASE_IE_FROMLIST(SOURCE, TARGET, FIELD)                                 \
+  do {                                                                             \
+    for (int iI = 0; iI < SOURCE->list.count; iI++) {                              \
+      long eL = *SOURCE->list.array[iI];                                           \
+      int iJ;                                                                      \
+      for (iJ = 0; iJ < TARGET->list.count; iJ++) {                                \
+        if (eL == TARGET->list.array[iJ]->FIELD)                                   \
+          break;                                                                   \
+      }                                                                            \
+      if (iJ == TARGET->list.count)                                                \
+        asn_sequence_del(&TARGET->list, iJ, 1);                                    \
+      else                                                                         \
+        LOG_E(NR_MAC, "Element not present in the list, impossible to release\n"); \
+    }                                                                              \
+  } while (0)                                                                      \
+
+#define ADDMOD_IE_FROMLIST(SOURCE, TARGET, FIELD, TYPE) \
+  do {                                                  \
+    for (int iI = 0; iI < SOURCE->list.count; iI++) {   \
+      long eL = SOURCE->list.array[iI]->FIELD;          \
+      int iJ;                                           \
+      for (iJ = 0; iJ < TARGET->list.count; iJ++) {     \
+        if (eL == TARGET->list.array[iJ]->FIELD)        \
+          break;                                        \
+      }                                                 \
+      if (iJ == TARGET->list.count) {                   \
+        TYPE *nEW = calloc(1, sizeof(*nEW));            \
+        ASN_SEQUENCE_ADD(&TARGET->list, nEW);           \
+      }                                                 \
+      UPDATE_MAC_IE(TARGET->list.array[iJ],             \
+                    SOURCE->list.array[iI],             \
+                    TYPE);                              \
+    }                                                   \
+  } while (0)                                           \
+
+#define ADDMOD_IE_FROMLIST_WFUNCTION(SOURCE, TARGET, FIELD, TYPE, FUNC) \
+  do {                                                                  \
+    for (int iI = 0; iI < SOURCE->list.count; iI++) {                   \
+      long eL = SOURCE->list.array[iI]->FIELD;                          \
+      int iJ;                                                           \
+      for (iJ = 0; iJ < TARGET->list.count; iJ++) {                     \
+        if (eL == TARGET->list.array[iJ]->FIELD)                        \
+          break;                                                        \
+      }                                                                 \
+      if (iJ == TARGET->list.count) {                                   \
+        TYPE *nEW = calloc(1, sizeof(*nEW));                            \
+        ASN_SEQUENCE_ADD(&TARGET->list, nEW);                           \
+      }                                                                 \
+      FUNC(TARGET->list.array[iJ],                                      \
+           SOURCE->list.array[iI]);                                     \
+    }                                                                   \
+  } while (0)
+
 
 /**\brief initialize the field in nr_mac instance
    \param module_id      module id */
