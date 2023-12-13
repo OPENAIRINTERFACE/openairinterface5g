@@ -739,7 +739,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->target_code_rate = mac->ul_harq_info[pid].R;
     pusch_config_pdu->pusch_data.tb_size = mac->ul_harq_info[pid].TBS;
   }
+
   pusch_config_pdu->ldpcBaseGraph = get_BG(pusch_config_pdu->pusch_data.tb_size << 3, pusch_config_pdu->target_code_rate);
+
+  if (pusch_config_pdu->pusch_data.tb_size == 0) {
+    LOG_E(MAC, "Invalid TBS = 0. Probably caused by missed detection of DCI\n");
+    return -1;
+  }
+
   return 0;
 }
 
