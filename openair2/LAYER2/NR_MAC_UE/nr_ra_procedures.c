@@ -592,22 +592,14 @@ void nr_Msg3_transmitted(NR_UE_MAC_INST_t *mac, uint8_t CC_id, frame_t frameP, s
   RA_config_t *ra = &mac->ra;
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->current_UL_BWP->rach_ConfigCommon;
   long mu = mac->current_UL_BWP->scs;
-  int subframes_per_slot = nr_slots_per_frame[mu]/10;
+  int subframes_per_slot = nr_slots_per_frame[mu] / 10;
 
-  // start contention resolution timer (cnt in slots)
-  int RA_contention_resolution_timer_subframes = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1)<<3;
+  // start contention resolution timer
+  int RA_contention_resolution_timer_subframes = (nr_rach_ConfigCommon->ra_ContentionResolutionTimer + 1) << 3;
+  // timer step 1 slot and timer target given by ra_ContentionResolutionTimer
+  nr_timer_setup(&ra->contention_resolution_timer, RA_contention_resolution_timer_subframes * subframes_per_slot, 1);
+  nr_timer_start(&ra->contention_resolution_timer);
 
-  ra->RA_contention_resolution_target_frame = (frameP + (RA_contention_resolution_timer_subframes/10)) % MAX_FRAME_NUMBER;
-  ra->RA_contention_resolution_target_slot = (slotP + (RA_contention_resolution_timer_subframes * subframes_per_slot)) % nr_slots_per_frame[mu];
-
-  LOG_D(MAC,"[UE %d] CB-RA: contention resolution timer set in frame.slot %d.%d and expiring in %d.%d\n",
-        mac->ue_id,
-        frameP,
-        slotP,
-        ra->RA_contention_resolution_target_frame,
-        ra->RA_contention_resolution_target_slot);
-
-  ra->RA_contention_resolution_timer_active = 1;
   ra->ra_state = WAIT_CONTENTION_RESOLUTION;
 }
 
@@ -770,7 +762,7 @@ void nr_ue_get_rach(NR_UE_MAC_INST_t *mac, int CC_id, frame_t frame, uint8_t gNB
     }
   }
 
-  if (ra->RA_contention_resolution_timer_active) {
+  if (is_nr_timer_active(ra->contention_resolution_timer)) {
     nr_ue_contention_resolution(mac, CC_id, frame, nr_slot_tx, prach_resources);
   }
 }
@@ -826,16 +818,12 @@ void nr_ue_contention_resolution(NR_UE_MAC_INST_t *mac, int cc_id, frame_t frame
 {
   RA_config_t *ra = &mac->ra;
 
-  if (ra->RA_contention_resolution_timer_active == 1) {
-    if (frame >= ra->RA_contention_resolution_target_frame &&
-      slot >= ra->RA_contention_resolution_target_slot) {
-      ra->t_crnti = 0;
-      ra->RA_active = 0;
-      ra->RA_contention_resolution_timer_active = 0;
-      // Signal PHY to quit RA procedure
-      LOG_E(MAC, "[UE %d] CB-RA: Contention resolution timer has expired, RA procedure has failed...\n", mac->ue_id);
-      nr_ra_failed(mac, cc_id, prach_resources, frame, slot);
-    }
+  if (nr_timer_expired(ra->contention_resolution_timer)) {
+    ra->t_crnti = 0;
+    nr_timer_stop(&ra->contention_resolution_timer);
+    // Signal PHY to quit RA procedure
+    LOG_E(MAC, "[UE %d] CB-RA: Contention resolution timer has expired, RA procedure has failed...\n", mac->ue_id);
+    nr_ra_failed(mac, cc_id, prach_resources, frame, slot);
   }
 }
 
@@ -852,7 +840,7 @@ void nr_ra_succeeded(NR_UE_MAC_INST_t *mac, const uint8_t gNB_index, const frame
     ra->RA_window_cnt = -1;
   } else {
     LOG_A(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mac->ue_id, frame, slot);
-    ra->RA_contention_resolution_timer_active = 0;
+    nr_timer_stop(&ra->contention_resolution_timer);
     mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
     LOG_D(MAC, "[UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", mac->ue_id, frame, slot);
