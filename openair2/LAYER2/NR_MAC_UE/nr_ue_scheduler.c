@@ -627,7 +627,12 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* NDI */
-    pusch_config_pdu->pusch_data.new_data_indicator = dci->ndi != mac->UL_ndi[dci->harq_pid] ? 1 : 0;
+    pusch_config_pdu->pusch_data.new_data_indicator = 0;
+    if (dci->ndi != mac->UL_ndi[dci->harq_pid]) {
+      pusch_config_pdu->pusch_data.new_data_indicator = 1;
+      // if new data reset harq structure
+      memset(&mac->ul_harq_info[dci->harq_pid], 0, sizeof(mac->ul_harq_info[dci->harq_pid]));
+    }
     mac->UL_ndi[dci->harq_pid] = dci->ndi;
     /* RV */
     pusch_config_pdu->pusch_data.rv_index = dci->rv;

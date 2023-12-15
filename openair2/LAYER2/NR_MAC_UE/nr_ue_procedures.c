@@ -672,13 +672,30 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
   /* MCS */
   dlsch_pdu->mcs = dci->mcs;
 
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
+  /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
+  if (dl_conf_req->pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH ||
+      dl_conf_req->pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH ||
+      dci->ndi != mac->DL_ndi[dci->harq_pid]) {
+    // new data
+    dlsch_pdu->ndi = 1;
+    current_harq->R = 0;
+    current_harq->TBS = 0;
+  }
+  else
+    dlsch_pdu->ndi = 0;
+
+  if (dl_conf_req->pdu_type != FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH &&
+      dl_conf_req->pdu_type != FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH) {
+    mac->DL_ndi[dci->harq_pid] = dci->ndi;
+  }
+
   dlsch_pdu->qamModOrder = nr_get_Qm_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
   if (dlsch_pdu->qamModOrder == 0) {
     LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
     return -1;
   }
 
-  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
   int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
   if (R > 0) {
     dlsch_pdu->targetCodeRate = R;
@@ -698,6 +715,11 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
                                     1);
     // storing for possible retransmissions
     current_harq->R = dlsch_pdu->targetCodeRate;
+    if (dlsch_pdu->ndi == 0 && current_harq->TBS != dlsch_pdu->TBS) {
+      LOG_W(NR_MAC, "NDI indicates re-transmission but computed TBS %d doesn't match with what previously stored %d\n",
+            dlsch_pdu->TBS, current_harq->TBS);
+      dlsch_pdu->ndi = 1; // treated as new data
+    }
     current_harq->TBS = dlsch_pdu->TBS;
   }
   else {
@@ -715,8 +737,6 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
   int bw_tbslbrm = current_DL_BWP ? mac->sc_info.dl_bw_tbslbrm : dlsch_pdu->BWPSize;
   dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, 1);
 
-  /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
-  dlsch_pdu->ndi = dci->ndi;
   /* RV (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
   dlsch_pdu->rv = dci->rv;
   /* HARQ_PROCESS_NUMBER (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -955,7 +975,17 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   /* MCS (for transport block 1)*/
   dlsch_pdu->mcs = dci->mcs;
   /* NDI (for transport block 1)*/
-  dlsch_pdu->ndi = dci->ndi;
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
+  if (dci->ndi != mac->DL_ndi[dci->harq_pid]) {
+    // new data
+    dlsch_pdu->ndi = 1;
+    current_harq->R = 0;
+    current_harq->TBS = 0;
+  }
+  else {
+    dlsch_pdu->ndi = 0;
+  }
+  mac->DL_ndi[dci->harq_pid] = dci->ndi;
   /* RV (for transport block 1)*/
   dlsch_pdu->rv = dci->rv;
   /* MCS (for transport block 2)*/
@@ -1118,7 +1148,6 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
     nb_rb_oh = 0;
   int nb_re_dmrs = ((dmrs_type == NULL) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
 
-  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
   int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
   if (R > 0) {
     dlsch_pdu->targetCodeRate = R;
@@ -1131,6 +1160,11 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
                                     0,
                                     Nl);
     // storing for possible retransmissions
+    if (dlsch_pdu->ndi == 0 && current_harq->TBS != dlsch_pdu->TBS) {
+      LOG_W(NR_MAC, "NDI indicates re-transmission but computed TBS %d doesn't match with what previously stored %d\n",
+            dlsch_pdu->TBS, current_harq->TBS);
+      dlsch_pdu->ndi = 1; // treated as new data
+    }
     current_harq->R = dlsch_pdu->targetCodeRate;
     current_harq->TBS = dlsch_pdu->TBS;
   }

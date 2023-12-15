@@ -106,8 +106,11 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
     mac->scheduling_info.lc_sched_info[i].LCGID = 0; // defaults to 0 irrespective of SRB or DRB
     mac->scheduling_info.lc_sched_info[i].LCID_status = LCID_EMPTY;
     mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
-    for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
-      mac->UL_ndi[k] = -1; // initialize to invalid value
+  }
+
+  for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++) {
+    mac->UL_ndi[k] = -1; // initialize to invalid value
+    mac->DL_ndi[k] = -1; // initialize to invalid value
   }
 }
 

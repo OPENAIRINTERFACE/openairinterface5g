@@ -177,7 +177,6 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int dci_ndi, 
     dl_harq->status = ACTIVE;
 
     dl_harq->Ndi = dci_ndi;
-    //dl_harq->status = SCH_IDLE;
-   }
+  }
 }
 
