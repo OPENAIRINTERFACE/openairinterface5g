@@ -201,8 +201,6 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint3
       sys_info->sib1 = calloc(DUsi->sIB1_message.size, sizeof(char));
       memcpy(sys_info->sib1, DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
       sys_info->sib1_length = DUsi->sIB1_message.size;
-    } else {
-      LOG_D(F1AP, "No SysInfo in F1SetupReq, expecting GNB DU Config Update\n");
     }
   }
 
