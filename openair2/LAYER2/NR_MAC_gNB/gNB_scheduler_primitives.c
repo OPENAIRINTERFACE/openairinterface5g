@@ -2904,8 +2904,17 @@ void nr_mac_update_timers(module_id_t module_id,
     if (UE->ra_timer > 0) {
       UE->ra_timer--;
       if (UE->ra_timer == 0) {
-        LOG_W(NR_MAC, "Removing UE %04x because RA timer expired\n", UE->rnti);
-        mac_remove_nr_ue(mac, UE->rnti);
+        const rnti_t rnti = UE->rnti;
+        LOG_W(NR_MAC, "Removing UE %04x because RA timer expired\n", rnti);
+        mac_remove_nr_ue(mac, rnti);
+        NR_COMMON_channels_t *cc = &mac->common_channels[0];
+        for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+          if (cc->ra[i].rnti == rnti) {
+            nr_clear_ra_proc(module_id, 0, frame, &cc->ra[i]);
+          }
+        }
+        // don't skip a UE, current UE does not exist anymore
+        UE--;
       }
     }
   }
