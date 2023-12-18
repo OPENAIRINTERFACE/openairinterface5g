@@ -44,6 +44,8 @@ RUN apt-get update && \
 # if the --sanitize option was used to build, additional packages are required
     /bin/bash -c 'if [[ "$BUILD_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         libasan5 \
+        iproute2 \
+        net-tools \
         libubsan1 \
         liblapacke; fi' && \
     rm -rf /var/lib/apt/lists/*
