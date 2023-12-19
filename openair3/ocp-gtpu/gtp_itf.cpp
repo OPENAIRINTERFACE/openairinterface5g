@@ -940,7 +940,7 @@ static int Gtpv1uHandleError(int h,
                              uint32_t msgBufLen,
                              uint16_t peerPort,
                              uint32_t peerIp) {
-  LOG_E(GTPU, "Handle error to be dev\n");
+  LOG_E(GTPU, "Received GTP error indication (error handling is missing/not implemented)\n");
   int rc = GTPNOK;
   return rc;
 }
