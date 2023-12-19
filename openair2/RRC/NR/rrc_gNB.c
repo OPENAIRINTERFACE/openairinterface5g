@@ -2093,6 +2093,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
 
     /* pass QoS info to MAC */
     int nb_qos_flows = drb_config->numQosFlowSetup;
+    AssertFatal(nb_qos_flows > 0, "must map at least one flow to a DRB\n");
     drbs[i].drb_info.flows_to_be_setup_length = nb_qos_flows;
     drbs[i].drb_info.flows_mapped_to_drb = (f1ap_flows_mapped_to_drb_t *)calloc(nb_qos_flows, sizeof(f1ap_flows_mapped_to_drb_t));
     AssertFatal(drbs[i].drb_info.flows_mapped_to_drb, "could not allocate memory\n");
@@ -2111,6 +2112,9 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
         qos_char->non_dynamic.qos_priority_level = in_qos_char->qos_priority;
       }
     }
+    /* the DRB QoS parameters: we just reuse the ones from the first flow */
+    drbs[i].drb_info.drb_qos = drbs[i].drb_info.flows_mapped_to_drb[0].qos_params;
+
     /* pass NSSAI info to MAC */
     drbs[i].nssai = RRC_pduSession->param.nssai;
   }
