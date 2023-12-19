@@ -228,6 +228,7 @@ typedef struct {
   // BWP for RA
   NR_UE_DL_BWP_t DL_BWP;
   NR_UE_UL_BWP_t UL_BWP;
+  NR_UE_ServingCell_Info_t sc_info;
 } NR_RA_t;
 
 /*! \brief gNB common channels */
@@ -699,6 +700,7 @@ typedef struct {
   NR_UE_sched_ctrl_t UE_sched_ctrl;
   NR_UE_DL_BWP_t current_DL_BWP;
   NR_UE_UL_BWP_t current_UL_BWP;
+  NR_UE_ServingCell_Info_t sc_info;
   NR_mac_stats_t mac_stats;
   /// currently active CellGroupConfig
   NR_CellGroupConfig_t *CellGroup;

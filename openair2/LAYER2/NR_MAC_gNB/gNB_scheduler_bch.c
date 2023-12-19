@@ -495,8 +495,7 @@ static void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   int dci_format = NR_DL_DCI_FORMAT_1_0;
   int rnti_type = NR_RNTI_SI;
 
-  fill_dci_pdu_rel15(scc,
-                     NULL,
+  fill_dci_pdu_rel15(NULL,
                      NULL,
                      NULL,
                      &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],

@@ -24,7 +24,6 @@
 #include "mac_proto.h"
 #include "openair2/F1AP/f1ap_ids.h"
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
-#include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 #include "F1AP_CauseRadioNetwork.h"
 
 #include "uper_decoder.h"
@@ -225,7 +224,7 @@ static NR_UE_NR_Capability_t *get_ue_nr_cap(int rnti, uint8_t *buf, uint32_t len
   return cap;
 }
 
-static NR_CellGroupConfig_t *clone_CellGroupConfig(const NR_CellGroupConfig_t *orig)
+NR_CellGroupConfig_t *clone_CellGroupConfig(const NR_CellGroupConfig_t *orig)
 {
   uint8_t buf[16636];
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, orig, buf, sizeof(buf));
