@@ -40,6 +40,8 @@
 #define NR_DL_MAX_DAI                            (4)                      /* TS 38.213 table 9.1.3-1 Value of counter DAI for DCI format 1_0 and 1_1 */
 #define NR_DL_MAX_NB_CW                          (2)                      /* number of downlink code word */
 
+// Macro updates DESTINATION with configuration from ORIGIN by swapping pointers
+// Old configuration is freed after completing configuration
 #define UPDATE_MAC_IE(DESTINATION, ORIGIN, TYPE) \
   do {                                           \
     TYPE *tmp = ORIGIN;                          \
@@ -47,6 +49,10 @@
     DESTINATION = tmp;                           \
   } while(0);                                    \
 
+// Macro handles reception of SetupRelease element ORIGIN (see NR_SetupRelease.h)
+// If release (NR_SetupRelease_xxx_PR_release equivalent to 1), removing structure from DESTINATION
+// If setup (NR_SetupRelease_xxx_PR_setup equivalent to 2), add or modify structure in DESTINATION
+// Destination is not a SetupRelease structure
 #define HANDLE_SETUPRELEASE_DIRECT(DESTINATION, ORIGIN, TYPE, ASN_DEF) \
   do {                                                                 \
     if (ORIGIN->present == 1) {                                        \
@@ -56,6 +62,10 @@
       UPDATE_MAC_IE(DESTINATION, ORIGIN->choice.setup, TYPE);          \
   } while(0);                                                          \
 
+// Macro handles reception of SetupRelease element ORIGIN (see NR_SetupRelease.h)
+// If release (NR_SetupRelease_xxx_PR_release equivalent to 1), removing structure from DESTINATION
+// If setup (NR_SetupRelease_xxx_PR_setup equivalent to 2), add or modify structure in DESTINATION
+// Destination is a SetupRelease structure
 #define HANDLE_SETUPRELEASE_IE(DESTINATION, ORIGIN, TYPE, ASN_DEF)          \
   do {                                                                      \
     if (ORIGIN->present == 1) {                                             \
@@ -69,6 +79,8 @@
     }                                                                       \
   } while(0);                                                               \
 
+// Macro releases entries in list TARGET if the corresponding ID is found in list SOURCE.
+// Prints an error if ID not found in list.
 #define RELEASE_IE_FROMLIST(SOURCE, TARGET, FIELD)                                 \
   do {                                                                             \
     for (int iI = 0; iI < SOURCE->list.count; iI++) {                              \
@@ -85,6 +97,7 @@
     }                                                                              \
   } while (0)                                                                      \
 
+// Macro adds or modifies entries of type TYPE in list TARGET with elements received in list SOURCE
 #define ADDMOD_IE_FROMLIST(SOURCE, TARGET, FIELD, TYPE) \
   do {                                                  \
     for (int iI = 0; iI < SOURCE->list.count; iI++) {   \
@@ -104,6 +117,8 @@
     }                                                   \
   } while (0)                                           \
 
+// Macro adds or modifies entries of type TYPE in list TARGET with elements received in list SOURCE
+// Action performed by function FUNC
 #define ADDMOD_IE_FROMLIST_WFUNCTION(SOURCE, TARGET, FIELD, TYPE, FUNC) \
   do {                                                                  \
     for (int iI = 0; iI < SOURCE->list.count; iI++) {                   \
