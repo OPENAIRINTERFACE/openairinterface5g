@@ -554,7 +554,7 @@ int DU_send_UE_CONTEXT_SETUP_FAILURE(sctp_assoc_t assoc_id)
 
 int DU_send_UE_CONTEXT_RELEASE_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_release_req_t *req)
 {
-  F1AP_F1AP_PDU_t                   pdu;
+  F1AP_F1AP_PDU_t                   pdu = {0};
   F1AP_UEContextReleaseRequest_t    *out;
   uint8_t  *buffer=NULL;
   uint32_t  len=0;

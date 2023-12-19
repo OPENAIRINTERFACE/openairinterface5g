@@ -3097,6 +3097,7 @@ void nr_mac_check_ul_failure(const gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ct
   /* to trigger only once: trigger when ul_failure_timer == 1, but timer will
    * stop at 0 and we wait for a UE release command from upper layers */
   if (sched_ctrl->ul_failure_timer == 1) {
+    LOG_W(MAC, "request release after UL failure timer expiry\n");
     f1_ue_data_t ue_data = du_get_f1_ue_data(rnti);
     f1ap_ue_context_release_req_t request = {
       .gNB_CU_ue_id = ue_data.secondary_ue,
