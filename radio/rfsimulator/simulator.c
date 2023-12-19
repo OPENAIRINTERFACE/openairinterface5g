@@ -314,7 +314,7 @@ static void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t)
         continue;
 
       if (errno == EAGAIN) {
-        LOG_E(HW, "write() failed, errno(%d)\n", errno);
+        LOG_D(HW, "write() failed, errno(%d)\n", errno);
         usleep(250);
         continue;
       } else
