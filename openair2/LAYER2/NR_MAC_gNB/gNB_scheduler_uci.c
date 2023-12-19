@@ -212,8 +212,9 @@ void nr_csi_meas_reporting(int Mod_idP,
     if ((sched_ctrl->rrc_processing_timer > 0) || (sched_ctrl->ul_failure && !get_softmodem_params()->phy_test)) {
       continue;
     }
-    const NR_CSI_MeasConfig_t *csi_measconfig = ul_bwp->csi_MeasConfig;
-    if (!csi_measconfig) continue;
+    const NR_CSI_MeasConfig_t *csi_measconfig = UE->sc_info.csi_MeasConfig;
+    if (!csi_measconfig)
+      continue;
     AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
                 "NO CSI report configuration available");
     NR_PUCCH_Config_t *pucch_Config = ul_bwp->pucch_Config;
@@ -496,7 +497,7 @@ static void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot)
   uint8_t i, j;
 
   //bwp indicator
-  int n_dl_bwp = dl_bwp->n_dl_bwp;
+  int n_dl_bwp = UE->sc_info.n_dl_bwp;
   const int bwp_id = dl_bwp->bwp_id;
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;
@@ -1051,8 +1052,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     return;
   }
 
-  NR_CSI_MeasConfig_t *csi_MeasConfig = UE->current_UL_BWP.csi_MeasConfig;
-  if (csi_MeasConfig==NULL) {
+  NR_CSI_MeasConfig_t *csi_MeasConfig = UE->sc_info.csi_MeasConfig;
+  if (csi_MeasConfig == NULL) {
     NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return;
   }

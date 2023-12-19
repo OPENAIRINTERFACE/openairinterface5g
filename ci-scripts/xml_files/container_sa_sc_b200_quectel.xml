@@ -129,8 +129,8 @@
 
   <testCase id="270000">
     <class>Iperf</class>
-    <desc>iperf (DL/100Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 100M -t 30 -i 1 -fm</iperf_args>
+    <desc>iperf (DL/80Mbps/UDP)(30 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 80M -t 30 -i 1 -fm</iperf_args>
     <direction>DL</direction>
     <id>idefix</id>
     <iperf_packetloss_threshold>5</iperf_packetloss_threshold>

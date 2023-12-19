@@ -54,15 +54,13 @@
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
-//#include "LAYER2/NR_MAC_gNB/mac_proto.h"
-//#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "NR_asn_constant.h"
 #include "RRC/NR/nr_rrc_config.h"
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-//#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "NR_RRCReconfiguration.h"
 #define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
@@ -137,14 +135,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
   NR_UE_DL_BWP_t *current_BWP = &UE_info->current_DL_BWP;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
-
-  //TODO better implementation needed
-  //for now artificially set candidates for the required aggregation levels
-  sched_ctrl->search_space->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
-  sched_ctrl->search_space->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  sched_ctrl->search_space->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
-  sched_ctrl->search_space->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
-  sched_ctrl->search_space->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
 
   uint8_t nr_of_candidates = 0;
   if (g_mcsIndex < 4) {
@@ -614,6 +604,7 @@ int main(int argc, char **argv)
   InitSinLUT();
 
   get_softmodem_params()->phy_test = 1;
+  get_softmodem_params()->usim_test = 1;
   get_softmodem_params()->do_ra = 0;
   set_softmodem_optmask(SOFTMODEM_DLSIM_BIT);
 
@@ -879,10 +870,13 @@ int main(int argc, char **argv)
   // generate signal
   AssertFatal(input_fd==NULL,"Not ready for input signal file\n");
 
+  // clone CellGroup to have a separate copy at UE
+  NR_CellGroupConfig_t *UE_CellGroup = clone_CellGroupConfig(secondaryCellGroup);
+
   //Configure UE
   NR_BCCH_BCH_Message_t *mib = get_new_MIB_NR(scc);
   nr_rrc_mac_config_req_mib(0, 0, mib->message.choice.mib, false);
-  nr_rrc_mac_config_req_cg(0, 0, secondaryCellGroup);
+  nr_rrc_mac_config_req_cg(0, 0, UE_CellGroup);
 
   UE_mac->state = UE_CONNECTED;
   UE_mac->ra.ra_state = RA_SUCCEEDED;
@@ -1409,7 +1403,7 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg)
   }
 
   /* Additional DMRS positions 0 ,1 ,2 and 3 */
-  if(dmrs_arg[1] >= 0 && dmrs_arg[1] <4 ) {
+  if (dmrs_arg[1] >= 0 && dmrs_arg[1] < 4) {
     add_pos = dmrs_arg[1];
   } else {
     AssertFatal(1==0,"Incorrect Additional Position, valid options 0-pos1, 1-pos1, 2-pos2, 3-pos3\n");
@@ -1468,7 +1462,19 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg)
     if (dmrs_config->dmrs_AdditionalPosition == NULL) {
       dmrs_config->dmrs_AdditionalPosition = calloc(1,sizeof(*dmrs_MappingtypeA->choice.setup->dmrs_AdditionalPosition));
     }
-    *dmrs_config->dmrs_AdditionalPosition = add_pos;
+    switch (add_pos) {
+      case 0:
+        *dmrs_config->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos0;
+        break;
+      case 1:
+        *dmrs_config->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
+        break;
+      case 3:
+        *dmrs_config->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos3;
+        break;
+      default:
+        AssertFatal(false, "DMRS additional position %d not valid\n", add_pos);
+    }
   } else { // if NULL, Value pos2
     free(dmrs_config->dmrs_AdditionalPosition);
     dmrs_config->dmrs_AdditionalPosition = NULL;

@@ -145,4 +145,20 @@ c16_t nr_layer_precoder_cm(int n_layers,
                            c16_t *prec_matrix,
                            int symbol,
                            int offset);
+
+/*! \brief Precoding with SIMDe, txdataF_precoded[] = prec_matrix[] * txdataF_res_mapped[]
+  @param[in]  txdataF_res_mapped Tx data after resource mapping, before precoding.
+  @param[in]  prec_matrix        Weights of precoding matrix.
+  @param[in]  re_cnt             Number of RE (sub carrier) to write to txdataF_precoded, should be multiple of 4.
+  @param[out] txdataF_precoded   Precoded antenna data
+*/
+void nr_layer_precoder_simd(const int n_layers,
+                           const int n_symbols,
+                           const int symSz,
+                           const c16_t txdataF_res_mapped[n_layers][n_symbols][symSz],
+                           const c16_t prec_matrix[n_layers],
+                           const int symbol,
+                           const int sc_offset,
+                           const int re_cnt,
+                           c16_t *txdataF_precoded);
 #endif

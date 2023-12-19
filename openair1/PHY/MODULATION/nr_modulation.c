@@ -23,6 +23,8 @@
 #include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "executables/softmodem-common.h"
 
+// #define DEBUG_DLSCH_PRECODING_PRINT_WITH_TRIVIAL // TODO: For debug, to be removed if want to merge to develop
+
 //Table 6.3.1.5-1 Precoding Matrix W 1 layer 2 antenna ports 'n' = -1 and 'o' = -j
 const char nr_W_1l_2p[6][2][1] = {
     {{'1'}, {'0'}}, // pmi 0
@@ -711,3 +713,97 @@ c16_t nr_layer_precoder_cm(int n_layers,
   return precodatatx_F;
 }
 
+void nr_layer_precoder_simd(const int n_layers,
+                           const int n_symbols,
+                           const int symSz,
+                           const c16_t txdataF_res_mapped[n_layers][n_symbols][symSz],
+                           const c16_t prec_matrix[n_layers],
+                           const int symbol,
+                           const int sc_offset,
+                           const int re_cnt,
+                           c16_t *txdataF_precoded)
+{
+  uint32_t sc = sc_offset;
+
+  // For x86, use 256 SIMD for every 8 RE and 128 SIMD for last 4 RE
+  // For aarch64, use 128 SIMD for every 4 RE
+
+  // 256 SIMD: Do 8 RE in one iteration, 3 iterations for 2 RB
+  #ifdef __AVX2__
+    const uint32_t re_cnt_align8 = re_cnt & ~7;
+    for(; sc<sc_offset+(re_cnt_align8); sc+=sizeof(simde__m256i)/sizeof(*prec_matrix)){
+      // Matrix multiplication for 4 elements of the result (sizeof(simde__m256i) / sizeof(*prec_matrix) = 8)
+      simde__m256i y = simde_mm256_set1_epi16(0); // Y = W[0]*X[0] + W[1]*X[1] + ... + W[nrOfLayers-1]*X[nrOfLayers-1]
+      for(int nl=0; nl<n_layers; nl++){
+        const simde__m256i x = simde_mm256_loadu_epi32(&txdataF_res_mapped[nl][symbol][sc]);
+
+        // Rearrange precoding matrix weight to match complex multiplication and broadcast it to match SIMD size
+        const simde__m256i w_c   = simde_mm256_set1_epi32(c16toI32(c16conj(prec_matrix[nl])));   // broadcast conjugate of w
+        const simde__m256i w_s   = simde_mm256_set1_epi32(c16toI32(c16swap(prec_matrix[nl])));   // broadcast swapped real and img of w
+
+        // Multiplication and shift
+        const simde__m256i reals = simde_mm256_srai_epi32(simde_mm256_madd_epi16(x, w_c), 15); // (int32_t) .r = (x.r * w.r - x.i * w.i) >> 15
+        const simde__m256i imags = simde_mm256_slli_epi32(simde_mm256_madd_epi16(x, w_s), 1);  // (int32_t) .i = (x.r * w.i + x.i * w.r) << 1, since higher 16 bit of each 32 bit is taken by blend_epi16
+
+        // Re-arrange to match c16_t format
+        const simde__m256i produ = simde_mm256_blend_epi16(reals, imags, 0xAA);
+
+        // Accumulate the product
+        y = simde_mm256_adds_epi16(y, produ);
+      }
+      // Store the result to txdataF
+      simde_mm256_storeu_si256(&txdataF_precoded[sc], y);
+    }
+  #endif
+
+  // 128 SIMD: Do 4 RE in one iteration, 3 iterations for 1 RB
+  const uint32_t re_cnt_align4 = re_cnt & ~3;
+  for(; sc<sc_offset+re_cnt_align4; sc+=sizeof(simde__m128i)/sizeof(*prec_matrix)){
+    #ifdef DEBUG_DLSCH_PRECODING_PRINT_WITH_TRIVIAL // Get result with trivial solution, TODO: To be removed
+      c16_t y_triv[4];
+      for(int i=0; i<4; i++)
+        y_triv[i] = nr_layer_precoder_cm(n_layers,
+                                  NR_SYMBOLS_PER_SLOT,
+                                  symSz,
+                                  txdataF_res_mapped,
+                                  prec_matrix,
+                                  symbol,
+                                  sc + i);
+      memcpy(&txdataF_precoded[sc], y_triv, sizeof(y_triv));
+    #endif
+
+    // Matrix multiplication for 4 elements of the result (sizeof(simde__m128i) / sizeof(c16_t) = 4)
+    simde__m128i y = simde_mm_set1_epi16(0); // Y = W[0]*X[0] + W[1]*X[1] + ... + W[nrOfLayers-1]*X[nrOfLayers-1]
+    for(int nl=0; nl<n_layers; nl++){
+      const simde__m128i x = simde_mm_loadu_epi32(&txdataF_res_mapped[nl][symbol][sc]);
+
+      // Rearrange precoding matrix weight to match complex multiplication and broadcast it to match SIMD size
+      const simde__m128i w_c   = simde_mm_set1_epi32(c16toI32(c16conj(prec_matrix[nl])));   // broadcast conjugate of w
+      const simde__m128i w_s   = simde_mm_set1_epi32(c16toI32(c16swap(prec_matrix[nl])));   // broadcast swapped real and img of w
+
+      // Multiplication and shift
+      const simde__m128i reals = simde_mm_srai_epi32(simde_mm_madd_epi16(x, w_c), 15); // (int32_t) .r = (x.r * w.r - x.i * w.i) >> 15
+      const simde__m128i imags = simde_mm_slli_epi32(simde_mm_madd_epi16(x, w_s), 1);  // (int32_t) .i = (x.r * w.i + x.i * w.r) << 1, since higher 16 bit of each 32 bit is taken by blend_epi16
+
+      /* Re-arrange to match c16_t format
+        bit index: 0            | 16              | 32           | 48              | 64           | 80              | 96           | 112
+        reals =   {R0.r[15..30] | R0.r[31] (0)*15 | R1.r[15..30] | R1.r[31] (0)*15 | R2.r[15..30] | R2.r[31] (0)*15 | R3.r[15..30] | R3.r[31] (0)*15}
+        imags =   {0 R0.i[0..14]| R0.i[15..30]    | 0 R1.i[0..14]| R1.i[15..30]    | 0 R2.i[0..14]| R2.i[15..30]    | 0 R3.i[0..14]| R3.i[15..30]   }
+        16b from  {reals        | imags           | reals        | imags           | reals        | imags           | reals        | imags          }
+        produ =   {R0.r[15..30] | R0.i[15..30]    | R1.r[15..30] | R1.i[15..30]    | R2.r[15..30] | R2.i[15..30]    | R3.r[15..30] | R3.i[15..30]   }
+      */
+      const simde__m128i produ = simde_mm_blend_epi16(reals, imags, 0xAA);
+
+      // Accumulate the product
+      y = simde_mm_adds_epi16(y, produ);
+    }
+    // Store the result to txdataF
+    simde_mm_storeu_si128(&txdataF_precoded[sc], y);
+
+    #ifdef DEBUG_DLSCH_PRECODING_PRINT_WITH_TRIVIAL // Print simd and trivial result, TODO: To be removed
+      c16_t *y_simd = (c16_t*) &y;
+      printf("debug_to_be_removed re_cnt=%d, sc=%d, y_simd=(%+4d,%+4d), (%+4d,%+4d), (%+4d,%+4d), (%+4d,%+4d)\n", re_cnt, sc, y_simd[0].r, y_simd[0].i, y_simd[1].r, y_simd[1].i, y_simd[2].r, y_simd[2].i, y_simd[3].r, y_simd[3].i);
+      printf("debug_to_be_removed re_cnt=%d, sc=%d, y_triv=(%+4d,%+4d), (%+4d,%+4d), (%+4d,%+4d), (%+4d,%+4d)\n", re_cnt, sc, y_triv[0].r, y_triv[0].i, y_triv[1].r, y_triv[1].i, y_triv[2].r, y_triv[2].i, y_triv[3].r, y_triv[3].i);
+    #endif
+  }
+}

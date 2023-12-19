@@ -560,47 +560,60 @@ typedef struct nr_srs_feedback {
 
 typedef struct NR_UE_DL_BWP {
   NR_BWP_Id_t bwp_id;
-  int n_dl_bwp;
   int scs;
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
-  uint16_t initial_BWPSize;
-  uint16_t initial_BWPStart;
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_PDSCH_Config_t *pdsch_Config;
-  NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig;
   uint8_t mcsTableIdx;
   nr_dci_format_t dci_format;
-  int bw_tbslbrm;
 } NR_UE_DL_BWP_t;
 
 typedef struct NR_UE_UL_BWP {
   NR_BWP_Id_t bwp_id;
-  int n_ul_bwp;
   int scs;
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
-  uint16_t initial_BWPSize;
-  uint16_t initial_BWPStart;
   NR_RACH_ConfigCommon_t *rach_ConfigCommon;
-  NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig;
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_ConfiguredGrantConfig_t *configuredGrantConfig;
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;
   NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon;
-  NR_UplinkConfig_t *supplementaryUplink;
-  NR_CSI_MeasConfig_t *csi_MeasConfig;
   NR_SRS_Config_t *srs_Config;
   long *msg3_DeltaPreamble;
   long transform_precoding;
   uint8_t mcs_table;
   nr_dci_format_t dci_format;
-  int bw_tbslbrm;
   int max_fb_time;
 } NR_UE_UL_BWP_t;
+
+// non-BWP serving cell configuration
+typedef struct {
+  NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig;
+  NR_SRS_CarrierSwitching_t *carrierSwitching;
+  NR_UplinkConfig_t *supplementaryUplink;
+  NR_PDSCH_CodeBlockGroupTransmission_t *pdsch_CGB_Transmission;
+  long *xOverhead_PDSCH;
+  long *nrofHARQ_ProcessesForPDSCH;
+  long *maxMIMO_Layers_PDSCH;
+  NR_PUSCH_CodeBlockGroupTransmission_t *pusch_CGB_Transmission;
+  long *rateMatching_PUSCH;
+  long *xOverhead_PUSCH;
+  long *maxMIMO_Layers_PUSCH;
+  NR_CSI_MeasConfig_t *csi_MeasConfig;
+  NR_CSI_AperiodicTriggerStateList_t *aperiodicTriggerStateList;
+  uint16_t initial_dl_BWPSize;
+  uint16_t initial_dl_BWPStart;
+  uint16_t initial_ul_BWPSize;
+  uint16_t initial_ul_BWPStart;
+  int n_dl_bwp;
+  int n_ul_bwp;
+  int dl_bw_tbslbrm;
+  int ul_bw_tbslbrm;
+} NR_UE_ServingCell_Info_t;
 
 typedef enum {
   defaultA = 0,
