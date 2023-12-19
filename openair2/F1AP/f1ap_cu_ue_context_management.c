@@ -1227,7 +1227,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_conte
 
       else{
         /* 12.1.2 DRB_Information */
-        f1ap_drb_information_t *drb_info_in = &f1ap_ue_context_modification_req->drbs_to_be_setup->drb_info;
+        f1ap_drb_information_t *drb_info_in = &f1ap_ue_context_modification_req->drbs_to_be_setup[i].drb_info;
         drbs_toBeSetupMod_item->qoSInformation.present = F1AP_QoSInformation_PR_choice_extension;
         F1AP_QoSInformation_ExtIEs_t *ie = (F1AP_QoSInformation_ExtIEs_t *)calloc(1, sizeof(*ie));
         ie->id                             = F1AP_ProtocolIE_ID_id_DRB_Information;
