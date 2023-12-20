@@ -1886,6 +1886,7 @@ static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, s
         LOG_A(NR_MAC, "(UE RNTI 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", ra->rnti);
       } else {
         LOG_I(NR_MAC, "%4d.%2d UE %04x: RA Procedure failed at Msg4!\n", frame, slot, ra->rnti);
+        nr_mac_trigger_ul_failure(sched_ctrl, UE->current_DL_BWP.scs);
       }
 
       // Pause scheduling according to:
