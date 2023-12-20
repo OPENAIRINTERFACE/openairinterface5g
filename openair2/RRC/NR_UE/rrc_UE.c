@@ -1674,8 +1674,8 @@ void start_oai_nrue_threads()
       LOG_E(MAC, "sem_init() error\n");
       abort();
     }
-
-    init_nrUE_standalone_thread(0);
+    extern uint16_t ue_id_g;
+    init_nrUE_standalone_thread(ue_id_g);
 }
 
 static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
