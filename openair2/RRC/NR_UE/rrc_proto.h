@@ -110,7 +110,7 @@ void init_connections_with_lte_ue(void);
 
 void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg_type);
 
-void start_oai_nrue_threads(void);
+extern void start_oai_nrue_threads(void);
 
 int get_from_lte_ue_fd();
 
