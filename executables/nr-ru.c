@@ -874,8 +874,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   // AssertFatal(txs == 0,"trx write function error %d\n", txs);
 }
 
-// this is for RU with local RF unit
-void fill_rf_config(RU_t *ru, char *rf_config_file) {
+static void fill_rf_config(RU_t *ru, char *rf_config_file)
+{
   int i;
   NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
   nfapi_nr_config_request_scf_t *config = &ru->config; //tmp index
@@ -1150,22 +1150,12 @@ void *ru_thread( void *param ) {
   LOG_I(PHY,"Starting RU %d (%s,%s) on cpu %d\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing],sched_getcpu());
   memcpy((void *)&ru->config,(void *)&RC.gNB[0]->gNB_config,sizeof(ru->config));
 
-  if(emulate_rf) {
-    nr_init_frame_parms(&ru->config, fp);
-    nr_dump_frame_parms(fp);
-    fill_rf_config(ru,ru->rf_config_file);
-    nr_phy_init_RU(ru);
+  nr_init_frame_parms(&ru->config, fp);
+  nr_dump_frame_parms(fp);
+  nr_phy_init_RU(ru);
+  fill_rf_config(ru, ru->rf_config_file);
 
-    if (setup_RU_buffers(ru)!=0) {
-      printf("Exiting, cannot initialize RU Buffers\n");
-      exit(-1);
-    }
-  } else {
-    nr_init_frame_parms(&ru->config, fp);
-    nr_dump_frame_parms(fp);
-    fill_rf_config(ru,ru->rf_config_file);
-    nr_phy_init_RU(ru);
-
+  if(!emulate_rf) {
     // Start IF device if any
     if (ru->nr_start_if) {
       LOG_I(PHY, "starting transport\n");
@@ -1201,11 +1191,11 @@ void *ru_thread( void *param ) {
       ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
       AssertFatal(ret==0,"Cannot connect to local radio\n");
     }
+  }
 
-    if (setup_RU_buffers(ru)!=0) {
-      printf("Exiting, cannot initialize RU Buffers\n");
-      exit(-1);
-    }
+  if (setup_RU_buffers(ru)!=0) {
+    printf("Exiting, cannot initialize RU Buffers\n");
+    exit(-1);
   }
 
   LOG_I(PHY, "Signaling main thread that RU %d is ready, sl_ahead %d\n",ru->idx,ru->sl_ahead);
@@ -1824,9 +1814,6 @@ void init_NR_RU(configmodule_interface_t *cfg, char *rf_config_file)
         }
       }
     }
-    ru->openair0_cfg.rx_num_channels = ru->nb_rx;
-    ru->openair0_cfg.tx_num_channels = ru->nb_tx;
-    //LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
     set_function_spec_param(ru);
     init_RU_proc(ru);
     if (ru->if_south != REMOTE_IF4p5) {
