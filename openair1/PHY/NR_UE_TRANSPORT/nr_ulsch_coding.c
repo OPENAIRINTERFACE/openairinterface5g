@@ -152,12 +152,10 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   }
   start_meas(&ue->ulsch_ldpc_encoding_stats);
   if (ldpc_interface_offload.LDPCencoder) {
-    uint8_t tmp[BBDEV_LDPC_MAX_E] __attribute__((aligned(32)));
-    uint8_t *e = tmp;
     for (int j = 0; j < impp.n_segments; j++) {
       impp.E = nr_get_E(G, impp.n_segments, impp.Qm, ulsch->pusch_pdu.nrOfLayers, j);
-      ldpc_interface_offload.LDPCencoder(&harq_process->c[j], &e, &impp);
-      nr_interleaving_ldpc(impp.E, impp.Qm, e, harq_process->f + r_offset);
+      uint8_t *f = harq_process->f + r_offset;
+      ldpc_interface_offload.LDPCencoder(&harq_process->c[j], &f, &impp);
       r_offset += impp.E;
     }
   } else {

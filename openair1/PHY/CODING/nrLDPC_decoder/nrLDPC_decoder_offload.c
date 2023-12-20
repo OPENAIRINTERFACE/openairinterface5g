@@ -575,7 +575,7 @@ static void set_ldpc_enc_op(struct rte_bbdev_enc_op **ops,
     ops[i]->ldpc_enc.n_filler = p_offloadParams->F;
     ops[i]->ldpc_enc.n_cb = p_offloadParams->n_cb;
     ops[i]->ldpc_enc.rv_index = p_offloadParams->rv;
-    ops[i]->ldpc_enc.op_flags = RTE_BBDEV_LDPC_INTERLEAVER_BYPASS | RTE_BBDEV_LDPC_RATE_MATCH;
+    ops[i]->ldpc_enc.op_flags = RTE_BBDEV_LDPC_RATE_MATCH;
     ops[i]->ldpc_enc.code_block_mode = 1;
     ops[i]->ldpc_enc.output = outputs[start_idx + i];
     ops[i]->ldpc_enc.input = inputs[start_idx + i];
