@@ -1884,7 +1884,6 @@ static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, s
     if (harq->round == 0) {
       if (UE->Msg4_ACKed) {
         LOG_A(NR_MAC, "(UE RNTI 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", ra->rnti);
-        UE->ra_timer = 0;
       } else {
         LOG_I(NR_MAC, "%4d.%2d UE %04x: RA Procedure failed at Msg4!\n", frame, slot, ra->rnti);
       }

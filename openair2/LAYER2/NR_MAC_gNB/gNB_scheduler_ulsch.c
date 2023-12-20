@@ -765,7 +765,6 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
           nr_mac_reset_ul_failure(UE_scheduling_control);
           reset_dl_harq_list(UE_scheduling_control);
           reset_ul_harq_list(UE_scheduling_control);
-          UE_msg3_stage->ra_timer = 0;
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           process_CellGroup(ra->CellGroup, UE_msg3_stage);
 

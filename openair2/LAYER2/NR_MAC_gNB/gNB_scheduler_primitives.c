@@ -2401,10 +2401,6 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   /* Set default BWPs */
   AssertFatal(UE->sc_info.n_ul_bwp <= NR_MAX_NUM_BWP, "uplinkBWP_ToAddModList has %d BWP!\n", UE->sc_info.n_ul_bwp);
 
-  if (get_softmodem_params()->phy_test == 0) {
-    UE->ra_timer = 12000 << UE->current_DL_BWP.scs; // 12000 ms is arbitrary and found to be a good timeout from experiments
-  }
-
   /* get Number of HARQ processes for this UE */
   // pdsch_servingcellconfig == NULL in SA -> will create default (8) number of HARQ processes
   create_dl_harq_list(sched_ctrl, &UE->sc_info);
@@ -2958,24 +2954,6 @@ void nr_mac_update_timers(module_id_t module_id,
       sched_ctrl->rrc_processing_timer--;
       if (sched_ctrl->rrc_processing_timer == 0)
         nr_mac_apply_cellgroup(mac, UE, frame, slot);
-    }
-
-    // RA timer
-    if (UE->ra_timer > 0) {
-      UE->ra_timer--;
-      if (UE->ra_timer == 0) {
-        const rnti_t rnti = UE->rnti;
-        LOG_W(NR_MAC, "Removing UE %04x because RA timer expired\n", rnti);
-        mac_remove_nr_ue(mac, rnti);
-        NR_COMMON_channels_t *cc = &mac->common_channels[0];
-        for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-          if (cc->ra[i].rnti == rnti) {
-            nr_clear_ra_proc(module_id, 0, frame, &cc->ra[i]);
-          }
-        }
-        // don't skip a UE, current UE does not exist anymore
-        UE--;
-      }
     }
   }
 }

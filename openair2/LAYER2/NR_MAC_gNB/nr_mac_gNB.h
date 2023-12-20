@@ -712,7 +712,6 @@ typedef struct {
   // UE selected beam index
   uint8_t UE_beam_index;
   bool Msg4_ACKed;
-  uint32_t ra_timer;
   float ul_thr_ue;
   float dl_thr_ue;
   long pdsch_HARQ_ACK_Codebook;
