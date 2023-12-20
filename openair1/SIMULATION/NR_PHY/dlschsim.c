@@ -483,6 +483,7 @@ int main(int argc, char **argv)
 	dlsch0_ue->dlsch_config.rv = rvidx;
 	dlsch0_ue->dlsch_config.targetCodeRate = rate;
   dlsch0_ue->dlsch_config.TBS = TBS;
+  dlsch0_ue->dlsch_config.ldpcBaseGraph = get_BG(TBS, rate);
 	dlsch0_ue->dlsch_config.dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	dlsch0_ue->dlsch_config.dlDmrsSymbPos = 4;
 	dlsch0_ue->dlsch_config.n_dmrs_cdm_groups = 1;

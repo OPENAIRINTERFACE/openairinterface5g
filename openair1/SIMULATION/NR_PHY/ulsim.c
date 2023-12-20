@@ -1116,6 +1116,7 @@ int main(int argc, char *argv[])
         pusch_config_pdu->absolute_delta_PUSCH = 0;
         pusch_config_pdu->target_code_rate = code_rate;
         pusch_config_pdu->tbslbrm = tbslbrm;
+        pusch_config_pdu->ldpcBaseGraph = get_BG(TBS, code_rate);
         pusch_config_pdu->pusch_data.tb_size = TBS / 8;
         pusch_config_pdu->pusch_data.new_data_indicator = round == 0 ? true : false;
         pusch_config_pdu->pusch_data.rv_index = rv_index;
