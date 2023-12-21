@@ -426,6 +426,28 @@ static void get_channel_model_mode(configmodule_interface_t *cfg)
     init_bler_table("NR_AWGN_RESULTS_DIR");
 }
 
+void start_oai_nrue_threads()
+{
+    init_queue(&nr_rach_ind_queue);
+    init_queue(&nr_rx_ind_queue);
+    init_queue(&nr_crc_ind_queue);
+    init_queue(&nr_uci_ind_queue);
+    init_queue(&nr_sfn_slot_queue);
+    init_queue(&nr_chan_param_queue);
+    init_queue(&nr_dl_tti_req_queue);
+    init_queue(&nr_tx_req_queue);
+    init_queue(&nr_ul_dci_req_queue);
+    init_queue(&nr_ul_tti_req_queue);
+
+    if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
+    {
+      LOG_E(MAC, "sem_init() error\n");
+      abort();
+    }
+
+    init_nrUE_standalone_thread(ue_id_g);
+}
+
 int NB_UE_INST = 1;
 configmodule_interface_t *uniqCfg = NULL;
 

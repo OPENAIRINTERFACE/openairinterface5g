@@ -1647,28 +1647,6 @@ void *recv_msgs_from_lte_ue(void *args_p)
     return NULL;
 }
 
-void start_oai_nrue_threads()
-{
-    init_queue(&nr_rach_ind_queue);
-    init_queue(&nr_rx_ind_queue);
-    init_queue(&nr_crc_ind_queue);
-    init_queue(&nr_uci_ind_queue);
-    init_queue(&nr_sfn_slot_queue);
-    init_queue(&nr_chan_param_queue);
-    init_queue(&nr_dl_tti_req_queue);
-    init_queue(&nr_tx_req_queue);
-    init_queue(&nr_ul_dci_req_queue);
-    init_queue(&nr_ul_tti_req_queue);
-
-    if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
-    {
-      LOG_E(MAC, "sem_init() error\n");
-      abort();
-    }
-
-    init_nrUE_standalone_thread(0);
-}
-
 static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
 {
   NR_UE_NR_Capability_t *UE_Capability_nr = NR_UE_rrc_inst[0].UECap.UE_NR_Capability = CALLOC(1, sizeof(NR_UE_NR_Capability_t));
