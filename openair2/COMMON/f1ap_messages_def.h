@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include "openair2/COMMON/f1ap_messages_types.h"
 /* To setup F1 at DU */
 MESSAGE_DEF(F1AP_DU_REGISTER_REQ, MESSAGE_PRIORITY_MED, f1ap_du_register_req_t, f1ap_du_register_req)
 

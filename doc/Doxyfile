@@ -1337,9 +1337,9 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/nas_timer.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/TLVDecoder.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/nas_timer.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/memory.c \
+@CMAKE_CURRENT_SOURCE_DIR@/../common/utils/mem/memory.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/OctetString.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/memory.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../common/utils/mem/oai_memory.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/TLVDecoder.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/nas_log.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair3/NAS/COMMON/UTIL/TLVEncoder.h \
@@ -1771,7 +1771,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OTG/otg_models.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OTG/otg_externs.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OTG/otg_config.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/MEM/mem_block.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/MATH/oml.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/MATH/oml.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_ue_context_management.c \
@@ -1836,7 +1835,7 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/COMMON/udp_messages_def.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/COMMON/nas_messages_types.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/COMMON/sctp_messages_types.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/COMMON/platform_types.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../common/platform_types.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/COMMON/ngap_messages_types.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/COMMON/gtpv1_u_messages_types.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/COMMON/rlc_messages_types.h \

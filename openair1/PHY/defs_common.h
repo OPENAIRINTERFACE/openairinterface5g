@@ -59,7 +59,7 @@
 
 //#include <complex.h>
 #include "time_meas.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #define MAX_NUM_RU_PER_eNB 64
 
 #include <pthread.h>

@@ -10,7 +10,7 @@ extern "C" {
 #include <sys/types.h>
 #include <netdb.h>
 
-#include <openair2/COMMON/platform_types.h>
+#include "common/platform_types.h"
 #include <openair3/UTILS/conversions.h>
 #include "common/utils/LOG/log.h"
 #include <common/utils/ocp_itti/intertask_interface.h>

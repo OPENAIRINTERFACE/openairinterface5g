@@ -22,7 +22,7 @@
 #ifndef _NR_SDAP_GNB_H_
 #define _NR_SDAP_GNB_H_
 
-#include "openair2/COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "nr_sdap_entity.h"
 

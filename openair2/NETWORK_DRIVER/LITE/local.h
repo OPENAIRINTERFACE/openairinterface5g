@@ -56,7 +56,7 @@
 #define IP2PDCP_FIFO 22
 
 #include "constant.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "sap.h"
 
 struct cx_entity {

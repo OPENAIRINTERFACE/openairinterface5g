@@ -35,6 +35,7 @@
 #include "NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "LAYER2/RLC/rlc.h"
 
 /*NFAPI*/
 #include "nfapi_nr_interface.h"

@@ -59,29 +59,6 @@ typedef struct timer_elm_s {
   static int nb_queues=0;
   static pthread_mutex_t lock_nb_queues;
 
-  void *pool_buffer_init (void) {
-    return 0;
-  }
-
-  void *pool_buffer_clean (void *arg) {
-    //-----------------------------------------------------------------------------
-    return 0;
-  }
-
-  void free_mem_block (mem_block_t *leP, const char *caller) {
-    AssertFatal(leP!=NULL,"");
-    free(leP);
-  }
-
-  mem_block_t *get_free_mem_block (uint32_t sizeP, const char *caller) {
-    mem_block_t *ptr=(mem_block_t *)malloc(sizeP+sizeof(mem_block_t));
-    ptr->next = NULL;
-    ptr->previous = NULL;
-    ptr->data=((unsigned char *)ptr)+sizeof(mem_block_t);
-    ptr->size=sizeP;
-    return ptr;
-  }
-
   void *itti_malloc(task_id_t origin_task_id, task_id_t destination_task_id, ssize_t size) {
     void *ptr = NULL;
     AssertFatal ((ptr=calloc (size, 1)) != NULL, "Memory allocation of %zu bytes failed (%d -> %d)!\n",

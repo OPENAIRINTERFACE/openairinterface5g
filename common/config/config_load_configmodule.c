@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <dlfcn.h>
-#include <platform_types.h>
+#include "common/platform_types.h"
 
 #define CONFIG_LOADCONFIG_MAIN
 #include "config_load_configmodule.h"

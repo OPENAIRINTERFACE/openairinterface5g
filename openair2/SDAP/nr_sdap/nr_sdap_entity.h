@@ -24,7 +24,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "openair2/COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "NR_RadioBearerConfig.h"
 

@@ -39,6 +39,7 @@
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 #include <executables/softmodem-common.h>
+#include "openair2/LAYER2/RLC/rlc.h"
 
 int16_t get_prach_tx_power(module_id_t mod_id) {
 

@@ -39,7 +39,7 @@ Description NAS procedure functions triggered by the user
 
 #include "user_defs.h"
 #include "nas_log.h"
-#include "memory.h"
+#include "common/utils/mem/oai_memory.h"
 
 #include "at_command.h"
 #include "at_response.h"

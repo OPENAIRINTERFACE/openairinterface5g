@@ -23,7 +23,7 @@
 #define __MAC_RRC_PRIMITIVES_H__
 
 #include "LAYER2/RLC/rlc.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "common/platform_constants.h"
 #include "openair2/RRC/LTE/rrc_defs.h"
 

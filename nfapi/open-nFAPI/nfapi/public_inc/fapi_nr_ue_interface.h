@@ -19,7 +19,7 @@
 #include <pthread.h>
 
 #include "stddef.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "fapi_nr_ue_constants.h"
 #include "PHY/impl_defs_top.h"
 #include "PHY/impl_defs_nr.h"

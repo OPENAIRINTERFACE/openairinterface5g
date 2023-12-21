@@ -67,7 +67,7 @@
 #include "uper_encoder.h"
 #include "uper_decoder.h"
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"

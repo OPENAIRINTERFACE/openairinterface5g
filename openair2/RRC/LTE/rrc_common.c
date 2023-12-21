@@ -32,7 +32,7 @@
 #include "rrc_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "COMMON/openair_defs.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"

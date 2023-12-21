@@ -31,7 +31,7 @@
 #define __RRC_ENB_UE_CONTEXT_H__
 
 #include "collection/tree.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "rrc_defs.h"
 
 int rrc_eNB_compare_ue_rnti_id(

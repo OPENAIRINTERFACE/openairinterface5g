@@ -30,6 +30,7 @@
 #include "NR_RLC-Config.h"
 #include "NR_CellGroupConfig.h"
 #include "openair2/RRC/NR/nr_rrc_proto.h"
+#include "common/utils/mem/oai_memory.h"
 #include <stdint.h>
 
 /* from OAI */
@@ -111,7 +112,7 @@ typedef struct {
   mui_t           muiP;
   confirm_t       confirmP;
   sdu_size_t      sdu_sizeP;
-  mem_block_t     *sdu_pP;
+  uint8_t *sdu_pP;
 } rlc_data_req_queue_item;
 
 #define RLC_DATA_REQ_QUEUE_SIZE 10000
@@ -173,13 +174,13 @@ static void init_nr_rlc_data_req_queue(void)
 }
 
 static void enqueue_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
-                                 const srb_flag_t   srb_flagP,
-                                 const MBMS_flag_t  MBMS_flagP,
-                                 const rb_id_t      rb_idP,
-                                 const mui_t        muiP,
-                                 confirm_t    confirmP,
-                                 sdu_size_t   sdu_sizeP,
-                                 mem_block_t *sdu_pP)
+                                 const srb_flag_t srb_flagP,
+                                 const MBMS_flag_t MBMS_flagP,
+                                 const rb_id_t rb_idP,
+                                 const mui_t muiP,
+                                 confirm_t confirmP,
+                                 sdu_size_t sdu_sizeP,
+                                 uint8_t *sdu_pP)
 {
   int i;
   int logged = 0;
@@ -210,13 +211,13 @@ static void enqueue_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
 }
 
 void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
-                     const srb_flag_t   srb_flagP,
-                     const MBMS_flag_t  MBMS_flagP,
-                     const rb_id_t      rb_idP,
-                     const mui_t        muiP,
-                     confirm_t    confirmP,
-                     sdu_size_t   sdu_sizeP,
-                     mem_block_t *sdu_pP)
+                     const srb_flag_t srb_flagP,
+                     const MBMS_flag_t MBMS_flagP,
+                     const rb_id_t rb_idP,
+                     const mui_t muiP,
+                     confirm_t confirmP,
+                     sdu_size_t sdu_sizeP,
+                     uint8_t *sdu_pP)
 {
   enqueue_rlc_data_req(ctxt_pP,
                        srb_flagP,
@@ -241,7 +242,7 @@ typedef struct {
   MBMS_flag_t     MBMS_flagP;
   rb_id_t         rb_id;
   sdu_size_t      sdu_buffer_size;
-  mem_block_t     *sdu_buffer;
+  uint8_t *sdu_buffer;
 } pdcp_data_ind_queue_item;
 
 #define PDCP_DATA_IND_QUEUE_SIZE 10000
@@ -256,13 +257,12 @@ typedef struct {
 
 static pdcp_data_ind_queue pq;
 
-static void do_pdcp_data_ind(
-  const protocol_ctxt_t *const  ctxt_pP,
-  const srb_flag_t srb_flagP,
-  const MBMS_flag_t MBMS_flagP,
-  const rb_id_t rb_id,
-  const sdu_size_t sdu_buffer_size,
-  mem_block_t *const sdu_buffer)
+static void do_pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
+                             const srb_flag_t srb_flagP,
+                             const MBMS_flag_t MBMS_flagP,
+                             const rb_id_t rb_id,
+                             const sdu_size_t sdu_buffer_size,
+                             uint8_t *const sdu_buffer)
 {
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
@@ -285,14 +285,14 @@ static void do_pdcp_data_ind(
   rb = nr_pdcp_get_rb(ue, rb_id, srb_flagP);
 
   if (rb != NULL) {
-    rb->recv_pdu(rb, (char *)sdu_buffer->data, sdu_buffer_size);
+    rb->recv_pdu(rb, (char *)sdu_buffer, sdu_buffer_size);
   } else {
     LOG_E(PDCP, "pdcp_data_ind: no RB found (rb_id %ld, srb_flag %d)\n", rb_id, srb_flagP);
   }
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 
-  free_mem_block(sdu_buffer, __FUNCTION__);
+  free(sdu_buffer);
 }
 
 static void *pdcp_data_ind_thread(void *_)
@@ -337,13 +337,12 @@ static void init_nr_pdcp_data_ind_queue(void)
   }
 }
 
-static void enqueue_pdcp_data_ind(
-  const protocol_ctxt_t *const  ctxt_pP,
-  const srb_flag_t srb_flagP,
-  const MBMS_flag_t MBMS_flagP,
-  const rb_id_t rb_id,
-  const sdu_size_t sdu_buffer_size,
-  mem_block_t *const sdu_buffer)
+static void enqueue_pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
+                                  const srb_flag_t srb_flagP,
+                                  const MBMS_flag_t MBMS_flagP,
+                                  const rb_id_t rb_id,
+                                  const sdu_size_t sdu_buffer_size,
+                                  uint8_t *const sdu_buffer)
 {
   int i;
   int logged = 0;
@@ -371,12 +370,12 @@ static void enqueue_pdcp_data_ind(
   if (pthread_mutex_unlock(&pq.m) != 0) abort();
 }
 
-bool pdcp_data_ind(const protocol_ctxt_t *const  ctxt_pP,
+bool pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
                    const srb_flag_t srb_flagP,
                    const MBMS_flag_t MBMS_flagP,
                    const rb_id_t rb_id,
                    const sdu_size_t sdu_buffer_size,
-                   mem_block_t *const sdu_buffer,
+                   uint8_t *const sdu_buffer,
                    const uint32_t *const srcID,
                    const uint32_t *const dstID)
 {
@@ -670,8 +669,8 @@ static void deliver_pdu_drb_ue(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
   DevAssert(deliver_pdu_data == NULL);
   protocol_ctxt_t ctxt = { .enb_flag = 0, .rntiMaybeUEid = ue_id };
 
-  mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
-  memcpy(memblock->data, buf, size);
+  uint8_t *memblock = malloc16(size);
+  memcpy(memblock, buf, size);
   LOG_D(PDCP, "%s(): (drb %d) calling rlc_data_req size %d UE %ld/%04lx\n", __func__, rb_id, size, ctxt.rntiMaybeUEid, ctxt.rntiMaybeUEid);
   enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
 }
@@ -702,8 +701,8 @@ static void deliver_pdu_drb_gnb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id
     extern instance_t CUuniqInstance;
     itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
   } else {
-    mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
-    memcpy(memblock->data, buf, size);
+    uint8_t *memblock = malloc16(size);
+    memcpy(memblock, buf, size);
     LOG_D(PDCP, "%s(): (drb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
     enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
   }
@@ -760,8 +759,8 @@ void deliver_pdu_srb_rlc(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
                          char *buf, int size, int sdu_id)
 {
   protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_id };
-  mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
-  memcpy(memblock->data, buf, size);
+  uint8_t *memblock = malloc16(size);
+  memcpy(memblock, buf, size);
   enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
 }
 
@@ -1244,12 +1243,12 @@ bool cu_f1u_data_req(protocol_ctxt_t  *ctxt_pP,
                      const uint32_t *const destinationL2Id) {
   //Force instance id to 0, OAI incoherent instance management
   ctxt_pP->instance=0;
-  mem_block_t *memblock = get_free_mem_block(sdu_buffer_size, __func__);
+  uint8_t *memblock = malloc16(sdu_buffer_size);
   if (memblock == NULL) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_E(RLC, "%s:%d:%s: ERROR: malloc16 failed\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
-  memcpy(memblock->data,sdu_buffer, sdu_buffer_size);
+  memcpy(memblock, sdu_buffer, sdu_buffer_size);
   int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id, sdu_buffer_size, memblock, NULL, NULL);
   if (!ret) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);

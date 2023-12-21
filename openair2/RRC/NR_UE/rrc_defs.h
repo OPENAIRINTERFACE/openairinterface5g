@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "commonDef.h"
 #include "common/platform_constants.h"
 

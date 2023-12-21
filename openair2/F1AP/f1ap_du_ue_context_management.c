@@ -38,6 +38,7 @@
 
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
 bool DURecvCb(protocol_ctxt_t *ctxt_pP,
               const srb_flag_t srb_flagP,
@@ -51,8 +52,8 @@ bool DURecvCb(protocol_ctxt_t *ctxt_pP,
               const uint32_t *destinationL2Id)
 {
   // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
-  mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
-  memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
+  uint8_t *sdu = malloc16(sdu_buffer_sizeP);
+  memcpy(sdu, sdu_buffer_pP, sdu_buffer_sizeP);
   du_rlc_data_req(ctxt_pP, srb_flagP, false, rb_idP, muiP, confirmP, sdu_buffer_sizeP, sdu);
   return true;
 }

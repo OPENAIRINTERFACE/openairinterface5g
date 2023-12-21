@@ -51,7 +51,7 @@
 #define E1AP_BEARER_CONTEXT_RELEASE_CMD(mSGpTR)           (mSGpTR)->ittiMsg.e1ap_bearer_release_cmd
 #define E1AP_BEARER_CONTEXT_RELEASE_CPLT(mSGpTR)          (mSGpTR)->ittiMsg.e1ap_bearer_release_cplt
 
-typedef f1ap_net_ip_address_t e1ap_net_ip_address_t;
+typedef net_ip_address_t e1ap_net_ip_address_t;
 
 typedef struct PLMN_ID_s {
   int mcc;

@@ -139,7 +139,7 @@ target_include_directories(secu_cn PRIVATE
 ################################################################################
 set(util_SRC
     ${OPENAIR_NAS_DIR}/COMMON/UTIL/device.c
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/memory.c
+    ${OPENAIR_DIR}/common/utils/mem/memory.c
     ${OPENAIR_NAS_DIR}/COMMON/UTIL/nas_log.c
     ${OPENAIR_NAS_DIR}/COMMON/UTIL/nas_timer.c
     ${OPENAIR_NAS_DIR}/COMMON/UTIL/OctetString.c
@@ -149,19 +149,8 @@ set(util_SRC
     ${OPENAIR_NAS_DIR}/COMMON/UTIL/socket.c
     ${OPENAIR_NAS_DIR}/COMMON/UTIL/stty.c
 )
-set(util_HDR
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/device.h
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/memory.h
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/nas_log.h
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/nas_timer.h
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/OctetString.h
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/parser.h
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/TLVDecoder.h
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/TLVEncoder.h
-    ${OPENAIR_NAS_DIR}/COMMON/UTIL/socket.h
-)
 
-add_library(util ${util_SRC} ${util_HDR})
+add_library(util ${util_SRC})
 target_include_directories(util PRIVATE ${OPENAIR_NAS_DIR}/COMMON/UTIL
                                         ${OPENAIR_NAS_DIR}/COMMON
                                         )
@@ -178,15 +167,7 @@ set(api_user_SRC
     ${OPENAIR_NAS_DIR}/UE/API/USER/user_indication.c
 )
 
-set(api_user_HDR
-    ${OPENAIR_NAS_DIR}/UE/API/USER/at_command.h
-    ${OPENAIR_NAS_DIR}/UE/API/USER/at_error.h
-    ${OPENAIR_NAS_DIR}/UE/API/USER/at_response.h
-    ${OPENAIR_NAS_DIR}/UE/API/USER/user_api.h
-    ${OPENAIR_NAS_DIR}/UE/API/USER/user_indication.h
-)
-
-add_library(api_user ${api_user_SRC} ${api_user_HDR})
+add_library(api_user ${api_user_SRC})
 target_include_directories(api_user PRIVATE ${OPENAIR_NAS_DIR}/UE/API/USER
                                             ${OPENAIR_NAS_DIR}/COMMON
                                             ${OPENAIR_NAS_DIR}/UE
@@ -200,13 +181,7 @@ set(api_usim_SRC
     ${OPENAIR_NAS_DIR}/UE/API/USIM/usim_api.c
 )
 
-set(api_usim_HDR
-    ${OPENAIR_NAS_DIR}/UE/API/USIM/aka_functions.h
-    ${OPENAIR_NAS_DIR}/UE/API/USIM/usim_api.h
-
-)
-
-add_library(api_usim ${api_usim_SRC} ${api_usim_HDR})
+add_library(api_usim ${api_usim_SRC})
 target_include_directories(api_usim PRIVATE ${OPENAIR_NAS_DIR}/UE/API/USIM)
 
 ################################################################################
@@ -217,13 +192,8 @@ set(api_network_SRC
     ${OPENAIR_NAS_DIR}/COMMON/API/NETWORK/nas_message.c
     ${OPENAIR_NAS_DIR}/COMMON/API/NETWORK/network_api.c
 )
-set(api_network_HDR
-    ${OPENAIR_NAS_DIR}/COMMON/API/NETWORK/as_message.h
-    ${OPENAIR_NAS_DIR}/COMMON/API/NETWORK/nas_message.h
-    ${OPENAIR_NAS_DIR}/COMMON/API/NETWORK/network_api.h
-)
 
-add_library(api_network ${api_network_SRC} ${api_network_HDR})
+add_library(api_network ${api_network_SRC})
 target_include_directories(api_network PRIVATE ${OPENAIR_NAS_DIR}/COMMON/API/NETWORK
                                                ${OPENAIR_NAS_DIR}/COMMON
                                                )
@@ -311,60 +281,7 @@ set(emm_SRC
     
 )
 
-set(emm_HDR
-    ${OPENAIR_NAS_DIR}/UE/EMM/emmData.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/emm_main.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/emm_proc.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/IdleMode.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/LowerLayer.h
-    
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/AttachAccept.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/AttachComplete.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/AttachReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/AttachRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/AuthenticationFailure.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/AuthenticationReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/AuthenticationRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/AuthenticationResponse.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/CsServiceNotification.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/DetachAccept.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/DetachRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/DownlinkNasTransport.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/emm_cause.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/EmmInformation.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/emm_msgDef.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/emm_msg.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/EmmStatus.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/ExtendedServiceRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/GutiReallocationCommand.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/GutiReallocationComplete.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/IdentityRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/IdentityResponse.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/NASSecurityModeCommand.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/NASSecurityModeComplete.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/SecurityModeReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/ServiceReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/ServiceRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/TrackingAreaUpdateAccept.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/TrackingAreaUpdateComplete.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/TrackingAreaUpdateReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/TrackingAreaUpdateRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG/UplinkNasTransport.h
-    
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_asDef.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_as.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_esmDef.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_esm.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_fsm.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_recv.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_regDef.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_reg.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_sap.h
-    ${OPENAIR_NAS_DIR}/UE/EMM/SAP/emm_send.h
-
-)
-
-add_library(emm ${emm_SRC} ${emm_HDR})
+add_library(emm ${emm_SRC})
 
 target_include_directories(emm PRIVATE 
                      ${OPENAIR_DIR}/common/utils
@@ -423,41 +340,7 @@ set(esm_SRC
     ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_send.c
 )
 
-set(esm_HDR
-    ${OPENAIR_TARGETS}/COMMON/openairinterface5g_limits.h
-    ${OPENAIR_NAS_DIR}/UE/ESM/esm_main.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextAccept.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDefaultEpsBearerContextAccept.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDefaultEpsBearerContextReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDefaultEpsBearerContextRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/BearerResourceAllocationReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/BearerResourceAllocationRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/BearerResourceModificationReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/BearerResourceModificationRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/DeactivateEpsBearerContextAccept.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/DeactivateEpsBearerContextRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/esm_cause.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/EsmInformationRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/EsmInformationResponse.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/esm_msgDef.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/esm_msg.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/EsmStatus.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ModifyEpsBearerContextAccept.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ModifyEpsBearerContextReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ModifyEpsBearerContextRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/PdnConnectivityReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/PdnConnectivityRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/PdnDisconnectReject.h
-    ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/PdnDisconnectRequest.h
-    ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_recv.h
-    ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_sap.h
-    ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_send.h
-    ${OPENAIR_DIR}/common/utils/utils.h
-)
-
-add_library(esm ${esm_SRC} ${esm_HDR})
+add_library(esm ${esm_SRC})
 
 target_include_directories(esm PRIVATE 
                      ${OPENAIR_DIR}/common/utils
@@ -553,89 +436,8 @@ set(ies_SRC
     ${OPENAIR_NAS_DIR}/COMMON/IES/UeSecurityCapability.c
     ${OPENAIR_NAS_DIR}/COMMON/IES/VoiceDomainPreferenceAndUeUsageSetting.c
 )
-set(ies_HDR
-    ${OPENAIR_NAS_DIR}/COMMON/IES/AccessPointName.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/AdditionalUpdateResult.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/AdditionalUpdateType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/ApnAggregateMaximumBitRate.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/AuthenticationFailureParameter.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/AuthenticationParameterAutn.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/AuthenticationParameterRand.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/AuthenticationResponseParameter.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/CipheringKeySequenceNumber.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/Cli.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/CsfbResponse.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/DaylightSavingTime.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/DetachType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/DrxParameter.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EmergencyNumberList.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EmmCause.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsAttachResult.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsAttachType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsBearerContextStatus.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsBearerIdentity.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsMobileIdentity.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsNetworkFeatureSupport.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsQualityOfService.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsUpdateResult.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EpsUpdateType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EsmCause.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EsmInformationTransferFlag.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/EsmMessageContainer.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/GprsTimer.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/GutiType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/IdentityType2.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/ImeisvRequest.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/KsiAndSequenceNumber.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/LcsClientIdentity.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/LcsIndicator.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/LinkedEpsBearerIdentity.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/LlcServiceAccessPointIdentifier.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/LocationAreaIdentification.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/MessageType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/MobileIdentity.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/MobileStationClassmark2.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/MobileStationClassmark3.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/MsNetworkCapability.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/MsNetworkFeatureSupport.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/NasKeySetIdentifier.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/NasMessageContainer.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/NasRequestType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/NasSecurityAlgorithms.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/NetworkName.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/Nonce.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/PacketFlowIdentifier.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/PagingIdentity.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/PdnAddress.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/PdnType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/PlmnList.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/ProcedureTransactionIdentity.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/ProtocolConfigurationOptions.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/ProtocolDiscriminator.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/PTmsiSignature.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/QualityOfService.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/RadioPriority.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/SecurityHeaderType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/ServiceType.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/ShortMac.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/SsCode.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/SupportedCodecList.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/TimeZoneAndTime.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/TimeZone.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/TmsiStatus.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/TrackingAreaIdentity.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/TrackingAreaIdentityList.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/TrafficFlowAggregateDescription.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/TrafficFlowTemplate.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/TransactionIdentifier.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/UeNetworkCapability.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/UeRadioCapabilityInformationUpdateNeeded.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/UeSecurityCapability.h
-    ${OPENAIR_NAS_DIR}/COMMON/IES/VoiceDomainPreferenceAndUeUsageSetting.h
 
-)
-
-add_library(ies ${ies_SRC} ${ies_HDR})
+add_library(ies ${ies_SRC})
 
 target_include_directories(ies PRIVATE 
                      ${OPENAIR_NAS_DIR}/COMMON/IES 
