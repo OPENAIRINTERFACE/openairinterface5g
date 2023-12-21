@@ -593,7 +593,7 @@ void init_eNB_afterRU(void) {
     LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
 
     gNB = RC.gNB[inst];
-    gNB->ldpc_offload_flag = ldpc_offload_flag;
+    gNB->ldpc_offload_flag = get_softmodem_params()->ldpc_offload_flag;
     gNB->reorder_thread_disable = get_softmodem_params()->reorder_thread_disable;
 
     phy_init_nr_gNB(gNB);
