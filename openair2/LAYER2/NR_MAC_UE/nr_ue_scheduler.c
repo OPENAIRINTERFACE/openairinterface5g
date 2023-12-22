@@ -885,7 +885,7 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
 
-  NR_SRS_Config_t *srs_config = current_UL_BWP->srs_Config;
+  NR_SRS_Config_t *srs_config = current_UL_BWP ? current_UL_BWP->srs_Config : NULL;
 
   if (!srs_config) {
     return false;
