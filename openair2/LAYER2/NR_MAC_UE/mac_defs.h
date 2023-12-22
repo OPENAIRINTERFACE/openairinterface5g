@@ -434,10 +434,9 @@ typedef struct ssb_list_info {
 
 typedef struct nr_lcordered_info_s {
   // logical channels ids ordered as per priority
-  int lcids_ordered;
-
+  NR_LogicalChannelIdentity_t lcid;
   // logical channel configurations reordered as per priority
-  NR_LogicalChannelConfig_t *logicalChannelConfig_ordered;
+  NR_LogicalChannelConfig_t *logicalChannelConfig;
 } nr_lcordered_info_t;
 
 typedef struct {
@@ -513,11 +512,9 @@ typedef struct NR_UE_MAC_INST_s {
   /// BSR report flag management
   uint8_t BSR_reporting_active;
 
-  // Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-  NR_LogicalChannelConfig_t *logicalChannelConfig[NR_MAX_NUM_LCID];
-
   // order lc info
-  nr_lcordered_info_t lc_ordered_info[NR_MAX_NUM_LCID];
+  A_SEQUENCE_OF(nr_lcordered_info_t) lc_ordered_list;
+
   NR_UE_SCHEDULING_INFO scheduling_info;
 
   /// PHR

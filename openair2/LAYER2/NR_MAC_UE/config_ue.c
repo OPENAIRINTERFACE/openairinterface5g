@@ -648,25 +648,16 @@ static void configure_ss_coreset(NR_BWP_PDCCH_t *pdcch, NR_PDCCH_Config_t *pdcch
   }
 }
 
-static int lcid_cmp(const void *lc1, const void *lc2, void *mac_inst)
+static int lcid_cmp(const void *a, const void *b)
 {
-  uint8_t id1 = ((nr_lcordered_info_t *)lc1)->lcids_ordered;
-  uint8_t id2 = ((nr_lcordered_info_t *)lc2)->lcids_ordered;
-  NR_UE_MAC_INST_t *mac = (NR_UE_MAC_INST_t *)mac_inst;
-
-  NR_LogicalChannelConfig_t **lc_config = &mac->logicalChannelConfig[0];
-
-  AssertFatal(id1 > 0 && id2 > 0, "undefined logical channel identity\n");
-  AssertFatal(lc_config[id1 - 1] != NULL || lc_config[id2 - 1] != NULL, "logical channel configuration should be available\n");
-
-  return (lc_config[id1 - 1]->ul_SpecificParameters->priority - lc_config[id2 - 1]->ul_SpecificParameters->priority);
-}
-
-void nr_release_mac_config_logicalChannelBearer(NR_UE_MAC_INST_t *mac, long channel_identity)
-{
-  if (mac->logicalChannelConfig[channel_identity - 1] != NULL) {
-    asn1cFreeStruc(asn_DEF_NR_LogicalChannelConfig, mac->logicalChannelConfig[channel_identity - 1]);
-  }
+  long pa, pb;
+  memcpy(&pa, &((nr_lcordered_info_t*)a)->logicalChannelConfig->ul_SpecificParameters->priority, sizeof(pa));
+  memcpy(&pb, &((nr_lcordered_info_t*)b)->logicalChannelConfig->ul_SpecificParameters->priority, sizeof(pb));
+  if (pa < pb)
+    return -1;
+  else if (pa > pb)
+    return 1;
+  return 0;
 }
 
 static int nr_get_ms_bucketsizeduration(long bucketsizeduration)
@@ -695,14 +686,9 @@ static int nr_get_ms_bucketsizeduration(long bucketsizeduration)
   }
 }
 
-void nr_configure_mac_config_logicalChannelBearer(module_id_t module_id,
-                                                  long channel_identity,
-                                                  NR_LogicalChannelConfig_t *lc_config)
+void nr_configure_sched_info(NR_UE_MAC_INST_t *mac, long channel_identity, NR_LogicalChannelConfig_t *lc_config)
 {
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-
-  LOG_I(NR_MAC, "[MACLogicalChannelConfig]Applying RRC Logical Channel Config %d to lcid %li\n", module_id, channel_identity);
-  mac->logicalChannelConfig[channel_identity - 1] = lc_config;
+  LOG_D(NR_MAC, "Applying RRC Logical Channel Config to lcid %li\n", channel_identity);
 
   // initialize the variable Bj for every LCID
   mac->scheduling_info.lc_sched_info[channel_identity - 1].Bj = 0;
@@ -729,59 +715,82 @@ static void configure_logicalChannelBearer(module_id_t module_id,
                                            struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+
   if (rlc_torelease_list) {
     for (int i = 0; i < rlc_torelease_list->list.count; i++) {
-      if (rlc_torelease_list->list.array[i]) {
-        int lc_identity = *rlc_torelease_list->list.array[i];
-        nr_release_mac_config_logicalChannelBearer(mac, lc_identity);
+      long id = *rlc_torelease_list->list.array[i];
+      int j;
+      for (j = 0; j < mac->lc_ordered_list.count; j++) {
+        if (id == mac->lc_ordered_list.array[j]->lcid)
+          break;
       }
+      if (j < mac->lc_ordered_list.count) {
+        nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[j];
+        free(lc_info->logicalChannelConfig);
+        asn_sequence_del(&mac->lc_ordered_list, j, 0);
+        free(lc_info);
+      }
+      else
+        LOG_E(NR_MAC, "Element not present in the list, impossible to release\n");
     }
   }
+
   if (rlc_toadd_list) {
     for (int i = 0; i < rlc_toadd_list->list.count; i++) {
       NR_RLC_BearerConfig_t *rlc_bearer = rlc_toadd_list->list.array[i];
       int lc_identity = rlc_bearer->logicalChannelIdentity;
-      mac->lc_ordered_info[i].lcids_ordered = lc_identity;
-      NR_LogicalChannelConfig_t *mac_lc_config = NULL;
-      if (mac->logicalChannelConfig[lc_identity - 1] == NULL) {
+      NR_LogicalChannelConfig_t *mac_lc_config = rlc_bearer->mac_LogicalChannelConfig;
+      int j;
+      for (j = 0; j < mac->lc_ordered_list.count; j++) {
+        if (lc_identity == mac->lc_ordered_list.array[j]->lcid)
+          break;
+      }
+      if (j < mac->lc_ordered_list.count) {
+        LOG_D(NR_MAC, "Logical channel %d is already established, Reconfiguring now\n", lc_identity);
+        if (mac_lc_config != NULL) {
+          nr_configure_sched_info(mac, lc_identity, mac_lc_config);
+          UPDATE_MAC_IE(mac->lc_ordered_list.array[j]->logicalChannelConfig,
+                        rlc_bearer->mac_LogicalChannelConfig,
+                        NR_LogicalChannelConfig_t);
+        }
+      }
+      else {
         /* setup of new LCID*/
+        nr_lcordered_info_t *lc_info = calloc(1, sizeof(*lc_info));
+        lc_info->lcid = lc_identity;
         LOG_D(NR_MAC, "Establishing the logical channel %d\n", lc_identity);
         AssertFatal(rlc_bearer->servedRadioBearer, "servedRadioBearer should be present for LCID establishment\n");
         if (rlc_bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity) { /* SRB */
           NR_SRB_Identity_t srb_id = rlc_bearer->servedRadioBearer->choice.srb_Identity;
-          if (rlc_bearer->mac_LogicalChannelConfig != NULL) {
-            UPDATE_MAC_IE(mac_lc_config, rlc_bearer->mac_LogicalChannelConfig, NR_LogicalChannelConfig_t);
+          if (mac_lc_config != NULL) {
+            UPDATE_MAC_IE(lc_info->logicalChannelConfig, rlc_bearer->mac_LogicalChannelConfig, NR_LogicalChannelConfig_t);
           } else {
-            LOG_I(NR_RRC, "Applying the default logicalChannelConfig for SRB\n");
-            if (srb_id == 1)
-              mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB1_logicalChannelConfig_defaultValue;
-            else if (srb_id == 2)
-              mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB2_logicalChannelConfig_defaultValue;
-            else if (srb_id == 3)
-              mac_lc_config = (NR_LogicalChannelConfig_t *)&NR_SRB3_logicalChannelConfig_defaultValue;
-            else
-              AssertFatal(1 == 0, "The logical id %d is not a valid SRB id %li\n", lc_identity, srb_id);
+            LOG_D(NR_RRC, "Applying the default logicalChannelConfig for SRB\n");
+            switch (srb_id) {
+              case 1 :
+                lc_info->logicalChannelConfig = (NR_LogicalChannelConfig_t *)&NR_SRB1_logicalChannelConfig_defaultValue;
+                break;
+              case 2 :
+                lc_info->logicalChannelConfig = (NR_LogicalChannelConfig_t *)&NR_SRB2_logicalChannelConfig_defaultValue;
+                break;
+              case 3 :
+                lc_info->logicalChannelConfig = (NR_LogicalChannelConfig_t *)&NR_SRB3_logicalChannelConfig_defaultValue;
+                break;
+              default :
+                AssertFatal(false, "The logical id %d is not a valid SRB id %li\n", lc_identity, srb_id);
+            }
           }
         } else { /* DRB */
-          AssertFatal(rlc_bearer->mac_LogicalChannelConfig,
-                      "When establishing a DRB, LogicalChannelConfig should be mandatorily present\n");
-          UPDATE_MAC_IE(mac_lc_config, rlc_bearer->mac_LogicalChannelConfig, NR_LogicalChannelConfig_t);
+          AssertFatal(mac_lc_config, "When establishing a DRB, LogicalChannelConfig should be mandatorily present\n");
+          UPDATE_MAC_IE(lc_info->logicalChannelConfig, rlc_bearer->mac_LogicalChannelConfig, NR_LogicalChannelConfig_t);
         }
-      } else {
-        /* LC is already established, reconfiguring the LC */
-        LOG_D(NR_MAC, "Logical channel %d is already established, Reconfiguring now\n", lc_identity);
-        if (rlc_bearer->mac_LogicalChannelConfig != NULL) {
-          UPDATE_MAC_IE(mac_lc_config, rlc_bearer->mac_LogicalChannelConfig, NR_LogicalChannelConfig_t);
-        }
-      }
-      if (mac_lc_config) {
-        mac->lc_ordered_info[i].logicalChannelConfig_ordered = mac_lc_config;
-        nr_configure_mac_config_logicalChannelBearer(module_id, lc_identity, mac_lc_config);
+        nr_configure_sched_info(mac, lc_identity, lc_info->logicalChannelConfig);
+        ASN_SEQUENCE_ADD(&mac->lc_ordered_list, lc_info);
       }
     }
 
     // reorder the logical channels as per its priority
-    qsort_r(mac->lc_ordered_info, rlc_toadd_list->list.count, sizeof(nr_lcordered_info_t), lcid_cmp, mac);
+    qsort(mac->lc_ordered_list.array, mac->lc_ordered_list.count, sizeof(nr_lcordered_info_t*), lcid_cmp);
   }
 }
 

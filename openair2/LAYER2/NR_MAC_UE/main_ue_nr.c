@@ -221,9 +221,11 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac)
   for (int i = 0; i < mac->ul_BWPs.count; i++)
     release_ul_BWP(mac, i);
 
-  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
-    nr_release_mac_config_logicalChannelBearer(mac, i + 1);
-    memset(&mac->lc_ordered_info[i], 0, sizeof(nr_lcordered_info_t));
+  for (int i = 0; i < mac->lc_ordered_list.count; i++) {
+    nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
+    free(lc_info->logicalChannelConfig);
+    asn_sequence_del(&mac->lc_ordered_list, i, 0);
+    free(lc_info);
   }
 
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
