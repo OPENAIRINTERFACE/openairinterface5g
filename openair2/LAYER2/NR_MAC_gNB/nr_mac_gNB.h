@@ -223,6 +223,7 @@ typedef struct {
   NR_CellGroupConfig_t *CellGroup;
   /// Preambles for contention-free access
   NR_preamble_ue_t preambles;
+  int contention_resolution_timer;
   /// CFRA flag
   bool cfra;
   // BWP for RA

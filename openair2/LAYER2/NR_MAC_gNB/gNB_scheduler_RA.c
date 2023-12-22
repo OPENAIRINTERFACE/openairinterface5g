@@ -693,6 +693,21 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
 }
 
+static void start_ra_contention_resolution_timer(NR_RA_t *ra, const long ra_ContentionResolutionTimer, const int K2, const int scs)
+{
+  // 3GPP TS 38.331 Section 6.3.2 Radio resource control information elements
+  // ra-ContentionResolutionTimer ENUMERATED {sf8, sf16, sf24, sf32, sf40, sf48, sf56, sf64}
+  // The initial value for the contention resolution timer.
+  // Value sf8 corresponds to 8 subframes, value sf16 corresponds to 16 subframes, and so on.
+  // We add K2 because we start the timer in the DL slot that schedules Msg3/Msg3 retransmission
+  ra->contention_resolution_timer = ((((int)ra_ContentionResolutionTimer + 1) * 8) << scs) + K2;
+  LOG_D(NR_MAC,
+        "Starting RA Contention Resolution timer with %d ms + %d K2 (%d slots) duration\n",
+        ((int)ra_ContentionResolutionTimer + 1) * 8,
+        K2,
+        ra->contention_resolution_timer);
+}
+
 static void nr_generate_Msg3_retransmission(module_id_t module_idP,
                                             int CC_id,
                                             frame_t frame,
@@ -860,6 +875,14 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
     for (int rb = 0; rb < ra->msg3_nb_rb; rb++) {
       vrb_map_UL[rbStart + BWPStart + rb] |= SL_to_bitmap(StartSymbolIndex, NrOfSymbols);
     }
+
+    // Restart RA contention resolution timer in Msg3 retransmission slot (current slot + K2)
+    // 3GPP TS 38.321 Section 5.1.5 Contention Resolution
+    start_ra_contention_resolution_timer(
+        ra,
+        scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ra_ContentionResolutionTimer,
+        K2,
+        ra->UL_BWP.scs);
 
     // reset state to wait msg3
     ra->state = WAIT_Msg3;
@@ -1382,6 +1405,14 @@ static void nr_generate_Msg2(module_id_t module_idP,
     // Program UL processing for Msg3
     nr_get_Msg3alloc(module_idP, CC_id, scc, slotP, frameP, ra, nr_mac->tdd_beam_association);
     nr_add_msg3(module_idP, CC_id, frameP, slotP, ra, (uint8_t *) &tx_req->TLVs[0].value.direct[0]);
+
+    // Start RA contention resolution timer in Msg3 transmission slot (current slot + K2)
+    // 3GPP TS 38.321 Section 5.1.5 Contention Resolution
+    start_ra_contention_resolution_timer(
+        ra,
+        scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ra_ContentionResolutionTimer,
+        *ra->UL_BWP.tdaList_Common->list.array[ra->Msg3_tda_id]->k2,
+        ra->UL_BWP.scs);
 
     if (ra->cfra) {
       NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[module_idP]->UE_info, ra->rnti);
@@ -2062,6 +2093,18 @@ void nr_schedule_RA(module_id_t module_idP,
     for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
       NR_RA_t *ra = &cc->ra[i];
       LOG_D(NR_MAC, "RA[state:%d]\n", ra->state);
+
+      // Check RA Contention Resolution timer
+      if (ra->state >= WAIT_Msg3) {
+        ra->contention_resolution_timer--;
+        if (ra->contention_resolution_timer < 0) {
+          LOG_W(NR_MAC, "(%d.%d) RA Contention Resolution timer expired for UE 0x%04x, RA procedure failed...\n", frameP, slotP, ra->rnti);
+          nr_mac_release_ue(mac, ra->rnti);
+          nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
+          continue;
+        }
+      }
+
       switch (ra->state) {
         case Msg2:
           nr_generate_Msg2(module_idP, CC_id, frameP, slotP, ra, DL_req, TX_req);
