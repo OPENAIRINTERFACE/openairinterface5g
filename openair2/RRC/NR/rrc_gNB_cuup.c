@@ -46,7 +46,7 @@ static const nr_rrc_cuup_container_t *select_cuup_slice(const struct rrc_cuup_tr
       for (int s = 0; s < sr->plmn[p].supported_slices; ++s) {
         e1ap_nssai_t *nssai = &sr->plmn[p].slice[s];
         if (nssai->sst == sst && nssai->sd == sd) {
-          LOG_I(RRC, "selecting CU-UP ID %ld based on exact NSSAI match (%d:0x%06x)\n", sr->gNB_cu_up_id, sst, sd);
+          LOG_A(RRC, "selecting CU-UP ID %ld based on exact NSSAI match (%d:0x%06x)\n", sr->gNB_cu_up_id, sst, sd);
           return cuup; /* exact match */
         } else if (nssai->sst == sst && second_best_match == NULL) {
           LOG_I(RRC, "second best match: CU-UP ID %ld matches SST %d\n", sr->gNB_cu_up_id, sst);
@@ -66,7 +66,7 @@ static const nr_rrc_cuup_container_t *select_cuup_round_robin(size_t n_t, const 
   nr_rrc_cuup_container_t *cuup = NULL;
   RB_FOREACH(cuup, rrc_cuup_tree, (struct rrc_cuup_tree *)&t) {
     if (m == 0) {
-      LOG_I(RRC, "round-robin match: select CU-UP ID %ld (no NSSAI match)\n", cuup->setup_req->gNB_cu_up_id);
+      LOG_W(RRC, "round-robin match: select CU-UP ID %ld (no NSSAI match)\n", cuup->setup_req->gNB_cu_up_id);
       return cuup;
     }
     m--;

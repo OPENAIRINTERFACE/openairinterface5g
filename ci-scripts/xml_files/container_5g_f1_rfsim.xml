@@ -27,13 +27,11 @@
         <TestCaseRequestedList>
  111111
  100021
- 000020
  000021
  000022
- 000023
- 000024
- 000025
  020021
+ 030021
+ 030022
  100021
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
@@ -42,61 +40,29 @@
                 <class>Pull_Local_Registry</class>
                 <desc>Pull Images from Local Registry</desc>
                 <test_svr_id>0</test_svr_id>
-                <images_to_pull>oai-gnb-asan oai-nr-ue-asan</images_to_pull>
-        </testCase>
-
-        <testCase id="000020">
-                <class>DeployGenObject</class>
-                <desc>Deploy MySql Database</desc>
-                <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>mysql</services>
-                <nb_healthy>1</nb_healthy>
+                <images_to_pull>oai-gnb-asan oai-nr-cuup-asan oai-nr-ue-asan</images_to_pull>
         </testCase>
 
         <testCase id="000021">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
                 <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
+                <services>mysql oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
                 <nb_healthy>6</nb_healthy>
         </testCase>
 
         <testCase id="000022">
                 <class>DeployGenObject</class>
-                <desc>Deploy OAI 5G CU RF sim SA</desc>
+                <desc>Deploy OAI 5G CU+DU+UE RF sim SA</desc>
                 <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>oai-cu</services>
-                <nb_healthy>7</nb_healthy>
-        </testCase>
-
-        <testCase id="000023">
-                <class>DeployGenObject</class>
-                <desc>Deploy 3 OAI 5G DUs RF sim SA</desc>
-                <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>oai-du oai-du2 oai-du3</services>
-                <nb_healthy>10</nb_healthy>
-        </testCase>
-
-        <testCase id="000024">
-                <class>DeployGenObject</class>
-                <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
-                <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>oai-nr-ue oai-nr-ue2</services>
-                <nb_healthy>12</nb_healthy>
-        </testCase>
-
-        <testCase id="000025">
-                <class>DeployGenObject</class>
-                <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
-                <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
-                <services>oai-nr-ue3</services>
-                <nb_healthy>13</nb_healthy>
+                <services>oai-cu oai-du oai-nr-ue</services>
+                <nb_healthy>9</nb_healthy>
         </testCase>
 
         <testCase id="020021">
                 <class>Ping</class>
                 <desc>Ping ext-dn from all NR-UEs</desc>
-                <id>rfsim5g_ue rfsim5g_ue2 rfsim5g_ue3</id>
+                <id>rfsim5g_ue</id>
                 <ping_args> -c 20 192.168.72.135 -i0.25</ping_args>
                 <ping_packetloss_threshold>5</ping_packetloss_threshold>
         </testCase>
@@ -107,7 +73,7 @@
                 <server_container_name>rfsim5g-oai-nr-ue</server_container_name>
                 <client_container_name>rfsim5g-oai-ext-dn</client_container_name>
                 <server_options>-B 12.1.1.2 -u -i 1 -s</server_options>
-                <client_options>-c 12.1.1.2 -u -i 1 -t 30 -b 3M</client_options>
+                <client_options>-c 12.1.1.2 -u -i 1 -t 10 -b 20M</client_options>
         </testCase>
 
         <testCase id="030022">
@@ -116,7 +82,7 @@
                 <server_container_name>rfsim5g-oai-ext-dn</server_container_name>
                 <client_container_name>rfsim5g-oai-nr-ue</client_container_name>
                 <server_options>-u -i 1 -s</server_options>
-                <client_options>-B 12.1.1.2 -c 192.168.72.135 -u -i 1 -t 30 -b 1M</client_options>
+                <client_options>-B 12.1.1.2 -c 192.168.72.135 -u -i 1 -t 10 -b 5M</client_options>
         </testCase>
 
         <testCase id="100021">
