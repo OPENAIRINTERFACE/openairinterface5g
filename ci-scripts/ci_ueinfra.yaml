@@ -49,7 +49,7 @@ adb_ue_2:
 
 amarisoft_ue:
   Host: amariue
-  InitScript: /root/lteue-linux-2023-10-27/ue/lteue /root/oaicicd/ran_sa_aw2s_asue/aw2s-multi-20897-2x2.cfg &
+  InitScript: /root/lteue-linux-2023-10-27/ue/lteue /root/oaicicd/ran_sa_aw2s_asue_2x2/aw2s-multi-20897-2x2.cfg &
   TermScript: /root/2023-10-27/libs/ws.js -t 10 127.0.0.1:9002 '{"message":"quit"}' || killall -KILL lteue-avx2
 amarisoft_ue_1:
   Host: amariue

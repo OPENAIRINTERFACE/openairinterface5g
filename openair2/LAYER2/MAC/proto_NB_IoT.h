@@ -32,7 +32,7 @@
 
 #include "openair1/PHY/LTE_TRANSPORT/defs_NB_IoT.h"
 #include "LAYER2/MAC/defs_NB_IoT.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "openair2/RRC/LTE/defs_NB_IoT.h"
 /** \addtogroup _mac
  *  @{

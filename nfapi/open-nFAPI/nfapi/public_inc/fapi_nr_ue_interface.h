@@ -19,7 +19,7 @@
 #include <pthread.h>
 
 #include "stddef.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "fapi_nr_ue_constants.h"
 #include "PHY/impl_defs_top.h"
 #include "PHY/impl_defs_nr.h"
@@ -673,7 +673,7 @@ typedef struct
 } fapi_nr_prach_config_t;
 
 typedef struct {
-  uint16_t target_Nid_cell;
+  int16_t target_Nid_cell;
 } fapi_nr_synch_request_t;
 
 typedef struct {

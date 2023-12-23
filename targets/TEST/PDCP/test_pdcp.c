@@ -217,7 +217,7 @@ bool test_pdcp_data_req(void)
   unsigned int index = 0;
 
   /*
-   * Create an unsigned char buffer out of mem_block_t
+   * Create an unsigned char buffer out of uint8_t
    */
   pdcp_test_pdu_buffer = (unsigned char*) calloc(1, pdcp_test_pdu_buffer_size);
 
@@ -244,8 +244,8 @@ bool test_pdcp_data_req(void)
       msg("[TEST] Starting to dissect PDU created by PDCP...\n");
 
       /*
-       * XXX mem_block_t doesn't hold buffer size, how do we keep the size
-       * information if we pass mem_block_ts via a linked list?
+       * XXX uint8_t doesn't hold buffer size, how do we keep the size
+       * information if we pass uint8_ts via a linked list?
        */
 
       if (pdcp_test_pdu_buffer_size == 0 ) {
@@ -254,11 +254,11 @@ bool test_pdcp_data_req(void)
       }
 
       /*
-       * Serialize incoming mem_block_t into an unsigned character array
+       * Serialize incoming uint8_t into an unsigned character array
        * and add removed PDU to RX list in order to use it in the next test
        * (test_pdcp_data_ind())
        */
-      mem_block_t* pdcp_test_pdu = list_remove_head(&test_pdu_tx_list);
+      uint8_t* pdcp_test_pdu = list_remove_head(&test_pdu_tx_list);
       memcpy(pdcp_test_pdu_buffer, pdcp_test_pdu->data, pdcp_test_pdu_buffer_size);
       list_add_tail_eurecom(pdcp_test_pdu, &test_pdu_rx_list);
 
@@ -314,7 +314,7 @@ bool test_pdcp_data_ind(void)
    * every single element in the list
    */
   list_t test_pdu_indication_list;
-  mem_block_t* test_sdu = NULL;
+  uint8_t* test_sdu = NULL;
   /*
    * pdcp_data_req() method prepended PDU header in front of DUMMY_BUFFER so
    * the size should be 12 bytes
@@ -354,7 +354,7 @@ bool test_pdcp_data_ind(void)
     /*
      * Get pdcp_data_ind_header_t added by pdcp_data_ind()
      */
-    mem_block_t* test_data_ind_header = list_remove_head(&test_pdu_indication_list);
+    uint8_t* test_data_ind_header = list_remove_head(&test_pdu_indication_list);
 
     if (test_data_ind_header == NULL) {
       msg("[TEST] Data indication header is not valid!\n");

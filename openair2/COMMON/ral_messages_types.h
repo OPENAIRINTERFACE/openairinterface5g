@@ -22,7 +22,7 @@
 #ifndef RAL_MESSAGES_TYPES_H_
 #define RAL_MESSAGES_TYPES_H_
 #include "asn_constant.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "commonDef.h"
 /* 802.21 mappings with the RRC protocol :
 (Research Report RR-12-265 Mapping of IEEE 802.21 MIH primitives to EPS/LTE protocols March 13 th, 2012, Michelle WETTERWALD, Prof. Christian BONNET )

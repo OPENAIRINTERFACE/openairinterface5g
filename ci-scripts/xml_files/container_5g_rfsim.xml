@@ -28,7 +28,6 @@
         <TestCaseRequestedList>
  111111
  100001
- 000000
  000001
  000002
  000003
@@ -36,6 +35,7 @@
  000005
  000006
  000007
+ 000008
  020001
  020002
  020003
@@ -61,19 +61,11 @@
                 <images_to_pull>oai-gnb-asan oai-nr-ue</images_to_pull>
         </testCase>
 
-        <testCase id="000000">
-                <class>DeployGenObject</class>
-                <desc>Deploy MySql Database</desc>
-                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
-                <services>mysql</services>
-                <nb_healthy>1</nb_healthy>
-        </testCase>
-
         <testCase id="000001">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
-                <services>oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
+                <services>mysql oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
                 <nb_healthy>6</nb_healthy>
         </testCase>
 
@@ -123,6 +115,12 @@
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
                 <services>oai-nr-ue9 oai-nr-ue10</services>
                 <nb_healthy>17</nb_healthy>
+        </testCase>
+
+        <testCase id="000008">
+                <class>Attach_UE</class>
+                <desc>Attach OAI UE (Wait for IP)</desc>
+                <id>rfsim5g_ue rfsim5g_ue2 rfsim5g_ue3 rfsim5g_ue4 rfsim5g_ue5 rfsim5g_ue6 rfsim5g_ue7 rfsim5g_ue8 rfsim5g_ue9 rfsim5g_ue10</id>
         </testCase>
 
         <testCase id="020001">

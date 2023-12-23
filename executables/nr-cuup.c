@@ -71,7 +71,7 @@ rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const pc,
                              const mui_t mui,
                              const confirm_t c,
                              const sdu_size_t size,
-                             mem_block_t *const buf,
+                             uint8_t *const buf,
                              const uint32_t *const a,
                              const uint32_t *const b)
 {

@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "memory.h"
+#include "common/utils/mem/oai_memory.h"
 #include "conf_emm.h"
 #include "fs.h"
 

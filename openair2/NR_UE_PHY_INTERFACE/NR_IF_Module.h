@@ -33,7 +33,7 @@
 #ifndef __NR_IF_MODULE_H__
 #define __NR_IF_MODULE_H__
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include <semaphore.h>
 #include "fapi_nr_ue_interface.h"
 #include "openair2/PHY_INTERFACE/queue_t.h"

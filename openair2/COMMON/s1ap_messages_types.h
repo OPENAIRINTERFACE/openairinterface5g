@@ -24,6 +24,7 @@
 
 #include <netinet/in.h>
 #include <netinet/sctp.h>
+#include "common/platform_types.h"
 #include "LTE_asn_constant.h"
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
@@ -112,13 +113,6 @@ typedef enum cn_domain_s {
   CN_DOMAIN_PS = 1,
   CN_DOMAIN_CS = 2
 } cn_domain_t;
-
-typedef struct net_ip_address_s {
-  unsigned ipv4:1;
-  unsigned ipv6:1;
-  char ipv4_address[16];
-  char ipv6_address[46];
-} net_ip_address_t;
 
 typedef uint64_t bitrate_t;
 

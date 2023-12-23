@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "platform_types.h"
+#include "common/platform_types.h"
 
 /* IF */
 #include "NR_IF_Module.h"
@@ -164,6 +164,11 @@ typedef enum {
   UE_PERFORMING_RA,
   UE_CONNECTED
 } NR_UE_L2_STATE_t;
+
+typedef enum {
+  GO_TO_IDLE,
+  RE_ESTABLISHMENT
+} NR_UE_MAC_reset_cause_t;
 
 typedef enum {
   RA_2STEP = 0,
@@ -471,13 +476,6 @@ typedef struct {
 
   bool phy_config_request_sent;
   frame_type_t frame_type;
-
-  ///     Type0-PDCCH seach space
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
-  uint32_t type0_pdcch_ss_mux_pattern;
-  int type0_pdcch_ss_sfn_c;
-  uint32_t type0_pdcch_ss_n_c;
-  uint32_t type0_pdcch_consecutive_slots;
 
   /* PDUs */
   /// Outgoing CCCH pdu for PHY

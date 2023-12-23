@@ -5,7 +5,7 @@
 #include "usim_api.h"
 #include "emmData.h"
 #include "display.h"
-#include "memory.h"
+#include "common/utils/mem/oai_memory.h"
 #include "fs.h"
 
 #define PRINT_PLMN_DIGIT(d) if ((d) != 0xf) printf("%u", (d))

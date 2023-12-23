@@ -37,7 +37,7 @@
 //-----------------------------------------------------------------------------
 #include "RRC/LTE/rrc_defs.h"
 #include "common/platform_constants.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "LTE_DRB-ToAddMod.h"
 #include "LTE_DRB-ToAddModList.h"
 #include "LTE_SRB-ToAddMod.h"
@@ -47,14 +47,25 @@
 
 #include "openair3/SECU/secu_defs.h"
 
-typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *const,
-						     const srb_flag_t, const MBMS_flag_t,
-						     const rb_id_t, const mui_t,
-    confirm_t, sdu_size_t, mem_block_t *,const uint32_t *const, const uint32_t *const);
+typedef rlc_op_status_t (*send_rlc_data_req_func_t)(const protocol_ctxt_t *const,
+                                                    const srb_flag_t,
+                                                    const MBMS_flag_t,
+                                                    const rb_id_t,
+                                                    const mui_t,
+                                                    confirm_t,
+                                                    sdu_size_t,
+                                                    uint8_t *,
+                                                    const uint32_t *const,
+                                                    const uint32_t *const);
 
-typedef bool (pdcp_data_ind_t)( const protocol_ctxt_t *, const srb_flag_t,
-						 const MBMS_flag_t, const rb_id_t, const sdu_size_t,
-						 mem_block_t *,const uint32_t *const, const uint32_t *const);
+typedef bool(pdcp_data_ind_t)(const protocol_ctxt_t *,
+                              const srb_flag_t,
+                              const MBMS_flag_t,
+                              const rb_id_t,
+                              const sdu_size_t,
+                              uint8_t *,
+                              const uint32_t *const,
+                              const uint32_t *const);
 typedef pdcp_data_ind_t* pdcp_data_ind_func_t;
 
 #define MAX_NUMBER_NETIF                 1 //16
@@ -265,19 +276,19 @@ bool cu_f1u_data_req(protocol_ctxt_t  *ctxt_pP,
                      const uint32_t *const sourceL2Id,
                      const uint32_t *const destinationL2Id);
 
-/*! \fn bool pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, mem_block_t*, bool)
-* \brief This functions handles data transfer indications coming from RLC
-* \param[in] ctxt_pP        Running context.
-* \param[in] Shows if rb is SRB
-* \param[in] Tells if MBMS traffic
-* \param[in] rab_id Radio Bearer ID
-* \param[in] sdu_buffer_size Size of incoming SDU in bytes
-* \param[in] sdu_buffer Buffer carrying SDU
-* \param[in] is_data_plane flag to indicate whether the userplane data belong to the control plane or data plane
-* \return TRUE on success, false otherwise
-* \note None
-* @ingroup _pdcp
-*/
+/*! \fn bool pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, uint8_t*, bool)
+ * \brief This functions handles data transfer indications coming from RLC
+ * \param[in] ctxt_pP        Running context.
+ * \param[in] Shows if rb is SRB
+ * \param[in] Tells if MBMS traffic
+ * \param[in] rab_id Radio Bearer ID
+ * \param[in] sdu_buffer_size Size of incoming SDU in bytes
+ * \param[in] sdu_buffer Buffer carrying SDU
+ * \param[in] is_data_plane flag to indicate whether the userplane data belong to the control plane or data plane
+ * \return TRUE on success, false otherwise
+ * \note None
+ * @ingroup _pdcp
+ */
 pdcp_data_ind_t pdcp_data_ind;
 
 /*! \fn void rrc_pdcp_config_req(const protocol_ctxt_t* const ,uint32_t,rb_id_t,uint8_t)

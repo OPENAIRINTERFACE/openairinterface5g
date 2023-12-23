@@ -62,7 +62,7 @@
 #include "constant.h"
 #include "sap.h"
 #include "rrc_nas_primitives.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 
 struct rb_entity {
   nasRadioBearerId_t rab_id;

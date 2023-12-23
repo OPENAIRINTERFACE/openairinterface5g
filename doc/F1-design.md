@@ -152,9 +152,11 @@ In the CU file:
 In the DU file:
 - Set `MACRLCs.[0].tr_n_preference` to `f1`
 - Update `MACRLCs.[0].local_n_address` (local north-bound address of the DU) to
-  `127.0.0.4`
+  `127.0.0.4`. This IP address is used to bind the GTP socket (F1-U user plane
+  traffic).
 - Update `MACRLCs.[].remote_n_address` (remote north-bound address of the CU)
-  to `127.0.0.3`
+  to `127.0.0.3`. This IP address is used as the CU destination IP address for
+  F1AP communication.
 
 Note: all `local_*_if_name` parameters are ignored.
 

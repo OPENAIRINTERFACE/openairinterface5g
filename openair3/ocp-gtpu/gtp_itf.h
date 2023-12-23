@@ -4,6 +4,8 @@
 #define GTPNOK -1
 
 # define GTPU_HEADER_OVERHEAD_MAX 64
+
+#include "common/utils/hashtable/hashtable.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

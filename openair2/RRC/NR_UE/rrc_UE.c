@@ -49,7 +49,6 @@
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
-#include "COMMON/mac_rrc_primitives.h"
 
 #include "intertask_interface.h"
 
@@ -689,8 +688,7 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(instance_t instance,
     switch (bcch_message->message.choice.c1->present) {
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
         LOG_D(NR_RRC, "[UE %ld] Decoding SIB1\n", instance);
-        ASN_STRUCT_FREE(asn_DEF_NR_SIB1, SI_info->sib1);
-        SI_info->sib1 = NULL;
+        asn1cFreeStruc(asn_DEF_NR_SIB1, SI_info->sib1);
         NR_SIB1_t *sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
         if(!SI_info->sib1)
           SI_info->sib1 = calloc(1, sizeof(*SI_info->sib1));
@@ -707,7 +705,6 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(instance_t instance,
         nr_rrc_configure_default_SI(SI_info, sib1);
         // configure timers and constant
         nr_rrc_set_sib1_timers_and_constants(&rrc->timers_and_constants, sib1);
-        // take ServingCellConfigCommon and configure L1/L2
         nr_rrc_mac_config_req_sib1(instance, 0, sib1->si_SchedulingInfo, sib1->servingCellConfigCommon);
         break;
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
@@ -1335,19 +1332,13 @@ static int nr_rrc_ue_decode_dcch(instance_t instance,
         case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
           LOG_I(NR_RRC, "Received rrcResume on DL-DCCH-Message\n");
           break;
-        case NR_DL_DCCH_MessageType__c1_PR_rrcRelease: {
-          struct NR_RRCRelease__criticalExtensions *ext = &c1->choice.rrcRelease->criticalExtensions;
-          LOG_I(NR_RRC, "Received RRC Release (gNB %d)\n", gNB_indexP);
-          MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_CONN_RELEASE_IND);
-          // FixMe: this code do nothing !!!!
-          if (ext->present == NR_RRCRelease__criticalExtensions_PR_rrcRelease) {
-            ext->choice.rrcRelease->deprioritisationReq->deprioritisationTimer =
-                NR_RRCRelease_IEs__deprioritisationReq__deprioritisationTimer_min5;
-            ext->choice.rrcRelease->deprioritisationReq->deprioritisationType =
-                NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_frequency;
-          }
-          itti_send_msg_to_task(TASK_NAS_NRUE, instance, msg_p);
-        } break;
+        case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
+          LOG_I(NR_RRC, "[UE %ld] Received RRC Release (gNB %d)\n",
+                instance, gNB_indexP);
+          // TODO properly implement procedures in 5.3.8.3 of 38.331
+          NR_Release_Cause_t cause = OTHER;
+          nr_rrc_going_to_IDLE(instance, cause, dl_dcch_msg->message.choice.c1->choice.rrcRelease);
+          break;
 
         case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
           LOG_I(NR_RRC, "Received Capability Enquiry (gNB %d)\n", gNB_indexP);
@@ -1656,28 +1647,6 @@ void *recv_msgs_from_lte_ue(void *args_p)
     return NULL;
 }
 
-void start_oai_nrue_threads()
-{
-    init_queue(&nr_rach_ind_queue);
-    init_queue(&nr_rx_ind_queue);
-    init_queue(&nr_crc_ind_queue);
-    init_queue(&nr_uci_ind_queue);
-    init_queue(&nr_sfn_slot_queue);
-    init_queue(&nr_chan_param_queue);
-    init_queue(&nr_dl_tti_req_queue);
-    init_queue(&nr_tx_req_queue);
-    init_queue(&nr_ul_dci_req_queue);
-    init_queue(&nr_ul_tti_req_queue);
-
-    if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
-    {
-      LOG_E(MAC, "sem_init() error\n");
-      abort();
-    }
-
-    init_nrUE_standalone_thread(0);
-}
-
 static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
 {
   NR_UE_NR_Capability_t *UE_Capability_nr = NR_UE_rrc_inst[0].UECap.UE_NR_Capability = CALLOC(1, sizeof(NR_UE_NR_Capability_t));
@@ -1845,6 +1814,141 @@ static void process_lte_nsa_msg(NR_UE_RRC_INST_t *rrc, nsa_msg_t *msg, int msg_l
         default:
             LOG_E(NR_RRC, "No NSA Message Found\n");
     }
+}
+
+void nr_rrc_going_to_IDLE(instance_t instance,
+                          NR_Release_Cause_t release_cause,
+                          NR_RRCRelease_t *RRCRelease)
+{
+  NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
+  NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
+
+  // if going to RRC_IDLE was triggered by reception
+  // of the RRCRelease message including a waitTime
+  NR_RejectWaitTime_t *waitTime = NULL;
+  if (RRCRelease) {
+    struct NR_RRCRelease_IEs *rrcReleaseIEs = RRCRelease->criticalExtensions.choice.rrcRelease;
+    if(rrcReleaseIEs) {
+      waitTime = rrcReleaseIEs->nonCriticalExtension ?
+                 rrcReleaseIEs->nonCriticalExtension->waitTime : NULL;
+      if (waitTime) {
+        if (tac->T302_active)
+          tac->T302_cnt = 0; // stop 302
+        // start timer T302 with the value set to the waitTime
+        tac->T302_active = true;
+        tac->T302_k = *waitTime * 1000; // waitTime is in seconds
+        // TODO inform upper layers that access barring is applicable
+        // for all access categories except categories '0' and '2'.
+        LOG_E(NR_RRC,"Go to IDLE. Handling RRCRelease message including a waitTime not implemented\n");
+      }
+    }
+  }
+  if (!waitTime) {
+    if (tac->T302_active) {
+      tac->T302_cnt = 0;
+      tac->T302_active = false;
+      // TODO barring alleviation as in 5.3.14.4
+      // not implemented
+      LOG_E(NR_RRC,"Go to IDLE. Barring alleviation not implemented\n");
+    }
+  }
+  if (tac->T390_active) {
+    tac->T390_cnt = 0;
+    tac->T390_active = false;
+    // TODO barring alleviation as in 5.3.14.4
+    // not implemented
+    LOG_E(NR_RRC,"Go to IDLE. Barring alleviation not implemented\n");
+  }
+  if (!RRCRelease && rrc->nrRrcState == RRC_STATE_INACTIVE_NR) {
+    // TODO discard the cell reselection priority information provided by the cellReselectionPriorities
+    // cell reselection priorities not implemented yet
+    if (tac->T320_active) {
+      tac->T320_cnt = 0;
+      tac->T320_active = false;
+    }
+  }
+  // Stop all the timers except T302, T320 and T325
+  tac->T300_active = false;
+  tac->T300_cnt = 0;
+  tac->T301_active = false;
+  tac->T301_cnt = 0;
+  tac->T304_active = false;
+  tac->T304_cnt = 0;
+  tac->T310_active = false;
+  tac->T310_cnt = 0;
+  tac->T311_active = false;
+  tac->T311_cnt = 0;
+  tac->T319_active = false;
+  tac->T319_cnt = 0;
+
+  // discard the UE Inactive AS context
+  // TODO there is no inactive AS context
+
+  // release the suspendConfig
+  // TODO suspendConfig not handled yet
+
+  // discard the keys (only kgnb is stored)
+  memset(rrc->kgnb, 0, sizeof(rrc->kgnb));
+
+  // release all radio resources, including release of the RLC entity,
+  // the MAC configuration and the associated PDCP entity
+  // and SDAP for all established RBs
+  for (int j = 0; j < NB_CNX_UE; j++) {
+    rrcPerNB_t *nb = &rrc->perNB[j];
+    for (int i = 0; i < MAX_DRBS_PER_UE; i++) {
+      if (nb->status_DRBs[i] != RB_NOT_PRESENT) {
+        nb->status_DRBs[i] = RB_NOT_PRESENT;
+        nr_pdcp_release_drb(rrc->rnti, i);
+      }
+    }
+    for (int i = 1; i < NR_NUM_SRB; i++) {
+      if (nb->Srb[i] != RB_NOT_PRESENT) {
+        nb->Srb[i] = RB_NOT_PRESENT;
+        nr_pdcp_release_srb(rrc->rnti, i);
+      }
+    }
+    for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+      if (nb->active_RLC_entity[i]) {
+        nb->active_RLC_entity[i] = false;
+        nr_rlc_release_entity(rrc->rnti, i);
+      }
+    }
+  }
+
+  asn1cFreeStruc(asn_DEF_NR_MeasConfig, rrc->meas_config);
+  rrc->meas_config = NULL;
+
+  for (int i = 0; i < NB_CNX_UE; i++) {
+    rrcPerNB_t *nb = &rrc->perNB[i];
+    NR_UE_RRC_SI_INFO *SI_info = &nb->SInfo;
+    asn1cFreeStruc(asn_DEF_NR_SIB1, SI_info->sib1);
+    asn1cFreeStruc(asn_DEF_NR_SIB2, SI_info->sib2);
+    asn1cFreeStruc(asn_DEF_NR_SIB3, SI_info->sib3);
+    asn1cFreeStruc(asn_DEF_NR_SIB4, SI_info->sib4);
+    asn1cFreeStruc(asn_DEF_NR_SIB5, SI_info->sib5);
+    asn1cFreeStruc(asn_DEF_NR_SIB6, SI_info->sib6);
+    asn1cFreeStruc(asn_DEF_NR_SIB7, SI_info->sib7);
+    asn1cFreeStruc(asn_DEF_NR_SIB8, SI_info->sib8);
+    asn1cFreeStruc(asn_DEF_NR_SIB9, SI_info->sib9);
+    asn1cFreeStruc(asn_DEF_NR_SIB10_r16, SI_info->sib10);
+    asn1cFreeStruc(asn_DEF_NR_SIB11_r16, SI_info->sib11);
+    asn1cFreeStruc(asn_DEF_NR_SIB12_r16, SI_info->sib12);
+    asn1cFreeStruc(asn_DEF_NR_SIB13_r16, SI_info->sib13);
+    asn1cFreeStruc(asn_DEF_NR_SIB14_r16, SI_info->sib14);
+  }
+
+  // reset MAC
+  NR_UE_MAC_reset_cause_t cause = GO_TO_IDLE;
+  nr_rrc_mac_config_req_reset(instance, cause);
+
+  // enter RRC_IDLE
+  rrc->nrRrcState = RRC_STATE_IDLE_NR;
+  rrc->rnti = 0;
+
+  // Indicate the release of the RRC connection to upper layers
+  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NR_NAS_CONN_RELEASE_IND);
+  NR_NAS_CONN_RELEASE_IND(msg_p).cause = release_cause;
+  itti_send_msg_to_task(TASK_NAS_NRUE, instance, msg_p);
 }
 
 void nr_ue_rrc_timer_trigger(int instance, int frame, int gnb_id)

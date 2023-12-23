@@ -500,10 +500,10 @@ target_link_libraries(shlib_loader PRIVATE CONFIG_LIB)
 add_boolean_option(ENABLE_LDPC_T2 OFF "Build support for LDPC Offload to T2 library" OFF)
 set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/lib/x86_64-linux-gnu/pkgconfig")
 if (ENABLE_LDPC_T2)
-  pkg_check_modules(LIBDPDK_T2 REQUIRED libdpdk=20.11.7)
-  find_library(PMD_T2 NAMES rte_baseband_accl_ldpc HINTS "/opt/dpdk-t2/lib/x86_64-linux-gnu/")
+  pkg_check_modules(LIBDPDK_T2 REQUIRED libdpdk=20.11.9)
+  find_library(PMD_T2 NAMES rte_baseband_accl_ldpc HINTS ${LIBDPDK_T2_LIBRARY_DIRS})
   if (NOT PMD_T2)
-    message(FATAL_ERROR "could not find PMD T2")
+    message(FATAL_ERROR "could not find poll-mode driver for AccelerComm T2 LDPC Offload (rte_baseband_accl_ldpc.so)")
   endif()
   message(STATUS "T2 build: use ${PMD_T2}")
   add_library(ldpc_t2 MODULE ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c)
@@ -1687,7 +1687,7 @@ set(libnas_ies_OBJS
 
 set (libnas_utils_OBJS
   ${NAS_SRC}COMMON/UTIL/device.c
-  ${NAS_SRC}COMMON/UTIL/memory.c
+  common/utils/mem/memory.c
   ${NAS_SRC}COMMON/UTIL/nas_timer.c
   ${NAS_SRC}COMMON/UTIL/socket.c
   ${NAS_SRC}COMMON/UTIL/stty.c
@@ -2052,7 +2052,6 @@ add_executable(nr-softmodem
   ${rrc_h}
   ${nr_rrc_h}
   ${s1ap_h}
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_DIR}/executables/nr-gnb.c
   ${OPENAIR_DIR}/executables/nr-ru.c
   ${OPENAIR_DIR}/executables/nr-softmodem.c
@@ -2121,7 +2120,6 @@ target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 add_executable(nr-uesoftmodem
   ${rrc_h}
   ${s1ap_h}
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_DIR}/executables/nr-uesoftmodem.c
   ${OPENAIR_DIR}/executables/nr-ue.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
@@ -2439,9 +2437,6 @@ make_driver(nasmesh  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH ${nasmesh_src})
 # user space tool for configuring MESH IP driver
 ################
 add_executable(rb_tool
-  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/constant.h
-  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/ioctl.h
-  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/rrc_nas_primitives.h
   ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/RB_TOOL/rb_tool.c
 )
 target_include_directories(rb_tool PRIVATE ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/)

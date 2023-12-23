@@ -328,15 +328,6 @@ typedef struct nas_establish_req_s {
 } nas_establish_req_t;
 
 /*
- * fill me
- */
-typedef struct nas_deregistration_req_s {
-  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
-  // To be removed if the structure is filled
-  uint32_t dummy;
-} nas_deregistration_req_t;
-
-/*
  * AS->NAS - NAS signalling connection establishment indication
  * AS transfers the initial NAS message to the NAS.
  */
@@ -405,6 +396,10 @@ typedef struct nas_release_req_s {
 typedef struct nas_release_ind_s {
   release_cause_t cause;      /* Release cause            */
 } nas_release_ind_t;
+
+typedef struct nas_deregistration_req_s {
+  release_cause_t cause;
+} nas_deregistration_req_t;
 
 /*
  * --------------------------------------------------------------------------

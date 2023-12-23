@@ -31,7 +31,7 @@
 #define __OPENAIR_RRC_L2_INTERFACE_H__
 
 #include "COMMON/mac_rrc_primitives.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 
 int8_t
 mac_rrc_data_req(

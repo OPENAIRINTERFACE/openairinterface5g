@@ -1043,16 +1043,13 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
             }
             mac_pdu_exist = 1;
           } else {
-
             if (ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator &&
                 (mac->state == UE_CONNECTED ||
                 (ra->ra_state == WAIT_RAR && ra->cfra))){
-
               // Getting IP traffic to be transmitted
               nr_ue_get_sdu(mod_id, cc_id,frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
               mac_pdu_exist = 1;
             }
-
           }
 
           // Config UL TX PDU

@@ -265,18 +265,16 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   return ret;
 }
 
-
-rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
-                                  const srb_flag_t   srb_flagP,
-                                  const MBMS_flag_t  MBMS_flagP,
-                                  const rb_id_t      rb_idP,
-                                  const mui_t        muiP,
-                                  confirm_t    confirmP,
-                                  sdu_size_t   sdu_sizeP,
-                                  mem_block_t *sdu_pP,
-                                  const uint32_t *const sourceL2Id,
-                                  const uint32_t *const destinationL2Id
-                                 )
+rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
+                             const srb_flag_t srb_flagP,
+                             const MBMS_flag_t MBMS_flagP,
+                             const rb_id_t rb_idP,
+                             const mui_t muiP,
+                             confirm_t confirmP,
+                             sdu_size_t sdu_sizeP,
+                             uint8_t *sdu_pP,
+                             const uint32_t *const sourceL2Id,
+                             const uint32_t *const destinationL2Id)
 {
   int rnti = ctxt_pP->rntiMaybeUEid;
   rlc_ue_t *ue;
@@ -312,7 +310,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 
   if (rb != NULL) {
     rb->set_time(rb, rlc_current_time);
-    rb->recv_sdu(rb, (char *)sdu_pP->data, sdu_sizeP, muiP);
+    rb->recv_sdu(rb, (char *)sdu_pP, sdu_sizeP, muiP);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: SDU sent to unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
@@ -320,7 +318,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 
   rlc_manager_unlock(rlc_ue_manager);
 
-  free_mem_block(sdu_pP, __func__);
+  free(sdu_pP);
 
   return RLC_OP_STATUS_OK;
 }
@@ -359,7 +357,7 @@ static void deliver_sdu(void *_ue, rlc_entity_t *entity, char *buf, int size)
   int is_srb;
   int rb_id;
   protocol_ctxt_t ctx;
-  mem_block_t *memblock;
+  uint8_t *memblock;
   int i;
   int is_enb;
   int is_mbms;
@@ -413,13 +411,13 @@ rb_found:
       T_INT(0 /*ctxt_pP->module_id*/),
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
   }
-  
-  memblock = get_free_mem_block(size, __func__);
+
+  memblock = malloc16(size);
   if (memblock == NULL) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_E(RLC, "%s:%d:%s: ERROR: malloc16 failed\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
-  memcpy(memblock->data, buf, size);
+  memcpy(memblock, buf, size);
   if (!get_pdcp_data_ind_func()(&ctx, is_srb, is_mbms, rb_id, size, memblock, NULL, NULL)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed (is_srb %d rb_id %d rnti %d)\n",
           __FILE__, __LINE__, __FUNCTION__,
@@ -1008,24 +1006,6 @@ void rlc_tick(int frame, int subframe)
     rlc_current_time_last_frame = frame;
     rlc_current_time_last_subframe = subframe;
   }
-}
-
-void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
-                     const srb_flag_t   srb_flagP,
-                     const MBMS_flag_t  MBMS_flagP,
-                     const rb_id_t      rb_idP,
-                     const mui_t        muiP,
-                     confirm_t    confirmP,
-                     sdu_size_t   sdu_sizeP,
-                     mem_block_t *sdu_pP){
-  rlc_data_req (ctxt_pP,
-		srb_flagP,
-		MBMS_flagP,
-		rb_idP,
-		muiP,
-		confirmP,
-		sdu_sizeP,
-		sdu_pP, NULL, NULL);
 }
 
 /* HACK to be removed: nr_rlc_get_available_tx_space is needed by

@@ -123,7 +123,6 @@ void *F1AP_CU_task(void *arg) {
   int         result;
   LOG_I(F1AP, "Starting F1AP at CU\n");
   // no RLC in CU, initialize mem pool for PDCP
-  pool_buffer_init();
   itti_mark_task_ready(TASK_CU_F1);
   eth_params_t *IPaddrs;
 

@@ -343,7 +343,7 @@
 #include "f1ap_default_values.h"
 
 #include "conversions.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "intertask_interface.h"
 #include "sctp_messages_types.h"

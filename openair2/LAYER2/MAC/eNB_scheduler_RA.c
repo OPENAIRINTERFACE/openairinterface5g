@@ -33,7 +33,7 @@
 
 
 #include "assertions.h"
-#include "platform_types.h"
+#include "common/platform_types.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"

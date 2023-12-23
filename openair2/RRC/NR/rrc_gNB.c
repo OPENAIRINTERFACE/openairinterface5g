@@ -67,7 +67,7 @@
 #include "uper_encoder.h"
 #include "uper_decoder.h"
 
-#include "platform_types.h"
+#include "common/platform_types.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -1904,6 +1904,10 @@ static void rrc_CU_process_ue_context_release_complete(MessageDef *msg_p)
   }
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
+  /* we call nr_pdcp_remove_UE() in the handler of E1 bearer release, but if we
+   * are in E1, we also need to free the UE in the CU-CP, so call it twice to
+   * cover all cases */
+  nr_pdcp_remove_UE(UE->rrc_ue_id);
   rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(instance, UE->rrc_ue_id);
   LOG_I(NR_RRC, "removed UE CU UE ID %u/RNTI %04x \n", UE->rrc_ue_id, UE->rnti);
   rrc_delete_ue_data(UE);
@@ -2089,6 +2093,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
 
     /* pass QoS info to MAC */
     int nb_qos_flows = drb_config->numQosFlowSetup;
+    AssertFatal(nb_qos_flows > 0, "must map at least one flow to a DRB\n");
     drbs[i].drb_info.flows_to_be_setup_length = nb_qos_flows;
     drbs[i].drb_info.flows_mapped_to_drb = (f1ap_flows_mapped_to_drb_t *)calloc(nb_qos_flows, sizeof(f1ap_flows_mapped_to_drb_t));
     AssertFatal(drbs[i].drb_info.flows_mapped_to_drb, "could not allocate memory\n");
@@ -2107,6 +2112,9 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
         qos_char->non_dynamic.qos_priority_level = in_qos_char->qos_priority;
       }
     }
+    /* the DRB QoS parameters: we just reuse the ones from the first flow */
+    drbs[i].drb_info.drb_qos = drbs[i].drb_info.flows_mapped_to_drb[0].qos_params;
+
     /* pass NSSAI info to MAC */
     drbs[i].nssai = RRC_pduSession->param.nssai;
   }

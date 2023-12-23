@@ -10,7 +10,7 @@ extern "C" {
 #include <sys/types.h>
 #include <netdb.h>
 
-#include <openair2/COMMON/platform_types.h>
+#include "common/platform_types.h"
 #include <openair3/UTILS/conversions.h>
 #include "common/utils/LOG/log.h"
 #include <common/utils/ocp_itti/intertask_interface.h>
@@ -940,7 +940,7 @@ static int Gtpv1uHandleError(int h,
                              uint32_t msgBufLen,
                              uint16_t peerPort,
                              uint32_t peerIp) {
-  LOG_E(GTPU, "Handle error to be dev\n");
+  LOG_E(GTPU, "Received GTP error indication (error handling is missing/not implemented)\n");
   int rc = GTPNOK;
   return rc;
 }

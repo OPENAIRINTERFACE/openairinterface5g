@@ -12,7 +12,7 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs_NB_IoT.h"
 #include "LTE_PhysicalConfigDedicated-NB-r13.h"
 //#include "openair2/PHY_INTERFACE/IF_Module_NB_IoT.h"
-#include "openair2/COMMON/platform_types.h"
+#include "common/platform_types.h"
 //#include "openair1/SCHED/IF_Module_L1_primitives_NB_IoT.h"
 
 //#define SCH_PAYLOAD_SIZE_MAX 4096

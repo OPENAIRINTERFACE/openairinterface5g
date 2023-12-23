@@ -31,7 +31,7 @@
 #include "pnf.h"
 
 # if 1 // for hard-code (remove later)
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "common/platform_constants.h"
 #include "common/ran_context.h"
 

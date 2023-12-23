@@ -21,7 +21,7 @@
 #ifndef __NR_CHAN_MODEL_H__
 #define __NR_CHAN_MODEL_H__
 
-#include <platform_types.h>
+#include "common/platform_types.h"
 #include <nfapi_nr_interface_scf.h>
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 

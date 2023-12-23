@@ -54,8 +54,6 @@ void du_task_send_sctp_association_req(instance_t instance, f1ap_net_config_t *n
   sctp_new_association_req_p->out_streams = 2; //du_inst->sctp_out_streams;
   // remote
   memcpy(&sctp_new_association_req_p->remote_address, &nc->CU_f1_ip_address, sizeof(nc->CU_f1_ip_address));
-  // local
-  memcpy(&sctp_new_association_req_p->local_address, &nc->DU_f1_ip_address, sizeof(nc->DU_f1_ip_address));
   // du_f1ap_register_to_sctp
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }

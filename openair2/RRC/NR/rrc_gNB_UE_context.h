@@ -31,7 +31,7 @@
 #define __RRC_GNB_UE_CONTEXT_H__
 
 #include "collection/tree.h"
-#include "COMMON/platform_types.h"
+#include "common/platform_types.h"
 #include "nr_rrc_defs.h"
 
 int rrc_gNB_compare_ue_rnti_id(rrc_gNB_ue_context_t* c1_pP, rrc_gNB_ue_context_t* c2_pP);

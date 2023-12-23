@@ -62,7 +62,7 @@ static void release_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t chan
     return;
   if (rb->type == NR_RLC_SRB) {
     int id = rb->choice.srb_id - 1;
-    AssertFatal(id > 0, "logic bug: impossible to have srb0 here\n");
+    AssertFatal(id >= 0, "logic bug: impossible to have srb0 here\n");
     if (ue->srb[id]) {
       ue->srb[id]->delete_entity(ue->srb[id]);
       ue->srb[id] = NULL;
@@ -293,7 +293,6 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(const module_id_t module
   return ret;
 }
 
-
 rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
                              const srb_flag_t srb_flagP,
                              const MBMS_flag_t MBMS_flagP,
@@ -301,7 +300,7 @@ rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
                              const mui_t muiP,
                              confirm_t confirmP,
                              sdu_size_t sdu_sizeP,
-                             mem_block_t *sdu_pP,
+                             uint8_t *sdu_pP,
                              const uint32_t *const sourceL2Id,
                              const uint32_t *const destinationL2Id)
 {
@@ -331,14 +330,14 @@ rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
 
   if (rb != NULL) {
     rb->set_time(rb, nr_rlc_current_time);
-    rb->recv_sdu(rb, (char *)sdu_pP->data, sdu_sizeP, muiP);
+    rb->recv_sdu(rb, (char *)sdu_pP, sdu_sizeP, muiP);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: SDU sent to unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
   }
 
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 
-  free_mem_block(sdu_pP, __func__);
+  free(sdu_pP);
 
   return RLC_OP_STATUS_OK;
 }
@@ -402,7 +401,7 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   int is_srb;
   int rb_id;
   protocol_ctxt_t ctx;
-  mem_block_t *memblock;
+  uint8_t *memblock;
   int i;
   int is_enb;
 
@@ -500,12 +499,12 @@ rb_found:
   }
 
   /* UE or monolithic gNB */
-  memblock = get_free_mem_block(size, __func__);
+  memblock = malloc16(size);
   if (memblock == NULL) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    LOG_E(RLC, "%s:%d:%s: ERROR: malloc16 failed\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
   }
-  memcpy(memblock->data, buf, size);
+  memcpy(memblock, buf, size);
   LOG_D(PDCP, "Calling PDCP layer from RLC in %s\n", __FUNCTION__);
   if (!pdcp_data_ind(&ctx, is_srb, 0, rb_id, size, memblock, NULL, NULL)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);

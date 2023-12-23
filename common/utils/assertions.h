@@ -27,7 +27,7 @@
 #include <inttypes.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <platform_types.h>
+#include "common/platform_types.h"
 
 #define OAI_EXIT_NORMAL 0
 #define OAI_EXIT_ASSERT 1

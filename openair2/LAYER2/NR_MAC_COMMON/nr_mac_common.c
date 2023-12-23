@@ -4277,33 +4277,6 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
   AssertFatal(type0_PDCCH_CSS_config->num_symbols != -1, "Type0 PDCCH coreset num_symbols undefined");
   AssertFatal(type0_PDCCH_CSS_config->rb_offset != -1, "Type0 PDCCH coreset rb_offset undefined");
 
-
-  //uint32_t cell_id = 0;   //  obtain from L1 later
-
-  //mac->type0_pdcch_dci_config.coreset.rb_start = rb_offset;
-  //mac->type0_pdcch_dci_config.coreset.rb_end = rb_offset + num_rbs - 1;
-
-//  uint64_t mask = 0x0;
-//  uint8_t i;
-//  for(i=0; i<(type0_PDCCH_CSS_config->num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
-//    mask = mask >> 1;
-//    mask = mask | 0x100000000000;
-//  }
-
-  //LOG_I(MAC,">>>>>>>>mask %x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
-
-//    mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
-//    mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
-//
-//    //mac->type0_pdcch_dci_config.type0_pdcch_coreset.duration = num_symbols;
-//    mac->type0_pdcch_dci_config.coreset.cce_reg_mapping_type = CCE_REG_MAPPING_TYPE_INTERLEAVED;
-//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
-//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
-//    mac->type0_pdcch_dci_config.coreset.cce_reg_interleaved_shift_index = cell_id;
-//    mac->type0_pdcch_dci_config.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
-//    mac->type0_pdcch_dci_config.coreset.pdcch_dmrs_scrambling_id = cell_id;
-
-
   // type0-pdcch search space
   float big_o = 0.0f;
   float big_m = 0.0f;

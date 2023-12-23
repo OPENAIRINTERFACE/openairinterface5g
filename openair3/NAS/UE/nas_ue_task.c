@@ -29,7 +29,7 @@
 # include "user_api.h"
 # include "nas_parser.h"
 # include "nas_proc.h"
-# include "memory.h"
+#include "common/utils/mem/oai_memory.h"
 
 #include "nas_user.h"
 #include "common/ran_context.h"
