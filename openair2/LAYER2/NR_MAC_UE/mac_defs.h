@@ -462,6 +462,7 @@ typedef struct {
   struct NR_SI_SchedulingInfo *si_SchedulingInfo;
   int si_window_start;
   ssb_list_info_t ssb_list;
+  prach_association_pattern_t prach_assoc_pattern;
 
   NR_UE_ServingCell_Info_t sc_info;
   A_SEQUENCE_OF(NR_UE_DL_BWP_t) dl_BWPs;
