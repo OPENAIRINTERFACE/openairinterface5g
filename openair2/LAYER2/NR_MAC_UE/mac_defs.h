@@ -69,8 +69,8 @@
 // ==========
 
 #define NB_NR_UE_MAC_INST 1
-#define MAX_NUM_BWP_UE       4
-#define NUM_SLOT_FRAME    10
+#define MAX_NUM_BWP_UE 5
+#define NUM_SLOT_FRAME 10
 
 /*!\brief value for indicating BSR Timer is not running */
 #define NR_MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
@@ -461,13 +461,13 @@ typedef struct {
   NR_MIB_t *mib;
   struct NR_SI_SchedulingInfo *si_SchedulingInfo;
   int si_window_start;
-  ssb_list_info_t ssb_list;
-  prach_association_pattern_t prach_assoc_pattern;
+  ssb_list_info_t ssb_list[MAX_NUM_BWP_UE];
+  prach_association_pattern_t prach_assoc_pattern[MAX_NUM_BWP_UE];
 
   NR_UE_ServingCell_Info_t sc_info;
   A_SEQUENCE_OF(NR_UE_DL_BWP_t) dl_BWPs;
   A_SEQUENCE_OF(NR_UE_UL_BWP_t) ul_BWPs;
-  NR_BWP_PDCCH_t config_BWP_PDCCH[5];
+  NR_BWP_PDCCH_t config_BWP_PDCCH[MAX_NUM_BWP_UE];
   NR_UE_DL_BWP_t *current_DL_BWP;
   NR_UE_UL_BWP_t *current_UL_BWP;
 
