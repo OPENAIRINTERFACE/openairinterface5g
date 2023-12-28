@@ -86,6 +86,12 @@ class Cmd(metaclass=abc.ABCMeta):
 		return
 
 class LocalCmd(Cmd):
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_value, exc_traceback):
+		self.close()
+
 	def __init__(self, d = None):
 		self.cwd = d
 		if self.cwd is not None:
@@ -128,6 +134,12 @@ class LocalCmd(Cmd):
 		self.copyin(src, tgt, recursive)
 
 class RemoteCmd(Cmd):
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_value, exc_traceback):
+		self.close()
+
 	def __init__(self, hostname, d=None):
 		cIdx = 0
 		logging.getLogger('paramiko').setLevel(logging.ERROR) # prevent spamming through Paramiko
