@@ -275,14 +275,12 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
           SEQUENCE_free( &asn_DEF_NR_RadioBearerConfig, RadioBearerConfig, 1 );
           return;
         }
-        if (get_softmodem_params()->nsa) {
-          LOG_D(NR_RRC, "Calling nr_rrc_ue_process_RadioBearerConfig() at %d with: e_rab_id = %ld, drbID = %ld, cipher_algo = %ld, key = %ld \n",
-                          __LINE__, RadioBearerConfig->drb_ToAddModList->list.array[0]->cnAssociation->choice.eps_BearerIdentity,
-                          RadioBearerConfig->drb_ToAddModList->list.array[0]->drb_Identity,
-                          RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
-                          *RadioBearerConfig->securityConfig->keyToUse);
-          nr_rrc_ue_process_RadioBearerConfig(rrc, rrc->perNB + 0, RadioBearerConfig);
-        }
+        LOG_D(NR_RRC, "Calling nr_rrc_ue_process_RadioBearerConfig()with: e_rab_id = %ld, drbID = %ld, cipher_algo = %ld, key = %ld \n",
+                     RadioBearerConfig->drb_ToAddModList->list.array[0]->cnAssociation->choice.eps_BearerIdentity,
+                     RadioBearerConfig->drb_ToAddModList->list.array[0]->drb_Identity,
+                     RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
+                     *RadioBearerConfig->securityConfig->keyToUse);
+        nr_rrc_ue_process_RadioBearerConfig(rrc, rrc->perNB + 0, RadioBearerConfig);
         if (LOG_DEBUGFLAG(DEBUG_ASN1))
           xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *)RadioBearerConfig);
         ASN_STRUCT_FREE(asn_DEF_NR_RadioBearerConfig, RadioBearerConfig);
@@ -795,9 +793,7 @@ void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB, NR_UE_RRC_INST_t *rrc, NR
     }
   }
 
-  // TODO verify why we need this limitation
-  if (get_softmodem_params()->sa || get_softmodem_params()->nsa)
-    nr_rrc_manage_rlc_bearers(rrc, cellGroupConfig, rrcNB);
+  nr_rrc_manage_rlc_bearers(rrc, cellGroupConfig, rrcNB);
 
   AssertFatal(cellGroupConfig->sCellToReleaseList == NULL,
               "Secondary serving cell release not implemented\n");
