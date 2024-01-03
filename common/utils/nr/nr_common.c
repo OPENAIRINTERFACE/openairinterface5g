@@ -865,3 +865,44 @@ void nr_est_delay(int ofdm_symbol_size, const c16_t *ls_est, c16_t *ch_estimates
   delay->delay_max_val = max_val;
   delay->est_delay = max_pos - sync_pos;
 }
+
+void nr_timer_start(NR_timer_t *timer)
+{
+  timer->active = true;
+  timer->counter = 0;
+}
+
+void nr_timer_stop(NR_timer_t *timer)
+{
+  timer->active = false;
+  timer->counter = 0;
+}
+
+bool is_nr_timer_active(NR_timer_t timer)
+{
+  return timer.active;
+}
+
+bool nr_timer_tick(NR_timer_t *timer)
+{
+  bool expired = false;
+  if (timer->active) {
+    timer->counter += timer->step;
+    expired = nr_timer_expired(*timer);
+    if (expired)
+      timer->active = false;
+  }
+  return expired;
+}
+
+bool nr_timer_expired(NR_timer_t timer)
+{
+  return (timer.counter >= timer.target);
+}
+
+void nr_timer_setup(NR_timer_t *timer, const uint32_t target, const uint32_t step)
+{
+  timer->target = target;
+  timer->step = step;
+  nr_timer_stop(timer);
+}

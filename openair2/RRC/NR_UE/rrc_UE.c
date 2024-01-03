@@ -621,7 +621,7 @@ static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc)
 
   // start timer T300
   NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
-  tac->T300_active = true;
+  nr_timer_start(&tac->T300);
 
   /* convention: RNTI for SRB0 is zero, as it changes all the time */
   nr_rlc_srb_recv_sdu(rrc->ue_id, 0, buf, len);
@@ -766,13 +766,10 @@ void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB, NR_UE_RRC_INST_t *rrc, NR
         // with the release cause 'other' upon which the procedure ends
         // TODO
       }
-      if (tac->T310_active) {
-        tac->T310_active = false;
-        tac->T310_cnt = 0;
-      }
-      nr_rrc_set_T304(&rrc->timers_and_constants, reconfigurationWithSync);
-      tac->T304_active = true;
-      tac->T304_cnt = 0;
+      nr_timer_stop(&tac->T310);
+      int t304_value = nr_rrc_get_T304(reconfigurationWithSync->t304);
+      nr_timer_setup(&tac->T304, t304_value, 10); // 10ms step
+      nr_timer_start(&tac->T304);
       rrc->rnti = reconfigurationWithSync->newUE_Identity;
       // resume suspended radio bearers
       for (int i = 0; i < NR_NUM_SRB; i++) {
@@ -877,16 +874,12 @@ static void nr_rrc_process_rrcsetup(NR_UE_RRC_INST_t *rrc,
   // TODO (not handled) if stored, discard the cell reselection priority information provided by
   // the cellReselectionPriorities or inherited from another RAT
 
-  // stop timer T300, T301 or T319 if running;
+  // stop timer T300, T301, T319, T320 if running;
   NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
-  timers->T300_active = false;
-  timers->T300_cnt = 0;
-  timers->T301_active = false;
-  timers->T301_cnt = 0;
-  timers->T319_active = false;
-  timers->T319_cnt = 0;
-  timers->T320_active = false;
-  timers->T320_cnt = 0;
+  nr_timer_stop(&timers->T300);
+  nr_timer_stop(&timers->T301);
+  nr_timer_stop(&timers->T319);
+  nr_timer_stop(&timers->T320);
 
   // TODO if T390 and T302 are running (not implemented)
 
@@ -1389,10 +1382,9 @@ static int nr_rrc_ue_decode_dcch(NR_UE_RRC_INST_t *rrc,
 void nr_rrc_handle_ra_indication(NR_UE_RRC_INST_t *rrc, bool ra_succeeded)
 {
   NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
-  if (ra_succeeded && timers->T304_active == true) {
+  if (ra_succeeded && is_nr_timer_active(timers->T304)) {
     // successful Random Access procedure triggered by reconfigurationWithSync
-    timers->T304_active = false;
-    timers->T304_cnt = 0;
+    nr_timer_stop(&timers->T304);
     // TODO handle the rest of procedures as described in 5.3.5.3 for when
     // reconfigurationWithSync is included in spCellConfig
   }
@@ -1829,11 +1821,11 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
       waitTime = rrcReleaseIEs->nonCriticalExtension ?
                  rrcReleaseIEs->nonCriticalExtension->waitTime : NULL;
       if (waitTime) {
-        if (tac->T302_active)
-          tac->T302_cnt = 0; // stop 302
+        nr_timer_stop(&tac->T302); // stop 302
         // start timer T302 with the value set to the waitTime
-        tac->T302_active = true;
-        tac->T302_k = *waitTime * 1000; // waitTime is in seconds
+        int target = *waitTime * 1000; // waitTime is in seconds
+        nr_timer_setup(&tac->T302, target, 10);
+        nr_timer_start(&tac->T302);
         // TODO inform upper layers that access barring is applicable
         // for all access categories except categories '0' and '2'.
         LOG_E(NR_RRC,"Go to IDLE. Handling RRCRelease message including a waitTime not implemented\n");
@@ -1841,17 +1833,15 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
     }
   }
   if (!waitTime) {
-    if (tac->T302_active) {
-      tac->T302_cnt = 0;
-      tac->T302_active = false;
+    if (is_nr_timer_active(tac->T302)) {
+      nr_timer_stop(&tac->T302);
       // TODO barring alleviation as in 5.3.14.4
       // not implemented
       LOG_E(NR_RRC,"Go to IDLE. Barring alleviation not implemented\n");
     }
   }
-  if (tac->T390_active) {
-    tac->T390_cnt = 0;
-    tac->T390_active = false;
+  if (is_nr_timer_active(tac->T390)) {
+    nr_timer_stop(&tac->T390);
     // TODO barring alleviation as in 5.3.14.4
     // not implemented
     LOG_E(NR_RRC,"Go to IDLE. Barring alleviation not implemented\n");
@@ -1859,24 +1849,15 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
   if (!RRCRelease && rrc->nrRrcState == RRC_STATE_INACTIVE_NR) {
     // TODO discard the cell reselection priority information provided by the cellReselectionPriorities
     // cell reselection priorities not implemented yet
-    if (tac->T320_active) {
-      tac->T320_cnt = 0;
-      tac->T320_active = false;
-    }
+    nr_timer_stop(&tac->T320);
   }
   // Stop all the timers except T302, T320 and T325
-  tac->T300_active = false;
-  tac->T300_cnt = 0;
-  tac->T301_active = false;
-  tac->T301_cnt = 0;
-  tac->T304_active = false;
-  tac->T304_cnt = 0;
-  tac->T310_active = false;
-  tac->T310_cnt = 0;
-  tac->T311_active = false;
-  tac->T311_cnt = 0;
-  tac->T319_active = false;
-  tac->T319_cnt = 0;
+  nr_timer_stop(&tac->T300);
+  nr_timer_stop(&tac->T301);
+  nr_timer_stop(&tac->T304);
+  nr_timer_stop(&tac->T310);
+  nr_timer_stop(&tac->T311);
+  nr_timer_stop(&tac->T319);
 
   // discard the UE Inactive AS context
   // TODO there is no inactive AS context

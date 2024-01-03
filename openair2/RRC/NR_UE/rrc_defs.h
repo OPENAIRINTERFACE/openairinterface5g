@@ -144,44 +144,23 @@ typedef struct UE_RRC_SI_INFO_NR_s {
 } __attribute__ ((__packed__)) NR_UE_RRC_SI_INFO;
 
 typedef struct NR_UE_Timers_Constants_s {
-  // timers status
-  bool T300_active;
-  bool T301_active;
-  bool T302_active;
-  bool T304_active;
-  bool T310_active;
-  bool T311_active;
-  bool T319_active;
-  bool T320_active;
-  bool T325_active;
-  bool T390_active;
   // timers
-  uint32_t T300_cnt;
-  uint32_t T301_cnt;
-  uint32_t T302_cnt;
-  uint32_t T304_cnt;
-  uint32_t T310_cnt;
-  uint32_t T311_cnt;
-  uint32_t T319_cnt;
-  uint32_t T320_cnt;
-  uint32_t T325_cnt;
-  uint32_t T390_cnt;
+  NR_timer_t T300;
+  NR_timer_t T301;
+  NR_timer_t T302;
+  NR_timer_t T304;
+  NR_timer_t T310;
+  NR_timer_t T311;
+  NR_timer_t T319;
+  NR_timer_t T320;
+  NR_timer_t T325;
+  NR_timer_t T390;
   // counters
   uint32_t N310_cnt;
   uint32_t N311_cnt;
   // constants (limits configured by the network)
   uint32_t N310_k;
   uint32_t N311_k;
-  uint32_t T300_k;
-  uint32_t T301_k;
-  uint32_t T302_k;
-  uint32_t T304_k;
-  uint32_t T310_k;
-  uint32_t T311_k;
-  uint32_t T319_k;
-  uint32_t T320_k;
-  uint32_t T325_k;
-  uint32_t T390_k;
 } NR_UE_Timers_Constants_t;
 
 typedef enum {
