@@ -33,7 +33,7 @@
 #ifndef _RRC_PROTO_H_
 #define _RRC_PROTO_H_
 
-
+#include "oai_asn1.h"
 #include "rrc_defs.h"
 #include "NR_RRCReconfiguration.h"
 #include "NR_MeasConfig.h"
@@ -108,6 +108,7 @@ extern void start_oai_nrue_threads(void);
 int get_from_lte_ue_fd();
 
 void nr_rrc_SI_timers(NR_UE_RRC_SI_INFO *SInfo);
+void init_SI_timers(NR_UE_RRC_SI_INFO *SInfo);
 
 void nr_ue_rrc_timer_trigger(int module_id, int frame, int gnb_id);
 void handle_t300_expiry(NR_UE_RRC_INST_t *rrc);

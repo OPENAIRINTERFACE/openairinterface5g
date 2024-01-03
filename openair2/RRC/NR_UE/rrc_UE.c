@@ -33,7 +33,6 @@
 #define RRC_UE
 #define RRC_UE_C
 
-#include "oai_asn1.h"
 #include "NR_DL-DCCH-Message.h"        //asn_DEF_NR_DL_DCCH_Message
 #include "NR_DL-CCCH-Message.h"        //asn_DEF_NR_DL_CCCH_Message
 #include "NR_BCCH-BCH-Message.h"       //asn_DEF_NR_BCCH_BCH_Message
@@ -309,12 +308,14 @@ NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int nb_inst)
     rrc->dl_bwp_id = 0;
     rrc->ul_bwp_id = 0;
     rrc->as_security_activated = false;
-
     rrc->uecap_file = uecap_file;
+
+    memset(&rrc->timers_and_constants, 0, sizeof(rrc->timers_and_constants));
 
     for (int i = 0; i < NB_CNX_UE; i++) {
       rrcPerNB_t *ptr = &rrc->perNB[i];
       ptr->SInfo = (NR_UE_RRC_SI_INFO){0};
+      init_SI_timers(&ptr->SInfo);
       for (int j = 0; j < NR_NUM_SRB; j++)
         ptr->Srb[j] = RB_NOT_PRESENT;
       for (int j = 0; j < MAX_DRBS_PER_UE; j++)
@@ -335,57 +336,44 @@ bool check_si_validity(NR_UE_RRC_SI_INFO *SI_info, int si_type)
 {
   switch (si_type) {
     case NR_SIB_TypeInfo__type_sibType2:
-      if (!SI_info->sib2 || SI_info->sib2_timer == -1)
+      if (!SI_info->sib2)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType3:
-      if (!SI_info->sib3 || SI_info->sib3_timer == -1)
+      if (!SI_info->sib3)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType4:
-      if (!SI_info->sib4 || SI_info->sib4_timer == -1)
+      if (!SI_info->sib4)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType5:
-      if (!SI_info->sib5 || SI_info->sib5_timer == -1)
+      if (!SI_info->sib5)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType6:
-      if (!SI_info->sib6 || SI_info->sib6_timer == -1)
+      if (!SI_info->sib6)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType7:
-      if (!SI_info->sib7 || SI_info->sib7_timer == -1)
+      if (!SI_info->sib7)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType8:
-      if (!SI_info->sib8 || SI_info->sib8_timer == -1)
+      if (!SI_info->sib8)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType9:
-      if (!SI_info->sib9 || SI_info->sib9_timer == -1)
+      if (!SI_info->sib9)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType10_v1610:
-      if (!SI_info->sib10 || SI_info->sib10_timer == -1)
+      if (!SI_info->sib10)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType11_v1610:
-      if (!SI_info->sib11 || SI_info->sib11_timer == -1)
+      if (!SI_info->sib11)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType12_v1610:
-      if (!SI_info->sib12 || SI_info->sib12_timer == -1)
+      if (!SI_info->sib12)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType13_v1610:
-      if (!SI_info->sib13 || SI_info->sib13_timer == -1)
+      if (!SI_info->sib13)
         return false;
-      break;
     case NR_SIB_TypeInfo__type_sibType14_v1610:
-      if (!SI_info->sib14 || SI_info->sib14_timer == -1)
+      if (!SI_info->sib14)
         return false;
-      break;
     default :
       AssertFatal(false, "Invalid SIB type %d\n", si_type);
   }
@@ -395,8 +383,7 @@ bool check_si_validity(NR_UE_RRC_SI_INFO *SI_info, int si_type)
 int check_si_status(NR_UE_RRC_SI_INFO *SI_info)
 {
   // schedule reception of SIB1 if RRC doesn't have it
-  // or if the timer expired
-  if (!SI_info->sib1 || SI_info->sib1_timer == -1)
+  if (!SI_info->sib1)
     return 1;
   else {
     if (SI_info->sib1->si_SchedulingInfo) {
@@ -472,91 +459,91 @@ static int nr_decode_SI(NR_UE_RRC_SI_INFO *SI_info, NR_SystemInformation_t *si)
         if(!SI_info->sib2)
           SI_info->sib2 = calloc(1, sizeof(*SI_info->sib2));
         memcpy(SI_info->sib2, typeandinfo->choice.sib2, sizeof(NR_SIB2_t));
-        SI_info->sib2_timer = 0;
+        nr_timer_start(&SI_info->sib2_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib3:
         if(!SI_info->sib3)
           SI_info->sib3 = calloc(1, sizeof(*SI_info->sib3));
         memcpy(SI_info->sib3, typeandinfo->choice.sib3, sizeof(NR_SIB3_t));
-        SI_info->sib3_timer = 0;
+        nr_timer_start(&SI_info->sib3_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib4:
         if(!SI_info->sib4)
           SI_info->sib4 = calloc(1, sizeof(*SI_info->sib4));
         memcpy(SI_info->sib4, typeandinfo->choice.sib4, sizeof(NR_SIB4_t));
-        SI_info->sib4_timer = 0;
+        nr_timer_start(&SI_info->sib4_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib5:
         if(!SI_info->sib5)
           SI_info->sib5 = calloc(1, sizeof(*SI_info->sib5));
         memcpy(SI_info->sib5, typeandinfo->choice.sib5, sizeof(NR_SIB5_t));
-        SI_info->sib5_timer = 0;
+        nr_timer_start(&SI_info->sib5_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib6:
         if(!SI_info->sib6)
           SI_info->sib6 = calloc(1, sizeof(*SI_info->sib6));
         memcpy(SI_info->sib6, typeandinfo->choice.sib6, sizeof(NR_SIB6_t));
-        SI_info->sib6_timer = 0;
+        nr_timer_start(&SI_info->sib6_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib7:
         if(!SI_info->sib7)
           SI_info->sib7 = calloc(1, sizeof(*SI_info->sib7));
         memcpy(SI_info->sib7, typeandinfo->choice.sib7, sizeof(NR_SIB7_t));
-        SI_info->sib7_timer = 0;
+        nr_timer_start(&SI_info->sib7_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib8:
         if(!SI_info->sib8)
           SI_info->sib8 = calloc(1, sizeof(*SI_info->sib8));
         memcpy(SI_info->sib8, typeandinfo->choice.sib8, sizeof(NR_SIB8_t));
-        SI_info->sib8_timer = 0;
+        nr_timer_start(&SI_info->sib8_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib9:
         if(!SI_info->sib9)
           SI_info->sib9 = calloc(1, sizeof(*SI_info->sib9));
         memcpy(SI_info->sib9, typeandinfo->choice.sib9, sizeof(NR_SIB9_t));
-        SI_info->sib9_timer = 0;
+        nr_timer_start(&SI_info->sib9_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib10_v1610:
         if(!SI_info->sib10)
           SI_info->sib10 = calloc(1, sizeof(*SI_info->sib10));
         memcpy(SI_info->sib10, typeandinfo->choice.sib10_v1610, sizeof(NR_SIB10_r16_t));
-        SI_info->sib10_timer = 0;
+        nr_timer_start(&SI_info->sib10_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib11_v1610:
         if(!SI_info->sib11)
           SI_info->sib11 = calloc(1, sizeof(*SI_info->sib11));
         memcpy(SI_info->sib11, typeandinfo->choice.sib11_v1610, sizeof(NR_SIB11_r16_t));
-        SI_info->sib11_timer = 0;
+        nr_timer_start(&SI_info->sib11_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib12_v1610:
         if(!SI_info->sib12)
           SI_info->sib12 = calloc(1, sizeof(*SI_info->sib12));
         memcpy(SI_info->sib12, typeandinfo->choice.sib12_v1610, sizeof(NR_SIB12_r16_t));
-        SI_info->sib12_timer = 0;
+        nr_timer_start(&SI_info->sib12_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib13_v1610:
         if(!SI_info->sib13)
           SI_info->sib13 = calloc(1, sizeof(*SI_info->sib13));
         memcpy(SI_info->sib13, typeandinfo->choice.sib13_v1610, sizeof(NR_SIB13_r16_t));
-        SI_info->sib13_timer = 0;
+        nr_timer_start(&SI_info->sib13_timer);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib14_v1610:
         if(!SI_info->sib14)
           SI_info->sib14 = calloc(1, sizeof(*SI_info->sib14));
         memcpy(SI_info->sib12, typeandinfo->choice.sib14_v1610, sizeof(NR_SIB14_r16_t));
-        SI_info->sib14_timer = 0;
+        nr_timer_start(&SI_info->sib14_timer);
         break;
       default:
         break;
@@ -686,7 +673,7 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(NR_UE_RRC_INST_t *rrc,
         if(g_log->log_component[NR_RRC].level >= OAILOG_DEBUG)
           xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void *) SI_info->sib1);
         LOG_A(NR_RRC, "SIB1 decoded\n");
-        SI_info->sib1_timer = 0;
+        nr_timer_start(&SI_info->sib1_timer);
         // FIXME: improve condition for the RA trigger
         if (rrc->nrRrcState == RRC_STATE_IDLE_NR) {
           LOG_D(PHY,"Setting state to RRC_STATE_IDLE_NR\n");
@@ -1896,6 +1883,7 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
   for (int i = 0; i < NB_CNX_UE; i++) {
     rrcPerNB_t *nb = &rrc->perNB[i];
     NR_UE_RRC_SI_INFO *SI_info = &nb->SInfo;
+    init_SI_timers(SI_info);
     asn1cFreeStruc(asn_DEF_NR_SIB1, SI_info->sib1);
     asn1cFreeStruc(asn_DEF_NR_SIB2, SI_info->sib2);
     asn1cFreeStruc(asn_DEF_NR_SIB3, SI_info->sib3);
