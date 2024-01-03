@@ -274,12 +274,16 @@ int DU_send_F1_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_setup_req_t *setup_req)
     OCTET_STRING_fromBuf(&served_cell_information->measurementTimingConfiguration,
                          measurementTimingConfiguration,
                          strlen(measurementTimingConfiguration));
-    asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, gNB_DU_System_Information);
+
     /* 4.1.2 gNB-DU System Information */
-    AssertFatal(setup_req->cell[i].sys_info != NULL, "assume that sys_info is present, which is not the case\n");
-    const f1ap_gnb_du_system_info_t *sys_info = setup_req->cell[i].sys_info;
-    OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message, (const char *)sys_info->mib, sys_info->mib_length);
-    OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message, (const char *)sys_info->sib1, sys_info->sib1_length);
+    if (setup_req->cell[i].sys_info != NULL) {
+      asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, gNB_DU_System_Information);
+      const f1ap_gnb_du_system_info_t *sys_info = setup_req->cell[i].sys_info;
+      AssertFatal(sys_info->mib != NULL, "MIB must be present in DU sys info\n");
+      OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message, (const char *)sys_info->mib, sys_info->mib_length);
+      AssertFatal(sys_info->sib1 != NULL, "SIB1 must be present in DU sys info\n");
+      OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message, (const char *)sys_info->sib1, sys_info->sib1_length);
+    }
   }
 
   /* mandatory */
