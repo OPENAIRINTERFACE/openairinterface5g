@@ -201,10 +201,13 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
 
   /* Fill UE identities with available information */
   req->ue_identity.presenceMask = NGAP_UE_IDENTITIES_NONE;
-  /* Fill s-TMSI */
-  req->ue_identity.s_tmsi.amf_set_id = UE->Initialue_identity_5g_s_TMSI.amf_set_id;
-  req->ue_identity.s_tmsi.amf_pointer = UE->Initialue_identity_5g_s_TMSI.amf_pointer;
-  req->ue_identity.s_tmsi.m_tmsi = UE->Initialue_identity_5g_s_TMSI.fiveg_tmsi;
+  if (UE->Initialue_identity_5g_s_TMSI.presence) {
+    /* Fill s-TMSI */
+    req->ue_identity.presenceMask = NGAP_UE_IDENTITIES_FiveG_s_tmsi;
+    req->ue_identity.s_tmsi.amf_set_id = UE->Initialue_identity_5g_s_TMSI.amf_set_id;
+    req->ue_identity.s_tmsi.amf_pointer = UE->Initialue_identity_5g_s_TMSI.amf_pointer;
+    req->ue_identity.s_tmsi.m_tmsi = UE->Initialue_identity_5g_s_TMSI.fiveg_tmsi;
+  }
 
   /* selected_plmn_identity: IE is 1-based, convert to 0-based (C array) */
   int selected_plmn_identity = rrcSetupComplete->selectedPLMN_Identity - 1;
