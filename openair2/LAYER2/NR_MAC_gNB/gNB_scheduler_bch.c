@@ -405,7 +405,6 @@ static void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
   nr_configure_pdcch(pdcch_pdu_rel15,
                      gNB_mac->sched_ctrlCommon->coreset,
-                     true, // sib1
                      &gNB_mac->sched_ctrlCommon->sched_pdcch);
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];

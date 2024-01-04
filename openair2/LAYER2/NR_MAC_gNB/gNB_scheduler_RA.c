@@ -796,7 +796,7 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu_rel15 = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(pdcch_pdu_rel15, coreset, false, &ra->sched_pdcch);
+      nr_configure_pdcch(pdcch_pdu_rel15, coreset, &ra->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -1241,7 +1241,7 @@ static void nr_generate_Msg2(module_id_t module_idP,
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      nr_configure_pdcch(pdcch_pdu_rel15, coreset, false, &ra->sched_pdcch);
+      nr_configure_pdcch(pdcch_pdu_rel15, coreset, &ra->sched_pdcch);
       nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
     }
 
@@ -1458,7 +1458,7 @@ static void prepare_dl_pdus(gNB_MAC_INST *nr_mac,
     dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2 + sizeof(nfapi_nr_dl_tti_pdcch_pdu));
     dl_req->nPDUs += 1;
     pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-    nr_configure_pdcch(pdcch_pdu_rel15, coreset, false, &ra->sched_pdcch);
+    nr_configure_pdcch(pdcch_pdu_rel15, coreset, &ra->sched_pdcch);
     nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu_rel15;
   }
 

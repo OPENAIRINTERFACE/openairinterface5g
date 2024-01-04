@@ -199,7 +199,6 @@ void find_search_space(int ss_type,
 
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ControlResourceSet_t *coreset,
-                        bool is_sib1,
                         NR_sched_pdcch_t *pdcch);
 
 NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
