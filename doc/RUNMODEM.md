@@ -145,9 +145,31 @@ In phy-test mode it is possible to mimic the reception of UE Capabilities at gNB
 
 ## noS1 setup with OAI UE
 
-Instead of randomly generated payload, in the phy-test mode we can also inject/receive user-plane traffic over a TUN interface. This is the so-called noS1 mode. 
+Instead of randomly generated payload, in the phy-test mode we can also
+inject/receive user-plane traffic over a TUN interface. This is the so-called
+noS1 mode.
 
-This setup is described in the [rfsimulator page](../radio/rfsimulator/README.md#5g-case). In theory this should also work with the real hardware target although this has yet to be tested.
+The noS1 mode is applicable to both gNB/UE, and enabled by passing `--noS1` as
+an option. The gNB/UE will open a TUN interface which the interface names and
+IP addresses `oaitun_enb1`/10.0.1.1, and `oaitun_ue1`/10.0.1.2, respectively.
+You can then use these interfaces to send traffic, e.g.,
+```bash
+iperf -sui1 -B 10.0.1.2
+```
+to open an iperf server on the UE side, and
+```bash
+iperf -uc 10.0.1.2 -B 10.0.1.1 -i1 -t10 -b1M
+```
+to send data from the gNB down to the UE.
+
+Note that this does not work if both interfaces are on the same host. We
+recommend to use two different hosts, or at least network namespaces, to route
+traffic through the gNB/UE tunnel.
+
+This option is only really helpful for phy-test/do-ra (see below) modes, in
+which the UE does not connect to a core network. If the UE connects to a core
+network, it receives an IP address for which it automatically opens a network
+interface.
 
 ## do-ra setup with OAI
 
