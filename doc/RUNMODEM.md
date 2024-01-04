@@ -26,7 +26,7 @@ It is planned to enhance this simulator with the following functionalities:
 
 - Support for multiple eNodeB's or gNodeB's for hand-over tests
 
-This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../radio/rfsimulator/README.md ) contains the detailed documentation.
+This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../radio/rfsimulator/README.md) contains the detailed documentation.
 
 ## L2 nFAPI Simulator
 
