@@ -106,8 +106,6 @@
 
 extern RAN_CONTEXT_t RC;
 
-static inline uint64_t bitStr_to_uint64(const BIT_STRING_t *asn);
-
 mui_t rrc_gNB_mui = 0;
 
 // the assoc_id might be 0 (if the DU goes offline). Below helper macro to
@@ -1214,7 +1212,7 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id,
       return;
     }
 
-    uint64_t s_tmsi_part1 = bitStr_to_uint64(&rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1);
+    uint64_t s_tmsi_part1 = BIT_STRING_to_uint64(&rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1);
 
     // memcpy(((uint8_t *) & random_value) + 3,
     //         rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.buf,
@@ -1349,29 +1347,6 @@ fallback_rrc_setup:
   new->ue_context.Srb[1].Active = 1;
   rrc_gNB_generate_RRCSetup(0, msg->crnti, new, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
   return;
-}
-
-/*! \fn uint64_t bitStr_to_uint64(BIT_STRING_t *)
- *\brief  This function extract at most a 64 bits value from a BIT_STRING_t object, the exact bits number depend on the BIT_STRING_t contents.
- *\param[in] pointer to the BIT_STRING_t object.
- *\return the extracted value.
- */
-static inline uint64_t bitStr_to_uint64(const BIT_STRING_t *asn) {
-  uint64_t result = 0;
-  int index;
-  int shift;
-
-  DevCheck ((asn->size > 0) && (asn->size <= 8), asn->size, 0, 0);
-
-  shift = ((asn->size - 1) * 8) - asn->bits_unused;
-  for (index = 0; index < (asn->size - 1); index++) {
-    result |= (uint64_t)asn->buf[index] << shift;
-    shift -= 8;
-  }
-
-  result |= asn->buf[index] >> asn->bits_unused;
-
-  return result;
 }
 
 static void rrc_gNB_process_MeasurementReport(rrc_gNB_ue_context_t *ue_context, NR_MeasurementReport_t *measurementReport)
@@ -1556,7 +1531,7 @@ static int handle_rrcSetupComplete(const protocol_ctxt_t *const ctxt_pP,
         return -1;
       }
 
-      uint64_t fiveg_s_TMSI = bitStr_to_uint64(&setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI);
+      uint64_t fiveg_s_TMSI = BIT_STRING_to_uint64(&setup_complete_ies->ng_5G_S_TMSI_Value->choice.ng_5G_S_TMSI);
       LOG_I(NR_RRC,
             "Received rrcSetupComplete, 5g_s_TMSI: 0x%lX, amf_set_id: 0x%lX(%ld), amf_pointer: 0x%lX(%ld), 5g TMSI: 0x%X \n",
             fiveg_s_TMSI,
