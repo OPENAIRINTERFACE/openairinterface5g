@@ -34,15 +34,6 @@ This simulator connects a eNodeB  and UEs through a nfapi interface, short-cutti
 
 As for the rf simulator, no specific hardware is required. The [L2 nfapi simulator page](L2NFAPI.md) contains the detailed documentation.
 
-## L1 Simulator
-
-**This information might be outdated. We recommend to use the RFsimulator as
-shown above.**
-
-The L1 simulator is using the ethernet fronthaul protocol, as used to connect a RRU and a RAU to connect UEs and a eNodeB. UEs are simulated in a single `lte-uesoftmodem` process, as for the nfapi simulator. 
-
-The [L1 simulator page](L1SIM.md) contains the detailed documentation.
-
 # Running with a true radio head
 
 OAI supports different radio heads, the following are tested in the CI:
