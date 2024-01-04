@@ -42,7 +42,7 @@
 
 void nr_group_sequence_hopping(pucch_GroupHopping_t PUCCH_GroupHopping,
                                uint32_t n_id,
-                               uint8_t n_hop,
+                               int n_hop,
                                int nr_slot_tx,
                                uint8_t *u,
                                uint8_t *v);

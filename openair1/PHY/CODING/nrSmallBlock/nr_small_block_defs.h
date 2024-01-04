@@ -43,7 +43,7 @@
 
 #define L1d_CLS 64
 
-uint32_t encodeSmallBlock(uint16_t *in, uint8_t len);
+uint32_t encodeSmallBlock(int in, int len);
 
 uint16_t decodeSmallBlock(int8_t *in, uint8_t len);
 
