@@ -530,11 +530,7 @@ static void rrc_gNB_process_RRCSetupComplete(const protocol_ctxt_t *const ctxt_p
   ue_context_pP->ue_context.StatusRrc = NR_RRC_CONNECTED;
   AssertFatal(ctxt_pP->rntiMaybeUEid == ue_context_pP->ue_context.rrc_ue_id, "logic bug: inconsistent IDs, must use CU UE ID!\n");
 
-  if (get_softmodem_params()->sa) {
-    rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
-  } else {
-    rrc_gNB_generate_SecurityModeCommand(ctxt_pP, ue_context_pP);
-  }
+  rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
 }
 
 //-----------------------------------------------------------------------------
@@ -1102,11 +1098,9 @@ static void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *co
   ue_p->StatusRrc = NR_RRC_CONNECTED;
 
   ue_p->Srb[1].Active = 1;
-  if (get_softmodem_params()->sa) {
-    uint8_t send_security_mode_command = false;
-    nr_rrc_pdcp_config_security(ctxt_pP, ue_context_pP, send_security_mode_command);
-    LOG_D(NR_RRC, "RRC Reestablishment - set security successfully \n");
-  }
+
+  uint8_t send_security_mode_command = false;
+  nr_rrc_pdcp_config_security(ctxt_pP, ue_context_pP, send_security_mode_command);
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
@@ -1515,9 +1509,7 @@ static int handle_ueCapabilityInformation(const protocol_ctxt_t *const ctxt_pP,
       return -1;
   }
 
-  if (get_softmodem_params()->sa) {
-    rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(ctxt_pP, ue_context_p, ue_cap_info);
-  }
+  rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(ctxt_pP, ue_context_p, ue_cap_info);
 
   // we send the UE capabilities request before RRC connection is complete,
   // so we cannot have a PDU session yet
@@ -1598,33 +1590,31 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
   rrc_gNB_process_RRCReconfigurationComplete(ctxt_pP, ue_context_p, xid);
 
   bool successful_reconfig = true;
-  if (get_softmodem_params()->sa) {
-    switch (UE->xids[xid]) {
-      case RRC_PDUSESSION_RELEASE: {
-        gtpv1u_gnb_delete_tunnel_req_t req = {0};
-        gtpv1u_delete_ngu_tunnel(ctxt_pP->instance, &req);
-        // NGAP_PDUSESSION_RELEASE_RESPONSE
-        rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(ctxt_pP, ue_context_p, xid);
-      } break;
-      case RRC_PDUSESSION_ESTABLISH:
-        if (UE->nb_of_pdusessions > 0)
-          rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(ctxt_pP, ue_context_p, xid);
-        break;
-      case RRC_PDUSESSION_MODIFY:
-        rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(ctxt_pP, ue_context_p, xid);
-        break;
-      case RRC_DEFAULT_RECONF:
-        rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
-        break;
-      case RRC_REESTABLISH_COMPLETE:
-      case RRC_DEDICATED_RECONF:
-        /* do nothing */
-        break;
-      default:
-        LOG_E(RRC, "Received unexpected transaction type %d for xid %d\n", UE->xids[xid], xid);
-        successful_reconfig = false;
-        break;
-    }
+  switch (UE->xids[xid]) {
+    case RRC_PDUSESSION_RELEASE: {
+      gtpv1u_gnb_delete_tunnel_req_t req = {0};
+      gtpv1u_delete_ngu_tunnel(ctxt_pP->instance, &req);
+      // NGAP_PDUSESSION_RELEASE_RESPONSE
+      rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(ctxt_pP, ue_context_p, xid);
+    } break;
+    case RRC_PDUSESSION_ESTABLISH:
+      if (UE->nb_of_pdusessions > 0)
+        rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(ctxt_pP, ue_context_p, xid);
+      break;
+    case RRC_PDUSESSION_MODIFY:
+      rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(ctxt_pP, ue_context_p, xid);
+      break;
+    case RRC_DEFAULT_RECONF:
+      rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
+      break;
+    case RRC_REESTABLISH_COMPLETE:
+    case RRC_DEDICATED_RECONF:
+      /* do nothing */
+      break;
+    default:
+      LOG_E(RRC, "Received unexpected transaction type %d for xid %d\n", UE->xids[xid], xid);
+      successful_reconfig = false;
+      break;
   }
 
   gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -1718,9 +1708,7 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
         LOG_D(NR_RRC, "[MSG] RRC UL Information Transfer \n");
         LOG_DUMPMSG(RRC, DEBUG_RRC, (char *)Rx_sdu, sdu_sizeP, "[MSG] RRC UL Information Transfer \n");
 
-        if (get_softmodem_params()->sa) {
-          rrc_gNB_send_NGAP_UPLINK_NAS(ctxt_pP, ue_context_p, ul_dcch_msg);
-        }
+        rrc_gNB_send_NGAP_UPLINK_NAS(ctxt_pP, ue_context_p, ul_dcch_msg);
         break;
 
       case NR_UL_DCCH_MessageType__c1_PR_securityModeComplete:
