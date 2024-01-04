@@ -954,27 +954,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 */
 static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP, const uint8_t xid)
 {
-  int                                 drb_id;
-  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  NR_DRB_ToAddModList_t *DRB_configList = createDRBlist(ue_p, false);
-
-  /* Refresh SRBs/DRBs */
-  LOG_D(NR_RRC, "Configuring PDCP DRBs/SRBs for UE %04x\n", ue_p->rnti);
   ue_context_pP->ue_context.ue_reconfiguration_after_reestablishment_counter++;
-
-  /* Loop through DRBs and establish if necessary */
-  if (DRB_configList != NULL) {
-    for (int i = 0; i < DRB_configList->list.count; i++) {
-      if (DRB_configList->list.array[i]) {
-        drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
-        if (ue_p->DRB_active[drb_id - 1] == 0) {
-          ue_p->DRB_active[drb_id - 1] = DRB_ACTIVE;
-        }
-      } // end if (DRB_configList->list.array[i])
-    } // end for (int i = 0; i < DRB_configList->list.count; i++)
-
-  } // end if DRB_configList != NULL
-  freeDRBlist(DRB_configList);
 }
 
 //-----------------------------------------------------------------------------

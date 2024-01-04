@@ -154,16 +154,15 @@ uint8_t next_available_drb(gNB_RRC_UE_t *ue, rrc_pdu_session_param_t *pdusession
   }
   /* GBR Flow  or a Non-GBR DRB does not exist in the same PDU Session, find an available DRB */
   for (drb_id = 0; drb_id < MAX_DRBS_PER_UE; drb_id++)
-    if (ue->DRB_active[drb_id] == DRB_INACTIVE)
+    if (ue->established_drbs[drb_id].status == DRB_INACTIVE)
       return drb_id + 1;
   /* From this point, we need to handle the case that all DRBs are already used by the UE. */
   LOG_E(RRC, "Error - All the DRBs are used - Handle this\n");
   return DRB_INACTIVE;
 }
 
-bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id) {
+bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id)
+{
   DevAssert(drb_id > 0);
-  if(ue->DRB_active[drb_id-1] == DRB_ACTIVE)
-    return true;
-  return false;
+  return ue->established_drbs[drb_id - 1].status == DRB_ACTIVE;
 }
