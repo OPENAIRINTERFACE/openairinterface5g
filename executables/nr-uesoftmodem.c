@@ -454,7 +454,8 @@ configmodule_interface_t *uniqCfg = NULL;
 // A global var to reduce the changes size
 ldpc_interface_t ldpc_interface = {0}, ldpc_interface_offload = {0};
 
-int main( int argc, char **argv ) {
+int main(int argc, char **argv)
+{
   int set_exe_prio = 1;
   if (checkIfFedoraDistribution())
     if (checkIfGenericKernelOnFedora())
@@ -509,7 +510,7 @@ int main( int argc, char **argv ) {
     memset(PHY_vars_UE_g[0][CC_id], 0, sizeof(*PHY_vars_UE_g[0][CC_id]));
   }
 
-  init_NR_UE(1, uecap_file, reconfig_file, rbconfig_file);
+  init_NR_UE(NB_UE_INST, uecap_file, reconfig_file, rbconfig_file);
 
   int mode_offset = get_softmodem_params()->nsa ? NUMBER_OF_UE_MAX : 1;
   uint16_t node_number = get_softmodem_params()->node_number;

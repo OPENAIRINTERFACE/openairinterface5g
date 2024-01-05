@@ -112,26 +112,32 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
   }
 }
 
-NR_UE_MAC_INST_t *nr_l2_init_ue()
+NR_UE_MAC_INST_t *nr_l2_init_ue(int nb_inst)
 {
   //init mac here
-  nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(NB_NR_UE_MAC_INST, sizeof(NR_UE_MAC_INST_t));
+  nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(nb_inst, sizeof(NR_UE_MAC_INST_t));
+  AssertFatal(nr_ue_mac_inst, "Couldn't allocate %d instances of MAC module\n", nb_inst);
 
-  for (int j = 0; j < NB_NR_UE_MAC_INST; j++) {
+  for (int j = 0; j < nb_inst; j++) {
     nr_ue_init_mac(j);
     NR_UE_MAC_INST_t *mac = get_mac_inst(j);
+    mac->ue_id = j;
     nr_ue_mac_default_configs(mac);
     if (get_softmodem_params()->sa)
       ue_init_config_request(mac, get_softmodem_params()->numerology);
   }
+
   int rc = rlc_module_init(0);
-  AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
+  AssertFatal(rc == 0, "Could not initialize RLC layer\n");
 
   return (nr_ue_mac_inst);
 }
 
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id) {
-  return &nr_ue_mac_inst[(int)module_id];
+NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id)
+{
+  NR_UE_MAC_INST_t *mac = &nr_ue_mac_inst[(int)module_id];
+  AssertFatal(mac, "Couldn't get MAC inst %d\n", module_id);
+  return mac;
 }
 
 void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)

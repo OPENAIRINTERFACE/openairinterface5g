@@ -308,9 +308,8 @@ rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
   nr_rlc_ue_t *ue;
   nr_rlc_entity_t *rb;
 
-  LOG_D(RLC, "%s rnti %d srb_flag %d rb_id %ld mui %d confirm %d sdu_size %d MBMS_flag %d\n",
-        __FUNCTION__, rnti, srb_flagP, rb_idP, muiP, confirmP, sdu_sizeP,
-        MBMS_flagP);
+  LOG_D(RLC, "rnti %d srb_flag %d rb_id %ld mui %d confirm %d sdu_size %d MBMS_flag %d\n",
+        rnti, srb_flagP, rb_idP, muiP, confirmP, sdu_sizeP, MBMS_flagP);
 
   if (ctxt_pP->enb_flag)
     T(T_ENB_RLC_DL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rntiMaybeUEid), T_INT(rb_idP), T_INT(sdu_sizeP));

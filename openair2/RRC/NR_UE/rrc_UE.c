@@ -299,40 +299,37 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
   }
 }
 
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file)
+NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int nb_inst)
 {
-  if(NB_NR_UE_INST > 0) {
-    NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)calloc(NB_NR_UE_INST , sizeof(NR_UE_RRC_INST_t));
-    for(int nr_ue = 0; nr_ue < NB_NR_UE_INST; nr_ue++) {
-      NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[nr_ue];
-      rrc->ue_id = nr_ue;
-      // fill UE-NR-Capability @ UE-CapabilityRAT-Container here.
-      rrc->selected_plmn_identity = 1;
+  NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)calloc(nb_inst, sizeof(NR_UE_RRC_INST_t));
+  AssertFatal(NR_UE_rrc_inst, "Couldn't allocate %d instances of RRC module\n", nb_inst);
 
-      rrc->dl_bwp_id = 0;
-      rrc->ul_bwp_id = 0;
-      rrc->as_security_activated = false;
+  for(int nr_ue = 0; nr_ue < nb_inst; nr_ue++) {
+    NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[nr_ue];
+    rrc->ue_id = nr_ue;
+    // fill UE-NR-Capability @ UE-CapabilityRAT-Container here.
+    rrc->selected_plmn_identity = 1;
 
-      for (int i = 0; i < NB_CNX_UE; i++) {
-        rrcPerNB_t *ptr = &rrc->perNB[i];
-        ptr->SInfo = (NR_UE_RRC_SI_INFO){0};
-        for (int j = 0; j < NR_NUM_SRB; j++)
-          ptr->Srb[j] = RB_NOT_PRESENT;
-        for (int j = 0; j < MAX_DRBS_PER_UE; j++)
-          ptr->status_DRBs[j] = RB_NOT_PRESENT;
-        // SRB0 activated by default
-        ptr->Srb[0] = RB_ESTABLISHED;
-      }
-    }
+    rrc->dl_bwp_id = 0;
+    rrc->ul_bwp_id = 0;
+    rrc->as_security_activated = false;
 
-    NR_UE_rrc_inst->uecap_file = uecap_file;
+    rrc->uecap_file = uecap_file;
 
-    if (get_softmodem_params()->sl_mode) {
-      configure_NR_SL_Preconfig(get_softmodem_params()->sync_ref);
+    for (int i = 0; i < NB_CNX_UE; i++) {
+      rrcPerNB_t *ptr = &rrc->perNB[i];
+      ptr->SInfo = (NR_UE_RRC_SI_INFO){0};
+      for (int j = 0; j < NR_NUM_SRB; j++)
+        ptr->Srb[j] = RB_NOT_PRESENT;
+      for (int j = 0; j < MAX_DRBS_PER_UE; j++)
+        ptr->status_DRBs[j] = RB_NOT_PRESENT;
+      // SRB0 activated by default
+      ptr->Srb[0] = RB_ESTABLISHED;
     }
   }
-  else{
-    NR_UE_rrc_inst = NULL;
+
+  if (get_softmodem_params()->sl_mode) {
+    configure_NR_SL_Preconfig(get_softmodem_params()->sync_ref);
   }
 
   return NR_UE_rrc_inst;

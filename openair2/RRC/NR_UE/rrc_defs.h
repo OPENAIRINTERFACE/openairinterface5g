@@ -59,7 +59,6 @@
 #include "as_message.h"
 #include "common/utils/nr/nr_common.h"
 
-#define NB_NR_UE_INST 1
 #define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
 #define MAX_MEAS_OBJ 7
 #define MAX_MEAS_CONFIG 7

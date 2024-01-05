@@ -690,8 +690,7 @@ int main(int argc, char *argv[])
   }
 
   //Configure UE
-  nr_l2_init_ue();
-
+  nr_l2_init_ue(1);
   NR_UE_MAC_INST_t* UE_mac = get_mac_inst(0);
 
   ue_init_config_request(UE_mac, mu);
