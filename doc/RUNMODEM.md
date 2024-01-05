@@ -7,12 +7,18 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">Running OAI Softmodems</font></b>
+      <b><font size = "5">Running OAI 5G Softmodems</font></b>
     </td>
   </tr>
 </table>
 
-After you have [built the softmodem executables](BUILD.md) you can set your default directory  to the build directory `cmake_targets/ran_build/build/` and start testing some use cases. Below, the description of the different oai functionalities should help you choose the oai configuration that suits your need. 
+This document explains some options for running 5G executables.
+
+After you have [built the softmodem executables](BUILD.md) you can set your
+default directory  to the build directory `cmake_targets/ran_build/build/` and
+start testing some use cases. Below, the description of the different OAI
+functionalities should help you choose the OAI configuration that suits your
+need.
 
 [[_TOC_]]
 
@@ -20,28 +26,27 @@ After you have [built the softmodem executables](BUILD.md) you can set your defa
 
 ## RFsimulator
 
-The RF simulator is an OAI device replacing the radio heads (for example the USRP device). It allows connecting the oai UE (LTE or 5G) and respectively the oai eNodeB or gNodeB through a network interface carrying the time-domain samples, getting rid of over the air unpredictable perturbations. This is the ideal tool to check signal processing algorithms and protocols implementation.  The rf simulator has some preliminary support for channel modeling.
+The RFsimulator is an OAI device replacing the radio heads (for example the
+USRP device). It allows connecting the oai UE (LTE or 5G) and respectively the
+oai eNodeB or gNodeB through a network interface carrying the time-domain
+samples, getting rid of over the air unpredictable perturbations. This is the
+ideal tool to check signal processing algorithms and protocols implementation.
+The RFsimulator has some preliminary support for channel modeling.
 
 It is planned to enhance this simulator with the following functionalities:
 
 - Support for multiple eNodeB's or gNodeB's for hand-over tests
 
-This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../radio/rfsimulator/README.md ) contains the detailed documentation.
+This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../radio/rfsimulator/README.md) contains the detailed documentation.
 
 ## L2 nFAPI Simulator
 
-This simulator connects a eNodeB  and UEs through a nfapi interface, short-cutting the L1 layer. The objective of this simulator is to allow multi UEs simulation, with a large number of UEs (ideally up to 255 ) .Here to ease the platform setup, UEs are simulated via a single `lte-uesoftmodem` instance. Today the CI tests just with one UE and architecture has to be reviewed to allow a number of UE above about 16. This work is on-going.
+This simulator connects an eNodeB and UEs through an nFAPI interface,
+short-cutting the L1 layer. The objective of this simulator is to allow multi
+UEs simulation, with a large number of UEs (ideally up to 255).
 
-As for the rf simulator, no specific hardware is required. The [L2 nfapi simulator page](L2NFAPI.md) contains the detailed documentation.
-
-## L1 Simulator
-
-**This information might be outdated. We recommend to use the RFsimulator as
-shown above.**
-
-The L1 simulator is using the ethernet fronthaul protocol, as used to connect a RRU and a RAU to connect UEs and a eNodeB. UEs are simulated in a single `lte-uesoftmodem` process, as for the nfapi simulator. 
-
-The [L1 simulator page](L1SIM.md) contains the detailed documentation.
+As for the RFsimulator, no specific hardware is required. The [L2 nfapi
+simulator page](./L2NFAPI.md) contains the detailed documentation.
 
 # Running with a true radio head
 
@@ -89,7 +94,7 @@ At the UE the --sa flag will:
   4) 5G-NR RRC Reconfiguration
   5) Start Downlink and Uplink Data Transfer
 
-Command line parameters for UE in --sa mode:
+Command line parameters for UE in `--sa` mode:
 - `-C` : downlink carrier frequency in Hz (default value 0)
 - `--CO` : uplink frequency offset for FDD in Hz (default value 0)
 - `--numerology` : numerology index (default value 1)
@@ -104,7 +109,7 @@ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band
 sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ssb 516 --sa
 ```
 
-With the RF simulator (on the same machine):
+With the RFsimulator (on the same machine):
 
 ```bash
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa
@@ -117,11 +122,15 @@ Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabi
 
 Some other useful paramters of the UE are
 
- - --ue-fo-compensation: enables the frequency offset compenstation at the UE. This is useful when running over the air and/or without an external clock/time source
- - --usrp-args: this is the equivalend paramter of sdr_addrs field in the gNB config file and can be used to identify the USRP and set some basic paramters (like the clock source)
- - --clock-source: sets the clock-source (internal or external). 
- - --time-source: sets the time-source (internal or external). 
+- `--ue-fo-compensation`: enables the frequency offset compenstation at the UE. This is useful when running over the air and/or without an external clock/time source
+- `--usrp-args`: this is the equivalend paramter of `sdr_addrs` field in the gNB config file and can be used to identify the USRP and set some basic paramters (like the clock source)
+- `--clock-source`: sets the clock-source (internal or external).
+- `--time-source`: sets the time-source (internal or external).
 
+You can see all options by typing
+```
+./nr-uesoftmodem --help
+```
 
 # Specific OAI modes
 
@@ -154,9 +163,31 @@ In phy-test mode it is possible to mimic the reception of UE Capabilities at gNB
 
 ## noS1 setup with OAI UE
 
-Instead of randomly generated payload, in the phy-test mode we can also inject/receive user-plane traffic over a TUN interface. This is the so-called noS1 mode. 
+Instead of randomly generated payload, in the phy-test mode we can also
+inject/receive user-plane traffic over a TUN interface. This is the so-called
+noS1 mode.
 
-This setup is described in the [rfsimulator page](../radio/rfsimulator/README.md#5g-case). In theory this should also work with the real hardware target although this has yet to be tested.
+The noS1 mode is applicable to both gNB/UE, and enabled by passing `--noS1` as
+an option. The gNB/UE will open a TUN interface which the interface names and
+IP addresses `oaitun_enb1`/10.0.1.1, and `oaitun_ue1`/10.0.1.2, respectively.
+You can then use these interfaces to send traffic, e.g.,
+```bash
+iperf -sui1 -B 10.0.1.2
+```
+to open an iperf server on the UE side, and
+```bash
+iperf -uc 10.0.1.2 -B 10.0.1.1 -i1 -t10 -b1M
+```
+to send data from the gNB down to the UE.
+
+Note that this does not work if both interfaces are on the same host. We
+recommend to use two different hosts, or at least network namespaces, to route
+traffic through the gNB/UE tunnel.
+
+This option is only really helpful for phy-test/do-ra (see below) modes, in
+which the UE does not connect to a core network. If the UE connects to a core
+network, it receives an IP address for which it automatically opens a network
+interface.
 
 ## do-ra setup with OAI
 
@@ -244,7 +275,3 @@ The DL logical antenna port configuration can be selected through configuration 
 Finally the number of TX physical antenna in the RU part of the configuration file, `nb_tx`, should be equal or larger than the total number of PDSCH logical antenna ports.
 
 [Example of configuration file with parameters for 2-layer MIMO](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf)
-
-# Additional links
-
-[Selecting an alternative ldpc implementation at run time](../openair1/PHY/CODING/DOC/LDPCImplementation.md)
