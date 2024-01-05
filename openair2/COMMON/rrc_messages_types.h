@@ -74,6 +74,7 @@
 #define NAS_CELL_SELECTION_REQ(mSGpTR)  (mSGpTR)->ittiMsg.nas_cell_selection_req
 #define NAS_CONN_ESTABLI_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_conn_establi_req
 #define NAS_UPLINK_DATA_REQ(mSGpTR)     (mSGpTR)->ittiMsg.nas_ul_data_req
+#define NAS_DETACH_REQ(mSGpTR)          (mSGpTR)->ittiMsg.nas_detach_req
 #define NAS_DEREGISTRATION_REQ(mSGpTR)  (mSGpTR)->ittiMsg.nas_deregistration_req
 
 #define NAS_RAB_ESTABLI_RSP(mSGpTR)     (mSGpTR)->ittiMsg.nas_rab_est_rsp
@@ -429,6 +430,7 @@ typedef cell_info_req_t         NasCellSelectionReq;
 typedef nas_establish_req_t     NasConnEstabliReq;
 typedef ul_info_transfer_req_t  NasUlDataReq;
 typedef nas_deregistration_req_t NasDeregistrationReq;
+typedef nas_detach_req_t        NasDetachReq;
 
 typedef rab_establish_rsp_t     NasRabEstRsp;
 

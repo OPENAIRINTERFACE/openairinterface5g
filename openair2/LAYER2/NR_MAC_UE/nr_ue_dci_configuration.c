@@ -263,7 +263,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
     case NR_RNTI_SP_CSI:
       break;
     case NR_RNTI_SI:
-      sps=14;
+      sps = 14;
       // for SPS=14 8 MSBs in positions 13 down to 6
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
       rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values

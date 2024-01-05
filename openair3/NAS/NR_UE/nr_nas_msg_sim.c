@@ -911,6 +911,14 @@ static void send_nas_uplink_data_req(instance_t instance, const as_nas_info_t *i
   itti_send_msg_to_task(TASK_RRC_NRUE, instance, msg);
 }
 
+static void send_nas_detach_req(instance_t instance, bool wait_release)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_DETACH_REQ);
+  nas_detach_req_t *req = &NAS_DETACH_REQ(msg);
+  req->wait_release = wait_release;
+  itti_send_msg_to_task(TASK_RRC_NRUE, instance, msg);
+}
+
 static void parse_allowed_nssai(nr_nas_msg_snssai_t nssaiList[8], const uint8_t *buf, const uint32_t len)
 {
   int nssai_cnt = 0;
@@ -1172,15 +1180,19 @@ void *nas_nrue(void *args_p)
       case NAS_DEREGISTRATION_REQ: {
         LOG_I(NAS, "[UE %ld] Received %s\n", instance, ITTI_MSG_NAME(msg_p));
         nr_ue_nas_t *nas = get_ue_nas_info(0);
+        nas_deregistration_req_t *req = &NAS_DEREGISTRATION_REQ(msg_p);
         if (nas->guti) {
-          nas_deregistration_req_t *req = &NAS_DEREGISTRATION_REQ(msg_p);
-          if (req->cause == AS_DETACH)
+          if (req->cause == AS_DETACH) {
             nas->termination_procedure = true;
+            send_nas_detach_req(instance, true);
+          }
           as_nas_info_t initialNasMsg = {0};
           generateDeregistrationRequest(nas, &initialNasMsg, req);
           send_nas_uplink_data_req(instance, &initialNasMsg);
         } else {
-          LOG_E(NAS, "no GUTI, cannot trigger deregistration request\n");
+          LOG_W(NAS, "No GUTI, cannot trigger deregistration request.\n");
+          if (req->cause == AS_DETACH)
+            send_nas_detach_req(instance, false);
         }
       } break;
 

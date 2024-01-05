@@ -61,6 +61,7 @@ MESSAGE_DEF(NAS_KENB_REFRESH_REQ,       MESSAGE_PRIORITY_MED,       NasKenbRefre
 MESSAGE_DEF(NAS_CELL_SELECTION_REQ,     MESSAGE_PRIORITY_MED,       NasCellSelectionReq,        nas_cell_selection_req)
 MESSAGE_DEF(NAS_CONN_ESTABLI_REQ,       MESSAGE_PRIORITY_MED,       NasConnEstabliReq,          nas_conn_establi_req)
 MESSAGE_DEF(NAS_UPLINK_DATA_REQ,        MESSAGE_PRIORITY_MED,       NasUlDataReq,               nas_ul_data_req)
+MESSAGE_DEF(NAS_DETACH_REQ,             MESSAGE_PRIORITY_MED,       NasDetachReq,               nas_detach_req)
 MESSAGE_DEF(NAS_DEREGISTRATION_REQ,     MESSAGE_PRIORITY_MED,       NasDeregistrationReq,       nas_deregistration_req)
 
 MESSAGE_DEF(NAS_RAB_ESTABLI_RSP,        MESSAGE_PRIORITY_MED,       NasRabEstRsp,               nas_rab_est_rsp)

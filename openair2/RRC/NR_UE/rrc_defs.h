@@ -83,7 +83,7 @@ typedef enum Rrc_State_NR_e {
   RRC_STATE_IDLE_NR = 0,
   RRC_STATE_INACTIVE_NR,
   RRC_STATE_CONNECTED_NR,
-
+  RRC_STATE_DETACH_NR,
   RRC_STATE_FIRST_NR = RRC_STATE_IDLE_NR,
   RRC_STATE_LAST_NR = RRC_STATE_CONNECTED_NR,
 } Rrc_State_NR_t;
@@ -206,8 +206,6 @@ typedef struct rrcPerNB {
 } rrcPerNB_t;
 
 typedef struct NR_UE_RRC_INST_s {
-  NR_MeasConfig_t        *meas_config;
-
   rrcPerNB_t perNB[NB_CNX_UE];
 
   char                           *uecap_file;

@@ -401,6 +401,10 @@ typedef struct nas_deregistration_req_s {
   release_cause_t cause;
 } nas_deregistration_req_t;
 
+typedef struct nas_detach_req_s {
+  bool wait_release;
+} nas_detach_req_t;
+
 /*
  * --------------------------------------------------------------------------
  *              NAS information transfer

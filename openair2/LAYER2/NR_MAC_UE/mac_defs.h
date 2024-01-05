@@ -167,6 +167,7 @@ typedef enum {
 
 typedef enum {
   GO_TO_IDLE,
+  DETACH,
   RE_ESTABLISHMENT
 } NR_UE_MAC_reset_cause_t;
 
