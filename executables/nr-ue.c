@@ -1001,7 +1001,7 @@ void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconf
 
         // set up PDCP, RLC, MAC
         nr_pdcp_layer_init(false);
-        nr_pdcp_add_drbs(ENB_FLAG_NO, mac_inst->crnti, rbconfig->drb_ToAddModList, 0, NULL, NULL);
+        nr_pdcp_add_drbs(ENB_FLAG_NO, inst, rbconfig->drb_ToAddModList, 0, NULL, NULL);
         nr_rlc_add_drb(mac_inst->crnti, rbconfig->drb_ToAddModList->list.array[0]->drb_Identity, rlc_rbconfig);
         struct NR_CellGroupConfig__rlc_BearerToAddModList rlc_toadd_list;
         rlc_toadd_list.list.count = 1;

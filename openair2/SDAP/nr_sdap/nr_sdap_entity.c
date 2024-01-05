@@ -404,7 +404,15 @@ void nr_sdap_ue_qfi2drb_config(nr_sdap_entity_t *existing_sdap_entity, rb_id_t p
   }
 }
 
-nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb, bool has_sdap_rx, bool has_sdap_tx, ue_id_t ue_id, int pdusession_id, bool is_defaultDRB, uint8_t drb_identity, NR_QFI_t *mapped_qfi_2_add, uint8_t mappedQFIs2AddCount)
+nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb,
+                                     bool has_sdap_rx,
+                                     bool has_sdap_tx,
+                                     ue_id_t ue_id,
+                                     int pdusession_id,
+                                     bool is_defaultDRB,
+                                     uint8_t drb_identity,
+                                     NR_QFI_t *mapped_qfi_2_add,
+                                     uint8_t mappedQFIs2AddCount)
 {
   if (nr_sdap_get_entity(ue_id, pdusession_id)) {
     LOG_E(SDAP, "SDAP Entity for UE already exists with RNTI/UE ID: %lu and PDU SESSION ID: %d\n", ue_id, pdusession_id);

@@ -765,7 +765,7 @@ void deliver_pdu_srb_rlc(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
 }
 
 void add_srb(int is_gnb,
-             ue_id_t rntiMaybeUEid,
+             ue_id_t UEid,
              struct NR_SRB_ToAddMod *s,
              int ciphering_algorithm,
              int integrity_algorithm,
@@ -781,9 +781,9 @@ void add_srb(int is_gnb,
     t_Reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
-  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rntiMaybeUEid);
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, UEid);
   if (nr_pdcp_get_rb(ue, srb_id, true) != NULL) {
-    LOG_E(PDCP, "warning SRB %d already exist for UE ID/RNTI %ld, do nothing\n", srb_id, rntiMaybeUEid);
+    LOG_E(PDCP, "warning SRB %d already exist for UE ID %ld, do nothing\n", srb_id, UEid);
   } else {
     pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
                                   0, false, false, // sdap parameters
@@ -795,13 +795,13 @@ void add_srb(int is_gnb,
                                   integrity_key);
     nr_pdcp_ue_add_srb_pdcp_entity(ue, srb_id, pdcp_srb);
 
-    LOG_D(PDCP, "%s:%d:%s: added srb %d to UE ID/RNTI %ld\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rntiMaybeUEid);
+    LOG_D(PDCP, "added srb %d to UE ID %ld\n", srb_id, UEid);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
 void add_drb(int is_gnb,
-             ue_id_t rntiMaybeUEid,
+             ue_id_t UEid,
              struct NR_DRB_ToAddMod *s,
              int ciphering_algorithm,
              int integrity_algorithm,
@@ -877,9 +877,9 @@ void add_drb(int is_gnb,
 
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
-  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rntiMaybeUEid);
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, UEid);
   if (nr_pdcp_get_rb(ue, drb_id, false) != NULL) {
-    LOG_W(PDCP, "warning DRB %d already exist for UE ID/RNTI %ld, do nothing\n", drb_id, rntiMaybeUEid);
+    LOG_W(PDCP, "warning DRB %d already exist for UE ID %ld, do nothing\n", drb_id, UEid);
   } else {
     pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id, pdusession_id,
                                   has_sdap_rx, has_sdap_tx, deliver_sdu_drb, ue,
@@ -893,9 +893,9 @@ void add_drb(int is_gnb,
                                   has_integrity ? integrity_key : NULL);
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
-    LOG_D(PDCP, "%s:%d:%s: added drb %d to UE ID/RNTI %ld\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rntiMaybeUEid);
+    LOG_D(PDCP, "added drb %d to UE ID %ld\n", drb_id, UEid);
 
-    new_nr_sdap_entity(is_gnb, has_sdap_rx, has_sdap_tx, rntiMaybeUEid, pdusession_id, is_sdap_DefaultDRB, drb_id, mappedQFIs2Add, mappedQFIs2AddCount);
+    new_nr_sdap_entity(is_gnb, has_sdap_rx, has_sdap_tx, UEid, pdusession_id, is_sdap_DefaultDRB, drb_id, mappedQFIs2Add, mappedQFIs2AddCount);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
