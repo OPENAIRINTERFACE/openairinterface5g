@@ -72,8 +72,7 @@ typedef struct {
 extern nr_bler_struct nr_bler_data[NR_NUM_MCS];
 extern nr_bler_struct nr_mimo_bler_data[NR_NUM_MCS];
 
-void read_channel_param(const nfapi_nr_dl_tti_pdsch_pdu_rel15_t * pdu, int sf, int index);
-void save_pdsch_pdu_for_crnti(nfapi_nr_dl_tti_request_t *dl_tti_request);
+void read_channel_param(const nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdu, int sf, int index);
 float get_bler_val(uint8_t mcs, int sinr);
 bool should_drop_transport_block(int slot, uint16_t rnti);
 bool is_channel_modeling(void);

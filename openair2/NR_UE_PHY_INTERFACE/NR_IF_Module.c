@@ -66,6 +66,7 @@ queue_t nr_tx_req_queue;
 queue_t nr_ul_dci_req_queue;
 queue_t nr_ul_tti_req_queue;
 pthread_mutex_t mac_IF_mutex;
+static void save_pdsch_pdu_for_crnti(nfapi_nr_dl_tti_request_t *dl_tti_request);
 
 void nrue_init_standalone_socket(int tx_port, int rx_port)
 {
@@ -906,7 +907,7 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
     return;
 }
 
-void save_pdsch_pdu_for_crnti(nfapi_nr_dl_tti_request_t *dl_tti_request)
+static void save_pdsch_pdu_for_crnti(nfapi_nr_dl_tti_request_t *dl_tti_request)
 {
   int count_sent = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);

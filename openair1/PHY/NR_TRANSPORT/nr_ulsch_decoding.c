@@ -372,7 +372,9 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 
   LOG_D(PHY,
-        "ULSCH Decoding, harq_pid %d rnti %x TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, Coderate %f RV %d round %d new RX %d\n",
+        "ULSCH Decoding, ulsch_id %d, harq_pid %d rnti %x TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, Coderate %f RV %d round %d new "
+        "RX %d\n",
+        ULSCH_id,
         harq_pid,
         ulsch->rnti,
         A,
