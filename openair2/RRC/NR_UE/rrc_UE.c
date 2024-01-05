@@ -865,7 +865,7 @@ static void rrc_ue_generate_RRCSetupComplete(instance_t instance, rnti_t rnti, c
     nas_msg_length = sizeof(nr_nas_attach_req_imsi_dummy_NSA_case);
   }
 
-  size = do_RRCSetupComplete(instance, buffer, sizeof(buffer), Transaction_id, sel_plmn_id, nas_msg_length, nas_msg);
+  size = do_RRCSetupComplete(buffer, sizeof(buffer), Transaction_id, sel_plmn_id, nas_msg_length, nas_msg);
   LOG_I(NR_RRC, "[UE %ld][RAPROC] Logical Channel UL-DCCH (SRB1), Generating RRCSetupComplete (bytes%d)\n", instance, size);
   int srb_id = 1; // RRC setup complete on SRB1
   LOG_D(NR_RRC, "[RRC_UE %ld] PDCP_DATA_REQ/%d Bytes RRCSetupComplete ---> %d\n", instance, size, srb_id);

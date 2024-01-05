@@ -492,7 +492,7 @@ static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
   unsigned char buf[1024];
-  int size = do_RRCReject(module_id, buf);
+  int size = do_RRCReject(buf);
   AssertFatal(size > 0, "do_RRCReject failed\n");
   AssertFatal(size <= 1024, "memory corruption\n");
 
