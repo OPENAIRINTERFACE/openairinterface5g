@@ -617,7 +617,7 @@ static void generateSecurityModeComplete(nr_ue_nas_t *nas, as_nas_info_t *initia
   }
 }
 
-static void decodeRegistrationAccept(uint8_t *buf, int len, nr_ue_nas_t *nas)
+static void decodeRegistrationAccept(const uint8_t *buf, int len, nr_ue_nas_t *nas)
 {
   registration_accept_msg reg_acc = {0};
   /* it seems there is no 5G corresponding emm_msg_decode() function, so here
@@ -1033,6 +1033,29 @@ void *nas_nrue_task(void *args_p)
   }
 }
 
+static void handle_registration_accept(instance_t instance,
+                                       nr_ue_nas_t *nas,
+                                       const uint8_t *pdu_buffer,
+                                       uint32_t msg_length)
+{
+  LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
+  decodeRegistrationAccept(pdu_buffer, msg_length, nas);
+  get_allowed_nssai(nas_allowed_nssai, pdu_buffer, msg_length);
+
+  as_nas_info_t initialNasMsg = {0};
+  generateRegistrationComplete(nas, &initialNasMsg, NULL);
+  if (initialNasMsg.length > 0) {
+    send_nas_uplink_data_req(instance, &initialNasMsg);
+    LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
+  }
+  const int nssai_idx = get_user_nssai_idx(nas_allowed_nssai, nas);
+  if (nssai_idx < 0) {
+    LOG_E(NAS, "NSSAI parameters not match with allowed NSSAI. Couldn't request PDU session.\n");
+  } else {
+    request_default_pdusession(instance, nssai_idx);
+  }
+}
+
 void *nas_nrue(void *args_p)
 {
   // Wait for a message or an event
@@ -1112,24 +1135,8 @@ void *nas_nrue(void *args_p)
         int msg_type = get_msg_type(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
 
         if (msg_type == REGISTRATION_ACCEPT) {
-          LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
           nr_ue_nas_t *nas = get_ue_nas_info(0);
-          decodeRegistrationAccept(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length, nas);
-          get_allowed_nssai(nas_allowed_nssai, pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
-
-          as_nas_info_t initialNasMsg = {0};
-          generateRegistrationComplete(nas, &initialNasMsg, NULL);
-          if (initialNasMsg.length > 0) {
-            send_nas_uplink_data_req(instance, &initialNasMsg);
-            LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
-          }
-
-          const int nssai_idx = get_user_nssai_idx(nas_allowed_nssai, nas);
-          if (nssai_idx < 0) {
-            LOG_E(NAS, "NSSAI parameters not match with allowed NSSAI. Couldn't request PDU session.\n");
-          } else {
-            request_default_pdusession(instance, nssai_idx);
-          }
+          handle_registration_accept(instance, nas, pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
         } else if (msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC) {
           capture_pdu_session_establishment_accept_msg(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
         }
@@ -1205,21 +1212,7 @@ void *nas_nrue(void *args_p)
             decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
             break;
           case REGISTRATION_ACCEPT:
-            LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
-            decodeRegistrationAccept(pdu_buffer, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length, nas);
-
-            as_nas_info_t initialNasMsg = {0};
-            generateRegistrationComplete(nas, &initialNasMsg, NULL);
-            if (initialNasMsg.length > 0) {
-              send_nas_uplink_data_req(instance, &initialNasMsg);
-              LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
-            }
-            const int nssai_idx = get_user_nssai_idx(nas_allowed_nssai, nas);
-            if (nssai_idx < 0) {
-              LOG_E(NAS, "NSSAI parameters not match with allowed NSSAI. Couldn't request PDU session.\n");
-            } else {
-              request_default_pdusession(instance, nssai_idx);
-            }
+            handle_registration_accept(instance, nas, pdu_buffer, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length);
             break;
           case FGS_DEREGISTRATION_ACCEPT:
             LOG_I(NAS, "received deregistration accept\n");

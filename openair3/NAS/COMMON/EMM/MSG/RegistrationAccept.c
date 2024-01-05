@@ -39,7 +39,7 @@
 #include "RegistrationAccept.h"
 #include "assertions.h"
 
-int decode_registration_accept(registration_accept_msg *registration_accept, uint8_t *buffer, uint32_t len)
+int decode_registration_accept(registration_accept_msg *registration_accept, const uint8_t *buffer, uint32_t len)
 {
   uint32_t decoded = 0;
   int decoded_result = 0;

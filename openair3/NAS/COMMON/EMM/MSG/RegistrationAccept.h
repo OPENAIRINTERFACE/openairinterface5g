@@ -62,7 +62,7 @@ typedef struct registration_accept_msg_tag {
   FGSMobileIdentity *guti;
 } registration_accept_msg;
 
-int decode_registration_accept(registration_accept_msg *registrationaccept, uint8_t *buffer, uint32_t len);
+int decode_registration_accept(registration_accept_msg *registrationaccept, const uint8_t *buffer, uint32_t len);
 
 int encode_registration_accept(registration_accept_msg *registrationaccept, uint8_t *buffer, uint32_t len);
 
