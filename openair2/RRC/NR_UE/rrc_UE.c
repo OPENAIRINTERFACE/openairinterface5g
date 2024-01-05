@@ -143,7 +143,7 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
                                                 rnti_t rnti,
                                                 rrcPerNB_t *rrcNB,
                                                 NR_RadioBearerConfig_t *const radioBearerConfig);
-static void nr_rrc_ue_generate_RRCSetupRequest(rnti_t rnti);
+static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc, rnti_t rnti);
 static void nr_rrc_ue_generate_rrcReestablishmentComplete(NR_RRCReestablishment_t *rrcReestablishment);
 static void process_lte_nsa_msg(NR_UE_RRC_INST_t *rrc, nsa_msg_t *msg, int msg_len);
 static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
@@ -572,12 +572,12 @@ static int nr_decode_SI(NR_UE_RRC_SI_INFO *SI_info, NR_SystemInformation_t *si)
   return 0;
 }
 
-void nr_rrc_ue_generate_ra_msg(instance_t instance, RA_trigger_t trigger, rnti_t rnti)
+void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, rnti_t rnti)
 {
   switch (trigger) {
     case INITIAL_ACCESS_FROM_RRC_IDLE:
       // After SIB1 is received, prepare RRCConnectionRequest
-      nr_rrc_ue_generate_RRCSetupRequest(rnti);
+      nr_rrc_ue_generate_RRCSetupRequest(rrc, rnti);
       break;
     case RRC_CONNECTION_REESTABLISHMENT:
       AssertFatal(1==0, "ra_trigger not implemented yet!\n");
@@ -606,8 +606,9 @@ void nr_rrc_ue_generate_ra_msg(instance_t instance, RA_trigger_t trigger, rnti_t
   }
 }
 
-static void nr_rrc_ue_generate_RRCSetupRequest(rnti_t rnti)
+static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc, rnti_t rnti)
 {
+  LOG_D(NR_RRC, "Generation of RRCSetupRequest\n");
   uint8_t rv[6];
   // Get RRCConnectionRequest, fill random for now
   // Generate random byte stream for contention resolution
@@ -622,6 +623,10 @@ static void nr_rrc_ue_generate_RRCSetupRequest(rnti_t rnti)
 
   uint8_t buf[1024];
   int len = do_RRCSetupRequest(buf, sizeof(buf), rv);
+
+  // start timer T300
+  NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
+  tac->T300_active = true;
 
   /* convention: RNTI for SRB0 is zero, as it changes all the time */
   nr_rlc_srb_recv_sdu(rnti, 0, buf, len);
@@ -868,6 +873,58 @@ static void rrc_ue_generate_RRCSetupComplete(instance_t instance, rnti_t rnti, c
   nr_pdcp_data_req_srb(rnti, srb_id, 0, size, buffer, deliver_pdu_srb_rlc, NULL);
 }
 
+static void nr_rrc_process_rrcsetup(const instance_t instance,
+                                    const rnti_t rnti,
+                                    const uint8_t gNB_index,
+                                    const NR_RRCSetup_t *rrcSetup)
+{
+  NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
+
+  // if the RRCSetup is received in response to an RRCReestablishmentRequest
+  // or RRCResumeRequest or RRCResumeRequest1
+  // TODO none of the procedures implemented yet
+
+  // perform the cell group configuration procedure in accordance with the received masterCellGroup
+  rrc->rnti = rnti;
+  nr_rrc_ue_process_masterCellGroup(instance,
+                                    rnti,
+                                    rrc->perNB + gNB_index,
+                                    &rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup,
+                                    NULL);
+  // perform the radio bearer configuration procedure in accordance with the received radioBearerConfig
+  nr_rrc_ue_process_RadioBearerConfig(rrc,
+                                      rnti,
+                                      rrc->perNB + gNB_index,
+                                      &rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+
+  // TODO (not handled) if stored, discard the cell reselection priority information provided by
+  // the cellReselectionPriorities or inherited from another RAT
+
+  // stop timer T300, T301 or T319 if running;
+  NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
+  timers->T300_active = false;
+  timers->T300_cnt = 0;
+  timers->T301_active = false;
+  timers->T301_cnt = 0;
+  timers->T319_active = false;
+  timers->T319_cnt = 0;
+  timers->T320_active = false;
+  timers->T320_cnt = 0;
+
+  // TODO if T390 and T302 are running (not implemented)
+
+  // if the RRCSetup is received in response to an RRCResumeRequest, RRCResumeRequest1 or RRCSetupRequest
+  // enter RRC_CONNECTED
+  rrc->nrRrcState = RRC_STATE_CONNECTED_NR;
+
+  // set the content of RRCSetupComplete message
+  // TODO procedues described in 5.3.3.4 seems more complex than what we actualy do
+  rrc_ue_generate_RRCSetupComplete(instance,
+                                   rnti,
+                                   rrcSetup->rrc_TransactionIdentifier,
+                                   rrc->selected_plmn_identity);
+}
+
 static int8_t nr_rrc_ue_decode_ccch(const instance_t instance,
                                     const rnti_t rnti,
                                     const NRRrcMacCcchDataInd *ind,
@@ -906,27 +963,7 @@ static int8_t nr_rrc_ue_decode_ccch(const instance_t instance,
 
        case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
          LOG_I(NR_RRC, "[UE%ld][RAPROC] Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n", instance, rnti);
-
-         // Get configuration
-         // Release T300 timer
-         rrc->timers_and_constants.T300_active = 0;
-         rrc->rnti = rnti;
-         NR_RRCSetup_t *rrcSetup = dl_ccch_msg->message.choice.c1->choice.rrcSetup;
-         nr_rrc_ue_process_masterCellGroup(instance,
-                                           rnti,
-                                           rrc->perNB + gNB_index,
-                                           &rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup,
-                                           NULL);
-         nr_rrc_ue_process_RadioBearerConfig(rrc,
-                                             rnti,
-                                             rrc->perNB + gNB_index,
-                                             &rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
-         rrc->nrRrcState = RRC_STATE_CONNECTED_NR;
-
-         rrc_ue_generate_RRCSetupComplete(instance,
-                                          rnti,
-                                          rrcSetup->rrc_TransactionIdentifier,
-                                          rrc->selected_plmn_identity);
+         nr_rrc_process_rrcsetup(instance, rnti, gNB_index, dl_ccch_msg->message.choice.c1->choice.rrcSetup);
          rval = 0;
          break;
 
@@ -1430,14 +1467,13 @@ void *rrc_nrue(void *notUsed)
   case NRRRC_FRAME_PROCESS:
     LOG_D(NR_RRC, "Received %s: frame %d\n", ITTI_MSG_NAME(msg_p), NRRRC_FRAME_PROCESS(msg_p).frame);
     // increase the timers every 10ms (every new frame)
-    NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[instance].timers_and_constants;
-    nr_rrc_handle_timers(timers);
+    nr_rrc_handle_timers(rrc, instance);
     NR_UE_RRC_SI_INFO *SInfo = &NR_UE_rrc_inst[instance].perNB[NRRRC_FRAME_PROCESS(msg_p).gnb_id].SInfo;
     nr_rrc_SI_timers(SInfo);
     break;
 
   case NR_RRC_MAC_MSG3_IND:
-    nr_rrc_ue_generate_ra_msg(instance, INITIAL_ACCESS_FROM_RRC_IDLE, NR_RRC_MAC_MSG3_IND(msg_p).rnti);
+    nr_rrc_ue_generate_ra_msg(rrc, INITIAL_ACCESS_FROM_RRC_IDLE, NR_RRC_MAC_MSG3_IND(msg_p).rnti);
     break;
 
   case NR_RRC_MAC_RA_IND:
@@ -1947,6 +1983,15 @@ void nr_rrc_going_to_IDLE(instance_t instance,
   MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NR_NAS_CONN_RELEASE_IND);
   NR_NAS_CONN_RELEASE_IND(msg_p).cause = release_cause;
   itti_send_msg_to_task(TASK_NAS_NRUE, instance, msg_p);
+}
+
+void handle_t300_expiry(instance_t instance)
+{
+  // reset MAC, release the MAC configuration
+  NR_UE_MAC_reset_cause_t cause = T300_EXPIRY;
+  nr_rrc_mac_config_req_reset(instance, cause);
+  // TODO handle connEstFailureControl
+  // TODO inform upper layers about the failure to establish the RRC connection
 }
 
 void nr_ue_rrc_timer_trigger(int instance, int frame, int gnb_id)

@@ -98,9 +98,18 @@ void nr_rrc_SI_timers(NR_UE_RRC_SI_INFO *SInfo)
   }
 }
 
-void nr_rrc_handle_timers(NR_UE_Timers_Constants_t *timers)
+void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc, instance_t instance)
 {
-  // T304
+  NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
+
+  if (timers->T300_active == true) {
+    timers->T300_cnt += 10;
+    if(timers->T300_cnt >= timers->T300_k) {
+      timers->T300_active = false;
+      timers->T300_cnt = 0;
+      handle_t300_expiry(instance);
+    }
+  }
   if (timers->T304_active == true) {
     timers->T304_cnt += 10;
     if(timers->T304_cnt >= timers->T304_k) {
@@ -118,6 +127,14 @@ void nr_rrc_handle_timers(NR_UE_Timers_Constants_t *timers)
       // handle detection of radio link failure
       // as described in 5.3.10.3 of 38.331
       AssertFatal(false, "Radio link failure! Not handled yet!\n");
+    }
+  }
+  if (timers->T311_active == true) {
+    timers->T311_cnt += 10;
+    if(timers->T311_cnt >= timers->T311_k) {
+      // Upon T311 expiry, the UE shall perform the actions upon going to RRC_IDLE
+      // with release cause 'RRC connection failure'
+      nr_rrc_going_to_IDLE(instance, RRC_CONNECTION_FAILURE, NULL);
     }
   }
 }
