@@ -56,7 +56,7 @@ void send_srb0_rrc(int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *data)
 
 void send_msg3_rrc_request(module_id_t mod_id, int rnti)
 {
-  nr_rlc_activate_srb0(rnti, NULL, send_srb0_rrc);
+  nr_rlc_activate_srb0(mod_id, NULL, send_srb0_rrc);
   nr_mac_rrc_msg3_ind(mod_id, rnti);
 }
 

@@ -992,7 +992,7 @@ void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconf
       init_nsa_message(&rrc_inst[i], reconfig_file, rbconfig_file);
       // TODO why do we need noS1 configuration?
       // temporarily moved here to understand why not using the one provided by gNB
-      nr_rlc_activate_srb0(mac->crnti, NULL, send_srb0_rrc);
+      nr_rlc_activate_srb0(i, NULL, send_srb0_rrc);
       if (IS_SOFTMODEM_NOS1) {
         // get default noS1 configuration
         NR_RadioBearerConfig_t *rbconfig = NULL;
@@ -1002,7 +1002,7 @@ void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconf
         // set up PDCP, RLC, MAC
         nr_pdcp_layer_init(false);
         nr_pdcp_add_drbs(ENB_FLAG_NO, i, rbconfig->drb_ToAddModList, 0, NULL, NULL);
-        nr_rlc_add_drb(mac->crnti, rbconfig->drb_ToAddModList->list.array[0]->drb_Identity, rlc_rbconfig);
+        nr_rlc_add_drb(i, rbconfig->drb_ToAddModList->list.array[0]->drb_Identity, rlc_rbconfig);
         struct NR_CellGroupConfig__rlc_BearerToAddModList rlc_toadd_list;
         rlc_toadd_list.list.count = 1;
         rlc_toadd_list.list.array = calloc(1, sizeof(NR_RLC_BearerConfig_t));

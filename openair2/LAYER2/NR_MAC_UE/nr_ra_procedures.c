@@ -620,7 +620,7 @@ void nr_get_msg3_payload(module_id_t mod_id, uint8_t *buf, int TBS_max)
   // if RRC has called nr_rlc_srb_recv_sdu(),
   // we are good even if the name is misleading (we send a ssrb msg, not receive if)
   tbs_size_t len = mac_rlc_data_req(mod_id,
-                                    ra->t_crnti,
+                                    mac->ue_id,
                                     0,
                                     0,
                                     ENB_FLAG_NO,

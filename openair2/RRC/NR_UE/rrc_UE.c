@@ -136,13 +136,12 @@ static const char nr_nas_attach_req_imsi_dummy_NSA_case[] = {
 
 static void nr_rrc_manage_rlc_bearers(const instance_t instance,
                                       const NR_CellGroupConfig_t *cellGroupConfig,
-                                      rrcPerNB_t *rrc,
-                                      const rnti_t rnti);
+                                      rrcPerNB_t *rrc);
 
 static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
                                                 rrcPerNB_t *rrcNB,
                                                 NR_RadioBearerConfig_t *const radioBearerConfig);
-static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc, rnti_t rnti);
+static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc);
 static void nr_rrc_ue_generate_rrcReestablishmentComplete(NR_RRCReestablishment_t *rrcReestablishment);
 static void process_lte_nsa_msg(NR_UE_RRC_INST_t *rrc, nsa_msg_t *msg, int msg_len);
 static void nr_rrc_ue_process_rrcReconfiguration(const instance_t instance,
@@ -566,12 +565,12 @@ static int nr_decode_SI(NR_UE_RRC_SI_INFO *SI_info, NR_SystemInformation_t *si)
   return 0;
 }
 
-void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, rnti_t rnti)
+void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger)
 {
   switch (trigger) {
     case INITIAL_ACCESS_FROM_RRC_IDLE:
       // After SIB1 is received, prepare RRCConnectionRequest
-      nr_rrc_ue_generate_RRCSetupRequest(rrc, rnti);
+      nr_rrc_ue_generate_RRCSetupRequest(rrc);
       break;
     case RRC_CONNECTION_REESTABLISHMENT:
       AssertFatal(1==0, "ra_trigger not implemented yet!\n");
@@ -600,7 +599,7 @@ void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, rnti
   }
 }
 
-static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc, rnti_t rnti)
+static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc)
 {
   LOG_D(NR_RRC, "Generation of RRCSetupRequest\n");
   uint8_t rv[6];
@@ -623,7 +622,7 @@ static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc, rnti_t rnt
   tac->T300_active = true;
 
   /* convention: RNTI for SRB0 is zero, as it changes all the time */
-  nr_rlc_srb_recv_sdu(rnti, 0, buf, len);
+  nr_rlc_srb_recv_sdu(rrc->ue_id, 0, buf, len);
 }
 
 void nr_rrc_configure_default_SI(NR_UE_RRC_SI_INFO *SI_info,
@@ -720,14 +719,13 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(instance_t instance,
 
 static void nr_rrc_manage_rlc_bearers(const instance_t instance,
                                       const NR_CellGroupConfig_t *cellGroupConfig,
-                                      rrcPerNB_t *rrc,
-                                      const rnti_t rnti)
+                                      rrcPerNB_t *rrc)
 {
   if (cellGroupConfig->rlc_BearerToReleaseList != NULL) {
     for (int i = 0; i < cellGroupConfig->rlc_BearerToReleaseList->list.count; i++) {
       NR_LogicalChannelIdentity_t *lcid = cellGroupConfig->rlc_BearerToReleaseList->list.array[i];
       AssertFatal(lcid, "LogicalChannelIdentity shouldn't be null here\n");
-      nr_rlc_release_entity(rnti, *lcid);
+      nr_rlc_release_entity(instance, *lcid);
     }
   }
 
@@ -737,8 +735,8 @@ static void nr_rrc_manage_rlc_bearers(const instance_t instance,
       NR_LogicalChannelIdentity_t lcid = rlc_bearer->logicalChannelIdentity;
       if (rrc->active_RLC_entity[lcid]) {
         if (rlc_bearer->reestablishRLC)
-          nr_rlc_reestablish_entity(rnti, lcid);
-        nr_rlc_reconfigure_entity(rnti, lcid, rlc_bearer->rlc_Config);
+          nr_rlc_reestablish_entity(instance, lcid);
+        nr_rlc_reconfigure_entity(instance, lcid, rlc_bearer->rlc_Config);
       } else {
         rrc->active_RLC_entity[lcid] = true;
         AssertFatal(rlc_bearer->servedRadioBearer, "servedRadioBearer mandatory in case of setup\n");
@@ -746,10 +744,10 @@ static void nr_rrc_manage_rlc_bearers(const instance_t instance,
                     "Invalid RB for RLC configuration\n");
         if (rlc_bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity) {
           NR_SRB_Identity_t srb_id = rlc_bearer->servedRadioBearer->choice.srb_Identity;
-          nr_rlc_add_srb(rnti, srb_id, rlc_bearer);
+          nr_rlc_add_srb(instance, srb_id, rlc_bearer);
         } else { // DRB
           NR_DRB_Identity_t drb_id = rlc_bearer->servedRadioBearer->choice.drb_Identity;
-          nr_rlc_add_drb(rnti, drb_id, rlc_bearer);
+          nr_rlc_add_drb(instance, drb_id, rlc_bearer);
         }
       }
     }
@@ -807,7 +805,7 @@ void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB,
 
   // TODO verify why we need this limitation
   if (get_softmodem_params()->sa || get_softmodem_params()->nsa)
-    nr_rrc_manage_rlc_bearers(instance, cellGroupConfig, rrcNB, rrc->rnti);
+    nr_rrc_manage_rlc_bearers(instance, cellGroupConfig, rrcNB);
 
   AssertFatal(cellGroupConfig->sCellToReleaseList == NULL,
               "Secondary serving cell release not implemented\n");
@@ -1461,7 +1459,7 @@ void *rrc_nrue(void *notUsed)
     break;
 
   case NR_RRC_MAC_MSG3_IND:
-    nr_rrc_ue_generate_ra_msg(rrc, INITIAL_ACCESS_FROM_RRC_IDLE, NR_RRC_MAC_MSG3_IND(msg_p).rnti);
+    nr_rrc_ue_generate_ra_msg(rrc, INITIAL_ACCESS_FROM_RRC_IDLE);
     break;
 
   case NR_RRC_MAC_RA_IND:
@@ -1931,7 +1929,7 @@ void nr_rrc_going_to_IDLE(instance_t instance,
     for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
       if (nb->active_RLC_entity[i]) {
         nb->active_RLC_entity[i] = false;
-        nr_rlc_release_entity(rrc->rnti, i);
+        nr_rlc_release_entity(instance, i);
       }
     }
   }

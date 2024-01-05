@@ -3606,7 +3606,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
           }
 
           mac_rlc_data_ind(module_idP,
-                           mac->crnti,
+                           mac->ue_id,
                            module_idP,
                            frameP,
                            ENB_FLAG_NO,
@@ -3744,7 +3744,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         LOG_D(NR_MAC, "%4d.%2d : DLSCH -> LCID %d %d bytes\n", frameP, slot, rx_lcid, mac_len);
 
         mac_rlc_data_ind(module_idP,
-                         mac->crnti,
+                         mac->ue_id,
                          gNB_index,
                          frameP,
                          ENB_FLAG_NO,
