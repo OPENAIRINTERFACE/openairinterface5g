@@ -300,7 +300,7 @@ typedef struct gNB_RRC_UE_s {
   uint8_t e_rab_release_command_flag;
   uint32_t ue_rrc_inactivity_timer;
   uint32_t                           ue_reestablishment_counter;
-  uint32_t                           ue_reconfiguration_after_reestablishment_counter;
+  uint32_t                           ue_reconfiguration_counter;
   NR_CellGroupId_t                                      cellGroupId;
   struct NR_SpCellConfig                                *spCellConfig;
   struct NR_CellGroupConfig__sCellToAddModList          *sCellconfig;

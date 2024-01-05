@@ -949,15 +949,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 }
 
 //-----------------------------------------------------------------------------
-/*
-* Process the RRC Reconfiguration Complete from the UE
-*/
-static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP, const uint8_t xid)
-{
-  ue_context_pP->ue_context.ue_reconfiguration_after_reestablishment_counter++;
-}
-
-//-----------------------------------------------------------------------------
 static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context_pP,
                                                 const uint8_t *masterCellGroup_from_DU,
                                                 const rnti_t old_rnti,
@@ -1500,7 +1491,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   uint8_t xid = reconfig_complete->rrc_TransactionIdentifier;
-  rrc_gNB_process_RRCReconfigurationComplete(ctxt_pP, ue_context_p, xid);
+  UE->ue_reconfiguration_counter++;
 
   bool successful_reconfig = true;
   switch (UE->xids[xid]) {
