@@ -547,7 +547,8 @@ void term_gNB_Tpool(int inst) {
   gNB_L1_proc_t *proc = &gNB->proc;
   if (!get_softmodem_params()->emulate_l1)
     pthread_join(proc->L1_stats_thread, NULL);
-  pthread_join(proc->pthread_tx_reorder, NULL);
+  if (!get_softmodem_params()->reorder_thread_disable)
+    pthread_join(proc->pthread_tx_reorder, NULL);
 }
 
 /*!
