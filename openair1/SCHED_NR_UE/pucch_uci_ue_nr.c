@@ -83,64 +83,7 @@ binary_search_float_nr(
 
   return first;
 }
-/*
-void nr_generate_pucch0(int32_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        uint8_t mcs,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB);
 
-void nr_generate_pucch1(int32_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                        uint64_t payload,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB,
-                        uint16_t startingPRB_intraSlotHopping,
-                        uint8_t timeDomainOCC,
-                        uint8_t nr_bit);
-
-void nr_generate_pucch2(int32_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                        uint64_t payload,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint8_t nrofPRB,
-                        uint16_t startingPRB,
-                        uint8_t nr_bit);
-
-void nr_generate_pucch3_4(int32_t **txdataF,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         pucch_format_nr_t fmt,
-                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                         uint64_t payload,
-                         int16_t amp,
-                         int nr_slot_tx,
-                         uint8_t nrofSymbols,
-                         uint8_t startingSymbolIndex,
-                         uint8_t nrofPRB,
-                         uint16_t startingPRB,
-                         uint8_t nr_bit,
-                         uint8_t occ_length_format4,
-                         uint8_t occ_index_format4);
-*/
-/**************** variables **************************************/
-
-
-/**************** functions **************************************/
-
-//extern uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id);
-//extern uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id);
 /*******************************************************************
 *
 * NAME :         pucch_procedures_ue_nr

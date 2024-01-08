@@ -795,6 +795,22 @@ void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs)
     pthread_mutex_init(&(mac->ul_config_request[i].mutex_ul_config), NULL);
 }
 
+static void update_mib_conf(NR_MIB_t *target, NR_MIB_t *source)
+{
+  target->systemFrameNumber.size = source->systemFrameNumber.size;
+  target->systemFrameNumber.bits_unused = source->systemFrameNumber.bits_unused;
+  if (!target->systemFrameNumber.buf)
+    target->systemFrameNumber.buf = calloc(target->systemFrameNumber.size, sizeof(*target->systemFrameNumber.buf));
+  for (int i = 0; i < target->systemFrameNumber.size; i++)
+    target->systemFrameNumber.buf[i] = source->systemFrameNumber.buf[i];
+  target->subCarrierSpacingCommon = source->subCarrierSpacingCommon;
+  target->ssb_SubcarrierOffset = source->ssb_SubcarrierOffset;
+  target->dmrs_TypeA_Position = source->dmrs_TypeA_Position;
+  target->pdcch_ConfigSIB1 = source->pdcch_ConfigSIB1;
+  target->cellBarred = source->cellBarred;
+  target->intraFreqReselection = source->intraFreqReselection;
+}
+
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
                                int cc_idP,
                                NR_MIB_t *mib,
@@ -802,16 +818,16 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   AssertFatal(mib, "MIB should not be NULL\n");
-  // initialize dl and ul config_request upon first reception of MIB
-  mac->mib = mib;    //  update by every reception
+  if (!mac->mib)
+    mac->mib = calloc(1, sizeof(*mac->mib));
+  update_mib_conf(mac->mib, mib);
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_idP;
   if (sched_sib == 1)
     mac->get_sib1 = true;
   else if (sched_sib == 2)
     mac->get_otherSI = true;
-  nr_ue_decode_mib(module_id,
-                   cc_idP);
+  nr_ue_decode_mib(module_id, cc_idP);
 }
 
 static void setup_puschpowercontrol(NR_PUSCH_PowerControl_t *source, NR_PUSCH_PowerControl_t *target)
@@ -1365,11 +1381,12 @@ void nr_rrc_mac_config_req_reset(module_id_t module_id,
 
   // Sending to PHY a request to resync
   // with no target cell ID
-  mac->synch_request.Mod_id = module_id;
-  mac->synch_request.CC_id = 0;
-  mac->synch_request.synch_req.target_Nid_cell = -1;
-  mac->if_module->synch_request(&mac->synch_request);
-
+  if (reset_cause != DETACH) {
+    mac->synch_request.Mod_id = module_id;
+    mac->synch_request.CC_id = 0;
+    mac->synch_request.synch_req.target_Nid_cell = -1;
+    mac->if_module->synch_request(&mac->synch_request);
+  }
 }
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,

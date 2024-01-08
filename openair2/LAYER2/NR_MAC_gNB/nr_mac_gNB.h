@@ -223,6 +223,7 @@ typedef struct {
   NR_CellGroupConfig_t *CellGroup;
   /// Preambles for contention-free access
   NR_preamble_ue_t preambles;
+  int contention_resolution_timer;
   /// CFRA flag
   bool cfra;
   // BWP for RA
@@ -712,7 +713,6 @@ typedef struct {
   // UE selected beam index
   uint8_t UE_beam_index;
   bool Msg4_ACKed;
-  uint32_t ra_timer;
   float ul_thr_ue;
   float dl_thr_ue;
   long pdsch_HARQ_ACK_Codebook;

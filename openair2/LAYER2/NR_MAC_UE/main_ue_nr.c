@@ -198,6 +198,7 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac)
   free(sc->nrofHARQ_ProcessesForPDSCH);
   free(sc->rateMatching_PUSCH);
   free(sc->xOverhead_PUSCH);
+  free(sc->maxMIMO_Layers_PDSCH);
   free(sc->maxMIMO_Layers_PUSCH);
   memset(&mac->sc_info, 0, sizeof(mac->sc_info));
 

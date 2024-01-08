@@ -286,7 +286,6 @@ typedef enum {
 typedef enum {
   NFAPI_NR_CSET_CONFIG_MIB_SIB1=0,
   NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG, // implicit assumption of coreset Id other than 0
-  NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0
 } nfapi_nr_coreset_config_type_e;
 
 typedef enum {

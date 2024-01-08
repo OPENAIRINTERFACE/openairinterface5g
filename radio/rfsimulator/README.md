@@ -1,65 +1,66 @@
+[[_TOC_]]
+
 # General
-This is an RF simulator that allows to test OAI without an RF board. It replaces an actual RF board driver.
 
-As much as possible, it works like an RF board, but not in real-time: It can run faster than real-time if there is enough CPU, or slower (it is CPU-bound instead of real-time RF sampling-bound).
+This is an RF simulator that allows to test OAI without an RF board. It
+replaces an actual RF board driver. In other words, towards the xNB/UE, it
+behaves like a "real" RF board, but it forwards samples between both ends
+instead of sending it over the air. It can simulate simple channels, such as
+AWGN, hence it *simulates* RF.
 
-It can be run either in:
+As much as possible, it works like an RF board, but not in real-time: It can
+run faster than real-time if there is enough CPU, or slower (it is CPU-bound
+instead of real-time RF sampling-bound).
 
-- "noS1" mode: the generated IP traffic is sent and received between gNB and UE IP tunnel interfaces ("oaitun") by applications like ping and iperf
-- "phy-test" mode: random UL and DL traffic is generated at every scheduling opportunity 
-
-
-# build
+# Build
 
 ## From [build_oai](../../../doc/BUILD.md) script
 The RF simulator is implemented as an OAI device and always built when you build the OAI eNB or the OAI UE.
 
-Using the `-w SIMU` option it is possible to just re-build the RF simulator device. 
+Using the `-w SIMU` option it is possible to just re-build the RF simulator device.
 
 Example:
 ```bash
-./build_oai --UE --eNB
-Will compile UE
-Will compile eNB
-CMAKE_CMD=cmake ..
-No local radio head and no transport protocol selected
-No radio head has been selected (HW set to None)
-No transport protocol has been selected (TP set to None)
-RF HW set to None
-Flags for Deadline scheduler: False
-......................
-......................
-Compiling rfsimulator
-Log file for compilation has been written to: /usr/local/oai/rfsimu_config/openairinterface5g/cmake_targets/log/rfsimulator.txt
-rfsimulator compiled
-......................
-......................
+./build_oai --UE --eNB --gNB --nrUE --ninja -w SIMU
 ```
 
 ## Add the rfsimulator after initial build
+
 After any regular build you can compile the device from the build directory:
 ```bash
 cd <path to oai sources>/openairinterface5g/cmake_targets/ran_build/build
-make rfsimulator
+ninja rfsimulator
 ```
+
 This is equivalent to using `-w SIMU` when running the `build_oai` script.
 
 # Usage
-To use the RF simulator add the `--rfsim` option to the command line. By default the RF simulator device will try to connect to host 127.0.0.1, port 4043, which is usually the behavior for the UE.
+
+## Overview
+
+To use the RF simulator add the `--rfsim` option to the command line. By
+default the RF simulator device will try to connect to host 127.0.0.1, port
+4043, which is usually the behavior for the UE.  For the eNB/gNB, you either
+have to pass `--rfsimulator.serveraddr server` on the command line, or specify
+the corresponding section in the configuration file.
 
 The RF simulator is using the configuration module, and its parameters are defined in a specific section called "rfsimulator".
 
 | parameter            | usage                                                                                                             | default |
 |:---------------------|:------------------------------------------------------------------------------------------------------------------|----:|
-| serveraddr           | ip address to connect to, or "enb" to behave as a tcp server                                                      | 127.0.0.1 |
+| serveraddr           | ip address to connect to, or `server` to behave as a tcp server                                                      | 127.0.0.1 |
 | serverport           | port number to connect to or to listen on (eNB, which behaves as a tcp server)                                    | 4043 |
 | options              | list of comma separated run-time options, two are supported: `chanmod` to enable channel modeling and `saviq` to write transmitted iqs to a file | all options disabled  |
 | modelname            | Name of the channel model to apply on received iqs when the `chanmod` option is enabled                           | AWGN |
 | IQfile               | Path to the file to be used to store iqs, when the `saviq` option is enabled                                      | /tmp/rfsimulator.iqs |
-        
+
 ## How to use the RF simulator options
 
-To define and use a channel model, the configuration file needs to include a channel configuration file. To do this, add `@include "channelmod_rfsimu.conf"` to the end of the configuration file, and place the channel configuration file in the same directory. An example channel configuration file `channelmod_rfsimu.conf` is in `ci-scripts/conf_files`.
+To define and use a channel model, the configuration file needs to include a
+channel configuration file. To do this, add `@include "channelmod_rfsimu.conf"`
+to the end of the configuration file, and place the channel configuration file
+in the same directory. An example channel configuration file is
+[`ci-scripts/conf_files/channelmod_rfsimu.conf`](../../ci-scripts/conf_files/channelmod_rfsimu.conf).
 
 Add the following options to the command line to enable the channel model and the IQ samples saving for future replay:
 ```bash
@@ -69,7 +70,7 @@ or just:
 ```bash
 --rfsimulator.options chanmod
 ```
-to enable the channel model. 
+to enable the channel model.
 
 set the model with:
 ```bash
@@ -86,16 +87,26 @@ where `@include "channelmod_rfsimu.conf"` has been added at the end of the file,
 
 ## 4G case
 
-For the UE, it should be set to the IP address of the eNB. For example:
+For the eNB, use a valid configuration file setup for the USRP board tests and start the softmodem with the `--rfsim` and `--rfsimulator.serveraddr server` options.
 ```bash
-sudo ./lte-uesoftmodem -C 2685000000 -r 50 --rfsimulator.serveraddr 192.168.2.200
+sudo ./lte-softmodem -O <config file> --rfsim --rfsimulator.serveraddr server
 ```
-For the eNB, use a valid configuration file setup for the USRP board tests and start the softmodem as usual, **but**, adding the `--rfsim` option.
-```bash
-sudo ./lte-softmodem -O <config file> --rfsim
+Often, configuration files define the corresponding `rfsimulator` section, in
+which case you might omit `--rfsimulator.serveraddr server`. Example:
+```
+rfsimulator : {
+  serveraddr = "server";
+};
 ```
 
-Except this, the UE and the eNB can be used as if the RF is real. noS1 mode can also be used with the RF simulator.
+For the UE, it should be set to the IP address of the eNB. For instance, if the
+eNB runs on another host with IP `192.168.2.200`, do
+```bash
+sudo ./lte-uesoftmodem -C 2685000000 -r 50 --rfsim --rfsimulator.serveraddr 192.168.2.200
+```
+For running on the same host, only `--rfsim` is necessary.
+
+The UE and the eNB can be used as if the RF is real. The noS1 mode might be used as well with the RF simulator.
 
 If you reach 'RA not active' on UE, be careful to generate a valid SIM.
 ```bash
@@ -104,52 +115,30 @@ $OPENAIR_DIR/cmake_targets/ran_build/build/conf2uedata -c $OPENAIR_DIR/openair3/
 
 ## 5G case
 
-If `build_oai` has not been run with `-w SIMU`, you need to build the `rfsimulator` manually. To do so:
+Similarly as for 4G, first launch the gNB, here in an example for the phytest:
+
 ```bash
-cd ran_build/build
-make rfsimulator
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --gNBs.[0].min_rxtxtime 6 --phy-test --rfsim --rfsimulator.serveraddr server
 ```
 
-### Launch gNB in one window
+`--gNBs.[0].min_rxtxtime 6` is due to the UE not being able to handle shorter
+RX/TX times.  As in the 4G case above, you can define an `rfsimulator` section
+in the config file.
+
+Then, launch the UE:
 
 ```bash
-sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test
-```
-
-### Launch UE in another window
-
-```bash
-sudo ./nr-uesoftmodem --rfsim --phy-test --rfsimulator.serveraddr <TARGET_GNB_INTERFACE_ADDRESS>
+sudo ./nr-uesoftmodem --rfsim --phy-test --rfsimulator.serveraddr <TARGET_GNB_IP_ADDRESS>
 ```
 
 Notes:
 
 1. This starts the gNB and UE in the `phy-test` UP-only mode where the gNB is started as if a UE had already connected. See [RUNMODEM.md](../../doc/RUNMODEM.md) for more details.
-2. <TARGET_GNB_INTERFACE_ADDRESS> can be 127.0.0.1 if both gNB and nrUE executables run on the same host, OR the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts.
+2. `<TARGET_GNB_IP_ADDRESS>` should be the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts, or be omitted if they are on the same host.
 3. To enable the noS1 mode, `--noS1` option should be added to the command line, see again [RUNMODEM.md](../../doc/RUNMODEM.md).
 4. To operate the gNB/UE with a 5GC, start them using the `--sa` option. More information can be found [here](../../../doc/NR_SA_Tutorial_OAI_CN5G.md).
 
-In the UE, you can add `-d` option to get the softscope.
-
-### Testing IP traffic (ping and iperf)
-
-```
-ping -I oaitun_enb1 10.0.1.2 (from gNB mchine)
-ping -I oaitun_ue1 10.0.1.1 (from nrUE mchine)
-``` 
-
-```iperf (Downlink):
-Server nrUE machine: iperf -s -i 1 -u -B 10.0.1.2
-Client gNB machine: iperf -c 10.0.1.2 -u -b 0.1M --bind 10.0.1.1
-```
-
-```iperf (Uplink):
-Server gNB machine: iperf -s -i 1 -u -B 10.0.1.1
-Client nrUE machine: iperf -c 10.0.1.1 -u -b 0.1M --bind 10.0.1.2
-Note: iperf tests can be performed only when running gNB and nrUE on separate hosts. 
-```
-
-### Store and replay
+## Store and replay
 
 You can store emitted I/Q samples. If you set the option `saviq`, the simulator will write all the I/Q samples into this file. Then, you can replay with the executable `replay_node`.
 
@@ -163,7 +152,7 @@ The file format is successive blocks of a header followed by the I/Q array. If y
 
 The format intends to be compatible with the OAI store/replay feature on USRP.
 
-### Channel simulation
+## Channel simulation
 
 When the `chanmod` option is enabled, the RF channel simulator is called.
 
@@ -221,11 +210,8 @@ setting the pathloss, etc...:
 channelmod modify <channelid> <param> <value>
 channelmod modify 0 ploss 15
 ```
-where:
-```bash
-<param name> can be one of "riceanf", "aoa", "randaoa", "ploss", "offset", "forgetf"
-```
+where `<param>` can be one of `riceanf`, `aoa`, `randaoa`, `ploss`, `offset`, `forgetf`.
 
 # Caveats
-Still issues in power control: txgain, rxgain are not used.
 
+There are issues in power control: txgain/rxgain setting is not supported.

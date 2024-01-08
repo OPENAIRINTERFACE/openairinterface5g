@@ -2352,8 +2352,7 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
 bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch, frame_t frame, int slot)
 {
   NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
-  NR_PUCCH_Config_t *pucch_Config = current_UL_BWP->pucch_Config;
-  const int n_slots_frame = nr_slots_per_frame[current_UL_BWP->scs];
+  NR_PUCCH_Config_t *pucch_Config = current_UL_BWP ? current_UL_BWP->pucch_Config : NULL;
 
   if(!pucch_Config ||
      !pucch_Config->schedulingRequestResourceToAddModList ||
@@ -2366,6 +2365,7 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *p
     int SR_period; int SR_offset;
 
     find_period_offset_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
+    const int n_slots_frame = nr_slots_per_frame[current_UL_BWP->scs];
     int sfn_sf = frame * n_slots_frame + slot;
 
     if ((sfn_sf - SR_offset) % SR_period == 0) {
@@ -2454,8 +2454,7 @@ int compute_csi_priority(NR_UE_MAC_INST_t *mac, NR_CSI_ReportConfig_t *csirep)
 int nr_get_csi_measurements(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sched_t *pucch)
 {
   NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
-  NR_BWP_Id_t bwp_id = current_UL_BWP->bwp_id;
-  NR_PUCCH_Config_t *pucch_Config = current_UL_BWP->pucch_Config;
+  NR_PUCCH_Config_t *pucch_Config = current_UL_BWP ? current_UL_BWP->pucch_Config : NULL;
   int num_csi = 0;
 
   if (mac->sc_info.csi_MeasConfig) {
@@ -2476,7 +2475,7 @@ int nr_get_csi_measurements(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCC
           for (int i = 0; i < csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.count; i++) {
             const NR_PUCCH_CSI_Resource_t *pucchcsires =
                 csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[i];
-            if (pucchcsires->uplinkBandwidthPartId == bwp_id) {
+            if (pucchcsires->uplinkBandwidthPartId == current_UL_BWP->bwp_id) {
               csi_res_id = pucchcsires->pucch_Resource;
               break;
             }

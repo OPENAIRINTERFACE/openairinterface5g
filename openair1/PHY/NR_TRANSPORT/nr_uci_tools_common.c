@@ -32,12 +32,13 @@
 
 #include "nr_dci.h"
 
-void nr_group_sequence_hopping (pucch_GroupHopping_t PUCCH_GroupHopping,
-                                uint32_t n_id,
-                                uint8_t n_hop,
-                                int nr_slot_tx,
-                                uint8_t *u,
-                                uint8_t *v) {
+void nr_group_sequence_hopping(pucch_GroupHopping_t PUCCH_GroupHopping,
+                               uint32_t n_id,
+                               int n_hop,
+                               int nr_slot_tx,
+                               uint8_t *u,
+                               uint8_t *v)
+{
   /*
    * Implements TS 38.211 subclause 6.3.2.2.1 Group and sequence hopping
    * The following variables are set by higher layers:
