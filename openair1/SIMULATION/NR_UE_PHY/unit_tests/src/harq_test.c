@@ -56,7 +56,7 @@ int test_harq_downlink(PHY_VARS_NR_UE *phy_vars_ue)
   int gNB_id = 0;
   int harq_pid = 0;
   int ndi = 1;
-  uint8_t rnti_type = _C_RNTI_;
+  uint8_t rnti_type = TYPE_C_RNTI_;
   int number_steps = 5;
   int thread_number = 0;
   int TB_identifier = 0;

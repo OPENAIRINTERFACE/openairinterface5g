@@ -597,7 +597,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
   /* Check for PTRS bitmap and process it respectively */
-  if((pduBitmap & 0x1) && (dlsch[0].rnti_type == _C_RNTI_)) {
+  if((pduBitmap & 0x1) && (dlsch[0].rnti_type == TYPE_C_RNTI_)) {
     nr_pdsch_ptrs_processing(
         ue, nbRx, ptrs_phase_per_slot, ptrs_re_per_slot, rx_size_symbol, rxdataF_comp, frame_parms, dlsch0_harq, dlsch1_harq, gNB_id, nr_slot_rx, symbol, (nb_rb_pdsch * 12), dlsch[0].rnti, dlsch);
     dl_valid_re[symbol-1] -= ptrs_re_per_slot[0][symbol];

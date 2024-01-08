@@ -138,9 +138,9 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
 
 void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int dci_ndi, int rv, uint8_t rnti_type) {
 
-  if (rnti_type == _SI_RNTI_ ||
-      rnti_type == _P_RNTI_ ||
-      rnti_type == _RA_RNTI_) {
+  if (rnti_type == TYPE_SI_RNTI_ ||
+      rnti_type == TYPE_P_RNTI_ ||
+      rnti_type == TYPE_RA_RNTI_) {
     dl_harq->DLround = 0;
     dl_harq->status = ACTIVE;
     dl_harq->first_rx = 1;
