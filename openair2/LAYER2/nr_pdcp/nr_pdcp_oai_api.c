@@ -750,8 +750,8 @@ srb_found:
     NR_RRC_DCCH_DATA_IND(message_p).dcch_index = srb_id;
     NR_RRC_DCCH_DATA_IND(message_p).sdu_p = rrc_buffer_p;
     NR_RRC_DCCH_DATA_IND(message_p).sdu_size = size;
-    NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->rntiMaybeUEid;
-    itti_send_msg_to_task(TASK_RRC_NRUE, 0, message_p);
+    ue_id_t ue_id = ue->rntiMaybeUEid;
+    itti_send_msg_to_task(TASK_RRC_NRUE, ue_id, message_p);
   }
 }
 

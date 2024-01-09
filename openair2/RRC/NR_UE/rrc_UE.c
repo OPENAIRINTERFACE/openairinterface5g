@@ -565,11 +565,12 @@ static int nr_decode_SI(NR_UE_RRC_SI_INFO *SI_info, NR_SystemInformation_t *si)
   return 0;
 }
 
-void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger)
+void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, int rnti)
 {
   switch (trigger) {
     case INITIAL_ACCESS_FROM_RRC_IDLE:
       // After SIB1 is received, prepare RRCConnectionRequest
+      rrc->rnti = rnti;
       nr_rrc_ue_generate_RRCSetupRequest(rrc);
       break;
     case RRC_CONNECTION_REESTABLISHMENT:
@@ -865,7 +866,6 @@ static void rrc_ue_generate_RRCSetupComplete(instance_t instance, const uint8_t 
 }
 
 static void nr_rrc_process_rrcsetup(const instance_t instance,
-                                    const rnti_t rnti,
                                     const uint8_t gNB_index,
                                     const NR_RRCSetup_t *rrcSetup)
 {
@@ -876,7 +876,6 @@ static void nr_rrc_process_rrcsetup(const instance_t instance,
   // TODO none of the procedures implemented yet
 
   // perform the cell group configuration procedure in accordance with the received masterCellGroup
-  rrc->rnti = rnti;
   nr_rrc_ue_process_masterCellGroup(instance,
                                     rrc->perNB + gNB_index,
                                     &rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup,
@@ -914,7 +913,6 @@ static void nr_rrc_process_rrcsetup(const instance_t instance,
 }
 
 static int8_t nr_rrc_ue_decode_ccch(const instance_t instance,
-                                    const rnti_t rnti,
                                     const NRRrcMacCcchDataInd *ind,
                                     const uint8_t gNB_index)
 {
@@ -950,8 +948,8 @@ static int8_t nr_rrc_ue_decode_ccch(const instance_t instance,
          break;
 
        case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
-         LOG_I(NR_RRC, "[UE%ld][RAPROC] Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n", instance, rnti);
-         nr_rrc_process_rrcsetup(instance, rnti, gNB_index, dl_ccch_msg->message.choice.c1->choice.rrcSetup);
+         LOG_I(NR_RRC, "[UE%ld][RAPROC] Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup\n", instance);
+         nr_rrc_process_rrcsetup(instance, gNB_index, dl_ccch_msg->message.choice.c1->choice.rrcSetup);
          rval = 0;
          break;
 
@@ -1459,7 +1457,7 @@ void *rrc_nrue(void *notUsed)
     break;
 
   case NR_RRC_MAC_MSG3_IND:
-    nr_rrc_ue_generate_ra_msg(rrc, INITIAL_ACCESS_FROM_RRC_IDLE);
+    nr_rrc_ue_generate_ra_msg(rrc, INITIAL_ACCESS_FROM_RRC_IDLE, NR_RRC_MAC_MSG3_IND(msg_p).rnti);
     break;
 
   case NR_RRC_MAC_RA_IND:
@@ -1483,7 +1481,7 @@ void *rrc_nrue(void *notUsed)
 
   case NR_RRC_MAC_CCCH_DATA_IND: {
     NRRrcMacCcchDataInd *ind = &NR_RRC_MAC_CCCH_DATA_IND(msg_p);
-    nr_rrc_ue_decode_ccch(instance, ind->rnti, ind, 0);
+    nr_rrc_ue_decode_ccch(instance, ind, 0);
   } break;
 
   case NR_RRC_DCCH_DATA_IND:

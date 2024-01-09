@@ -42,7 +42,7 @@
 #include "openair2/LAYER2/RLC/rlc.h"
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
 
-void send_srb0_rrc(int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *data)
+void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data)
 {
   AssertFatal(sdu_len > 0 && sdu_len < CCCH_SDU_SIZE, "invalid CCCH SDU size %d\n", sdu_len);
 
@@ -50,8 +50,7 @@ void send_srb0_rrc(int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *data)
   memset(NR_RRC_MAC_CCCH_DATA_IND(message_p).sdu, 0, sdu_len);
   memcpy(NR_RRC_MAC_CCCH_DATA_IND(message_p).sdu, sdu, sdu_len);
   NR_RRC_MAC_CCCH_DATA_IND(message_p).sdu_size = sdu_len;
-  NR_RRC_MAC_CCCH_DATA_IND(message_p).rnti = rnti;
-  itti_send_msg_to_task(TASK_RRC_NRUE, 0, message_p);
+  itti_send_msg_to_task(TASK_RRC_NRUE, ue_id, message_p);
 }
 
 void send_msg3_rrc_request(module_id_t mod_id, int rnti)

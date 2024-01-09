@@ -88,7 +88,7 @@ void nr_rrc_going_to_IDLE(instance_t instance,
                           NR_RRCRelease_t *RRCRelease);
 
 void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success);
-void nr_mac_rrc_msg3_ind(const module_id_t mod_id, int rnti);
+void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti);
 
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */

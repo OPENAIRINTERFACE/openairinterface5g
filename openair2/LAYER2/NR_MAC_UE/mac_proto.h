@@ -149,7 +149,7 @@
    \param module_id      module id */
 void nr_ue_init_mac(module_id_t module_idP);
 
-void send_srb0_rrc(int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *data);
+void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data);
 
 /**\brief apply default configuration values in nr_mac instance
    \param mac           mac instance */

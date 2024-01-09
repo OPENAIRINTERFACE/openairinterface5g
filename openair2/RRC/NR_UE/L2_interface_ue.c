@@ -101,7 +101,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
   return(0);
 }
 
-void nr_mac_rrc_msg3_ind(const module_id_t mod_id, int rnti)
+void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti)
 {
   MessageDef *message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_MSG3_IND);
   NR_RRC_MAC_MSG3_IND (message_p).rnti = rnti;
