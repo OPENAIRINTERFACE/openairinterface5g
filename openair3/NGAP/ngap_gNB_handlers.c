@@ -732,7 +732,7 @@ static int ngap_gNB_handle_initial_context_request(sctp_assoc_t assoc_id, uint32
     asn_INTEGER2ulong(&(ie->value.choice.UEAggregateMaximumBitRate.uEAggregateMaximumBitRateDL),
                       &(msg->ue_ambr.br_dl));
   } else {
-    NGAP_ERROR("could not found NGAP_ProtocolIE_ID_id_UEAggregateMaximumBitRate\n");
+    NGAP_WARN("could not find NGAP_ProtocolIE_ID_id_UEAggregateMaximumBitRate\n");
   }
 
 
