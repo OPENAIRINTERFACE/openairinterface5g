@@ -427,20 +427,6 @@ void nr_ue_msg3_scheduler(NR_UE_MAC_INST_t *mac,
                           sub_frame_t current_slot,
                           uint8_t Msg3_tda_id);
 
-/* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
-@param Mod_id Index of UE instance
-@param CC_id Index to a component carrier
-@param frame Frame index
-@param ra_rnti RA_RNTI value
-@param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
-@param t_crnti Pointer to PHY variable containing the T_CRNTI
-@param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
-random-access procedure
-@param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
-@returns timing advance or 0xffff if preamble doesn't match
-*/
-int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id);
-
 void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame, int slot, NR_PRACH_RESOURCES_t *prach_resources);
 
 void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_resources, frame_t frame, int slot);

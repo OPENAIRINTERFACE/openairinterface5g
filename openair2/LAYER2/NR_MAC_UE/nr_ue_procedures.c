@@ -89,6 +89,21 @@ static const int sequence_cyclic_shift_2_harq_ack_bits[4]
 /*        HARQ-ACK Value       (0,0)  (0,1)  (1,0)  (1,1) */
 /* Sequence cyclic shift */ = {   0,     3,     9,     6 };
 
+/* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It
+provides the timing advance and t-CRNTI.
+@param Mod_id Index of UE instance
+@param CC_id Index to a component carrier
+@param frame Frame index
+@param ra_rnti RA_RNTI value
+@param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
+@param t_crnti Pointer to PHY variable containing the T_CRNTI
+@param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
+random-access procedure
+@param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
+@returns timing advance or 0xffff if preamble doesn't match
+*/
+static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id);
+
 int get_pucch0_mcs(const int O_ACK, const int O_SR, const int ack_payload, const int sr_payload)
 {
   int mcs = 0;
@@ -3951,7 +3966,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 // - b buffer
 // - ulsch power offset
 // - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
-int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
+static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 {
   module_id_t mod_id       = dl_info->module_id;
   frame_t frame            = dl_info->frame;
