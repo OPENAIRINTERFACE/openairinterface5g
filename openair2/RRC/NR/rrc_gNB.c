@@ -1263,6 +1263,11 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id,
 
 static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id, const NR_RRCReestablishmentRequest_IEs_t *req, const f1ap_initial_ul_rrc_message_t *msg)
 {
+  /* in case we need to do RRC Setup, give the UE a new random identity */
+  uint64_t random_value;
+  fill_random(&random_value, sizeof(random_value));
+  random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
+
   const NR_ReestablishmentCause_t cause = req->reestablishmentCause;
   const long physCellId = req->ue_Identity.physCellId;
   LOG_I(NR_RRC,
@@ -1278,25 +1283,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
     LOG_E(RRC, "received CCCH message, but no corresponding DU found\n");
     return;
   }
-  const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
-  if (physCellId != cell_info->nr_pci) {
-    /* UE was moving from previous cell so quickly that RRCReestablishment for previous cell was received in this cell */
-    LOG_E(NR_RRC,
-          " NR_RRCReestablishmentRequest ue_Identity.physCellId(%ld) is not equal to current physCellId(%d), fallback to RRC "
-          "establishment\n",
-          physCellId,
-          cell_info->nr_pci);
-    /* 38.401 8.7: "If the UE accessed from a gNB-DU other than the
-     * original one, the gNB-CU should trigger the UE Context Setup
-     * procedure" we did not implement this yet; TBD for Multi-DU */
-    AssertFatal(false, "not implemented\n");
-    return;
-  }
 
-  /* in case we need to do RRC Setup, give the UE a new random identity */
-  uint64_t random_value;
-  fill_random(&random_value, sizeof(random_value));
-  random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
   if (du->mib == NULL || du->sib1 == NULL) {
     /* we don't have MIB/SIB1 of the DU, and therefore cannot generate the
      * Reestablishment (as we would need the SSB's ARFCN, which we cannot
@@ -1314,6 +1301,23 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
     ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
     ue_context_p->ue_context.Srb[1].Active = 1;
     rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+    return;
+  }
+
+  const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
+  if (physCellId != cell_info->nr_pci) {
+    /* UE was moving from previous cell so quickly that RRCReestablishment for previous cell was received in this cell */
+    LOG_I(NR_RRC,
+          "RRC Reestablishment Request from different physCellId (%ld) than current physCellId (%d), fallback to RRC setup\n",
+          physCellId,
+          cell_info->nr_pci);
+    /* 38.401 8.7: "If the UE accessed from a gNB-DU other than the original
+     * one, the gNB-CU should trigger the UE Context Setup procedure". Let's
+     * assume that the old DU will trigger a release request, also freeing the
+     * ongoing context at the CU. Hence, create new below */
+    rrc_gNB_ue_context_t *new = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    new->ue_context.Srb[1].Active = 1;
+    rrc_gNB_generate_RRCSetup(0, msg->crnti, new, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
     return;
   }
 
