@@ -258,7 +258,7 @@ static int pss_ch_est_nr(PHY_VARS_NR_UE *ue,
 
 static int do_pss_sss_extract_nr(
     PHY_VARS_NR_UE *ue,
-    UE_nr_rxtx_proc_t *proc,
+    const UE_nr_rxtx_proc_t *proc,
     c16_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR],
     c16_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR],
     uint8_t doPss,
@@ -340,7 +340,7 @@ static int do_pss_sss_extract_nr(
 *********************************************************************/
 
 static int pss_sss_extract_nr(PHY_VARS_NR_UE *phy_vars_ue,
-                              UE_nr_rxtx_proc_t *proc,
+                              const UE_nr_rxtx_proc_t *proc,
                               c16_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR],
                               c16_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR],
                               uint8_t subframe,
@@ -362,7 +362,7 @@ static int pss_sss_extract_nr(PHY_VARS_NR_UE *phy_vars_ue,
  *
  *********************************************************************/
 bool rx_sss_nr(PHY_VARS_NR_UE *ue,
-               UE_nr_rxtx_proc_t *proc,
+               const UE_nr_rxtx_proc_t *proc,
                int32_t *tot_metric,
                uint8_t *phase_max,
                int *freq_offset_sss,

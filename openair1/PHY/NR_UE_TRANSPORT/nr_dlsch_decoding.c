@@ -74,11 +74,11 @@ void nr_dlsch_unscrambling(int16_t *llr, uint32_t size, uint8_t q, uint32_t Nid,
 static bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue,
                              notifiedFIFO_elt_t *req,
                              notifiedFIFO_t *nf_p,
-                             bool last,
+                             const bool last,
                              int b_size,
                              uint8_t b[b_size],
                              int *num_seg_ok,
-                             UE_nr_rxtx_proc_t *proc)
+                             const UE_nr_rxtx_proc_t *proc)
 {
   ldpcDecode_ue_t *rdata = (ldpcDecode_ue_t*) NotifiedFifoData(req);
   NR_DL_UE_HARQ_t *harq_process = rdata->harq_process;
@@ -265,7 +265,7 @@ static void nr_processDLSegment(void *arg)
 }
 
 uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
-                           UE_nr_rxtx_proc_t *proc,
+                           const UE_nr_rxtx_proc_t *proc,
                            int eNB_id,
                            short *dlsch_llr,
                            NR_DL_FRAME_PARMS *frame_parms,

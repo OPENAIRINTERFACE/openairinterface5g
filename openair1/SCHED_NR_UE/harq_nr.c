@@ -145,8 +145,14 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int dci_ndi, 
     dl_harq->status = ACTIVE;
     dl_harq->first_rx = 1;
   }  else {
-    LOG_D(PHY,"receive harq process: %p harqPid=%d, rv=%d, ndi=%d, rntiType=%d new transmission= %s\n",
-	  dl_harq, harq_pid, rv, dci_ndi, rnti_type, dl_harq->Ndi != dci_ndi ? "yes":"no");
+    LOG_D(PHY,
+          "receive harq process: %p harqPid=%d, rv=%d, ndi=%d, rntiType=%d new transmission= %s\n",
+          dl_harq,
+          harq_pid,
+          rv,
+          dci_ndi,
+          rnti_type,
+          dl_harq->Ndi != dci_ndi ? "yes" : "no");
     AssertFatal(rv<4 && rv>=0, "invalid redondancy version %d\n", rv);
     if (dci_ndi!=dl_harq->Ndi) {
       if (dl_harq->ack == DL_NACK)

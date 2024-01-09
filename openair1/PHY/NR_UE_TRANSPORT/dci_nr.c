@@ -609,13 +609,13 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 }
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    UE_nr_rxtx_proc_t *proc,
+                    const UE_nr_rxtx_proc_t *proc,
                     int32_t pdcch_est_size,
                     int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
                     int16_t *pdcch_e_rx,
                     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-                    c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
-
+                    c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+{
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   uint8_t log2_maxh, aarx;
@@ -739,8 +739,6 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   return (0);
 }
 
-
-
 void nr_pdcch_unscrambling(int16_t *e_rx,
                            uint16_t scrambling_RNTI,
                            uint32_t length,
@@ -805,11 +803,11 @@ static uint16_t nr_dci_false_detection(uint64_t *dci,
 }
 
 uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
-                                  UE_nr_rxtx_proc_t *proc,
+                                  const UE_nr_rxtx_proc_t *proc,
                                   int16_t *pdcch_e_rx,
                                   fapi_nr_dci_indication_t *dci_ind,
-                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
-
+                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15)
+{
   //int gNB_id = 0;
   int16_t tmp_e[16*108];
   rnti_t n_rnti;
@@ -892,5 +890,3 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
   }
   return(dci_ind->number_of_dcis);
 }
-
-
