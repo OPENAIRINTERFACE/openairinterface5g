@@ -977,21 +977,7 @@ static void setup_pdschconfig(NR_PDSCH_Config_t *source, NR_PDSCH_Config_t *targ
   target->rbg_Size = source->rbg_Size;
   UPDATE_MAC_IE(target->mcs_Table, source->mcs_Table, long);
   UPDATE_MAC_IE(target->maxNrofCodeWordsScheduledByDCI, source->maxNrofCodeWordsScheduledByDCI, long);
-  target->prb_BundlingType.present = source->prb_BundlingType.present;
-  switch (source->prb_BundlingType.present) {
-    case NR_PDSCH_Config__prb_BundlingType_PR_staticBundling:
-      UPDATE_MAC_IE(target->prb_BundlingType.choice.staticBundling,
-                    source->prb_BundlingType.choice.staticBundling,
-                    struct NR_PDSCH_Config__prb_BundlingType__staticBundling);
-      break;
-    case NR_PDSCH_Config__prb_BundlingType_PR_dynamicBundling:
-      UPDATE_MAC_IE(target->prb_BundlingType.choice.dynamicBundling,
-                    source->prb_BundlingType.choice.dynamicBundling,
-                    struct NR_PDSCH_Config__prb_BundlingType__dynamicBundling);
-      break;
-    default:
-      break;
-  }
+  UPDATE_MAC_NP_IE(target->prb_BundlingType, source->prb_BundlingType, struct NR_PDSCH_Config__prb_BundlingType);
   AssertFatal(source->zp_CSI_RS_ResourceToAddModList == NULL, "Not handled\n");
   AssertFatal(source->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList == NULL, "Not handled\n");
   AssertFatal(source->sp_ZP_CSI_RS_ResourceSetsToAddModList == NULL, "Not handled\n");
@@ -1117,30 +1103,48 @@ static void setup_pucchconfig(NR_PUCCH_Config_t *source, NR_PUCCH_Config_t *targ
   }
 }
 
+static void handle_aperiodic_srs_type(struct NR_SRS_ResourceSet__resourceType__aperiodic *source,
+                                      struct NR_SRS_ResourceSet__resourceType__aperiodic *target)
+{
+  target->aperiodicSRS_ResourceTrigger = source->aperiodicSRS_ResourceTrigger;
+  if (source->csi_RS)
+    UPDATE_MAC_IE(target->csi_RS, source->csi_RS, NR_NZP_CSI_RS_ResourceId_t);
+  UPDATE_MAC_IE(target->slotOffset, source->slotOffset, long);
+  if (source->ext1 && source->ext1->aperiodicSRS_ResourceTriggerList)
+    UPDATE_MAC_IE(target->ext1->aperiodicSRS_ResourceTriggerList,
+                  source->ext1->aperiodicSRS_ResourceTriggerList,
+                  struct NR_SRS_ResourceSet__resourceType__aperiodic__ext1__aperiodicSRS_ResourceTriggerList);
+}
+
 static void setup_srsresourceset(NR_SRS_ResourceSet_t *target, NR_SRS_ResourceSet_t *source)
 {
   target->srs_ResourceSetId = source->srs_ResourceSetId;
   if (source->srs_ResourceIdList)
     UPDATE_MAC_IE(target->srs_ResourceIdList, source->srs_ResourceIdList, struct NR_SRS_ResourceSet__srs_ResourceIdList);
-  target->resourceType.present = source->resourceType.present;
-  switch (source->resourceType.present) {
-    case NR_SRS_ResourceSet__resourceType_PR_aperiodic:
-      UPDATE_MAC_IE(target->resourceType.choice.aperiodic,
-                    source->resourceType.choice.aperiodic,
-                    struct NR_SRS_ResourceSet__resourceType__aperiodic);
-      break;
-    case NR_SRS_ResourceSet__resourceType_PR_periodic:
-      UPDATE_MAC_IE(target->resourceType.choice.periodic,
-                    source->resourceType.choice.periodic,
-                    struct NR_SRS_ResourceSet__resourceType__periodic);
-      break;
-    case NR_SRS_ResourceSet__resourceType_PR_semi_persistent:
-      UPDATE_MAC_IE(target->resourceType.choice.semi_persistent,
-                    source->resourceType.choice.semi_persistent,
-                    struct NR_SRS_ResourceSet__resourceType__semi_persistent);
-      break;
-    default:
-      break;
+
+  if (target->resourceType.present != source->resourceType.present) {
+    UPDATE_MAC_NP_IE(target->resourceType, source->resourceType, struct NR_SRS_ResourceSet__resourceType);
+  }
+  else {
+    switch (source->resourceType.present) {
+      case NR_SRS_ResourceSet__resourceType_PR_aperiodic:
+        handle_aperiodic_srs_type(source->resourceType.choice.aperiodic, target->resourceType.choice.aperiodic);
+        break;
+      case NR_SRS_ResourceSet__resourceType_PR_periodic:
+        if (source->resourceType.choice.periodic->associatedCSI_RS)
+          UPDATE_MAC_IE(target->resourceType.choice.periodic->associatedCSI_RS,
+                        source->resourceType.choice.periodic->associatedCSI_RS,
+                        NR_NZP_CSI_RS_ResourceId_t);
+        break;
+      case NR_SRS_ResourceSet__resourceType_PR_semi_persistent:
+        if (source->resourceType.choice.semi_persistent->associatedCSI_RS)
+          UPDATE_MAC_IE(target->resourceType.choice.semi_persistent->associatedCSI_RS,
+                        source->resourceType.choice.semi_persistent->associatedCSI_RS,
+                        NR_NZP_CSI_RS_ResourceId_t);
+        break;
+      default:
+        break;
+    }
   }
   target->usage = source->usage;
   UPDATE_MAC_IE(target->alpha, source->alpha, NR_Alpha_t);
@@ -1546,46 +1550,52 @@ static void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroup
 
 static void configure_csi_resourcemapping(NR_CSI_RS_ResourceMapping_t *target, NR_CSI_RS_ResourceMapping_t *source)
 {
-  target->frequencyDomainAllocation.present = source->frequencyDomainAllocation.present;
-  switch (source->frequencyDomainAllocation.present) {
-    case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row1:
-      target->frequencyDomainAllocation.choice.row1.size = source->frequencyDomainAllocation.choice.row1.size;
-      target->frequencyDomainAllocation.choice.row1.bits_unused = source->frequencyDomainAllocation.choice.row1.bits_unused;
-      if (!target->frequencyDomainAllocation.choice.row1.buf)
-        target->frequencyDomainAllocation.choice.row1.buf =
-            calloc(target->frequencyDomainAllocation.choice.row1.size, sizeof(uint8_t));
-      for (int i = 0; i < target->frequencyDomainAllocation.choice.row1.size; i++)
-        target->frequencyDomainAllocation.choice.row1.buf[i] = source->frequencyDomainAllocation.choice.row1.buf[i];
-      break;
-    case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
-      target->frequencyDomainAllocation.choice.row2.size = source->frequencyDomainAllocation.choice.row2.size;
-      target->frequencyDomainAllocation.choice.row2.bits_unused = source->frequencyDomainAllocation.choice.row2.bits_unused;
-      if (!target->frequencyDomainAllocation.choice.row2.buf)
-        target->frequencyDomainAllocation.choice.row2.buf =
-            calloc(target->frequencyDomainAllocation.choice.row2.size, sizeof(uint8_t));
-      for (int i = 0; i < target->frequencyDomainAllocation.choice.row2.size; i++)
-        target->frequencyDomainAllocation.choice.row2.buf[i] = source->frequencyDomainAllocation.choice.row2.buf[i];
-      break;
-    case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4:
-      target->frequencyDomainAllocation.choice.row4.size = source->frequencyDomainAllocation.choice.row4.size;
-      target->frequencyDomainAllocation.choice.row4.bits_unused = source->frequencyDomainAllocation.choice.row4.bits_unused;
-      if (!target->frequencyDomainAllocation.choice.row4.buf)
-        target->frequencyDomainAllocation.choice.row4.buf =
-            calloc(target->frequencyDomainAllocation.choice.row4.size, sizeof(uint8_t));
-      for (int i = 0; i < target->frequencyDomainAllocation.choice.row4.size; i++)
-        target->frequencyDomainAllocation.choice.row4.buf[i] = source->frequencyDomainAllocation.choice.row4.buf[i];
-      break;
-    case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other:
-      target->frequencyDomainAllocation.choice.other.size = source->frequencyDomainAllocation.choice.other.size;
-      target->frequencyDomainAllocation.choice.other.bits_unused = source->frequencyDomainAllocation.choice.other.bits_unused;
-      if (!target->frequencyDomainAllocation.choice.other.buf)
-        target->frequencyDomainAllocation.choice.other.buf =
-            calloc(target->frequencyDomainAllocation.choice.other.size, sizeof(uint8_t));
-      for (int i = 0; i < target->frequencyDomainAllocation.choice.other.size; i++)
-        target->frequencyDomainAllocation.choice.other.buf[i] = source->frequencyDomainAllocation.choice.other.buf[i];
-      break;
-    default:
-      AssertFatal(false, "Invalid entry\n");
+  if (target->frequencyDomainAllocation.present != source->frequencyDomainAllocation.present) {
+    UPDATE_MAC_NP_IE(target->frequencyDomainAllocation,
+                     source->frequencyDomainAllocation,
+                     struct NR_CSI_RS_ResourceMapping__frequencyDomainAllocation);
+  }
+  else {
+    switch (source->frequencyDomainAllocation.present) {
+      case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row1:
+        target->frequencyDomainAllocation.choice.row1.size = source->frequencyDomainAllocation.choice.row1.size;
+        target->frequencyDomainAllocation.choice.row1.bits_unused = source->frequencyDomainAllocation.choice.row1.bits_unused;
+        if (!target->frequencyDomainAllocation.choice.row1.buf)
+          target->frequencyDomainAllocation.choice.row1.buf =
+              calloc(target->frequencyDomainAllocation.choice.row1.size, sizeof(uint8_t));
+        for (int i = 0; i < target->frequencyDomainAllocation.choice.row1.size; i++)
+          target->frequencyDomainAllocation.choice.row1.buf[i] = source->frequencyDomainAllocation.choice.row1.buf[i];
+        break;
+      case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
+        target->frequencyDomainAllocation.choice.row2.size = source->frequencyDomainAllocation.choice.row2.size;
+        target->frequencyDomainAllocation.choice.row2.bits_unused = source->frequencyDomainAllocation.choice.row2.bits_unused;
+        if (!target->frequencyDomainAllocation.choice.row2.buf)
+          target->frequencyDomainAllocation.choice.row2.buf =
+              calloc(target->frequencyDomainAllocation.choice.row2.size, sizeof(uint8_t));
+        for (int i = 0; i < target->frequencyDomainAllocation.choice.row2.size; i++)
+          target->frequencyDomainAllocation.choice.row2.buf[i] = source->frequencyDomainAllocation.choice.row2.buf[i];
+        break;
+      case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4:
+        target->frequencyDomainAllocation.choice.row4.size = source->frequencyDomainAllocation.choice.row4.size;
+        target->frequencyDomainAllocation.choice.row4.bits_unused = source->frequencyDomainAllocation.choice.row4.bits_unused;
+        if (!target->frequencyDomainAllocation.choice.row4.buf)
+          target->frequencyDomainAllocation.choice.row4.buf =
+              calloc(target->frequencyDomainAllocation.choice.row4.size, sizeof(uint8_t));
+        for (int i = 0; i < target->frequencyDomainAllocation.choice.row4.size; i++)
+          target->frequencyDomainAllocation.choice.row4.buf[i] = source->frequencyDomainAllocation.choice.row4.buf[i];
+        break;
+      case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other:
+        target->frequencyDomainAllocation.choice.other.size = source->frequencyDomainAllocation.choice.other.size;
+        target->frequencyDomainAllocation.choice.other.bits_unused = source->frequencyDomainAllocation.choice.other.bits_unused;
+        if (!target->frequencyDomainAllocation.choice.other.buf)
+          target->frequencyDomainAllocation.choice.other.buf =
+              calloc(target->frequencyDomainAllocation.choice.other.size, sizeof(uint8_t));
+        for (int i = 0; i < target->frequencyDomainAllocation.choice.other.size; i++)
+          target->frequencyDomainAllocation.choice.other.buf[i] = source->frequencyDomainAllocation.choice.other.buf[i];
+        break;
+      default:
+        AssertFatal(false, "Invalid entry\n");
+    }
   }
   target->nrofPorts = source->nrofPorts;
   target->firstOFDMSymbolInTimeDomain = source->firstOFDMSymbolInTimeDomain;

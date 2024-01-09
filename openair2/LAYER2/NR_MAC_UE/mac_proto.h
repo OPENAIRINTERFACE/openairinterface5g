@@ -49,6 +49,14 @@
     DESTINATION = tmp;                           \
   } while(0);                                    \
 
+// Same as above but swapping ASN1 elements that are not pointers
+#define UPDATE_MAC_NP_IE(DESTINATION, ORIGIN, TYPE) \
+  do {                                              \
+    TYPE tmp = ORIGIN;                              \
+    ORIGIN = DESTINATION;                           \
+    DESTINATION = tmp;                              \
+  } while(0);                                       \
+
 // Macro handles reception of SetupRelease element ORIGIN (see NR_SetupRelease.h)
 // If release (NR_SetupRelease_xxx_PR_release equivalent to 1), removing structure from DESTINATION
 // If setup (NR_SetupRelease_xxx_PR_setup equivalent to 2), add or modify structure in DESTINATION
