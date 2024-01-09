@@ -613,8 +613,7 @@ typedef struct {
   void *phy_sim_pdsch_dl_ch_estimates_ext;
   uint8_t *phy_sim_dlsch_b;
   notifiedFIFO_t phy_config_ind;
-  notifiedFIFO_t *tx_resume_ind_fifo[NR_MAX_SLOTS_PER_FRAME];
-  int tx_wait_for_dlsch[NR_MAX_SLOTS_PER_FRAME];
+  notifiedFIFO_t tx_resume_ind_fifo[NR_MAX_SLOTS_PER_FRAME];
 } PHY_VARS_NR_UE;
 
 typedef struct {
@@ -649,7 +648,6 @@ typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
   int writeBlockSize;
-  notifiedFIFO_t txFifo;
   nr_phy_data_t phy_data;
   int tx_wait_for_dlsch;
 } nr_rxtx_thread_data_t;
@@ -677,7 +675,7 @@ typedef struct LDPCDecode_ue_s {
   time_stats_t ts_deinterleave;
   time_stats_t ts_rate_unmatch;
   time_stats_t ts_ldpc_decode;
-  UE_nr_rxtx_proc_t *proc;
+  UE_nr_rxtx_proc_t proc;
 } ldpcDecode_ue_t;
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"

@@ -426,7 +426,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     rdata->offset = offset;
     rdata->dlsch = dlsch;
     rdata->dlsch_id = 0;
-    rdata->proc = proc;
+    rdata->proc = *proc;
     reset_meas(&rdata->ts_deinterleave);
     reset_meas(&rdata->ts_rate_unmatch);
     reset_meas(&rdata->ts_ldpc_decode);

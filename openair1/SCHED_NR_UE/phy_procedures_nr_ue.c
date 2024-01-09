@@ -488,19 +488,16 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
   return(dci_cnt);
 }
 
-int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
-                           UE_nr_rxtx_proc_t *proc,
-                           NR_UE_DLSCH_t dlsch[2],
-                           int16_t *llr[2],
-                           c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+static int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
+                                  const UE_nr_rxtx_proc_t *proc,
+                                  NR_UE_DLSCH_t dlsch[2],
+                                  int16_t *llr[2],
+                                  c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   int m;
   int first_symbol_flag=0;
-
-  if (!dlsch[0].active)
-    return 0;
 
   // We handle only one CW now
   if (!(NR_MAX_NB_LAYERS>4)) {
@@ -637,23 +634,23 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-void send_slot_ind(notifiedFIFO_t *nf, int slot) {
+// This function release the Tx working thread for one pending information, like dlsch ACK/NACK
+static void send_dl_done_to_tx_thread(notifiedFIFO_t *nf, int rx_slot)
+{
   if (nf) {
     notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(int), 0, NULL, NULL);
+    // We put rx slot only for tracing purpose
     int *msgData = (int *) NotifiedFifoData(newElt);
-    *msgData = slot;
+    *msgData = rx_slot;
     pushNotifiedFIFO(nf, newElt);
   }
 }
 
-bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
-                            UE_nr_rxtx_proc_t *proc,
-                            NR_UE_DLSCH_t dlsch[2],
-                            int16_t* llr[2]) {
-
+static bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, NR_UE_DLSCH_t dlsch[2], int16_t *llr[2])
+{
   if (dlsch[0].active == false) {
     LOG_E(PHY, "DLSCH should be active when calling this function\n");
-    return 1;
+    return true;
   }
 
   int gNB_id = proc->gNB_id;
@@ -688,8 +685,9 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   // exit dlsch procedures as there are no active dlsch
   if (is_cw0_active != ACTIVE && is_cw1_active != ACTIVE) {
     // don't wait anymore
+    LOG_E(NR_PHY, "Internal error  nr_ue_dlsch_procedure() called but no active cw on slot %d, harq %d\n", nr_slot_rx, harq_pid);
     const int ack_nack_slot = (proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame;
-    send_slot_ind(ue->tx_resume_ind_fifo[ack_nack_slot], proc->nr_slot_rx);
+    send_dl_done_to_tx_thread(ue->tx_resume_ind_fifo + ack_nack_slot, proc->nr_slot_rx);
     return false;
   }
 
@@ -821,7 +819,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       LOG_D(PHY, "AbsSubframe %d.%d --> ldpc Decoding for CW1 %5.3f\n",
             frame_rx%1024, nr_slot_rx,(ue->dlsch_decoding_stats.p_time)/(cpuf*1000.0));
       }
-  LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch[1].dlsch_config.TBS);
+      LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch[1].dlsch_config.TBS);
   }
 
   //  send to mac
@@ -829,8 +827,11 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     ue->if_inst->dl_indication(&dl_indication);
   }
 
-  const int ack_nack_slot = (proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame;
-  send_slot_ind(ue->tx_resume_ind_fifo[ack_nack_slot], proc->nr_slot_rx);
+  // DLSCH decoding finished! don't wait anymore in Tx process, we know if we should answer ACK/NACK PUCCH
+  if (dlsch[0].rnti_type == TYPE_C_RNTI_) {
+    const int ack_nack_slot = (proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame;
+    send_dl_done_to_tx_thread(ue->tx_resume_ind_fifo + ack_nack_slot, proc->nr_slot_rx);
+  }
 
   if (ue->phy_sim_dlsch_b)
     memcpy(ue->phy_sim_dlsch_b, p_b, dlsch_bytes);
@@ -1097,9 +1098,12 @@ void pdsch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_
 
     if (ret_pdsch >= 0)
       nr_ue_dlsch_procedures(ue, proc, dlsch, llr);
-    else
-      // don't wait anymore
-      send_slot_ind(ue->tx_resume_ind_fifo[(proc->nr_slot_rx + dlsch_config->k1_feedback) % ue->frame_parms.slots_per_frame], proc->nr_slot_rx);
+    else {
+      LOG_E(NR_PHY, "Demodulation impossible, internal error\n");
+      send_dl_done_to_tx_thread(
+          ue->tx_resume_ind_fifo + (proc->nr_slot_rx + dlsch_config->k1_feedback) % ue->frame_parms.slots_per_frame,
+          proc->nr_slot_rx);
+    }
 
     stop_meas(&ue->dlsch_procedures_stat);
     if (cpumeas(CPUMEAS_GETSTATE)) {
