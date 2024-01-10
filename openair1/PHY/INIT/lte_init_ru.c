@@ -186,7 +186,7 @@ int phy_init_RU(RU_t *ru) {
 void phy_free_RU(RU_t *ru) {
   int i,j,p;
   RU_CALIBRATION *calibration = &ru->calibration;
-  LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
+  LOG_I(PHY, "Freeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
     for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdata[i]);
