@@ -122,6 +122,19 @@ sctp_assoc_t get_new_cuup_for_ue(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue
   return ue_data.e1_assoc_id;
 }
 
+static void e1ap_setup_failure(sctp_assoc_t assoc_id, uint64_t transac_id)
+{
+  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_GNB, 0, E1AP_SETUP_FAIL);
+  msg_p->ittiMsgHeader.originInstance = assoc_id;
+  e1ap_setup_fail_t *setup_fail = &E1AP_SETUP_FAIL(msg_p);
+  setup_fail->transac_id = transac_id;
+  LOG_I(NR_RRC, "Triggering E1AP Setup Failure for transac_id %ld (%ld), assoc_id %ld\n",
+        transac_id,
+        E1AP_SETUP_FAIL(msg_p).transac_id,
+        msg_p->ittiMsgHeader.originInstance);
+  itti_send_msg_to_task(TASK_CUCP_E1, 0 /*unused by callee*/, msg_p);
+}
+
 int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
 {
   AssertFatal(req->supported_plmns <= PLMN_LIST_MAX_SIZE, "Supported PLMNs is more than PLMN_LIST_MAX_SIZE\n");
@@ -138,6 +151,7 @@ int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
             c->setup_req->gNB_cu_up_id,
             c->setup_req->gNB_cu_up_name,
             c->assoc_id);
+      e1ap_setup_failure(assoc_id, req->transac_id);
       return -1;
     }
   }
@@ -151,11 +165,12 @@ int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
             id->mnc,
             rrc->configuration.mcc[i],
             rrc->configuration.mnc[i]);
+      e1ap_setup_failure(assoc_id, req->transac_id);
       return -1;
     }
   }
 
-  LOG_I(RRC, "Accepting new CU-UP ID %ld name %s (assoc_id %d)\n", req->gNB_cu_up_id, req->gNB_cu_up_name, assoc_id);
+  LOG_I(NR_RRC, "Accepting new CU-UP ID %ld name %s (assoc_id %d)\n", req->gNB_cu_up_id, req->gNB_cu_up_name, assoc_id);
   nr_rrc_cuup_container_t *cuup = malloc(sizeof(*cuup));
   AssertFatal(cuup, "out of memory\n");
   cuup->setup_req = malloc(sizeof(*cuup->setup_req));

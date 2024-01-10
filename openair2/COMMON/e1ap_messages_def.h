@@ -27,6 +27,8 @@ MESSAGE_DEF(E1AP_SETUP_REQ  , MESSAGE_PRIORITY_MED , e1ap_setup_req_t , e1ap_set
 
 /* E1AP -> eNB_DU or eNB_CU_RRC -> E1AP application layer messages */
 MESSAGE_DEF(E1AP_SETUP_RESP , MESSAGE_PRIORITY_MED, e1ap_setup_resp_t , e1ap_setup_resp)
+/* E1AP Setup Failure: gNB-CU-CP -> gNB-CU-UP */
+MESSAGE_DEF(E1AP_SETUP_FAIL, MESSAGE_PRIORITY_MED, e1ap_setup_fail_t, e1ap_setup_fail)
 
 MESSAGE_DEF(E1AP_BEARER_CONTEXT_SETUP_REQ , MESSAGE_PRIORITY_MED , e1ap_bearer_setup_req_t , e1ap_bearer_setup_req)
 

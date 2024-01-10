@@ -17,17 +17,22 @@ connection setup only in split-mode, the rest is the same for CU):
 sequenceDiagram
   participant c as CUCP
   participant u as CUUP
-  u->c: SCTP connection setup (in split mode)
-  u->>c: E1AP Setup Request
-  Note over c: Execute rrc_gNB_process_e1_setup_req()
-  c->>u: E1AP Setup Response
 
+  Note over c,u: E1 Setup Procedure
+  u->c: SCTP connection setup (in split mode)
+  u->>c: E1 Setup Request
+  Note over c: Execute rrc_gNB_process_e1_setup_req()
+  c->>u: E1 Setup Response
+  c-->>u: E1 Setup Failure
+
+  Note over c,u: E1 Bearer Context Setup Procedure
   Note over c: Receives PDU session setup request from AMF
   c->>u: Bearer Context Setup Request
   Note over u: Execute e1_bearer_context_setup()<br/>Configure DRBs and create GTP Tunnels for F1-U and N3
   u->>c: Bearer Context Setup Response
   Note over c: Execute rrc_gNB_process_e1_setup_req()<br/>Sends F1-U UL TNL info to DU and receives DL TNL info
 
+  Note over c,u: E1 Bearer Context Modification (CU-CP Initiated) Procedure
   c->>u: Bearer Context Modification Request
   Note over u: Execute e1_bearer_context_modif()<br/>Updates GTP Tunnels with received info
   u->>c: Bearer Context Modification Response

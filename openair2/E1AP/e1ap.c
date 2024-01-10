@@ -257,25 +257,36 @@ void e1ap_send_SETUP_RESPONSE(sctp_assoc_t assoc_id, const e1ap_setup_resp_t *e1
   e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
 }
 
+/**
+ * @brief E1 Setup Failure ASN1 messager builder
+ * @ref 9.2.1.6 GNB-CU-UP E1 SETUP FAILURE of 3GPP TS 38.463
+*/
 static void fill_SETUP_FAILURE(long transac_id, E1AP_E1AP_PDU_t *pdu)
 {
   /* Create */
   /* 0. pdu Type */
   pdu->present = E1AP_E1AP_PDU_PR_unsuccessfulOutcome;
   asn1cCalloc(pdu->choice.unsuccessfulOutcome, initMsg);
+  /* mandatory */
+  /**
+   * Message Type IE
+   * -  procedureCode (integer)
+   * -  Type of Message (choice)
+   * @ref clause 9.3.1.1 of 3GPP TS 38.463
+   */
   initMsg->procedureCode = E1AP_ProcedureCode_id_gNB_CU_UP_E1Setup;
   initMsg->criticality = E1AP_Criticality_reject;
   initMsg->value.present = E1AP_UnsuccessfulOutcome__value_PR_GNB_CU_UP_E1SetupFailure;
   E1AP_GNB_CU_UP_E1SetupFailure_t *out = &pdu->choice.unsuccessfulOutcome->value.choice.GNB_CU_UP_E1SetupFailure;
   /* mandatory */
-  /* c1. Transaction ID (integer value) */
+  /* c1. Transaction ID (integer value), clause 9.3.1.53 of 3GPP TS 38.463 */
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ieC1);
   ieC1->id                         = E1AP_ProtocolIE_ID_id_TransactionID;
   ieC1->criticality                = E1AP_Criticality_reject;
   ieC1->value.present              = E1AP_GNB_CU_UP_E1SetupFailureIEs__value_PR_TransactionID;
   ieC1->value.choice.TransactionID = transac_id;
   /* mandatory */
-  /* c2. cause (integer value) */
+  /* c2. cause (integer value), clause 9.3.1.2 of 3GPP TS 38.463 */
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ieC2);
   ieC2->id                         = E1AP_ProtocolIE_ID_id_Cause;
   ieC2->criticality                = E1AP_Criticality_ignore;
@@ -284,8 +295,12 @@ static void fill_SETUP_FAILURE(long transac_id, E1AP_E1AP_PDU_t *pdu)
   ieC2->value.choice.Cause.choice.radioNetwork = E1AP_CauseRadioNetwork_unspecified;
 }
 
+/**
+ * @brief E1 Setup Failure ASN1 messager encoder
+*/
 void e1apCUCP_send_SETUP_FAILURE(sctp_assoc_t assoc_id, long transac_id)
 {
+  LOG_D(E1AP, "CU-CP: Encoding E1AP Setup Failure for transac_id %ld...\n", transac_id);
   E1AP_E1AP_PDU_t pdu = {0};
   fill_SETUP_FAILURE(transac_id, &pdu);
   e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
@@ -404,18 +419,31 @@ int e1apCUUP_handle_SETUP_RESPONSE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst
   return 0;
 }
 
+/**
+ * @brief E1 Setup Failure ASN1 messager decoder on CU-UP
+*/
 int e1apCUUP_handle_SETUP_FAILURE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu)
 {
+  LOG_D(E1AP, "CU-UP: Decoding E1AP Setup Failure...\n");
   E1AP_GNB_CU_UP_E1SetupFailureIEs_t *ie;
   DevAssert(pdu != NULL);
   E1AP_GNB_CU_UP_E1SetupFailure_t *in = &pdu->choice.unsuccessfulOutcome->value.choice.GNB_CU_UP_E1SetupFailure;
   /* Transaction ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ie, in,
                              E1AP_ProtocolIE_ID_id_TransactionID, true);
+  long transaction_id;
+  long old_transaction_id = inst->cuup.setupReq.transac_id;
+  transaction_id = ie->value.choice.TransactionID;
+  if (old_transaction_id != transaction_id)
+    LOG_E(E1AP, "Transaction IDs do not match %ld != %ld\n", old_transaction_id, transaction_id);
+  E1AP_free_transaction_identifier(transaction_id);
+
   /* Cause */
   F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ie, in,
                              E1AP_ProtocolIE_ID_id_Cause, true);
 
+  LOG_E(E1AP, "received E1 Setup Failure, please check the CU-CP output and the CU-UP parameters\n");
+  exit(1);
   return 0;
 }
 
@@ -1873,6 +1901,10 @@ void *E1AP_CUCP_task(void *arg) {
 
       case E1AP_SETUP_RESP:
         e1ap_send_SETUP_RESPONSE(assoc_id, &E1AP_SETUP_RESP(msg));
+        break;
+
+      case E1AP_SETUP_FAIL:
+        e1apCUCP_send_SETUP_FAILURE(assoc_id, E1AP_SETUP_FAIL(msg).transac_id);
         break;
 
       case E1AP_BEARER_CONTEXT_SETUP_REQ:

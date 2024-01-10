@@ -44,6 +44,7 @@
 #define E1AP_REGISTER_REQ(mSGpTR)                         (mSGpTR)->ittiMsg.e1ap_register_req
 #define E1AP_SETUP_REQ(mSGpTR)                            (mSGpTR)->ittiMsg.e1ap_setup_req
 #define E1AP_SETUP_RESP(mSGpTR)                           (mSGpTR)->ittiMsg.e1ap_setup_resp
+#define E1AP_SETUP_FAIL(mSGpTR)                           (mSGpTR)->ittiMsg.e1ap_setup_fail
 #define E1AP_BEARER_CONTEXT_SETUP_REQ(mSGpTR)             (mSGpTR)->ittiMsg.e1ap_bearer_setup_req
 #define E1AP_BEARER_CONTEXT_SETUP_RESP(mSGpTR)            (mSGpTR)->ittiMsg.e1ap_bearer_setup_resp
 #define E1AP_BEARER_CONTEXT_MODIFICATION_REQ(mSGpTR)      (mSGpTR)->ittiMsg.e1ap_bearer_setup_req
@@ -93,6 +94,11 @@ typedef struct e1ap_register_req_t {
 typedef struct e1ap_setup_resp_s {
   long transac_id;
 } e1ap_setup_resp_t;
+
+/* E1AP Setup Failure */
+typedef struct e1ap_setup_fail_s {
+  long transac_id;
+} e1ap_setup_fail_t;
 
 typedef struct cell_group_s {
   long id;
