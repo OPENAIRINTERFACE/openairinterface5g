@@ -47,21 +47,19 @@ bool pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
                    const uint32_t *const dstID);
 
 void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
-                      ue_id_t rntiMaybeUEid,
+                      ue_id_t UEid,
                       NR_DRB_ToAddModList_t *const drb2add_list,
                       const uint8_t security_modeP,
                       uint8_t *const kUPenc,
                       uint8_t *const kUPint);
 
 void add_drb(int is_gnb,
-             ue_id_t rntiMaybeUEid,
+             ue_id_t UEid,
              struct NR_DRB_ToAddMod *s,
              int ciphering_algorithm,
              int integrity_algorithm,
              unsigned char *ciphering_key,
              unsigned char *integrity_key);
-
-void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
 
 void nr_pdcp_remove_UE(ue_id_t ue_id);
 void nr_pdcp_reestablishment(ue_id_t ue_id, int rb_id, bool srb_flag);
@@ -75,7 +73,7 @@ void nr_pdcp_release_drb(ue_id_t ue_id, int drb_id);
 
 
 void add_srb(int is_gnb,
-             ue_id_t rntiMaybeUEid,
+             ue_id_t UEid,
              struct NR_SRB_ToAddMod *s,
              int ciphering_algorithm,
              int integrity_algorithm,
