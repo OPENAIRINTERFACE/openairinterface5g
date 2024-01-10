@@ -2065,6 +2065,9 @@ static pdusession_level_qos_parameter_t *get_qos_characteristics(const int qfi, 
   return NULL;
 }
 
+/**
+ * @brief E1AP Bearer Context Setup Response processing
+*/
 void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp, instance_t instance)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -2172,6 +2175,9 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
 }
 
+/**
+ * @brief E1AP Bearer Context Modification Response processing
+*/
 void rrc_gNB_process_e1_bearer_context_modif_resp(const e1ap_bearer_modif_resp_t *resp)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -2188,6 +2194,9 @@ void rrc_gNB_process_e1_bearer_context_modif_resp(const e1ap_bearer_modif_resp_t
   }
 }
 
+/**
+ * @brief E1AP Bearer Context Release processing
+*/
 void rrc_gNB_process_e1_bearer_context_release_cplt(const e1ap_bearer_release_cplt_t *cplt)
 {
   // there is not really anything to do here as of now

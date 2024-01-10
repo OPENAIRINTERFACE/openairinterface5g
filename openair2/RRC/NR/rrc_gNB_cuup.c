@@ -134,6 +134,9 @@ static void e1ap_setup_failure(sctp_assoc_t assoc_id, uint64_t transac_id)
   itti_send_msg_to_task(TASK_CUCP_E1, 0 /*unused by callee*/, msg_p);
 }
 
+/**
+ * @brief E1AP Setup Request processing on CU-CP
+*/
 int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
 {
   AssertFatal(req->supported_plmns <= PLMN_LIST_MAX_SIZE, "Supported PLMNs is more than PLMN_LIST_MAX_SIZE\n");

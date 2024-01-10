@@ -1860,6 +1860,14 @@ void e1apHandleTimer(instance_t myInstance)
     e1_task_send_sctp_association_req(TASK_CUUP_E1, myInstance, &getCxtE1(myInstance)->net_config);
 }
 
+/**
+ * @brief E1AP Centralized Unit Control Plane (CU-CP) task function.
+ *
+ * This is the main task loop for the E1AP CUCP module:
+ * it listens for incoming messages from the Inter-Task Interface (ITTI)
+ * and calls the relevant handlers for each message type.
+ *
+ */
 void *E1AP_CUCP_task(void *arg) {
   LOG_I(E1AP, "Starting E1AP at CU CP\n");
   MessageDef *msg = NULL;
@@ -1931,6 +1939,14 @@ void *E1AP_CUCP_task(void *arg) {
   }
 }
 
+/**
+ * @brief E1AP Centralized Unit User Plane (CU-UP) task function.
+ *
+ * This is the main task loop for the E1AP CUUP module:
+ * it listens for incoming messages from the Inter-Task Interface (ITTI)
+ * and calls the relevant handlers for each message type.
+ *
+ */
 void *E1AP_CUUP_task(void *arg) {
   LOG_I(E1AP, "Starting E1AP at CU UP\n");
   e1ap_common_init();

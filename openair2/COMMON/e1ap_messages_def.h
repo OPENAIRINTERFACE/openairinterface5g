@@ -22,10 +22,10 @@
 /* gNB_CUUP application layer -> E1AP messages */
 MESSAGE_DEF(E1AP_REGISTER_REQ, MESSAGE_PRIORITY_MED, e1ap_register_req_t, e1ap_register_req)
 
-/* E1AP messages -> RRC (CU-CP) */
+/* E1AP Interface Management Messages */
+/* E1AP Setup Request: gNB-CU-UP -> gNB-CU-CP */
 MESSAGE_DEF(E1AP_SETUP_REQ  , MESSAGE_PRIORITY_MED , e1ap_setup_req_t , e1ap_setup_req)
-
-/* E1AP -> eNB_DU or eNB_CU_RRC -> E1AP application layer messages */
+/* E1AP Setup Response: gNB-CU-CP -> gNB-CU-UP */
 MESSAGE_DEF(E1AP_SETUP_RESP , MESSAGE_PRIORITY_MED, e1ap_setup_resp_t , e1ap_setup_resp)
 /* E1AP Setup Failure: gNB-CU-CP -> gNB-CU-UP */
 MESSAGE_DEF(E1AP_SETUP_FAIL, MESSAGE_PRIORITY_MED, e1ap_setup_fail_t, e1ap_setup_fail)
