@@ -46,8 +46,8 @@
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_e1</yaml_path>
-                <services>mysql oai-nrf oai-amf oai-smf oai-spgwu</services>
-                <nb_healthy>5</nb_healthy>
+                <services>mysql oai-amf oai-smf oai-upf</services>
+                <nb_healthy>4</nb_healthy>
         </testCase>
 
         <testCase id="000022">
@@ -55,7 +55,7 @@
                 <desc>Deploy OAI 5G RAN RF sim SA (1 CU-CP, 3 CU-UPs, 3 DUs)</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_e1</yaml_path>
                 <services>oai-cucp oai-cuup oai-cuup2 oai-cuup3 oai-du oai-du2 oai-du3</services>
-                <nb_healthy>12</nb_healthy>
+                <nb_healthy>11</nb_healthy>
         </testCase>
 
         <testCase id="000023">
@@ -63,7 +63,7 @@
                 <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_e1</yaml_path>
                 <services>oai-nr-ue oai-nr-ue2 oai-nr-ue3</services>
-                <nb_healthy>15</nb_healthy>
+                <nb_healthy>14</nb_healthy>
         </testCase>
 
         <testCase id="020021">
