@@ -1,14 +1,5 @@
 version: '3.8'
 services:
-    oai-nrf:
-        container_name: "l2sim-oai-nrf"
-        image: oaisoftwarealliance/oai-nrf:v1.5.0
-        environment:
-            - NRF_INTERFACE_NAME_FOR_SBI=eth0
-            - TZ=Europe/Paris
-        networks:
-            public_net:
-                ipv4_address: 192.168.71.130
     mysql:
         container_name: "l2sim-mysql"
         image: mysql:8.0
@@ -31,108 +22,36 @@ services:
                 ipv4_address: 192.168.71.131
     oai-amf:
         container_name: "l2sim-oai-amf"
-        image: oaisoftwarealliance/oai-amf:v1.5.0
+        image: oaisoftwarealliance/oai-amf:v2.0.0
         environment:
             - TZ=Europe/paris
-            - MCC=208
-            - MNC=99
-            - REGION_ID=128
-            - AMF_SET_ID=1
-            - SERVED_GUAMI_MCC_0=208
-            - SERVED_GUAMI_MNC_0=99
-            - SERVED_GUAMI_REGION_ID_0=128
-            - SERVED_GUAMI_AMF_SET_ID_0=1
-            - SERVED_GUAMI_MCC_1=460
-            - SERVED_GUAMI_MNC_1=11
-            - SERVED_GUAMI_REGION_ID_1=10
-            - SERVED_GUAMI_AMF_SET_ID_1=1
-            - PLMN_SUPPORT_MCC=208
-            - PLMN_SUPPORT_MNC=99
-            - PLMN_SUPPORT_TAC=0x0001
-            # Only one slice is defined (1, 0xFFFFFF).
-            - SST_0=1
-            - AMF_INTERFACE_NAME_FOR_NGAP=eth0
-            - AMF_INTERFACE_NAME_FOR_N11=eth0
-            # One single SMF instance
-            - SMF_INSTANCE_ID_0=1
-            - SMF_FQDN_0=oai-smf
-            - SMF_IPV4_ADDR_0=192.168.71.133
-            - SELECTED_0=true
-            # mysql definition in AMF is mandatory in mini deployment.
-            - MYSQL_SERVER=192.168.71.131
-            - MYSQL_USER=root
-            - MYSQL_PASS=linux
-            - MYSQL_DB=oai_db
-            # NF registration
-            - NRF_IPV4_ADDRESS=192.168.71.130
-            - NRF_FQDN=oai-nrf
-            - NF_REGISTRATION=yes
-            - SMF_SELECTION=yes
-            - USE_FQDN_DNS=yes
-            - USE_HTTP2=no
+        volumes:
+            - ../5g_rfsimulator/mini_nonrf_config.yaml:/openair-amf/etc/config.yaml
         depends_on:
-            - oai-nrf
             - mysql
         networks:
             public_net:
                 ipv4_address: 192.168.71.132
     oai-smf:
         container_name: "l2sim-oai-smf"
-        image: oaisoftwarealliance/oai-smf:v1.5.0
+        image: oaisoftwarealliance/oai-smf:v2.0.0
         environment:
             - TZ=Europe/Paris
-            - SMF_INTERFACE_NAME_FOR_N4=eth0
-            - SMF_INTERFACE_NAME_FOR_SBI=eth0
-            - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
-            - DEFAULT_DNS_SEC_IPV4_ADDRESS=4.4.4.4
-            - AMF_IPV4_ADDRESS=192.168.71.132
-            - AMF_FQDN=oai-amf
-            - UPF_IPV4_ADDRESS=192.168.71.134
-            - UPF_FQDN_0=oai-spgwu
-            - NRF_IPV4_ADDRESS=192.168.71.130
-            - NRF_FQDN=oai-nrf
-            - REGISTER_NRF=yes
-            - DISCOVER_UPF=yes
-            - USE_FQDN_DNS=yes
-            - USE_LOCAL_SUBSCRIPTION_INFO=yes
-            - UE_MTU=1500
-            # Only one slice is defined (1, 0xFFFFFF)
-            - DNN_NI0=oai
-            - TYPE0=IPv4
-            - DNN_RANGE0=12.1.1.2 - 12.1.1.127
-            - NSSAI_SST0=1
-            - SESSION_AMBR_UL0=200Mbps
-            - SESSION_AMBR_DL0=400Mbps
-            - DEFAULT_CSCF_IPV4_ADDRESS=127.0.0.1
-            - ENABLE_USAGE_REPORTING=no
+        volumes:
+            - ../5g_rfsimulator/mini_nonrf_config.yaml:/openair-smf/etc/config.yaml
         depends_on:
-            - oai-nrf
             - oai-amf
         networks:
             public_net:
                 ipv4_address: 192.168.71.133
-    oai-spgwu:
-        container_name: "l2sim-oai-spgwu"
-        image: oaisoftwarealliance/oai-spgwu-tiny:v1.5.0
+    oai-upf:
+        container_name: "l2sim-oai-upf"
+        image: oaisoftwarealliance/oai-upf:v2.0.0
         environment:
             - TZ=Europe/Paris
-            - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
-            - SGW_INTERFACE_NAME_FOR_SX=eth0
-            - PGW_INTERFACE_NAME_FOR_SGI=eth0
-            - NETWORK_UE_NAT_OPTION=yes
-            - NETWORK_UE_IP=12.1.1.0/24
-            - ENABLE_5G_FEATURES=yes
-            - REGISTER_NRF=yes
-            - USE_FQDN_NRF=yes
-            - UPF_FQDN_5G=oai-spgwu
-            - NRF_IPV4_ADDRESS=192.168.71.130
-            - NRF_FQDN=oai-nrf
-            # Only one slice is defined (1, 0xFFFFFF)
-            - NSSAI_SST_0=1
-            - NSSAI_SD_0=0xffffff
-            - DNN_0=oai
+        volumes:
+            - ../5g_rfsimulator/mini_nonrf_config.yaml:/openair-upf/etc/config.yaml
         depends_on:
-            - oai-nrf
             - oai-smf
         cap_add:
             - NET_ADMIN
@@ -153,7 +72,7 @@ services:
               "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;"\
               "ip route add 12.1.1.0/24 via 192.168.72.134 dev eth0; sleep infinity"
         depends_on:
-            - oai-spgwu
+            - oai-upf
         networks:
             traffic_net:
                 ipv4_address: 192.168.72.135
@@ -172,7 +91,7 @@ services:
             USE_ADDITIONAL_OPTIONS: --sa --nfapi VNF --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
             ASAN_OPTIONS: detect_leaks=0
         depends_on:
-            - oai-spgwu
+            - oai-upf
             - oai-amf
         volumes:
             - ../../conf_files/gnb.sa.band78.106prb.l2sim.conf:/opt/oai-gnb/etc/gnb.conf
