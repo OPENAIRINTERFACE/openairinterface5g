@@ -129,20 +129,7 @@ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band
 # 5. OAI UE
 
 ## 5.1  SIM Card
-Edit openair3/UICC/usim_interface.c
-```bash
-#define UICC_PARAMS_DESC {\
-    {"imsi",             "USIM IMSI\n",          0,         strptr:&(uicc->imsiStr),              defstrval:"001010000000001",           TYPE_STRING,    0 },\
-    {"nmc_size"          "number of digits in NMC", 0,      iptr:&(uicc->nmc_size),               defintval:2,         TYPE_INT,       0 },\
-    {"key",              "USIM Ki\n",            0,         strptr:&(uicc->keyStr),               defstrval:"fec86ba6eb707ed08905757b1bb44b8f", TYPE_STRING,    0 },\
-    {"opc",              "USIM OPc\n",           0,         strptr:&(uicc->opcStr),               defstrval:"c42449363bbad02b66d16bc975d77cc1", TYPE_STRING,    0 },\
-    {"amf",              "USIM amf\n",           0,         strptr:&(uicc->amfStr),               defstrval:"8000",    TYPE_STRING,    0 },\
-    {"sqn",              "USIM sqn\n",           0,         strptr:&(uicc->sqnStr),               defstrval:"000000",  TYPE_STRING,    0 },\
-    {"dnn",              "UE dnn (apn)\n",       0,         strptr:&(uicc->dnnStr),               defstrval:"oai",     TYPE_STRING,    0 },\
-    {"nssai_sst",        "UE nssai\n",           0,         iptr:&(uicc->nssai_sst),              defintval:1,    TYPE_INT,    0 }, \
-    {"nssai_sd",         "UE nssai\n",           0,         iptr:&(uicc->nssai_sd),               defintval:0xffffff,    TYPE_INT,    0 }, \
-};
-```
+For this tutorial, there is no need to adjust any of the default OAI nrUE SIM card values. However, they can be checked and changed in [UICC_PARAMS_DESC](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/openair3/UICC/usim_interface.c?ref_type=heads#L40)
 
 ## 5.2 Testing OAI nrUE with USRP B210
 
