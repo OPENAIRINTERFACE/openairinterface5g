@@ -128,9 +128,8 @@ static void e1ap_setup_failure(sctp_assoc_t assoc_id, uint64_t transac_id)
   msg_p->ittiMsgHeader.originInstance = assoc_id;
   e1ap_setup_fail_t *setup_fail = &E1AP_SETUP_FAIL(msg_p);
   setup_fail->transac_id = transac_id;
-  LOG_I(NR_RRC, "Triggering E1AP Setup Failure for transac_id %ld (%ld), assoc_id %ld\n",
+  LOG_I(NR_RRC, "Triggering E1AP Setup Failure for transac_id %ld, assoc_id %ld\n",
         transac_id,
-        E1AP_SETUP_FAIL(msg_p).transac_id,
         msg_p->ittiMsgHeader.originInstance);
   itti_send_msg_to_task(TASK_CUCP_E1, 0 /*unused by callee*/, msg_p);
 }
