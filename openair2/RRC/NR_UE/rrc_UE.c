@@ -141,7 +141,6 @@ static void nr_rrc_manage_rlc_bearers(const NR_UE_RRC_INST_t *rrc,
 static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
                                                 rrcPerNB_t *rrcNB,
                                                 NR_RadioBearerConfig_t *const radioBearerConfig);
-static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc);
 static void nr_rrc_ue_generate_rrcReestablishmentComplete(NR_RRCReestablishment_t *rrcReestablishment);
 static void process_lte_nsa_msg(NR_UE_RRC_INST_t *rrc, nsa_msg_t *msg, int msg_len);
 static void nr_rrc_ue_process_rrcReconfiguration(NR_UE_RRC_INST_t *rrc,
@@ -309,7 +308,7 @@ NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int nb_inst)
     rrc->dl_bwp_id = 0;
     rrc->ul_bwp_id = 0;
     rrc->as_security_activated = false;
-
+    rrc->ra_trigger = RA_NOT_RUNNING;
     rrc->uecap_file = uecap_file;
 
     for (int i = 0; i < NB_CNX_UE; i++) {
@@ -566,13 +565,15 @@ static int nr_decode_SI(NR_UE_RRC_SI_INFO *SI_info, NR_SystemInformation_t *si)
   return 0;
 }
 
-void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, int rnti)
+static void nr_rrc_handle_msg3_indication(NR_UE_RRC_INST_t *rrc, int rnti)
 {
-  switch (trigger) {
+  switch (rrc->ra_trigger) {
     case INITIAL_ACCESS_FROM_RRC_IDLE:
       // After SIB1 is received, prepare RRCConnectionRequest
       rrc->rnti = rnti;
-      nr_rrc_ue_generate_RRCSetupRequest(rrc);
+      // start timer T300
+      NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
+      tac->T300_active = true;
       break;
     case RRC_CONNECTION_REESTABLISHMENT:
       AssertFatal(1==0, "ra_trigger not implemented yet!\n");
@@ -601,7 +602,7 @@ void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, int 
   }
 }
 
-static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc)
+static void nr_rrc_ue_prepare_RRCSetupRequest(NR_UE_RRC_INST_t *rrc)
 {
   LOG_D(NR_RRC, "Generation of RRCSetupRequest\n");
   uint8_t rv[6];
@@ -619,11 +620,6 @@ static void nr_rrc_ue_generate_RRCSetupRequest(NR_UE_RRC_INST_t *rrc)
   uint8_t buf[1024];
   int len = do_RRCSetupRequest(buf, sizeof(buf), rv);
 
-  // start timer T300
-  NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
-  tac->T300_active = true;
-
-  /* convention: RNTI for SRB0 is zero, as it changes all the time */
   nr_rlc_srb_recv_sdu(rrc->ue_id, 0, buf, len);
 }
 
@@ -687,9 +683,10 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(NR_UE_RRC_INST_t *rrc,
           xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void *) SI_info->sib1);
         LOG_A(NR_RRC, "SIB1 decoded\n");
         SI_info->sib1_timer = 0;
-        // FIXME: improve condition for the RA trigger
         if (rrc->nrRrcState == RRC_STATE_IDLE_NR) {
-          LOG_D(PHY,"Setting state to RRC_STATE_IDLE_NR\n");
+          rrc->ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
+          // preparing RRC setup request payload in advance
+          nr_rrc_ue_prepare_RRCSetupRequest(rrc);
         }
         // configure default SI
         nr_rrc_configure_default_SI(SI_info, sib1);
@@ -1440,7 +1437,7 @@ void *rrc_nrue(void *notUsed)
     break;
 
   case NR_RRC_MAC_MSG3_IND:
-    nr_rrc_ue_generate_ra_msg(rrc, INITIAL_ACCESS_FROM_RRC_IDLE, NR_RRC_MAC_MSG3_IND(msg_p).rnti);
+    nr_rrc_handle_msg3_indication(rrc, NR_RRC_MAC_MSG3_IND(msg_p).rnti);
     break;
 
   case NR_RRC_MAC_RA_IND:

@@ -213,9 +213,8 @@ typedef struct NR_UE_RRC_INST_s {
 
   OAI_NR_UECapability_t UECap;
   NR_UE_Timers_Constants_t timers_and_constants;
-  plmn_t                         plmnID;
-
-  // NR_MIB_t *mib;
+  RA_trigger_t ra_trigger;
+  plmn_t plmnID;
 
   NR_BWP_Id_t dl_bwp_id;
   NR_BWP_Id_t ul_bwp_id;
