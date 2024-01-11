@@ -126,18 +126,26 @@ cd cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa
 ```
 
+### RFsimulator in FR2
+```bash
+cd ~/openairinterface5g
+source oaienv
+cd cmake_targets/ran_build/build
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band257.32prb.usrpx410.conf --rfsim
+```
+
 # 5. OAI UE
 
 ## 5.1  SIM Card
 For this tutorial, there is no need to adjust any of the default OAI nrUE SIM card values. However, they can be checked and changed in [UICC_PARAMS_DESC](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/openair3/UICC/usim_interface.c?ref_type=heads#L40)
 
-## 5.2 Testing OAI nrUE with USRP B210
-
+## 5.2 Run OAI nrUE
+### USRP B210
 Important notes:
 - This should be run in a second Ubuntu 22.04 host, other than gNB
 - It only applies when running OAI gNB with USRP B210
 
-Run OAI nrUE
+Run OAI nrUE with USRP B210
 ```bash
 cd ~/openairinterface5g
 source oaienv
@@ -145,7 +153,7 @@ cd cmake_targets/ran_build/build
 sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ue-fo-compensation --sa -E --uicc0.imsi 001010000000001
 ```
 
-## 5.2 Testing OAI nrUE with RFsimulator
+### RFsimulator
 Important notes:
 - This should be run on the same host as the OAI gNB
 - It only applies when running OAI gNB with RFsimulator
@@ -155,11 +163,24 @@ Run OAI nrUE with RFsimulator
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
-sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --uicc0.imsi 001010000000001 --rfsimulator.serveraddr 127.0.0.1
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --sa --uicc0.imsi 001010000000001 --rfsim
 ```
 
-### 5.2.1 Ping test
-- UE host
+### RFsimulator in FR2
+Important notes:
+- This should be run on the same host as the OAI gNB
+- It only applies when running OAI gNB with RFsimulator in FR2
+
+Run OAI nrUE with RFsimulator in FR2
+```bash
+cd ~/openairinterface5g
+source oaienv
+cd cmake_targets/ran_build/build
+sudo ./nr-uesoftmodem -r 32 --numerology 3 --band 257 -C 27533280000 --sa --uicc0.imsi 001010000000001 --ssb 72 --rfsim
+```
+
+## 5.3 End-to-end connectivity test
+- Ping test from the UE host to the CN5G
 ```bash
 ping 192.168.70.135 -I oaitun_ue1
 ```
