@@ -608,23 +608,25 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot
   ra->ra_state = WAIT_CONTENTION_RESOLUTION;
 }
 
-void nr_get_msg3_payload(module_id_t mod_id)
+void nr_get_msg3_payload(module_id_t mod_id, uint8_t *buf, int TBS_max)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
-  uint8_t *pdu = mac->CCCH_pdu.payload;
-  const uint8_t sh_size = sizeof(NR_MAC_SUBHEADER_FIXED);
-  NR_MAC_SUBHEADER_FIXED *header = (NR_MAC_SUBHEADER_FIXED *) pdu;
-  pdu += sh_size;
-  int lcid = 0; // SRB0 for messages sent in MSG3
+  uint8_t *pdu = buf;
+  *(NR_MAC_SUBHEADER_FIXED *)pdu = (NR_MAC_SUBHEADER_FIXED){.LCID = UL_SCH_LCID_CCCH};
+  pdu += sizeof(NR_MAC_SUBHEADER_FIXED);
+  // here a big race condition: nothing ensure RRC thread has already pushed data to rlc
+  // there is no issue inside RLC,
+  // if RRC has called nr_rlc_srb_recv_sdu(),
+  // we are good even if the name is misleading (we send a ssrb msg, not receive if)
   tbs_size_t len = mac_rlc_data_req(mod_id,
                                     ra->t_crnti,
                                     0,
                                     0,
                                     ENB_FLAG_NO,
                                     MBMS_FLAG_NO,
-                                    lcid,
-                                    16, /* size of mac_ce above */
+                                    0, // SRB0 for messages sent in MSG3
+                                    TBS_max - sizeof(NR_MAC_SUBHEADER_FIXED), /* size of mac_ce above */
                                     (char *)pdu,
                                     0,
                                     0);
@@ -632,26 +634,16 @@ void nr_get_msg3_payload(module_id_t mod_id)
   // UE Contention Resolution Identity
   // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to determine whether or not the
   // Random Access Procedure has been successful after reception of Msg4
+  // We copy from persisted memory to another persisted memory
   memcpy(ra->cont_res_id, pdu, sizeof(uint8_t) * 6);
   pdu += len;
-  int Msg3_size = len + sh_size;
-  // Build header
-  header->R = 0;
-  header->LCID = UL_SCH_LCID_CCCH;
-  const uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // Note: unclear the reason behind the selection of such TBS_max
+  AssertFatal(TBS_max >= pdu - buf, "Allocated resources are not enough for Msg3!\n");
   // Padding: fill remainder with 0
-  if (TBS_max - Msg3_size > 0) {
-    AssertFatal(TBS_max > Msg3_size, "Allocated resources are not enough for Msg3!\n");
-    LOG_D(NR_MAC, "Remaining %d bytes, filling with padding\n",TBS_max - Msg3_size);
-    ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
-    ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
+  LOG_D(NR_MAC, "Remaining %ld bytes, filling with padding\n", pdu - buf);
+  while (pdu < buf + TBS_max - sizeof(NR_MAC_SUBHEADER_FIXED)) {
+    *(NR_MAC_SUBHEADER_FIXED *)pdu = (NR_MAC_SUBHEADER_FIXED){.LCID = UL_SCH_LCID_PADDING};
     pdu += sizeof(NR_MAC_SUBHEADER_FIXED);
-    memset(pdu, 0, TBS_max - Msg3_size - sizeof(NR_MAC_SUBHEADER_FIXED));
   }
-  // Dumping ULSCH payload
-  LOG_D(NR_MAC, "Dumping UL Msg3 MAC PDU with length %d: \n", TBS_max);
-  for(int k = 0; k < TBS_max; k++)
-    LOG_D(NR_MAC,"(%i): %i\n", k, pdu[k]);
 }
 
 /**
@@ -710,7 +702,7 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
       int size_sdu = 0;
       uint8_t mac_ce[16] = {0};
       uint8_t *pdu = get_softmodem_params()->sa ? mac->CCCH_pdu.payload : mac_ce;
-      uint8_t *payload = pdu;
+      const uint8_t *payload = pdu;
 
       // Concerning the C-RNTI MAC CE, it has to be included if the UL transmission (Msg3) is not being made for the CCCH logical channel.
       // Therefore it has been assumed that this event only occurs only when RA is done and it is not SA mode.

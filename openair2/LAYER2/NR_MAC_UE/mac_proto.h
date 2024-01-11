@@ -502,7 +502,7 @@ void set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu);
 void nr_Msg1_transmitted(module_id_t mod_id);
 
 void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot_t slotP, uint8_t gNB_id);
-void nr_get_msg3_payload(module_id_t mod_id);
+void nr_get_msg3_payload(module_id_t mod_id, uint8_t *buf, int TBS_max);
 void send_msg3_rrc_request(module_id_t mod_id, int rnti);
 
 void nr_ue_msg2_scheduler(module_id_t mod_id, uint16_t rach_frame, uint16_t rach_slot, uint16_t *msg2_frame, uint16_t *msg2_slot);

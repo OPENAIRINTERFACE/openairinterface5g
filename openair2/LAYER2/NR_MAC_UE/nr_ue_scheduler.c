@@ -1036,8 +1036,7 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
                 ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator,
                 TBS_bytes,ra->ra_state);
           if (ra->ra_state == WAIT_RAR && !ra->cfra) {
-            nr_get_msg3_payload(mod_id);
-            memcpy(ulsch_input_buffer, mac->CCCH_pdu.payload, TBS_bytes);
+            nr_get_msg3_payload(mod_id, ulsch_input_buffer, TBS_bytes);
             for (int k = 0; k < TBS_bytes; k++) {
               LOG_D(NR_MAC,"(%i): 0x%x\n", k, ulsch_input_buffer[k]);
             }
