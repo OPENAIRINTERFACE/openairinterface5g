@@ -1923,7 +1923,7 @@ static void configure_BWPs(NR_UE_MAC_INST_t *mac, NR_ServingCellConfig_t *scd)
     }
     if (scd->uplinkConfig->firstActiveUplinkBWP_Id) {
       mac->current_UL_BWP = get_ul_bwp_structure(mac, *scd->uplinkConfig->firstActiveUplinkBWP_Id, false);
-      AssertFatal(mac->current_UL_BWP, "Couldn't find DL-BWP %ld\n", *scd->uplinkConfig->firstActiveUplinkBWP_Id);
+      AssertFatal(mac->current_UL_BWP, "Couldn't find UL-BWP %ld\n", *scd->uplinkConfig->firstActiveUplinkBWP_Id);
     }
   }
 }
@@ -1957,7 +1957,9 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
   }
 
   // Setup the SSB to Rach Occasions mapping according to the config
-  build_ssb_to_ro_map(mac);
+  // Only if RACH is configured for current BWP
+  if (mac->current_UL_BWP->rach_ConfigCommon)
+    build_ssb_to_ro_map(mac);
 
   if (!mac->dl_config_request || !mac->ul_config_request)
     ue_init_config_request(mac, mac->current_DL_BWP->scs);

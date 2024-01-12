@@ -410,6 +410,7 @@ bool monitior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
     return false;
   const int si_window_slots = 5 << si_SchedulingInfo->si_WindowLength;
   const int abs_slot = frame * slots_per_frame + slot;
+  const int bwp_id = mac->current_DL_BWP->bwp_id;
   for (int n = 0; n < si_SchedulingInfo->schedulingInfoList.list.count; n++) {
     struct NR_SchedulingInfo *sched_Info = si_SchedulingInfo->schedulingInfoList.list.array[n];
     if(mac->si_window_start == -1) {
@@ -434,10 +435,10 @@ bool monitior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
       get_monitoring_period_offset(ss, &period, &offset);
       for (int i = 0; i < duration; i++) {
         if (((frame * slots_per_frame + slot - offset - i) % period) == 0) {
-          int N = mac->ssb_list.nb_tx_ssb;
+          int N = mac->ssb_list[bwp_id].nb_tx_ssb;
           int K = 0; // k_th transmitted SSB
           for (int i = 0; i < mac->mib_ssb; i++) {
-            if(mac->ssb_list.tx_ssb[i].transmitted)
+            if(mac->ssb_list[bwp_id].tx_ssb[i].transmitted)
               K++;
           }
           // numbering current frame and slot in terms of monitoring occasions in window
