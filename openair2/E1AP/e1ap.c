@@ -1774,6 +1774,16 @@ static void e1_task_handle_sctp_association_resp(E1_t type, instance_t instance,
 {
   DevAssert(sctp_new_association_resp != NULL);
   getCxtE1(instance)->sockState = sctp_new_association_resp->sctp_state;
+
+  if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN) {
+    LOG_I(E1AP, "Received SCTP shutdown for assoc_id %d, removing CUCP endpoint\n", sctp_new_association_resp->assoc_id);
+    /* inform RRC that the CU-UP is gone */
+    MessageDef *message_p = itti_alloc_new_message(TASK_CUCP_E1, 0, E1AP_LOST_CONNECTION);
+    message_p->ittiMsgHeader.originInstance = sctp_new_association_resp->assoc_id;
+    itti_send_msg_to_task(TASK_RRC_GNB, instance, message_p);
+    return;
+  }
+
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
     LOG_W(E1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
           sctp_new_association_resp->sctp_state,

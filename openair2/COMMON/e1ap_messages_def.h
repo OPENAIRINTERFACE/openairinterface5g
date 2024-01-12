@@ -22,6 +22,9 @@
 /* gNB_CUUP application layer -> E1AP messages */
 MESSAGE_DEF(E1AP_REGISTER_REQ, MESSAGE_PRIORITY_MED, e1ap_register_req_t, e1ap_register_req)
 
+/* E1AP -> RRC to inform about lost connection */
+MESSAGE_DEF(E1AP_LOST_CONNECTION, MESSAGE_PRIORITY_MED, e1ap_lost_connection_t, e1ap_lost_connection)
+
 /* E1AP Interface Management Messages */
 /* E1AP Setup Request: gNB-CU-UP -> gNB-CU-CP */
 MESSAGE_DEF(E1AP_SETUP_REQ  , MESSAGE_PRIORITY_MED , e1ap_setup_req_t , e1ap_setup_req)

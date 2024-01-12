@@ -2476,6 +2476,10 @@ void *rrc_gnb_task(void *args_p) {
         rrc_gNB_process_e1_bearer_context_release_cplt(&E1AP_BEARER_CONTEXT_RELEASE_CPLT(msg_p));
         break;
 
+      case E1AP_LOST_CONNECTION: /* CUCP */
+        rrc_gNB_process_e1_lost_connection(RC.nrrrc[0], &E1AP_LOST_CONNECTION(msg_p), msg_p->ittiMsgHeader.originInstance);
+        break;
+
       case NGAP_PAGING_IND:
         rrc_gNB_process_PAGING_IND(msg_p, instance);
         break;

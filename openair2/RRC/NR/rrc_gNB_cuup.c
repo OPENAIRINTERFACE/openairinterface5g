@@ -189,3 +189,28 @@ int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
 
   return 0;
 }
+
+/**
+ * @brief RRC Processing of the indication of E1 connection loss on CU-CP
+*/
+void rrc_gNB_process_e1_lost_connection(gNB_RRC_INST *rrc, e1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
+{
+  LOG_I(NR_RRC, "Received E1 connection loss indication on RRC\n");
+  AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
+  nr_rrc_cuup_container_t e = {.assoc_id = assoc_id};
+  nr_rrc_cuup_container_t *cuup = RB_FIND(rrc_cuup_tree, &rrc->cuups, &e);
+  if (cuup == NULL) {
+    LOG_W(NR_RRC, "CU-UP for assoc_id %d not found!\n", assoc_id);
+    return;
+  }
+  if (cuup->setup_req != NULL) {
+    e1ap_setup_req_t *req = cuup->setup_req;
+    LOG_I(NR_RRC, "releasing CU-UP %s on assoc_id %d\n", req->gNB_cu_up_name, assoc_id);
+    free(cuup->setup_req);
+  }
+  nr_rrc_cuup_container_t *removed = RB_REMOVE(rrc_cuup_tree, &rrc->cuups, cuup);
+  // Free relevant CU-UP structures
+  free(cuup);
+  DevAssert(removed != NULL);
+  rrc->num_cuups--;
+}

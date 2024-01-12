@@ -51,6 +51,7 @@
 #define E1AP_BEARER_CONTEXT_MODIFICATION_RESP(mSGpTR)     (mSGpTR)->ittiMsg.e1ap_bearer_modif_resp
 #define E1AP_BEARER_CONTEXT_RELEASE_CMD(mSGpTR)           (mSGpTR)->ittiMsg.e1ap_bearer_release_cmd
 #define E1AP_BEARER_CONTEXT_RELEASE_CPLT(mSGpTR)          (mSGpTR)->ittiMsg.e1ap_bearer_release_cplt
+#define E1AP_LOST_CONNECTION(mSGpTR)                      (mSGpTR)->ittiMsg.e1ap_lost_connection
 
 typedef net_ip_address_t e1ap_net_ip_address_t;
 
@@ -278,5 +279,11 @@ typedef struct e1ap_bearer_modif_resp_s {
   int numPDUSessionsMod;
   pdu_session_modif_t pduSessionMod[E1AP_MAX_NUM_PDU_SESSIONS];
 } e1ap_bearer_modif_resp_t;
+
+/* E1AP Connection Loss indication */
+typedef struct e1ap_lost_connection_t {
+  int dummy;
+} e1ap_lost_connection_t;
+
 
 #endif /* E1AP_MESSAGES_TYPES_H */
