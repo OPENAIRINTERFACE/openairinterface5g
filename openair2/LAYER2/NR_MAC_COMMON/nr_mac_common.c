@@ -4075,8 +4075,8 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
   }
 }
 
-uint8_t get_BG(uint32_t A, uint16_t R) {
-
+uint8_t get_BG(uint32_t A, uint16_t R)
+{
   float code_rate = (float) R / 10240.0f;
   if ((A <= 292) || ((A <= NR_MAX_PDSCH_TBS) && (code_rate <= 0.6667)) || code_rate <= 0.25)
     return 2;

@@ -44,7 +44,6 @@
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "common/utils/nr/nr_common.h"
-#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "openair1/PHY/TOOLS/phy_scope_interface.h"
 
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
@@ -348,7 +347,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   LOG_D(PHY,"%d.%d DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d length dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d Qm %d Coderate %f\n",
         frame,nr_slot_rx,harq_pid,A,A/8,G, nb_re_dmrs, dmrs_length, dlsch->dlsch_config.mcs, dlsch->Nl, nb_symb_sch, nb_rb, dlsch->dlsch_config.qamModOrder, Coderate);
-  decParams.BG = get_BG(A, dlsch->dlsch_config.targetCodeRate);
+  decParams.BG = dlsch->dlsch_config.ldpcBaseGraph;
   unsigned int kc = decParams.BG == 2 ? 52 : 68;
 
   if (harq_process->first_rx == 1) {

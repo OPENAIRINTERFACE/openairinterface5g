@@ -690,6 +690,8 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
     dlsch_pdu->TBS = current_harq->TBS;
   }
 
+  dlsch_pdu->ldpcBaseGraph = get_BG(dlsch_pdu->TBS, dlsch_pdu->targetCodeRate);
+
   int bw_tbslbrm = current_DL_BWP ? mac->sc_info.dl_bw_tbslbrm : dlsch_pdu->BWPSize;
   dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, 1);
 
@@ -1116,6 +1118,8 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
     dlsch_pdu->targetCodeRate = current_harq->R;
     dlsch_pdu->TBS = current_harq->TBS;
   }
+
+  dlsch_pdu->ldpcBaseGraph = get_BG(dlsch_pdu->TBS, dlsch_pdu->targetCodeRate);
 
   // TBS_LBRM according to section 5.4.2.1 of 38.212
   AssertFatal(sc_info->maxMIMO_Layers_PDSCH != NULL, "Option with max MIMO layers not configured is not supported\n");

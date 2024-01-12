@@ -122,11 +122,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 ///////////////////////// b---->| block segmentation |---->c /////////////////////////
 ///////////
 
-    if ((A <= 292) || ((A <= NR_MAX_PDSCH_TBS) && (Coderate <= 0.6667)) || Coderate <= 0.25) {
-      harq_process->BG = 2;
-    } else {
-      harq_process->BG = 1;
-    }
+    harq_process->BG = ulsch->pusch_pdu.ldpcBaseGraph;
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_IN);
     start_meas(&ue->ulsch_segmentation_stats);

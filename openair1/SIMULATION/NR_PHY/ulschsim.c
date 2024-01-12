@@ -506,6 +506,7 @@ int main(int argc, char **argv)
   ulsch_ue->pusch_pdu.pusch_data.tb_size  = TBS>>3;
   ulsch_ue->pusch_pdu.target_code_rate = code_rate;
   ulsch_ue->pusch_pdu.qam_mod_order = mod_order;
+  ulsch_ue->pusch_pdu.ldpcBaseGraph = get_BG(TBS, code_rate);
   unsigned char *test_input = harq_process_ul_ue->a;
 
   ///////////
