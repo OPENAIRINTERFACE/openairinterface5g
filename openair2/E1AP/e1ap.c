@@ -36,6 +36,10 @@
 
 #define E1AP_NUM_MSG_HANDLERS 14
 typedef int (*e1ap_message_processing_t)(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *message_p);
+
+/**
+ * @brief E1AP messages handlers
+*/
 const e1ap_message_processing_t e1ap_message_processing[E1AP_NUM_MSG_HANDLERS][3] = {
 
     {0, 0, 0}, /* Reset */

@@ -2066,7 +2066,7 @@ static pdusession_level_qos_parameter_t *get_qos_characteristics(const int qfi, 
 }
 
 /**
- * @brief E1AP Bearer Context Setup Response processing
+ * @brief E1AP Bearer Context Setup Response processing on CU-CP
 */
 void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp, instance_t instance)
 {
@@ -2176,7 +2176,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
 }
 
 /**
- * @brief E1AP Bearer Context Modification Response processing
+ * @brief E1AP Bearer Context Modification Response processing on CU-CP
 */
 void rrc_gNB_process_e1_bearer_context_modif_resp(const e1ap_bearer_modif_resp_t *resp)
 {

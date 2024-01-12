@@ -122,6 +122,11 @@ sctp_assoc_t get_new_cuup_for_ue(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue
   return ue_data.e1_assoc_id;
 }
 
+/* CU-CP Functions */
+
+/**
+ * @brief Trigger E1AP Setup Failure on CU-CP
+*/
 static void e1ap_setup_failure(sctp_assoc_t assoc_id, uint64_t transac_id)
 {
   MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_GNB, 0, E1AP_SETUP_FAIL);
