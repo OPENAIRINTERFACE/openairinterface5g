@@ -45,11 +45,37 @@ sequenceDiagram
   Note over c: Execute rrc_gNB_process_e1_bearer_context_release_cplt()
 ```
 
-The files that implement the callback towards these handlers are in
-- `cucp_cuup_direct.c`: integrated CU (for CP=>UP messages)
-- `cucp_cuup_e1ap.c`: E1 split mode (for CP=>UP messages)
-- `cuup_cucp_direct.c`: integrated CU (for UP=>CP messages)
-- `cuup_cucp_e1ap.c`: E1 split mode (for UP=>CP messages)
+The implementation of callbacks towards these handlers is distributed across the following file, depending on the operating mode:
+
+| Mode          | CP=>UP messages     |UP=>CP messages     |
+| --------------| --------------------|--------------------|
+| Integrated CU | `cucp_cuup_direct.c`|`cuup_cucp_direct.c`|
+| E1 Split      | `cucp_cuup_e1ap.c`  |`cuup_cucp_e1ap.c`  |
+
+As long as concerns E1 Interface Management Procedures, the code flow of request messages towards northbound looks like this:
+
+```mermaid
+sequenceDiagram
+  participant r as RRC
+  participant c as CUCP
+  participant u as CUUP
+
+  Note over u: E1AP_CUUP_task (SCTP Handler)
+  Note over u: ASN1 encoder
+  u->>c: e.g. E1 Setup Request (SCTP)
+  Note over c: E1AP_CUCP_task (SCTP Handler)
+  Note over c: ASN1 decoder
+  c->>r: E1AP_SETUP_REQ (ITTI)
+  Note over r: TASK_RRC_GNB (RRC Handler)
+  r->>c: E1AP_SETUP_RESP (ITTI)
+  Note over c: E1AP_CUCP_task (E1AP Callback)
+  Note over c: ASN1 encoder
+
+  c->>u: e.g. E1 Setup Response/Failure
+  Note over u: E1AP_CUUP_task (SCTP Handler)
+  Note over u: ASN1 decoder
+```
+
 
 # 2. Running the E1 Split
 
