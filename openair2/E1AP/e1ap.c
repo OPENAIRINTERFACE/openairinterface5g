@@ -73,7 +73,7 @@ const char *const e1ap_direction2String(int e1ap_dir)
   return(e1ap_direction_String[e1ap_dir]);
 }
 
-int e1ap_handle_message(instance_t instance, sctp_assoc_t assoc_id, const uint8_t *const data, const uint32_t data_length)
+static int e1ap_handle_message(instance_t instance, sctp_assoc_t assoc_id, const uint8_t *const data, const uint32_t data_length)
 {
   E1AP_E1AP_PDU_t pdu= {0};
   int ret;
@@ -105,7 +105,7 @@ int e1ap_handle_message(instance_t instance, sctp_assoc_t assoc_id, const uint8_
   return ret;
 }
 
-void e1_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind)
+static void e1_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind)
 {
   int result;
   DevAssert(sctp_data_ind != NULL);
@@ -310,8 +310,9 @@ void e1apCUCP_send_SETUP_FAILURE(sctp_assoc_t assoc_id, long transac_id)
   e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
 }
 
-void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
-                           e1ap_setup_req_t *req) {
+static void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
+                                  e1ap_setup_req_t *req)
+{
   E1AP_GNB_CU_UP_E1SetupRequestIEs_t *ie;
   E1AP_GNB_CU_UP_E1SetupRequest_t *in = &pdu->choice.initiatingMessage->value.choice.GNB_CU_UP_E1SetupRequest;
 
