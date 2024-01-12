@@ -240,22 +240,6 @@ typedef struct {
 } nfapi_nr_config_request_t;
 
 typedef enum {
-	NFAPI_NR_RNTI_new = 0,
-	NFAPI_NR_RNTI_C,
-	NFAPI_NR_RNTI_RA,
-	NFAPI_NR_RNTI_P,
-	NFAPI_NR_RNTI_CS,
-	NFAPI_NR_RNTI_TC,
-	NFAPI_NR_RNTI_SP_CSI,
-	NFAPI_NR_RNTI_SI,
-	NFAPI_NR_RNTI_SFI,
-	NFAPI_NR_RNTI_INT,
-	NFAPI_NR_RNTI_TPC_PUSCH,
-	NFAPI_NR_RNTI_TPC_PUCCH,
-	NFAPI_NR_RNTI_TPC_SRS
-} nfapi_nr_rnti_type_e;
-
-typedef enum {
   NFAPI_NR_USS_FORMAT_0_0_AND_1_0,
   NFAPI_NR_USS_FORMAT_0_1_AND_1_1,
 } nfapi_nr_uss_dci_formats_e;

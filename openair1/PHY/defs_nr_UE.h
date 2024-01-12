@@ -254,48 +254,16 @@ typedef struct {
 
 #define MAX_NR_DCI_DECODED_SLOT     10    // This value is not specified
 
-
-
 typedef enum {
-  _format_0_0_found=0,
-  _format_0_1_found=1,
-  _format_1_0_found=2,
-  _format_1_1_found=3,
-  _format_2_0_found=4,
-  _format_2_1_found=5,
-  _format_2_2_found=6,
-  _format_2_3_found=7
+  _format_0_0_found = 0,
+  _format_0_1_found = 1,
+  _format_1_0_found = 2,
+  _format_1_1_found = 3,
+  _format_2_0_found = 4,
+  _format_2_1_found = 5,
+  _format_2_2_found = 6,
+  _format_2_3_found = 7
 } format_found_t;
-#define TOTAL_NBR_SCRAMBLED_VALUES 13
-#define _C_RNTI_           0
-#define _CS_RNTI_          1
-#define _NEW_RNTI_         2
-#define _TC_RNTI_          3
-#define _P_RNTI_           4
-#define _SI_RNTI_          5
-#define _RA_RNTI_          6
-#define _SP_CSI_RNTI_      7
-#define _SFI_RNTI_         8
-#define _INT_RNTI_         9
-#define _TPC_PUSCH_RNTI_  10
-#define _TPC_PUCCH_RNTI_  11
-#define _TPC_SRS_RNTI_    12
-typedef enum {                          /* see 38.321  Table 7.1-2  RNTI usage */
-  _c_rnti         = _C_RNTI_,         /* Cell RNTI */
-  _cs_rnti        = _CS_RNTI_,        /* Configured Scheduling RNTI */
-  _new_rnti       = _NEW_RNTI_,       /* ? */
-  _tc_rnti        = _TC_RNTI_,        /* Temporary C-RNTI */
-  _p_rnti         = _P_RNTI_,         /* Paging RNTI */
-  _si_rnti        = _SI_RNTI_,        /* System information RNTI */
-  _ra_rnti        = _RA_RNTI_,        /* Random Access RNTI */
-  _sp_csi_rnti    = _SP_CSI_RNTI_,    /* Semipersistent CSI reporting on PUSCH */
-  _sfi_rnti       = _SFI_RNTI_,       /* Slot Format Indication on the given cell */
-  _int_rnti       = _INT_RNTI_,       /* Indication pre-emption in DL */
-  _tpc_pusch_rnti = _TPC_PUSCH_RNTI_, /* PUSCH power control */
-  _tpc_pucch_rnti = _TPC_PUCCH_RNTI_, /* PUCCH power control */
-  _tpc_srs_rnti   = _TPC_SRS_RNTI_
-} crc_scrambled_t;
-
 
 #endif
 typedef struct {
@@ -645,8 +613,7 @@ typedef struct {
   void *phy_sim_pdsch_dl_ch_estimates_ext;
   uint8_t *phy_sim_dlsch_b;
   notifiedFIFO_t phy_config_ind;
-  notifiedFIFO_t *tx_resume_ind_fifo[NR_MAX_SLOTS_PER_FRAME];
-  int tx_wait_for_dlsch[NR_MAX_SLOTS_PER_FRAME];
+  notifiedFIFO_t tx_resume_ind_fifo[NR_MAX_SLOTS_PER_FRAME];
 } PHY_VARS_NR_UE;
 
 typedef struct {
@@ -681,7 +648,6 @@ typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
   int writeBlockSize;
-  notifiedFIFO_t txFifo;
   nr_phy_data_t phy_data;
   int tx_wait_for_dlsch;
 } nr_rxtx_thread_data_t;
@@ -709,7 +675,7 @@ typedef struct LDPCDecode_ue_s {
   time_stats_t ts_deinterleave;
   time_stats_t ts_rate_unmatch;
   time_stats_t ts_ldpc_decode;
-  UE_nr_rxtx_proc_t *proc;
+  UE_nr_rxtx_proc_t proc;
 } ldpcDecode_ue_t;
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"

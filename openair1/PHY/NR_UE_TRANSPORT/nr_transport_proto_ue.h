@@ -198,19 +198,19 @@ void nr_conjch0_mult_ch1(int *ch0,
     @returns 0 on success, 1 on unsuccessful decoding
 */
 
-uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
-                         UE_nr_rxtx_proc_t *proc,
-                         int eNB_id,
-                         short *dlsch_llr,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         NR_UE_DLSCH_t *dlsch,
-                         NR_DL_UE_HARQ_t *harq_process,
-                         uint32_t frame,
-                         uint16_t nb_symb_sch,
-                         uint8_t nr_slot_rx,
-                         uint8_t harq_pid,
-                         int b_size,
-                         uint8_t b[b_size]);
+uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
+                           const UE_nr_rxtx_proc_t *proc,
+                           int eNB_id,
+                           short *dlsch_llr,
+                           NR_DL_FRAME_PARMS *frame_parms,
+                           NR_UE_DLSCH_t *dlsch,
+                           NR_DL_UE_HARQ_t *harq_process,
+                           uint32_t frame,
+                           uint16_t nb_symb_sch,
+                           uint8_t nr_slot_rx,
+                           uint8_t harq_pid,
+                           int b_size,
+                           uint8_t b[b_size]);
 
 int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                      NR_UE_ULSCH_t *ulsch,
@@ -267,13 +267,12 @@ void nr_dlsch_unscrambling(int16_t* llr,
 			   uint32_t n_RNTI);
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    UE_nr_rxtx_proc_t *proc,
+                    const UE_nr_rxtx_proc_t *proc,
                     int32_t pdcch_est_size,
                     int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
                     int16_t *pdcch_e_rx,
                     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
                     c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
-
 
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
   @param phy_vars_ue Pointer to UE variables
@@ -289,26 +288,30 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
   \returns number of tx antennas or -1 if error
 */
 int nr_rx_pbch(PHY_VARS_NR_UE *ue,
-               UE_nr_rxtx_proc_t *proc,
+               const UE_nr_rxtx_proc_t *proc,
                const int estimateSz,
                struct complex16 dl_ch_estimates[][estimateSz],
                NR_DL_FRAME_PARMS *frame_parms,
                uint8_t i_ssb,
                MIMO_mode_t mimo_mode,
-               fapiPbch_t* result,
+               fapiPbch_t *result,
                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
-int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
+int nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
                       PHY_VARS_NR_UE *ue,
                       int pbch_initial_symbol,
                       c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
-
 
 #ifndef modOrder
 #define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
 #endif
 
-int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue, UE_nr_rxtx_proc_t *proc, char* buffer, int length, runmode_t mode, int input_level_dBm);
+int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue,
+                  const UE_nr_rxtx_proc_t *proc,
+                  char *buffer,
+                  int length,
+                  runmode_t mode,
+                  int input_level_dBm);
 
 /*!
   \brief This function performs the initial cell search procedure - PSS detection, SSS detection and PBCH detection.  At the
@@ -320,10 +323,7 @@ int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue, UE_nr_rxtx_proc_t *proc, char* bu
 @param n_frames
   @param sa current running mode
 */
-int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
-                    PHY_VARS_NR_UE *phy_vars_ue,
-                    int n_frames,
-                    int sa);
+int nr_initial_sync(const UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *phy_vars_ue, int n_frames, int sa);
 
 /*!
   \brief This function gets the carrier frequencies either from FP or command-line-set global variables, depending on the
@@ -368,7 +368,7 @@ void nr_pdcch_unscrambling(int16_t *z,
                            int16_t *z2);
 
 uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
-                                  UE_nr_rxtx_proc_t *proc,
+                                  const UE_nr_rxtx_proc_t *proc,
                                   int16_t *pdcch_e_rx,
                                   fapi_nr_dci_indication_t *dci_ind,
                                   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
@@ -401,7 +401,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
     @param ptrs_re_per_slot
 */
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
-                UE_nr_rxtx_proc_t *proc,
+                const UE_nr_rxtx_proc_t *proc,
                 NR_UE_DLSCH_t dlsch[2],
                 unsigned char symbol,
                 unsigned char first_symbol_flag,

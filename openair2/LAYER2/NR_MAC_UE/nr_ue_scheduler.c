@@ -695,12 +695,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
   }
 
-  LOG_D(NR_MAC, "Received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d) for RNTI type %s \n",
+  LOG_D(NR_MAC,
+        "Received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d) for RNTI type %s \n",
         pusch_config_pdu->rb_start,
         pusch_config_pdu->rb_size,
         pusch_config_pdu->start_symbol_index,
         pusch_config_pdu->nr_of_symbols,
-        rnti_types[rnti_type]);
+        rnti_types(rnti_type));
 
   pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);

@@ -492,7 +492,7 @@ static void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dci_payload.dmrs_sequence_initialization.val = pdsch_pdu_rel15->SCID;
 
   int dci_format = NR_DL_DCI_FORMAT_1_0;
-  int rnti_type = NR_RNTI_SI;
+  int rnti_type = TYPE_SI_RNTI_;
 
   fill_dci_pdu_rel15(NULL,
                      NULL,

@@ -1071,7 +1071,7 @@ void handle_ssb_meas(NR_UE_MAC_INST_t *mac, uint8_t ssb_index, int16_t rsrp_dbm)
 
 // L2 Abstraction Layer
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
-int8_t handle_dlsch(nr_downlink_indication_t *dl_info, int pdu_id)
+static int8_t handle_dlsch(nr_downlink_indication_t *dl_info, int pdu_id)
 {
   /* L1 assigns harq_pid, but in emulated L1 mode we need to assign
      the harq_pid based on the saved global g_harq_pid. Because we are

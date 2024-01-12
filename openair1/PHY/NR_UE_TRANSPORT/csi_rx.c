@@ -807,8 +807,10 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
-
+int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue,
+                            const UE_nr_rxtx_proc_t *proc,
+                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+{
   int gNB_id = proc->gNB_id;
   if(!ue->csiim_vars[gNB_id]->active) {
     return -1;
@@ -852,7 +854,9 @@ static nfapi_nr_dl_tti_csi_rs_pdu_rel15_t convert_csirs_pdu(const fapi_nr_dl_con
   return dl_tti_csi_rs_pdu;
 }
 
-void nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+void nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue,
+                             const UE_nr_rxtx_proc_t *proc,
+                             c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
 
   int gNB_id = proc->gNB_id;

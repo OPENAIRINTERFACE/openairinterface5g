@@ -89,6 +89,21 @@ static const int sequence_cyclic_shift_2_harq_ack_bits[4]
 /*        HARQ-ACK Value       (0,0)  (0,1)  (1,0)  (1,1) */
 /* Sequence cyclic shift */ = {   0,     3,     9,     6 };
 
+/* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It
+provides the timing advance and t-CRNTI.
+@param Mod_id Index of UE instance
+@param CC_id Index to a component carrier
+@param frame Frame index
+@param ra_rnti RA_RNTI value
+@param dlsch_buffer  Pointer to dlsch_buffer containing RAR PDU
+@param t_crnti Pointer to PHY variable containing the T_CRNTI
+@param preamble_index Preamble Index used by PHY to transmit the PRACH.  This should match the received RAR to trigger the rest of
+random-access procedure
+@param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
+@returns timing advance or 0xffff if preamble doesn't match
+*/
+static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id);
+
 int get_pucch0_mcs(const int O_ACK, const int O_SR, const int ack_payload, const int sr_payload)
 {
   int mcs = 0;
@@ -162,23 +177,23 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
 {
 
     RA_config_t *ra = &mac->ra;
-    int rnti_type;
+    nr_rnti_type_t rnti_type;
 
     if (rnti == ra->ra_rnti) {
-      rnti_type = NR_RNTI_RA;
+      rnti_type = TYPE_RA_RNTI_;
     } else if (rnti == ra->t_crnti && (ra->ra_state == WAIT_RAR || ra->ra_state == WAIT_CONTENTION_RESOLUTION) ) {
-      rnti_type = NR_RNTI_TC;
+      rnti_type = TYPE_TC_RNTI_;
     } else if (rnti == mac->crnti) {
-      rnti_type = NR_RNTI_C;
+      rnti_type = TYPE_C_RNTI_;
     } else if (rnti == 0xFFFE) {
-      rnti_type = NR_RNTI_P;
+      rnti_type = TYPE_P_RNTI_;
     } else if (rnti == 0xFFFF) {
-      rnti_type = NR_RNTI_SI;
+      rnti_type = TYPE_SI_RNTI_;
     } else {
       AssertFatal(1 == 0, "In %s: Not identified/handled rnti %d \n", __FUNCTION__, rnti);
     }
 
-    LOG_D(MAC, "In %s: returning rnti_type %s \n", __FUNCTION__, rnti_types[rnti_type]);
+    LOG_D(MAC, "Returning rnti_type %s \n", rnti_types(rnti_type));
 
     return rnti_type;
 }
@@ -1157,6 +1172,7 @@ int8_t nr_ue_process_dci(module_id_t module_id,
                          dci_pdu_rel15_t *dci,
                          fapi_nr_dci_indication_pdu_t *dci_ind)
 {
+  const char *dci_formats[] = {"1_0", "1_1", "2_0", "2_1", "2_2", "2_3", "0_0", "0_1"};
   LOG_D(MAC, "Processing received DCI format %s\n", dci_formats[dci_ind->dci_format]);
 
   switch (dci_ind->dci_format) {
@@ -2855,11 +2871,11 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   case NR_DL_DCI_FORMAT_1_0:
 
     switch(rnti_type) {
-    case NR_RNTI_RA:
-      // Freq domain assignment
-      fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-      pos=fsize;
-      dci_pdu_rel15->frequency_domain_assignment.val = *dci_pdu>>(dci_size-pos)&((1<<fsize)-1);
+      case TYPE_RA_RNTI_:
+        // Freq domain assignment
+        fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
+        pos = fsize;
+        dci_pdu_rel15->frequency_domain_assignment.val = *dci_pdu >> (dci_size - pos) & ((1 << fsize) - 1);
 #ifdef DEBUG_EXTRACT_DCI
       LOG_D(MAC,"frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment.val,fsize,N_RB,dci_size-pos,*dci_pdu);
 #endif
@@ -2890,17 +2906,17 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 #endif
       break;
 
-    case NR_RNTI_C:
+      case TYPE_C_RNTI_:
 
-      //Identifier for DCI formats
-      pos++;
-      dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+        // Identifier for DCI formats
+        pos++;
+        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
 
-      //switch to DCI_0_0
-      if (dci_pdu_rel15->format_indicator == 0) {
-        dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_UL_DCI_FORMAT_0_0];
-        return 2 + nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
-      }
+        // switch to DCI_0_0
+        if (dci_pdu_rel15->format_indicator == 0) {
+          dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_UL_DCI_FORMAT_0_0];
+          return 2 + nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
+        }
 #ifdef DEBUG_EXTRACT_DCI
       LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
 #endif
@@ -3015,83 +3031,83 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       } //end else
       break;
 
-    case NR_RNTI_P:
-      /*
-      // Short Messages Indicator  E2 bits
-      for (int i=0; i<2; i++)
-      dci_pdu |= (((uint64_t)dci_pdu_rel15->short_messages_indicator>>(1-i))&1)<<(dci_size-pos++);
-      // Short Messages  E8 bits
-      for (int i=0; i<8; i++)
-      *dci_pdu |= (((uint64_t)dci_pdu_rel15->short_messages>>(7-i))&1)<<(dci_size-pos++);
-      // Freq domain assignment 0-16 bit
-      fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
-      for (int i=0; i<fsize; i++)
-      *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<(dci_size-pos++);
-      // Time domain assignment 4 bit
-      for (int i=0; i<4; i++)
-      *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment>>(3-i))&1)<<(dci_size-pos++);
-      // VRB to PRB mapping 1 bit
-      *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val&1)<<(dci_size-pos++);
-      // MCS 5 bit
-      for (int i=0; i<5; i++)
-      *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs>>(4-i))&1)<<(dci_size-pos++);
-	
-      // TB scaling 2 bit
-      for (int i=0; i<2; i++)
-      *dci_pdu |= (((uint64_t)dci_pdu_rel15->tb_scaling>>(1-i))&1)<<(dci_size-pos++);
-      */	
-	
-      break;
-  	
-    case NR_RNTI_SI:
-      // Freq domain assignment 0-16 bit
-      fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-      pos+=fsize;
-      dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
+      case TYPE_P_RNTI_:
+        /*
+        // Short Messages Indicator  E2 bits
+        for (int i=0; i<2; i++)
+        dci_pdu |= (((uint64_t)dci_pdu_rel15->short_messages_indicator>>(1-i))&1)<<(dci_size-pos++);
+        // Short Messages  E8 bits
+        for (int i=0; i<8; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->short_messages>>(7-i))&1)<<(dci_size-pos++);
+        // Freq domain assignment 0-16 bit
+        fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+        for (int i=0; i<fsize; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<(dci_size-pos++);
+        // Time domain assignment 4 bit
+        for (int i=0; i<4; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->time_domain_assignment>>(3-i))&1)<<(dci_size-pos++);
+        // VRB to PRB mapping 1 bit
+        *dci_pdu |= ((uint64_t)dci_pdu_rel15->vrb_to_prb_mapping.val&1)<<(dci_size-pos++);
+        // MCS 5 bit
+        for (int i=0; i<5; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->mcs>>(4-i))&1)<<(dci_size-pos++);
 
-      // Time domain assignment 4 bit
-      pos+=4;
-      dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
+        // TB scaling 2 bit
+        for (int i=0; i<2; i++)
+        *dci_pdu |= (((uint64_t)dci_pdu_rel15->tb_scaling>>(1-i))&1)<<(dci_size-pos++);
+        */
 
-      // VRB to PRB mapping 1 bit
-      pos++;
-      dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&0x1;
+        break;
 
-      // MCS 5bit  //bit over 32, so dci_pdu ++
-      pos+=5;
-      dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
+      case TYPE_SI_RNTI_:
+        // Freq domain assignment 0-16 bit
+        fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
+        pos += fsize;
+        dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu >> (dci_size - pos)) & ((1 << fsize) - 1);
 
-      // Redundancy version  2 bit
-      pos+=2;
-      dci_pdu_rel15->rv = (*dci_pdu>>(dci_size-pos))&3;
+        // Time domain assignment 4 bit
+        pos += 4;
+        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu >> (dci_size - pos)) & 0xf;
 
-      // System information indicator 1 bit
-      pos++;
-      dci_pdu_rel15->system_info_indicator = (*dci_pdu>>(dci_size-pos))&0x1;
+        // VRB to PRB mapping 1 bit
+        pos++;
+        dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu >> (dci_size - pos)) & 0x1;
 
-      LOG_D(MAC,"N_RB = %i\n", N_RB);
-      LOG_D(MAC,"dci_size = %i\n", dci_size);
-      LOG_D(MAC,"fsize = %i\n", fsize);
-      LOG_D(MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
-      LOG_D(MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
-      LOG_D(MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
-      LOG_D(MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
-      LOG_D(MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
-      LOG_D(MAC,"dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
+        // MCS 5bit  //bit over 32, so dci_pdu ++
+        pos += 5;
+        dci_pdu_rel15->mcs = (*dci_pdu >> (dci_size - pos)) & 0x1f;
 
-      break;
-	
-    case NR_RNTI_TC:
+        // Redundancy version  2 bit
+        pos += 2;
+        dci_pdu_rel15->rv = (*dci_pdu >> (dci_size - pos)) & 3;
 
-      // indicating a DL DCI format 1bit
-      pos++;
-      dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+        // System information indicator 1 bit
+        pos++;
+        dci_pdu_rel15->system_info_indicator = (*dci_pdu >> (dci_size - pos)) & 0x1;
 
-      //switch to DCI_0_0
-      if (dci_pdu_rel15->format_indicator == 0) {
-        dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_UL_DCI_FORMAT_0_0];
-        return 2 + nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
-      }
+        LOG_D(MAC, "N_RB = %i\n", N_RB);
+        LOG_D(MAC, "dci_size = %i\n", dci_size);
+        LOG_D(MAC, "fsize = %i\n", fsize);
+        LOG_D(MAC, "dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+        LOG_D(MAC, "dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+        LOG_D(MAC, "dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
+        LOG_D(MAC, "dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+        LOG_D(MAC, "dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
+        LOG_D(MAC, "dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
+
+        break;
+
+      case TYPE_TC_RNTI_:
+
+        // indicating a DL DCI format 1bit
+        pos++;
+        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
+
+        // switch to DCI_0_0
+        if (dci_pdu_rel15->format_indicator == 0) {
+          dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_UL_DCI_FORMAT_0_0];
+          return 2 + nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
+        }
 
         // Freq domain assignment 0-16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
@@ -3160,10 +3176,10 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   case NR_UL_DCI_FORMAT_0_0:
     switch(rnti_type)
       {
-      case NR_RNTI_C:
-        //Identifier for DCI formats
+      case TYPE_C_RNTI_:
+        // Identifier for DCI formats
         pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
 #ifdef DEBUG_EXTRACT_DCI
 	LOG_D(MAC,"Format indicator %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,dci_size-pos,*dci_pdu);
 #endif
@@ -3223,11 +3239,11 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 	   dci_pdu->= ((uint64_t)*dci_pdu>>(dci_size-pos)ul_sul_indicator&1)<<(dci_size-pos++);
 	*/
 	break;
-	
-      case NR_RNTI_TC:
-        //Identifier for DCI formats
+
+      case TYPE_TC_RNTI_:
+        // Identifier for DCI formats
         pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
 #ifdef DEBUG_EXTRACT_DCI
 	LOG_I(MAC,"Format indicator %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,dci_size-pos,*dci_pdu);
 #endif
@@ -3294,10 +3310,10 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   case NR_DL_DCI_FORMAT_1_1:
     switch(rnti_type)
       {
-      case NR_RNTI_C:
-        //Identifier for DCI formats
+      case TYPE_C_RNTI_:
+        // Identifier for DCI formats
         pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
+        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
         if (dci_pdu_rel15->format_indicator == 0)
           return 1; // discard dci, format indicator not corresponding to dci_format
         // Carrier indicator
@@ -3384,7 +3400,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   case NR_UL_DCI_FORMAT_0_1:
     switch(rnti_type)
       {
-      case NR_RNTI_C:
+      case TYPE_C_RNTI_:
         //Identifier for DCI formats
         pos++;
         dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
@@ -3954,7 +3970,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 // - b buffer
 // - ulsch power offset
 // - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
-int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
+static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 {
   module_id_t mod_id       = dl_info->module_id;
   frame_t frame            = dl_info->frame;
@@ -4078,6 +4094,8 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
       case 7:
         ra->Msg3_TPC = 8;
         break;
+      default:
+        LOG_E(NR_PHY, "RAR impossible msg3 TPC\n");
     }
     // MCS
     rar_grant.mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
@@ -4126,7 +4144,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
     NR_tda_info_t tda_info = get_ul_tda_info(current_UL_BWP,
                                              *pdcch_config->ra_SS->controlResourceSetId,
                                              pdcch_config->ra_SS->searchSpaceType->present,
-                                             NR_RNTI_RA,
+                                             TYPE_RA_RNTI_,
                                              rar_grant.Msg3_t_alloc);
     if (tda_info.nrOfSymbols == 0) {
       LOG_E(MAC, "Cannot schedule Msg3. Something wrong in TDA information\n");

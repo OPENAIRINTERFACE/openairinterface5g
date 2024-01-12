@@ -76,7 +76,7 @@ void insert_sss_nr(int16_t *sss_time,
                    NR_DL_FRAME_PARMS *frame_parms);
 
 bool rx_sss_nr(PHY_VARS_NR_UE *ue,
-               UE_nr_rxtx_proc_t *proc,
+               const UE_nr_rxtx_proc_t *proc,
                int32_t *tot_metric,
                uint8_t *phase_max,
                int *freq_offset_sss,

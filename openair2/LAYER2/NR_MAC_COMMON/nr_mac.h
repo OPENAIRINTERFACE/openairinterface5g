@@ -451,23 +451,6 @@ typedef enum {
   NR_DCI_NONE
 } nr_dci_format_t;
 
-typedef enum {
-  NR_RNTI_new = 0,
-  NR_RNTI_C,
-  NR_RNTI_RA,
-  NR_RNTI_P,
-  NR_RNTI_CS,
-  NR_RNTI_TC,
-  NR_RNTI_SP_CSI,
-  NR_RNTI_SI,
-  NR_RNTI_SFI,
-  NR_RNTI_INT,
-  NR_RNTI_TPC_PUSCH,
-  NR_RNTI_TPC_PUCCH,
-  NR_RNTI_TPC_SRS,
-  NR_RNTI_MCS_C,
-} nr_rnti_type_t;
-
 typedef enum channel_bandwidth_e {
   bw_5MHz   = 0x1,
   bw_10MHz  = 0x2,
