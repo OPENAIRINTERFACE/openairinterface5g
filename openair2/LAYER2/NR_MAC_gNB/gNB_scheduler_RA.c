@@ -839,10 +839,9 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
     dci_pdu->beta_PDCCH_1_0 = 0;
     dci_pdu->powerControlOffsetSS = 1;
 
-    dci_pdu_rel15_t uldci_payload;
-    memset(&uldci_payload, 0, sizeof(uldci_payload));
+    dci_pdu_rel15_t uldci_payload={0};
 
-    config_uldci(NULL,
+    config_uldci(sc_info,
                  pusch_pdu,
                  &uldci_payload,
                  NULL,
