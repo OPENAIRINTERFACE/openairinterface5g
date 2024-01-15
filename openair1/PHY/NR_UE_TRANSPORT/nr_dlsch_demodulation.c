@@ -49,8 +49,8 @@
 int32_t nr_dlsch_demod_shift = 0;
 //int16_t interf_unaw_shift = 13;
 
-//#define DEBUG_HARQ
-//#define DEBUG_PHY
+// #define DEBUG_HARQ(a...) printf(a)
+#define DEBUG_HARQ(...)
 //#define DEBUG_DLSCH_DEMOD
 //#define DEBUG_PDSCH_RX
 
@@ -233,7 +233,7 @@ void nr_dlsch_detection_mrc(uint32_t rx_size_symbol,
 
 /* Main Function */
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
-                UE_nr_rxtx_proc_t *proc,
+                const UE_nr_rxtx_proc_t *proc,
                 NR_UE_DLSCH_t dlsch[2],
                 unsigned char symbol,
                 unsigned char first_symbol_flag,
@@ -267,36 +267,19 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *common_vars  = &ue->common_vars;
   NR_DL_FRAME_PARMS *frame_parms    = &ue->frame_parms;
   PHY_NR_MEASUREMENTS *measurements = &ue->measurements;
-  int frame = proc->frame_rx;
-  int nr_slot_rx = proc->nr_slot_rx;
-  int gNB_id = proc->gNB_id;
+  const int frame = proc->frame_rx;
+  const int nr_slot_rx = proc->nr_slot_rx;
+  const int gNB_id = proc->gNB_id;
 
   int avg[16];
-//  int avg_0[2];
-//  int avg_1[2];
-
   uint8_t slot = 0;
-
-  unsigned char aatx=0,aarx=0;
-
-  int avgs = 0;// rb;
-  NR_DL_UE_HARQ_t *dlsch0_harq, *dlsch1_harq = NULL;
 
   int32_t codeword_TB0 = -1;
   int32_t codeword_TB1 = -1;
 
-  //to be updated higher layer
-  unsigned short start_rb = 0;
-  unsigned short nb_rb_pdsch = 50;
-  //int16_t  *pllr_symbol_cw0_deint;
-  //int16_t  *pllr_symbol_cw1_deint;
-  //uint16_t bundle_L = 2;
-  int32_t median[16];
-  uint32_t nb_re_pdsch;
-  uint16_t startSymbIdx=0;
-  uint16_t nbSymb=0;
-  uint16_t pduBitmap=0x0;
+  uint32_t nb_re_pdsch = -1;
 
+  NR_DL_UE_HARQ_t *dlsch0_harq, *dlsch1_harq = NULL;
   dlsch0_harq = &ue->dl_harq_processes[0][harq_pid];
   if (NR_MAX_NB_LAYERS>4)
     dlsch1_harq = &ue->dl_harq_processes[1][harq_pid];
@@ -311,75 +294,61 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       dlsch0_harq = &ue->dl_harq_processes[codeword_TB0][harq_pid];
       dlsch1_harq = &ue->dl_harq_processes[codeword_TB1][harq_pid];
 
-      #ifdef DEBUG_HARQ
-        printf("[DEMOD] I am assuming both TBs are active, in cw0 %d and cw1 %d \n", codeword_TB0, codeword_TB1);
-      #endif
+      DEBUG_HARQ("[DEMOD] I am assuming both TBs are active, in cw0 %d and cw1 %d \n", codeword_TB0, codeword_TB1);
 
     } else if ((dlsch0_harq->status == ACTIVE) && (dlsch1_harq->status != ACTIVE) ) {
       codeword_TB0 = dlsch0_harq->codeword;
       dlsch0_harq = &ue->dl_harq_processes[codeword_TB0][harq_pid];
       dlsch1_harq = NULL;
 
-      #ifdef DEBUG_HARQ
-        printf("[DEMOD] I am assuming only TB0 is active, in cw %d \n", codeword_TB0);
-      #endif
+      DEBUG_HARQ("[DEMOD] I am assuming only TB0 is active, in cw %d \n", codeword_TB0);
 
     } else if ((dlsch0_harq->status != ACTIVE) && (dlsch1_harq->status == ACTIVE)){
       codeword_TB1 = dlsch1_harq->codeword;
       dlsch0_harq  = NULL;
       dlsch1_harq  = &ue->dl_harq_processes[codeword_TB1][harq_pid];
 
-      #ifdef DEBUG_HARQ
-        printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", codeword_TB1);
-      #endif
-
-      LOG_E(PHY, "[UE][FATAL] DLSCH: TB0 not active and TB1 active case is not supported\n");
+      DEBUG_HARQ("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", codeword_TB1);
+      LOG_E(PHY, "[DEMOD] slot %d TB0 not active and TB1 active case is not supported\n", nr_slot_rx);
       return -1;
 
     } else {
-      LOG_E(PHY,"[UE][FATAL] nr_slot_rx %d: no active DLSCH\n", nr_slot_rx);
-      return(-1);
+      LOG_E(PHY, "[DEMOD] slot %d: no active DLSCH (2 layers case)\n", nr_slot_rx);
+      return (-1);
     }
   } else if (dlsch0_harq) {
     if (dlsch0_harq->status == ACTIVE) {
       codeword_TB0 = dlsch0_harq->codeword;
       dlsch0_harq = &ue->dl_harq_processes[0][harq_pid];
-
-      #ifdef DEBUG_HARQ
-        printf("[DEMOD] I am assuming only TB0 is active\n");
-      #endif
+      DEBUG_HARQ("[DEMOD] I am assuming only TB0 is active\n");
     } else {
-      LOG_E(PHY,"[UE][FATAL] nr_slot_rx %d: no active DLSCH\n", nr_slot_rx);
+      LOG_E(PHY, "[DEMOD] slot %d nr_rx_pdsch no active DLSCH (one layer case)\n", nr_slot_rx);
       return (-1);
     }
   } else {
-    LOG_E(PHY, "Done\n");
+    LOG_E(PHY, "[DEMOD] slot %d Inconsistent call to nr_rx_pdsch (no layer 0)\n", nr_slot_rx);
     return -1;
   }
 
-  #ifdef DEBUG_HARQ
-    printf("[DEMOD] MIMO mode = %d\n", dlsch0_harq->mimo_mode);
-    printf("[DEMOD] cw for TB0 = %d, cw for TB1 = %d\n", codeword_TB0, codeword_TB1);
-  #endif
+  DEBUG_HARQ("[DEMOD] cw for TB0 = %d, cw for TB1 = %d\n", codeword_TB0, codeword_TB1);
 
-  start_rb = dlsch[0].dlsch_config.start_rb;
-  nb_rb_pdsch =  dlsch[0].dlsch_config.number_rbs;
+  int start_rb = dlsch[0].dlsch_config.start_rb;
+  int nb_rb_pdsch = dlsch[0].dlsch_config.number_rbs;
 
   DevAssert(dlsch0_harq);
 
-
   if (gNB_id > 2) {
-    LOG_W(PHY, "In %s: Illegal gNB_id %d\n", __FUNCTION__, gNB_id);
+    LOG_E(PHY, "In %s: Illegal gNB_id %d\n", __FUNCTION__, gNB_id);
     return(-1);
   }
 
   if (!common_vars) {
-    LOG_W(PHY,"dlsch_demodulation.c: Null common_vars\n");
+    LOG_E(PHY, "dlsch_demodulation.c: Null common_vars\n");
     return(-1);
   }
 
   if (!frame_parms) {
-    LOG_W(PHY,"dlsch_demodulation.c: Null frame_parms\n");
+    LOG_E(PHY, "dlsch_demodulation.c: Null frame_parms\n");
     return(-1);
   }
 
@@ -463,18 +432,19 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       start_meas(&meas);
     if (first_symbol_flag == 1) {
       nr_dlsch_channel_level(rx_size_symbol, dl_ch_estimates_ext, frame_parms, nl, avg, symbol, nb_re_pdsch, nb_rb_pdsch);
-    avgs = 0;
-    for (aatx=0;aatx<nl;aatx++)
-      for (aarx=0;aarx<n_rx;aarx++) {
-        //LOG_I(PHY, "nb_rb %d len %d avg_%d_%d Power per SC is %d\n",nb_rb, len,aarx, aatx,avg[aatx*n_rx+aarx]);
-        avgs = cmax(avgs,avg[(aatx*n_rx)+aarx]);
-        //LOG_I(PHY, "avgs Power per SC is %d\n", avgs);
-        median[(aatx*n_rx)+aarx] = avg[(aatx*n_rx)+aarx];
-      }
+      int avgs = 0;
+      int32_t median[16];
+      for (int aatx = 0; aatx < nl; aatx++)
+        for (int aarx = 0; aarx < n_rx; aarx++) {
+          // LOG_I(PHY, "nb_rb %d len %d avg_%d_%d Power per SC is %d\n",nb_rb, len,aarx, aatx,avg[aatx*n_rx+aarx]);
+          avgs = cmax(avgs, avg[(aatx * n_rx) + aarx]);
+          // LOG_I(PHY, "avgs Power per SC is %d\n", avgs);
+          median[(aatx * n_rx) + aarx] = avg[(aatx * n_rx) + aarx];
+        }
     if (nl > 1) {
       nr_dlsch_channel_level_median(rx_size_symbol, dl_ch_estimates_ext, median, nl, n_rx, nb_re_pdsch);
-      for (aatx = 0; aatx < nl; aatx++) {
-        for (aarx = 0; aarx < n_rx; aarx++) {
+      for (int aatx = 0; aatx < nl; aatx++) {
+        for (int aarx = 0; aarx < n_rx; aarx++) {
           avgs = cmax(avgs, median[aatx*n_rx + aarx]);
         }
       }
@@ -589,6 +559,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     start_meas(&meas);
   /* Store the valid DL RE's */
   dl_valid_re[symbol-1] = nb_re_pdsch;
+  int startSymbIdx = 0;
+  int nbSymb = 0;
+  int pduBitmap = 0;
 
   if(dlsch0_harq->status == ACTIVE) {
     startSymbIdx = dlsch[0].dlsch_config.start_symbol;
@@ -597,7 +570,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
   /* Check for PTRS bitmap and process it respectively */
-  if((pduBitmap & 0x1) && (dlsch[0].rnti_type == _C_RNTI_)) {
+  if((pduBitmap & 0x1) && (dlsch[0].rnti_type == TYPE_C_RNTI_)) {
     nr_pdsch_ptrs_processing(
         ue, nbRx, ptrs_phase_per_slot, ptrs_re_per_slot, rx_size_symbol, rxdataF_comp, frame_parms, dlsch0_harq, dlsch1_harq, gNB_id, nr_slot_rx, symbol, (nb_rb_pdsch * 12), dlsch[0].rnti, dlsch);
     dl_valid_re[symbol-1] -= ptrs_re_per_slot[0][symbol];

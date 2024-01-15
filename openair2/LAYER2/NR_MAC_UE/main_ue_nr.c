@@ -74,6 +74,13 @@ void nr_ue_init_mac(module_id_t module_idP)
   mac->servCellIndex = 0;
   mac->harq_ACK_SpatialBundlingPUCCH = false;
   mac->harq_ACK_SpatialBundlingPUSCH = false;
+
+  memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
+  memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
+  for (int i = 0; i < MAX_NUM_BWP_UE; i++) {
+    memset(&mac->ssb_list[i], 0, sizeof(mac->ssb_list[i]));
+    memset(&mac->prach_assoc_pattern[i], 0, sizeof(mac->prach_assoc_pattern[i]));
+  }
 }
 
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
@@ -103,9 +110,6 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
     for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
       mac->UL_ndi[k] = -1; // initialize to invalid value
   }
-
-  memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
-  memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
 }
 
 NR_UE_MAC_INST_t *nr_l2_init_ue()

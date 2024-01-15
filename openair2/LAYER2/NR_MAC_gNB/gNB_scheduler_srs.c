@@ -562,7 +562,10 @@ void nr_schedule_srs(int module_id, frame_t frame, int slot)
         continue;
       }
 
-      NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = get_ul_tdalist(current_BWP, sched_ctrl->coreset->controlResourceSetId, sched_ctrl->search_space->searchSpaceType->present, NR_RNTI_C);
+      NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = get_ul_tdalist(current_BWP,
+                                                                            sched_ctrl->coreset->controlResourceSetId,
+                                                                            sched_ctrl->search_space->searchSpaceType->present,
+                                                                            TYPE_C_RNTI_);
       const int num_tda = tdaList->list.count;
       int max_k2 = 0;
       // avoid last one in the list (for msg3)

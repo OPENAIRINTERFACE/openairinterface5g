@@ -44,6 +44,37 @@
 #define NR_NB_SC_PER_RB 12
 #define NR_MAX_NUM_LCID 32
 #define NR_MAX_NUM_QFI 64
+#define RNTI_NAMES /* see 38.321  Table 7.1-2  RNTI usage */      \
+  R(TYPE_C_RNTI_) /* Cell RNTI */                                  \
+  R(TYPE_CS_RNTI_) /* Configured Scheduling RNTI */                \
+  R(TYPE_TC_RNTI_) /* Temporary C-RNTI */                          \
+  R(TYPE_P_RNTI_) /* Paging RNTI */                                \
+  R(TYPE_SI_RNTI_) /* System information RNTI */                   \
+  R(TYPE_RA_RNTI_) /* Random Access RNTI */                        \
+  R(TYPE_SP_CSI_RNTI_) /* Semipersistent CSI reporting on PUSCH */ \
+  R(TYPE_SFI_RNTI_) /* Slot Format Indication on the given cell */ \
+  R(TYPE_INT_RNTI_) /* Indication pre-emption in DL */            \
+  R(TYPE_TPC_PUSCH_RNTI_) /* PUSCH power control */               \
+  R(TYPE_TPC_PUCCH_RNTI_) /* PUCCH power control */               \
+  R(TYPE_TPC_SRS_RNTI_)                                           \
+  R(TYPE_MCS_C_RNTI_)
+
+#define R(k) k ,
+typedef enum { RNTI_NAMES } nr_rnti_type_t;
+#undef R
+
+#define R(k) \
+  case k:       \
+    return #k;
+static inline const char *rnti_types(nr_rnti_type_t rr)
+{
+  switch (rr) {
+    RNTI_NAMES
+    default:
+      return "Not existing RNTI type";
+  }
+}
+#undef R
 
 typedef enum {
   nr_FR1 = 0,

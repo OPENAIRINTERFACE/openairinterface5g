@@ -97,42 +97,32 @@ nfapi_mode_t nfapi_getmode(void) { return NFAPI_MODE_UNKNOWN; }
 void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
                            fapi_nr_dci_indication_t *dci_ind,
                            fapi_nr_rx_indication_t *rx_ind,
-                           UE_nr_rxtx_proc_t *proc,
+                           const UE_nr_rxtx_proc_t *proc,
                            PHY_VARS_NR_UE *ue,
-                           void *phy_data) {}
+                           void *phy_data)
+{
+}
 void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            uint8_t pdu_type,
                            PHY_VARS_NR_UE *ue,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
-                           UE_nr_rxtx_proc_t *proc,
+                           const UE_nr_rxtx_proc_t *proc,
                            void *typeSpecific,
-                           uint8_t *b) {}
+                           uint8_t *b)
+{
+}
 
 int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
-			   UE_nr_rxtx_proc_t *proc,
-         int32_t pdcch_est_size,
-         int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
-         nr_phy_data_t *phy_data,
-         int n_ss,
-         c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+                           const UE_nr_rxtx_proc_t *proc,
+                           int32_t pdcch_est_size,
+                           int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                           nr_phy_data_t *phy_data,
+                           int n_ss,
+                           c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+{
   return 0;
-}
-
-int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
-                           UE_nr_rxtx_proc_t *proc,
-                           NR_UE_DLSCH_t dlsch[2],
-                           int16_t *llr[2],
-                           c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
-  return 0;
-}
-
-bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
-                            UE_nr_rxtx_proc_t *proc,
-                            NR_UE_DLSCH_t dlsch[2],
-                            int16_t *llr[2]) {
-  return false;
 }
 
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,

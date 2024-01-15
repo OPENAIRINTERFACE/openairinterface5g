@@ -61,8 +61,14 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const int CC_id = 0;
 
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
-  NR_tda_info_t tda_info = get_dl_tda_info(dl_bwp, sched_ctrl->search_space->searchSpaceType->present, tda,
-                                           scc->dmrs_TypeA_Position, 1, NR_RNTI_C, sched_ctrl->coreset->controlResourceSetId, false);
+  NR_tda_info_t tda_info = get_dl_tda_info(dl_bwp,
+                                           sched_ctrl->search_space->searchSpaceType->present,
+                                           tda,
+                                           scc->dmrs_TypeA_Position,
+                                           1,
+                                           TYPE_C_RNTI_,
+                                           sched_ctrl->coreset->controlResourceSetId,
+                                           false);
 
   sched_ctrl->sched_pdsch.tda_info = tda_info;
   sched_ctrl->sched_pdsch.time_domain_allocation = tda;
@@ -210,7 +216,10 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
   const int mu = ul_bwp->scs;
 
-  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = get_ul_tdalist(ul_bwp, sched_ctrl->coreset->controlResourceSetId, sched_ctrl->search_space->searchSpaceType->present, NR_RNTI_C);
+  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = get_ul_tdalist(ul_bwp,
+                                                                        sched_ctrl->coreset->controlResourceSetId,
+                                                                        sched_ctrl->search_space->searchSpaceType->present,
+                                                                        TYPE_C_RNTI_);
   const int temp_tda = get_ul_tda(nr_mac, scc, frame, slot);
   if (temp_tda < 0)
     return false;
@@ -245,7 +254,11 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   else
     rbSize = target_ul_bw;
 
-  NR_tda_info_t tda_info = get_ul_tda_info(ul_bwp, sched_ctrl->coreset->controlResourceSetId, sched_ctrl->search_space->searchSpaceType->present, NR_RNTI_C, tda);
+  NR_tda_info_t tda_info = get_ul_tda_info(ul_bwp,
+                                           sched_ctrl->coreset->controlResourceSetId,
+                                           sched_ctrl->search_space->searchSpaceType->present,
+                                           TYPE_C_RNTI_,
+                                           tda);
   sched_ctrl->sched_pusch.tda_info = tda_info;
 
   const int buffer_index = ul_buffer_index(sched_frame, sched_slot, mu, nr_mac->vrb_map_UL_size);

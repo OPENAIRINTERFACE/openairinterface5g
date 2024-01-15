@@ -68,17 +68,14 @@ extern const uint16_t table_7_2_1[16];
 
 extern dci_pdu_rel15_t *def_dci_pdu_rel15;
 
-extern void mac_rlc_data_ind(const module_id_t         module_idP,
-                             const rnti_t              rntiP,
-                             const eNB_index_t         eNB_index,
-                             const frame_t             frameP,
-                             const eNB_flag_t          enb_flagP,
-                             const MBMS_flag_t         MBMS_flagP,
-                             const logical_chan_id_t   channel_idP,
-                             char                     *buffer_pP,
-                             const tb_size_t           tb_sizeP,
-                             num_tb_t                  num_tbP,
-                             crc_t                    *crcs_pP);
-
-extern const char *const rnti_types[];
-extern const char *const dci_formats[];
+extern void mac_rlc_data_ind(const module_id_t module_idP,
+                             const rnti_t rntiP,
+                             const eNB_index_t eNB_index,
+                             const frame_t frameP,
+                             const eNB_flag_t enb_flagP,
+                             const MBMS_flag_t MBMS_flagP,
+                             const logical_chan_id_t channel_idP,
+                             char *buffer_pP,
+                             const tb_size_t tb_sizeP,
+                             num_tb_t num_tbP,
+                             crc_t *crcs_pP);

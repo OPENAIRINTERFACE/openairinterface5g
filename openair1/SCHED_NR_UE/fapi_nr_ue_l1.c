@@ -429,7 +429,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           case FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH: {
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
             NR_UE_DLSCH_t *dlsch0 = &((nr_phy_data_t *)scheduled_response->phy_data)->dlsch[0];
-            dlsch0->rnti_type = _RA_RNTI_;
+            dlsch0->rnti_type = TYPE_RA_RNTI_;
             dlsch0->dlsch_config = *dlsch_config_pdu;
             configure_dlsch(dlsch0, PHY_vars_UE_g[module_id][cc_id]->dl_harq_processes[0], dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
@@ -437,7 +437,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           case FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH: {
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
             NR_UE_DLSCH_t *dlsch0 = &((nr_phy_data_t *)scheduled_response->phy_data)->dlsch[0];
-            dlsch0->rnti_type = _SI_RNTI_;
+            dlsch0->rnti_type = TYPE_SI_RNTI_;
             dlsch0->dlsch_config = *dlsch_config_pdu;
             configure_dlsch(dlsch0, PHY_vars_UE_g[module_id][cc_id]->dl_harq_processes[0], dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
@@ -445,7 +445,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           case FAPI_NR_DL_CONFIG_TYPE_DLSCH: {
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
             NR_UE_DLSCH_t *dlsch0 = &((nr_phy_data_t *)scheduled_response->phy_data)->dlsch[0];
-            dlsch0->rnti_type = _C_RNTI_;
+            dlsch0->rnti_type = TYPE_C_RNTI_;
             dlsch0->dlsch_config = *dlsch_config_pdu;
             configure_dlsch(dlsch0, PHY_vars_UE_g[module_id][cc_id]->dl_harq_processes[0], dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);

@@ -466,7 +466,11 @@ const uint8_t table_6_1_2_1_1_3[16][4] = {
     {0, 3, 0, 10} // row index 16
 };
 
-NR_tda_info_t get_ul_tda_info(const NR_UE_UL_BWP_t *ul_bwp, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type, int tda_index)
+NR_tda_info_t get_ul_tda_info(const NR_UE_UL_BWP_t *ul_bwp,
+                              int controlResourceSetId,
+                              int ss_type,
+                              nr_rnti_type_t rnti_type,
+                              int tda_index)
 {
   NR_tda_info_t tda_info = {0};
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist = get_ul_tdalist(ul_bwp, controlResourceSetId, ss_type, rnti_type);
@@ -604,8 +608,14 @@ NR_tda_info_t set_tda_info_from_list(NR_PDSCH_TimeDomainResourceAllocationList_t
   return tda_info;
 }
 
-NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda_index, int dmrs_typeA_pos,
-                              int mux_pattern, nr_rnti_type_t rnti_type, int coresetid, bool sib1)
+NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP,
+                              int ss_type,
+                              int tda_index,
+                              int dmrs_typeA_pos,
+                              int mux_pattern,
+                              nr_rnti_type_t rnti_type,
+                              int coresetid,
+                              bool sib1)
 {
   NR_tda_info_t tda_info;
   bool normal_CP = true;
@@ -614,7 +624,7 @@ NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda
   // implements Table 5.1.2.1.1-1 of 38.214
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdalist = get_dl_tdalist(dl_BWP, coresetid, ss_type, rnti_type);
   switch (rnti_type) {
-    case NR_RNTI_SI:
+    case TYPE_SI_RNTI_:
       if(sib1) {
         default_table_type_t table_type = get_default_table_type(mux_pattern);
         tda_info = get_info_from_tda_tables(table_type, tda_index, dmrs_typeA_pos, normal_CP);
@@ -628,7 +638,7 @@ NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda
         }
       }
       break;
-    case NR_RNTI_P:
+    case TYPE_P_RNTI_:
       if(tdalist)
         tda_info = set_tda_info_from_list(tdalist, tda_index);
       else {
@@ -636,11 +646,11 @@ NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda
         tda_info = get_info_from_tda_tables(table_type, tda_index, dmrs_typeA_pos, normal_CP);
       }
       break;
-    case NR_RNTI_C:
-    case NR_RNTI_CS:
-    case NR_RNTI_MCS_C:
-    case NR_RNTI_RA:
-    case NR_RNTI_TC:
+    case TYPE_C_RNTI_:
+    case TYPE_CS_RNTI_:
+    case TYPE_MCS_C_RNTI_:
+    case TYPE_RA_RNTI_:
+    case TYPE_TC_RNTI_:
       if(tdalist)
         tda_info = set_tda_info_from_list(tdalist, tda_index);
       else
@@ -3227,21 +3237,29 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
   return nbits;
 }
 
-NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t *DL_BWP, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type)
+NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t *DL_BWP,
+                                                            int controlResourceSetId,
+                                                            int ss_type,
+                                                            nr_rnti_type_t rnti_type)
 {
   if (!DL_BWP)
     return NULL;
   // see table 5.1.2.1.1-1 in 38.214
-  if ((rnti_type == NR_RNTI_CS || rnti_type == NR_RNTI_C || rnti_type == NR_RNTI_MCS_C) && !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0)
+  if ((rnti_type == TYPE_CS_RNTI_ || rnti_type == TYPE_C_RNTI_ || rnti_type == TYPE_MCS_C_RNTI_)
+      && !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0)
       && (DL_BWP->pdsch_Config && DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList))
     return DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
   else
     return DL_BWP->tdaList_Common;
 }
 
-NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type)
+NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP,
+                                                            int controlResourceSetId,
+                                                            int ss_type,
+                                                            nr_rnti_type_t rnti_type)
 {
-  if ((rnti_type == NR_RNTI_CS || rnti_type == NR_RNTI_C || rnti_type == NR_RNTI_MCS_C) && !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0)
+  if ((rnti_type == TYPE_CS_RNTI_ || rnti_type == TYPE_C_RNTI_ || rnti_type == TYPE_MCS_C_RNTI_)
+      && !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0)
       && (UL_BWP->pusch_Config && UL_BWP->pusch_Config->pusch_TimeDomainAllocationList))
     return UL_BWP->pusch_Config->pusch_TimeDomainAllocationList->choice.setup;
   else
@@ -3795,17 +3813,12 @@ uint8_t get_pdsch_mcs_table(long *mcs_Table, int dci_format, int rnti_type, int 
 
   // Set downlink MCS table (Semi-persistent scheduling ignored for now)
   uint8_t mcsTableIdx = 0; // default value
-  if (mcs_Table &&
-      *mcs_Table == NR_PDSCH_Config__mcs_Table_qam256 &&
-      dci_format == NR_DL_DCI_FORMAT_1_1 &&
-      rnti_type == NR_RNTI_C)
+  if (mcs_Table && *mcs_Table == NR_PDSCH_Config__mcs_Table_qam256 && dci_format == NR_DL_DCI_FORMAT_1_1 && rnti_type == TYPE_C_RNTI_)
     mcsTableIdx = 1;
-  else if (rnti_type != NR_RNTI_MCS_C &&
-           mcs_Table &&
-           *mcs_Table == NR_PDSCH_Config__mcs_Table_qam64LowSE &&
-           ss_type == NR_SearchSpace__searchSpaceType_PR_ue_Specific)
+  else if (rnti_type != TYPE_MCS_C_RNTI_ && mcs_Table && *mcs_Table == NR_PDSCH_Config__mcs_Table_qam64LowSE
+           && ss_type == NR_SearchSpace__searchSpaceType_PR_ue_Specific)
     mcsTableIdx = 2;
-  else if (rnti_type == NR_RNTI_MCS_C)
+  else if (rnti_type == TYPE_MCS_C_RNTI_)
     mcsTableIdx = 2;
 
   LOG_D(NR_MAC,"DL MCS Table Index: %d\n", mcsTableIdx);
@@ -3823,23 +3836,20 @@ uint8_t get_pusch_mcs_table(long *mcs_Table,
 
   // implementing 6.1.4.1 in 38.214
   if (mcs_Table != NULL) {
-    if (config_grant || (rnti_type == NR_RNTI_CS)) {
+    if (config_grant || (rnti_type == TYPE_CS_RNTI_)) {
       if (*mcs_Table == NR_PUSCH_Config__mcs_Table_qam256)
         return 1;
       else
         return (2 + (is_tp << 1));
-    }
-    else {
-      if ((*mcs_Table == NR_PUSCH_Config__mcs_Table_qam256) &&
-          (dci_format == NR_UL_DCI_FORMAT_0_1) &&
-          ((rnti_type == NR_RNTI_C ) || (rnti_type == NR_RNTI_SP_CSI)))
+    } else {
+      if ((*mcs_Table == NR_PUSCH_Config__mcs_Table_qam256) && (dci_format == NR_UL_DCI_FORMAT_0_1)
+          && ((rnti_type == TYPE_C_RNTI_) || (rnti_type == TYPE_SP_CSI_RNTI_)))
         return 1;
       // TODO take into account UE configuration
-      if ((*mcs_Table == NR_PUSCH_Config__mcs_Table_qam64LowSE) &&
-          (target_ss == NR_SearchSpace__searchSpaceType_PR_ue_Specific) &&
-          ((rnti_type == NR_RNTI_C ) || (rnti_type == NR_RNTI_SP_CSI)))
+      if ((*mcs_Table == NR_PUSCH_Config__mcs_Table_qam64LowSE) && (target_ss == NR_SearchSpace__searchSpaceType_PR_ue_Specific)
+          && ((rnti_type == TYPE_C_RNTI_) || (rnti_type == TYPE_SP_CSI_RNTI_)))
         return (2 + (is_tp << 1));
-      if (rnti_type == NR_RNTI_MCS_C)
+      if (rnti_type == TYPE_MCS_C_RNTI_)
         return (2 + (is_tp << 1));
     }
   }
@@ -4075,8 +4085,8 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
   }
 }
 
-uint8_t get_BG(uint32_t A, uint16_t R) {
-
+uint8_t get_BG(uint32_t A, uint16_t R)
+{
   float code_rate = (float) R / 10240.0f;
   if ((A <= 292) || ((A <= NR_MAX_PDSCH_TBS) && (code_rate <= 0.6667)) || code_rate <= 0.25)
     return 2;

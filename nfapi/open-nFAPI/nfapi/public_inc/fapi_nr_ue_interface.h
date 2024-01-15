@@ -348,6 +348,7 @@ typedef struct
   uint8_t  start_symbol_index;
   uint8_t  nr_of_symbols;
   uint32_t tbslbrm;
+  uint8_t ldpcBaseGraph;
   //Optional Data only included if indicated in pduBitmap
   nfapi_nr_ue_pusch_data_t pusch_data;
   nfapi_nr_ue_pusch_uci_t  pusch_uci;
@@ -491,6 +492,7 @@ typedef struct {
   uint16_t dlDmrsScramblingId;
   uint16_t pduBitmap;
   uint32_t k1_feedback;
+  uint8_t ldpcBaseGraph;
 } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
 typedef struct {

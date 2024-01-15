@@ -443,8 +443,14 @@ static bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Check first whether the old TDA can be reused
   * this helps allocate retransmission when TDA changes (e.g. new nrOfSymbols > old nrOfSymbols) */
-  NR_tda_info_t temp_tda = get_dl_tda_info(dl_bwp, sched_ctrl->search_space->searchSpaceType->present, tda,
-                                           scc->dmrs_TypeA_Position, 1, NR_RNTI_C, coresetid, false);
+  NR_tda_info_t temp_tda = get_dl_tda_info(dl_bwp,
+                                           sched_ctrl->search_space->searchSpaceType->present,
+                                           tda,
+                                           scc->dmrs_TypeA_Position,
+                                           1,
+                                           TYPE_C_RNTI_,
+                                           coresetid,
+                                           false);
 
   bool reuse_old_tda = (retInfo->tda_info.startSymbolIndex == temp_tda.startSymbolIndex) && (retInfo->tda_info.nrOfSymbols <= temp_tda.nrOfSymbols);
   LOG_D(NR_MAC, "[UE %x] %s old TDA, %s number of layers\n",
@@ -757,8 +763,14 @@ static void pf_dl(module_id_t module_id,
     AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
 
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-    sched_pdsch->tda_info = get_dl_tda_info(dl_bwp, sched_ctrl->search_space->searchSpaceType->present, sched_pdsch->time_domain_allocation,
-                                            scc->dmrs_TypeA_Position, 1, NR_RNTI_C, coresetid, false);
+    sched_pdsch->tda_info = get_dl_tda_info(dl_bwp,
+                                            sched_ctrl->search_space->searchSpaceType->present,
+                                            sched_pdsch->time_domain_allocation,
+                                            scc->dmrs_TypeA_Position,
+                                            1,
+                                            TYPE_C_RNTI_,
+                                            coresetid,
+                                            false);
 
     NR_tda_info_t *tda_info = &sched_pdsch->tda_info;
 
@@ -833,7 +845,8 @@ static void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   int startSymbolIndex, nrOfSymbols;
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = get_dl_tdalist(current_BWP, coresetid, sched_ctrl->search_space->searchSpaceType->present, NR_RNTI_C);
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList =
+      get_dl_tdalist(current_BWP, coresetid, sched_ctrl->search_space->searchSpaceType->present, TYPE_C_RNTI_);
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
@@ -1185,7 +1198,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tpc,
           pucch->timing_indicator);
 
-    const int rnti_type = NR_RNTI_C;
+    const int rnti_type = TYPE_C_RNTI_;
     fill_dci_pdu_rel15(&UE->sc_info,
                        current_BWP,
                        &UE->current_UL_BWP,

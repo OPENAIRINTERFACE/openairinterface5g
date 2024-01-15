@@ -75,7 +75,7 @@ float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
 }
 
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
-                        UE_nr_rxtx_proc_t *proc,
+                        const UE_nr_rxtx_proc_t *proc,
                         NR_UE_DLSCH_t *dlsch,
                         uint32_t pdsch_est_size,
                         int32_t dl_ch_estimates[][pdsch_est_size])
@@ -180,9 +180,9 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 // - RX Gain  dB
 void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
                                  int ssb_index,
-                                 UE_nr_rxtx_proc_t *proc,
-                                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
-
+                                 const UE_nr_rxtx_proc_t *proc,
+                                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+{
   int k_start = 56;
   int k_end   = 183;
   int slot = proc->nr_slot_rx;
@@ -235,9 +235,9 @@ void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
 // Measurement units:
 // - psd_awgn (AWGN power spectral density):     dBm/Hz
 void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
-                            UE_nr_rxtx_proc_t *proc,
-                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]){
-
+                            const UE_nr_rxtx_proc_t *proc,
+                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+{
   uint8_t k;
   int slot = proc->nr_slot_rx;
   int aarx;
@@ -300,11 +300,12 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
   LOG_D(PHY, "In [%s][slot:%d] NF USRP %d dB\n", __FUNCTION__, slot, nf_usrp);
   #endif
 
-  LOG_D(PHY, "In [%s][slot:%d] Noise Level %d (digital level %d dB, noise power spectral density %f dBm/RE)\n",
-    __FUNCTION__,
-    slot,
-    ue->measurements.n0_power_tot,
-    ue->measurements.n0_power_tot_dB,
-    ue->measurements.n0_power_tot_dB + 30 - 10*log10(pow(2, 30)) - dB_fixed(ue->frame_parms.ofdm_symbol_size) - ((int)rx_gain - (int)rx_gain_offset));
-
+  LOG_D(PHY,
+        "In [%s][slot:%d] Noise Level %d (digital level %d dB, noise power spectral density %f dBm/RE)\n",
+        __FUNCTION__,
+        slot,
+        ue->measurements.n0_power_tot,
+        ue->measurements.n0_power_tot_dB,
+        ue->measurements.n0_power_tot_dB + 30 - 10 * log10(pow(2, 30)) - dB_fixed(ue->frame_parms.ofdm_symbol_size)
+            - ((int)rx_gain - (int)rx_gain_offset));
 }

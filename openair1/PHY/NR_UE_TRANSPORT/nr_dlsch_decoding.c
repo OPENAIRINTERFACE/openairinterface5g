@@ -44,7 +44,6 @@
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "common/utils/nr/nr_common.h"
-#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "openair1/PHY/TOOLS/phy_scope_interface.h"
 
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
@@ -74,11 +73,11 @@ void nr_dlsch_unscrambling(int16_t *llr, uint32_t size, uint8_t q, uint32_t Nid,
 static bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue,
                              notifiedFIFO_elt_t *req,
                              notifiedFIFO_t *nf_p,
-                             bool last,
+                             const bool last,
                              int b_size,
                              uint8_t b[b_size],
                              int *num_seg_ok,
-                             UE_nr_rxtx_proc_t *proc)
+                             const UE_nr_rxtx_proc_t *proc)
 {
   ldpcDecode_ue_t *rdata = (ldpcDecode_ue_t*) NotifiedFifoData(req);
   NR_DL_UE_HARQ_t *harq_process = rdata->harq_process;
@@ -265,7 +264,7 @@ static void nr_processDLSegment(void *arg)
 }
 
 uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
-                           UE_nr_rxtx_proc_t *proc,
+                           const UE_nr_rxtx_proc_t *proc,
                            int eNB_id,
                            short *dlsch_llr,
                            NR_DL_FRAME_PARMS *frame_parms,
@@ -348,7 +347,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   LOG_D(PHY,"%d.%d DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d length dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d Qm %d Coderate %f\n",
         frame,nr_slot_rx,harq_pid,A,A/8,G, nb_re_dmrs, dmrs_length, dlsch->dlsch_config.mcs, dlsch->Nl, nb_symb_sch, nb_rb, dlsch->dlsch_config.qamModOrder, Coderate);
-  decParams.BG = get_BG(A, dlsch->dlsch_config.targetCodeRate);
+  decParams.BG = dlsch->dlsch_config.ldpcBaseGraph;
   unsigned int kc = decParams.BG == 2 ? 52 : 68;
 
   if (harq_process->first_rx == 1) {
@@ -426,7 +425,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     rdata->offset = offset;
     rdata->dlsch = dlsch;
     rdata->dlsch_id = 0;
-    rdata->proc = proc;
+    rdata->proc = *proc;
     reset_meas(&rdata->ts_deinterleave);
     reset_meas(&rdata->ts_rate_unmatch);
     reset_meas(&rdata->ts_ldpc_decode);

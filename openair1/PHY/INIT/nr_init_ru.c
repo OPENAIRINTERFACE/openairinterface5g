@@ -168,7 +168,7 @@ void nr_phy_free_RU(RU_t *ru)
   int i,j;
   int p;
 
-  LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
+  LOG_I(PHY, "Freeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
     // Hack: undo what is done at allocation

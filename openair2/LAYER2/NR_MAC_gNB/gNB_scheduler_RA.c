@@ -839,10 +839,9 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
     dci_pdu->beta_PDCCH_1_0 = 0;
     dci_pdu->powerControlOffsetSS = 1;
 
-    dci_pdu_rel15_t uldci_payload;
-    memset(&uldci_payload, 0, sizeof(uldci_payload));
+    dci_pdu_rel15_t uldci_payload={0};
 
-    config_uldci(NULL,
+    config_uldci(sc_info,
                  pusch_pdu,
                  &uldci_payload,
                  NULL,
@@ -857,7 +856,7 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
                        dci_pdu,
                        &uldci_payload,
                        NR_UL_DCI_FORMAT_0_0,
-                       NR_RNTI_TC,
+                       TYPE_TC_RNTI_,
                        ul_bwp->bwp_id,
                        ss,
                        coreset,
@@ -1215,8 +1214,14 @@ static void nr_generate_Msg2(module_id_t module_idP,
     // Calculate number of symbols
     int time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
     int mux_pattern = type0_PDCCH_CSS_config ? type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern : 1;
-    NR_tda_info_t tda_info = get_dl_tda_info(dl_bwp, ss->searchSpaceType->present, time_domain_assignment,
-                                             scc->dmrs_TypeA_Position, mux_pattern, NR_RNTI_RA, coresetid, false);
+    NR_tda_info_t tda_info = get_dl_tda_info(dl_bwp,
+                                             ss->searchSpaceType->present,
+                                             time_domain_assignment,
+                                             scc->dmrs_TypeA_Position,
+                                             mux_pattern,
+                                             TYPE_RA_RNTI_,
+                                             coresetid,
+                                             false);
 
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
@@ -1378,9 +1383,10 @@ static void nr_generate_Msg2(module_id_t module_idP,
           dci_payload.tb_scaling);
 
     LOG_D(NR_MAC,
-          "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
+          "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  "
+          "n_symb %d\n",
           pdcch_pdu_rel15->dci_pdu[0].RNTI,
-          NR_RNTI_RA,
+          TYPE_RA_RNTI_,
           NR_DL_DCI_FORMAT_1_0,
           *(unsigned long long *)pdcch_pdu_rel15->FreqDomainResource,
           pdcch_pdu_rel15->StartSymbolIndex,
@@ -1392,7 +1398,7 @@ static void nr_generate_Msg2(module_id_t module_idP,
                        &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                        &dci_payload,
                        NR_DL_DCI_FORMAT_1_0,
-                       NR_RNTI_RA,
+                       TYPE_RA_RNTI_,
                        dl_bwp->bwp_id,
                        ss,
                        coreset,
@@ -1605,9 +1611,10 @@ static void prepare_dl_pdus(gNB_MAC_INST *nr_mac,
         dci_payload.pdsch_to_harq_feedback_timing_indicator.val);
 
   LOG_D(NR_MAC,
-        "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d, BWPsize %d\n",
+        "[RAPROC] DCI params: rnti 0x%x, rnti_type %d, dci_format %d coreset params: FreqDomainResource %llx, start_symbol %d  "
+        "n_symb %d, BWPsize %d\n",
         pdcch_pdu_rel15->dci_pdu[0].RNTI,
-        NR_RNTI_TC,
+        TYPE_TC_RNTI_,
         NR_DL_DCI_FORMAT_1_0,
         (unsigned long long)pdcch_pdu_rel15->FreqDomainResource,
         pdcch_pdu_rel15->StartSymbolIndex,
@@ -1620,7 +1627,7 @@ static void prepare_dl_pdus(gNB_MAC_INST *nr_mac,
                      &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                      &dci_payload,
                      NR_DL_DCI_FORMAT_1_0,
-                     NR_RNTI_TC,
+                     TYPE_TC_RNTI_,
                      dl_bwp->bwp_id,
                      ss,
                      coreset,
@@ -1731,8 +1738,14 @@ static void nr_generate_Msg4(module_id_t module_idP,
 
     uint8_t time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
     int mux_pattern = type0_PDCCH_CSS_config ? type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern : 1;
-    NR_tda_info_t msg4_tda = get_dl_tda_info(dl_bwp, ss->searchSpaceType->present, time_domain_assignment,
-                                             scc->dmrs_TypeA_Position, mux_pattern, NR_RNTI_TC, coreset->controlResourceSetId, false);
+    NR_tda_info_t msg4_tda = get_dl_tda_info(dl_bwp,
+                                             ss->searchSpaceType->present,
+                                             time_domain_assignment,
+                                             scc->dmrs_TypeA_Position,
+                                             mux_pattern,
+                                             TYPE_TC_RNTI_,
+                                             coreset->controlResourceSetId,
+                                             false);
 
     NR_pdsch_dmrs_t dmrs_info = get_dl_dmrs_params(scc,
                                                    dl_bwp,
