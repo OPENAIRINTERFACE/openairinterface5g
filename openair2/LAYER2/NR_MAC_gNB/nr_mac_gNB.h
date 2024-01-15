@@ -78,6 +78,7 @@
 
 /* Interface */
 #include "nfapi_nr_interface_scf.h"
+#include "nfapi_nr_interface.h"
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "mac_rrc_ul.h"
 

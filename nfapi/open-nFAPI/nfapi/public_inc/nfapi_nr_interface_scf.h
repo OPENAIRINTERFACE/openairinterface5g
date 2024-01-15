@@ -11,7 +11,6 @@
 
 #include "stddef.h"
 #include "nfapi_interface.h"
-#include "nfapi_nr_interface.h"
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
 #define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
@@ -25,13 +24,6 @@
 #define NFAPI_MAX_NUM_CB 8
 
 // Extension to the generic structures for single tlv values
-
-
-typedef enum {
-  NFAPI_NR_DMRS_TYPE1=0,
-  NFAPI_NR_DMRS_TYPE2
-} nfapi_nr_dmrs_type_e;
-
 
 typedef struct {
   /// Value: 0 -> 1, 0: Payload is carried directly in the value field, 1: Pointer to payload is in the value field 

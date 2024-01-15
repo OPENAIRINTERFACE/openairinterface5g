@@ -317,12 +317,6 @@ void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti);
 
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
 
-int get_dlscs(nfapi_nr_config_request_t *cfg);
-
-int get_ulscs(nfapi_nr_config_request_t *cfg);
-
-int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
-
 int nr_write_ce_dlsch_pdu(module_id_t module_idP,
                           const NR_UE_sched_ctrl_t *ue_sched_ctl,
                           unsigned char *mac_pdu,

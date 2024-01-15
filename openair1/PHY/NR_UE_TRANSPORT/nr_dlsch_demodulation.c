@@ -41,6 +41,7 @@
 #include "common/utils/nr/nr_common.h"
 #include <complex.h>
 #include "openair1/PHY/TOOLS/phy_scope_interface.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 
 /* dynamic shift for LLR computation for TM3/4
  * set as command line argument, see lte-softmodem.c

@@ -35,7 +35,6 @@
 
 #include <pthread.h>
 #include <stdint.h>
-#include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"
 #include "common/platform_constants.h"
 #include "common/platform_types.h"

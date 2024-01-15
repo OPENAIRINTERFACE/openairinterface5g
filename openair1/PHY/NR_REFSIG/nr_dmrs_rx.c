@@ -38,6 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "nr_refsig.h"
 #include "PHY/defs_gNB.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 
 // Table 6.4.1.1.3-1/2 from TS 38.211
 static const int delta1[8] = {0, 0, 1, 1, 0, 0, 1, 1};
