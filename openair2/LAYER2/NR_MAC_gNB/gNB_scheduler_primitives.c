@@ -1966,18 +1966,17 @@ NR_UE_info_t *find_nr_UE(NR_UEs_t *UEs, rnti_t rntiP)
   return NULL;
 }
 
-int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
-//------------------------------------------------------------------------------
-  int RA_id;
-  RA_t *ra = (RA_t *) &RC.nrmac[mod_idP]->common_channels[CC_idP].ra[0];
+int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP)
+{
+  NR_RA_t *ra = &RC.nrmac[mod_idP]->common_channels[CC_idP].ra[0];
 
-  for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++) {
+  for (int RA_id = 0; RA_id < NR_NB_RA_PROC_MAX; RA_id++) {
     LOG_D(NR_MAC, "Checking RA_id %d for %x : state %d\n",
           RA_id,
           rntiP,
           ra[RA_id].state);
 
-    if (ra[RA_id].state != IDLE && ra[RA_id].rnti == rntiP)
+    if (ra[RA_id].state != RA_IDLE && ra[RA_id].rnti == rntiP)
       return RA_id;
   }
 
@@ -3047,7 +3046,7 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
   DevAssert(cellGroupConfig->rlc_BearerToAddModList->list.count == 1);
   const NR_RLC_BearerConfig_t *bearer = cellGroupConfig->rlc_BearerToAddModList->list.array[0];
   DevAssert(bearer->servedRadioBearer->choice.srb_Identity == 1);
-  nr_rlc_add_srb(UE->rnti, DCCH, bearer);
+  nr_rlc_add_srb(UE->rnti, bearer->servedRadioBearer->choice.srb_Identity, bearer);
 }
 
 void nr_mac_trigger_release_timer(NR_UE_sched_ctrl_t *sched_ctrl, NR_SubcarrierSpacing_t subcarrier_spacing)

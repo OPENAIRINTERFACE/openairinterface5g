@@ -332,8 +332,10 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
                                                                 new_CellGroup);
   }
 
-  if (req->rrc_container != NULL)
-    nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, DCCH, req->rrc_container, req->rrc_container_length);
+  if (req->rrc_container != NULL) {
+    logical_chan_id_t id = 1;
+    nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, id, req->rrc_container, req->rrc_container_length);
+  }
 
   UE->capability = ue_cap;
   if (ue_cap != NULL) {
@@ -424,8 +426,10 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
         handle_ue_context_drbs_release(req->gNB_DU_ue_id, req->drbs_to_be_released_length, req->drbs_to_be_released, new_CellGroup);
   }
 
-  if (req->rrc_container != NULL)
-    nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, DCCH, req->rrc_container, req->rrc_container_length);
+  if (req->rrc_container != NULL) {
+    logical_chan_id_t id = 1;
+    nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, id, req->rrc_container, req->rrc_container_length);
+  }
 
   if (req->ReconfigComplOutcome != RRCreconf_info_not_present && req->ReconfigComplOutcome != RRCreconf_success) {
     LOG_E(NR_MAC,
@@ -498,9 +502,10 @@ void ue_context_modification_confirm(const f1ap_ue_context_modif_confirm_t *conf
   }
   NR_SCHED_UNLOCK(&mac->sched_lock);
 
-  if (confirm->rrc_container_length > 0)
-    nr_rlc_srb_recv_sdu(confirm->gNB_DU_ue_id, DCCH, confirm->rrc_container, confirm->rrc_container_length);
-
+  if (confirm->rrc_container_length > 0) {
+    logical_chan_id_t id = 1;
+    nr_rlc_srb_recv_sdu(confirm->gNB_DU_ue_id, id, confirm->rrc_container, confirm->rrc_container_length);
+  }
   /* nothing else to be done? */
 }
 
@@ -589,7 +594,7 @@ void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
     du_add_f1_ue_data(dl_rrc->gNB_DU_ue_id, &new_ue_data);
   }
 
-  if (UE->expect_reconfiguration && dl_rrc->srb_id == DCCH) {
+  if (UE->expect_reconfiguration && dl_rrc->srb_id == 1) {
     /* we expected a reconfiguration, and this is on DCCH. We assume this is
      * the reconfiguration: nr_mac_prepare_cellgroup_update() already stored
      * the CellGroupConfig. Below, we trigger a timer, and the CellGroupConfig

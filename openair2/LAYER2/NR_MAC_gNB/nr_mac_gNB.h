@@ -85,8 +85,6 @@
 /* MAC */
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-#include "LAYER2/MAC/mac.h"
-#include "NR_TAG.h"
 
 #include <openair3/UICC/usim_interface.h>
 
@@ -251,14 +249,6 @@ typedef struct {
   /// Outgoing BCCH pdu for PHY
   uint8_t sib1_bcch_pdu[NR_MAX_SIB_LENGTH / 8];
   int sib1_bcch_length;
-  /// Outgoing BCCH DCI allocation
-  uint32_t BCCH_alloc_pdu;
-  /// Outgoing CCCH pdu for PHY
-  CCCH_PDU CCCH_pdu;
-  /// Outgoing PCCH DCI allocation
-  uint32_t PCCH_alloc_pdu;
-  /// Outgoing PCCH pdu for PHY
-  PCCH_PDU PCCH_pdu;
   /// Template for RA computations
   NR_RA_t ra[NR_NB_RA_PROC_MAX];
   /// VRB map for common channels

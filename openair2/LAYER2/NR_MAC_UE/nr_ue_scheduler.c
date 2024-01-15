@@ -1147,12 +1147,12 @@ void nr_ue_ul_scheduler(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
 
   // First check ReTxBSR Timer because it is always configured
   // Decrement ReTxBSR Timer if it is running and not null
-  if ((mac->scheduling_info.retxBSR_SF != MAC_UE_BSR_TIMER_NOT_RUNNING) && (mac->scheduling_info.retxBSR_SF != 0)) {
+  if ((mac->scheduling_info.retxBSR_SF != NR_MAC_UE_BSR_TIMER_NOT_RUNNING) && (mac->scheduling_info.retxBSR_SF != 0)) {
     mac->scheduling_info.retxBSR_SF--;
   }
 
   // Decrement Periodic Timer if it is running and not null
-  if ((mac->scheduling_info.periodicBSR_SF != MAC_UE_BSR_TIMER_NOT_RUNNING) && (mac->scheduling_info.periodicBSR_SF != 0)) {
+  if ((mac->scheduling_info.periodicBSR_SF != NR_MAC_UE_BSR_TIMER_NOT_RUNNING) && (mac->scheduling_info.periodicBSR_SF != 0)) {
     mac->scheduling_info.periodicBSR_SF--;
   }
 
@@ -1194,7 +1194,7 @@ bool nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t 
   for (int lcid = 1; lcid <= NR_MAX_NUM_LCID; lcid++) {
     // Reset transmission status
     lcid_bytes_in_buffer[lcid - 1] = 0;
-    mac->scheduling_info.lc_sched_info[lcid - 1].LCID_status = LCID_EMPTY;
+    mac->scheduling_info.lc_sched_info[lcid - 1].LCID_buffer_with_data = false;
   }
 
   for (int lcgid = 0; lcgid < NR_MAX_NUM_LCGID; lcgid++) {
@@ -1235,7 +1235,7 @@ bool nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t 
             rlc_status.bytes_in_buffer,
             frameP,
             slotP);
-      mac->scheduling_info.lc_sched_info[lcid - 1].LCID_status = LCID_NOT_EMPTY;
+      mac->scheduling_info.lc_sched_info[lcid - 1].LCID_buffer_with_data = true;
 
       //Update BSR_bytes and position in lcid_reordered_array only if Group is defined
       if (lcgid < NR_MAX_NUM_LCGID) {
@@ -2693,7 +2693,7 @@ static int nr_ue_get_sdu_mac_ce_pre(NR_UE_MAC_INST_t *mac,
   }
 
   //Restart ReTxBSR Timer at new grant indication (38.321)
-  if (mac->scheduling_info.retxBSR_SF != MAC_UE_BSR_TIMER_NOT_RUNNING) {
+  if (mac->scheduling_info.retxBSR_SF != NR_MAC_UE_BSR_TIMER_NOT_RUNNING) {
     mac->scheduling_info.retxBSR_SF = nr_get_sf_retxBSRTimer(mac->scheduling_info.retxBSR_Timer);
   }
 
@@ -2918,7 +2918,7 @@ static void nr_ue_get_sdu_mac_ce_post(NR_UE_MAC_INST_t *mac,
     }
 
     // Reset BSR Trigger flags
-    mac->BSR_reporting_active = BSR_TRIGGER_NONE;
+    mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
   }
 }
 
@@ -3242,7 +3242,7 @@ uint8_t nr_ue_get_sdu(NR_UE_MAC_INST_t *mac,
 
       // skip the logical channel if no data in the buffer initially or the data in the buffer was zero because it was written in to
       // MAC PDU
-      if (!sched_info->lc_sched_info[lcid - 1].LCID_status || !lcids_data_status[lcid - 1]) {
+      if (!sched_info->lc_sched_info[lcid - 1].LCID_buffer_with_data || !lcids_data_status[lcid - 1]) {
         lcids_data_status[lcid - 1] = false;
         continue;
       }

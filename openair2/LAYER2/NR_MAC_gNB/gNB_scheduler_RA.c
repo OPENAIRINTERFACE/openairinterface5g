@@ -617,7 +617,6 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       }
     }
     LOG_D(NR_MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
-    ra->state = Msg2;
     ra->timing_offset = timing_offset;
     ra->preamble_slot = slotP;
 
@@ -653,11 +652,12 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                && !((find_nr_UE(&nr_mac->UE_info, ra->rnti) == NULL) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
                     && ra->rnti >= 0x1 && ra->rnti <= 0xffef));
       if (loop == 100) {
-        LOG_E(NR_MAC, "%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
+        LOG_E(NR_MAC, "[RAPROC] initialisation random access aborted\n");
         abort();
       }
     }
 
+    ra->state = Msg2;
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
     ra->beam_id = cc->ssb_index[beam_index];
