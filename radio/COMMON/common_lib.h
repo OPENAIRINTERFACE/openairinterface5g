@@ -226,31 +226,31 @@ typedef struct openair0_config {
   //! tx daughter card
   char* tx_subdev;
   //! \brief RX base addresses for mmapped_dma
-  int32_t *rxbase[4];
+  int32_t *rxbase[8];
   //! \brief RX buffer size for direct access
   int rxsize;
   //! \brief TX base addresses for mmapped_dma or direct access
-  int32_t *txbase[4];
+  int32_t *txbase[8];
   //! \brief Center frequency in Hz for RX.
   //! index: [0..rx_num_channels[
-  double rx_freq[4];
+  double rx_freq[8];
   //! \brief Center frequency in Hz for TX.
   //! index: [0..rx_num_channels[ !!! see lte-ue.c:427 FIXME iterates over rx_num_channels
-  double tx_freq[4];
+  double tx_freq[8];
   double tune_offset;
   //! \brief memory
   //! \brief Pointer to Calibration table for RX gains
   rx_gain_calib_table_t *rx_gain_calib_table;
   //! mode for rxgain (ExpressMIMO2)
-  rx_gain_t rxg_mode[4];
+  rx_gain_t rxg_mode[8];
   //! \brief Gain for RX in dB.
   //! index: [0..rx_num_channels]
-  double rx_gain[4];
+  double rx_gain[8];
   //! \brief Gain offset (for calibration) in dB
   //! index: [0..rx_num_channels]
-  double rx_gain_offset[4];
+  double rx_gain_offset[8];
   //! gain for TX in dB
-  double tx_gain[4];
+  double tx_gain[8];
   //! RX bandwidth in Hz
   double rx_bw;
   //! TX bandwidth in Hz
@@ -262,7 +262,7 @@ typedef struct openair0_config {
   //! Manual SDR IP address
   char *sdr_addrs;
   //! Auto calibration flag
-  int autocal[4];
+  int autocal[8];
   //! rf devices work with x bits iqs when oai have its own iq format
   //! the two following parameters are used to convert iqs
   int iq_txshift;
@@ -295,9 +295,9 @@ typedef struct openair0_config {
   //! NR scs for raster
   int nr_scs_for_raster;
   //! Core IDs for RX FH
-  int rxfh_cores[4];
+  int rxfh_cores[8];
   //! Core IDs for TX FH
-  int txfh_cores[4];
+  int txfh_cores[8];
   //! select the GPIO control method
   gpio_control_t gpio_controller;
   //! this interface is reused for split 7, so split 7 options provided below
