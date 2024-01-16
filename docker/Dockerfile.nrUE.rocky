@@ -21,17 +21,15 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Rocky 8.7
+#   Valid for Rocky 9
 #
 #---------------------------------------------------------------------
 
-ARG BASE_IMAGE=docker.io/rockylinux:8.7
+ARG BASE_IMAGE=docker.io/rockylinux:9
 FROM ran-base:latest AS nr-ue-base
 
 FROM ran-build:latest AS nr-ue-build 
 
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/nr_ue_parameters.yaml && \
-    cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM $BASE_IMAGE as oai-nr-ue
@@ -59,9 +57,8 @@ RUN dnf update -y && \
 WORKDIR /opt/oai-nr-ue/bin
 COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/nr-uesoftmodem \
-    /oai-ran/docker/scripts/entrypoint.sh \
     ./
-
+COPY ./docker/scripts/nr_ue_entrypoint.sh ./entrypoint.sh
 WORKDIR /opt/oai-nr-ue/etc
 
 COPY --from=nr-ue-build \
@@ -77,25 +74,26 @@ COPY --from=nr-ue-build \
     /usr/local/lib/
 
 COPY --from=nr-ue-base \
-    /lib64/libconfig.so.9 \
+    /lib64/libconfig.so.11 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/libforms.so.2 \
-    /lib64/libboost_chrono.so.1.66.0 \
-    /lib64/libboost_date_time.so.1.66.0 \
-    /lib64/libboost_filesystem.so.1.66.0 \
-    /lib64/libboost_program_options.so.1.66.0 \
-    /lib64/libboost_serialization.so.1.66.0 \
-    /lib64/libboost_thread.so.1.66.0 \
-    /lib64/libboost_system.so.1.66.0 \
-    /lib64/libboost_unit_test_framework.so.1.66.0 \
-    /lib64/libboost_atomic.so.1.66.0 \
-    /lib64/libboost_timer.so.1.66.0 \
-    /lib64/libboost_regex.so.1.66.0 \
-    /lib64/libicudata.so.60 \
-    /lib64/libicui18n.so.60 \
-    /lib64/libicuuc.so.60 \
+    /lib64/libboost_chrono.so.1.75.0 \
+    /lib64/libboost_date_time.so.1.75.0 \
+    /lib64/libboost_filesystem.so.1.75.0 \
+    /lib64/libboost_program_options.so.1.75.0 \
+    /lib64/libboost_serialization.so.1.75.0 \
+    /lib64/libboost_thread.so.1.75.0 \
+    /lib64/libboost_system.so.1.75.0 \
+    /lib64/libboost_unit_test_framework.so.1.75.0 \
+    /lib64/libboost_atomic.so.1.75.0 \
+    /lib64/libboost_timer.so.1.75.0 \
+    /lib64/libboost_regex.so.1.75.0 \
+    /lib64/libicudata.so.67 \
+    /lib64/libicui18n.so.67 \
+    /lib64/libicuuc.so.67 \
     /lib64/
 
 # Now we are copying from builder-image the UHD files.
@@ -107,11 +105,16 @@ WORKDIR /usr/local/share/uhd/rfnoc
 COPY --from=nr-ue-base /usr/local/share/uhd/rfnoc/ .
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
-    ldconfig
-    
-# Copy the relevant configuration files for eNB
-WORKDIR /opt/oai-nr-ue/etc
-COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
+    ldconfig && \
+    echo "ldd on nr-uesoftmodem" && ldd /opt/oai-nr-ue/bin/nr-uesoftmodem && \
+    echo "ldd on liboai_eth_transpro.so" && ldd /usr/local/lib/liboai_eth_transpro.so && \
+    echo "ldd on librfsimulator.so" && ldd /usr/local/lib/librfsimulator.so && \
+    echo "ldd on liboai_usrpdevif.so" && ldd /usr/local/lib/liboai_usrpdevif.so && \
+    echo "ldd on libcoding.so" && ldd /usr/local/lib/libcoding.so && \
+    echo "ldd on libparams_libconfig.so" && ldd /usr/local/lib/libparams_libconfig.so && \
+    echo "ldd on libdfts.so" && ldd /usr/local/lib/libdfts.so && \
+    echo "ldd on libtelnetsrv.so" && ldd /usr/local/lib/libtelnetsrv.so && \
+    echo "ldd on libtelnetsrv_5Gue.so" && ldd /usr/local/lib/libtelnetsrv_5Gue.so
 
 WORKDIR /opt/oai-nr-ue
 CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem", "-O", "/opt/oai-nr-ue/etc/nr-ue.conf"]

@@ -21,11 +21,11 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Rocky 8.7
+#   Valid for Rocky 9
 #
 #---------------------------------------------------------------------
 
-ARG BASE_IMAGE=docker.io/rockylinux:8.7
+ARG BASE_IMAGE=docker.io/rockylinux:9
 FROM ran-base:latest AS gnb-base
 
 FROM ran-build:latest AS gnb-build
@@ -36,8 +36,9 @@ RUN cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypo
 FROM $BASE_IMAGE as oai-nr-cuup
 ENV TZ=Europe/Paris
 
-RUN dnf update -y && \
-    dnf install -y \
+RUN yum repolist --disablerepo=* && \
+    yum update -y && \
+    yum install -y \
         procps-ng \
         lksctp-tools \
         tzdata \
@@ -59,8 +60,9 @@ COPY --from=gnb-build \
     /usr/local/lib/
 
 COPY --from=gnb-base \
-    /lib64/libconfig.so.9 \
+    /lib64/libconfig.so.11 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/

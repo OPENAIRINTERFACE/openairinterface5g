@@ -21,17 +21,15 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Rocky 8.7
+#   Valid for Rocky 9
 #
 #---------------------------------------------------------------------
 
-ARG BASE_IMAGE=docker.io/rockylinux:8.7
+ARG BASE_IMAGE=docker.io/rockylinux:9
 FROM ran-base:latest AS enb-base
 
 FROM ran-build:latest AS enb-build
 
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
-    cp /oai-ran/docker/scripts/enb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM $BASE_IMAGE as oai-enb
@@ -56,9 +54,9 @@ RUN dnf update -y && \
 
 WORKDIR /opt/oai-enb/bin
 COPY --from=enb-build \
-    /oai-ran/cmake_targets/ran_build/build/lte-softmodem \
-    /oai-ran/docker/scripts/entrypoint.sh \
-    ./
+    /oai-ran/cmake_targets/ran_build/build/lte-softmodem ./
+
+COPY ./docker/scripts/enb_entrypoint.sh ./entrypoint.sh
 
 COPY --from=enb-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
@@ -73,24 +71,25 @@ COPY --from=enb-build \
     /usr/local/lib/
 
 COPY --from=enb-base \
-    /lib64/libconfig.so.9 \
+    /lib64/libconfig.so.11 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
-    /lib64/libboost_chrono.so.1.66.0 \
-    /lib64/libboost_date_time.so.1.66.0 \
-    /lib64/libboost_filesystem.so.1.66.0 \
-    /lib64/libboost_program_options.so.1.66.0 \
-    /lib64/libboost_serialization.so.1.66.0 \
-    /lib64/libboost_thread.so.1.66.0 \
-    /lib64/libboost_system.so.1.66.0 \
-    /lib64/libboost_unit_test_framework.so.1.66.0 \
-    /lib64/libboost_atomic.so.1.66.0 \
-    /lib64/libboost_timer.so.1.66.0 \
-    /lib64/libboost_regex.so.1.66.0 \
-    /lib64/libicudata.so.60 \
-    /lib64/libicui18n.so.60 \
-    /lib64/libicuuc.so.60 \
+    /lib64/libboost_chrono.so.1.75.0 \
+    /lib64/libboost_date_time.so.1.75.0 \
+    /lib64/libboost_filesystem.so.1.75.0 \
+    /lib64/libboost_program_options.so.1.75.0 \
+    /lib64/libboost_serialization.so.1.75.0 \
+    /lib64/libboost_thread.so.1.75.0 \
+    /lib64/libboost_system.so.1.75.0 \
+    /lib64/libboost_unit_test_framework.so.1.75.0 \
+    /lib64/libboost_atomic.so.1.75.0 \
+    /lib64/libboost_timer.so.1.75.0 \
+    /lib64/libboost_regex.so.1.75.0 \
+    /lib64/libicudata.so.67 \
+    /lib64/libicui18n.so.67 \
+    /lib64/libicuuc.so.67 \
     /lib64/
 
 
@@ -115,10 +114,6 @@ RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai
     echo "ldd on liboai_iqplayer.so" && ldd /usr/local/lib/liboai_iqplayer.so && \
     echo "ldd on libtelnetsrv.so" && ldd /usr/local/lib/libtelnetsrv.so && \
     echo "ldd on libtelnetsrv_enb.so" && ldd /usr/local/lib/libtelnetsrv_enb.so
-
-# Copy the relevant configuration files for eNB
-WORKDIR /opt/oai-enb/etc
-COPY --from=enb-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-enb
 
