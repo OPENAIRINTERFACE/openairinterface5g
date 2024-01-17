@@ -33,7 +33,7 @@
 static
 const int mod_id = 0;
 
-void read_gtp_sm(void * data)
+bool read_gtp_sm(void * data)
 {
   assert(data != NULL);
 
@@ -80,6 +80,7 @@ void read_gtp_sm(void * data)
     i++;
   }
 
+  return num_ues > 0;
 }
 
 void read_gtp_setup_sm(void* data)

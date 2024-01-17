@@ -67,7 +67,7 @@ void active_avg_to_tx(NR_UEs_t* const UE_info)
   }
 }
 
-void read_rlc_sm(void* data)
+bool read_rlc_sm(void* data)
 {
   assert(data != NULL);
 //  assert(data->type ==  RLC_STATS_V0);
@@ -161,6 +161,8 @@ void read_rlc_sm(void* data)
       ++i;
     }
   }
+
+  return act_rb > 0;
 }
 
 void read_rlc_setup_sm(void* data)

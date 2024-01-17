@@ -55,7 +55,7 @@ static
   return act_rb;
 }
 
-void read_pdcp_sm(void* data)
+bool read_pdcp_sm(void* data)
 {
   assert(data != NULL);
   //assert(data->type == PDCP_STATS_V0);
@@ -123,6 +123,9 @@ void read_pdcp_sm(void* data)
         ++i;
       }
     }
+
+    return act_rb > 0;
+    
   } else {
 
     //assert(0!=0 && "Calling PDCP");
@@ -176,6 +179,8 @@ void read_pdcp_sm(void* data)
         ++i;
       }
     }
+
+    return act_rb > 0;
   }
 }
 

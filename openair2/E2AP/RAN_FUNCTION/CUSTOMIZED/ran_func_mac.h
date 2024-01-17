@@ -28,7 +28,7 @@
 #include "openair2/E2AP/flexric/src/util/time_now_us.h"
 
 
-void read_mac_sm(void*);
+bool read_mac_sm(void*);
 
 void read_mac_setup_sm(void*);
 

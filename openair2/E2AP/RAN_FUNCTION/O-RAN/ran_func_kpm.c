@@ -73,7 +73,7 @@ static size_t filter_ues_by_s_nssai_in_du_or_monolithic(test_cond_e const condit
   }
 
   matches->num_ues = i;
-  assert(matches->num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
+
   return i;
 }
 
@@ -104,7 +104,7 @@ static size_t filter_ues_by_s_nssai_in_cu(test_cond_e const condition, uint8_t s
   }
 
   matches->num_ues = i;
-  assert(matches->num_ues >= 1 && "The number of filtered UEs must be at least equal to 1");
+  
   return i;
 }
 
@@ -613,9 +613,9 @@ kpm_ric_ind_hdr_format_1_t kpm_ind_hdr_frm_1(void)
   kpm_ric_ind_hdr_format_1_t hdr_frm_1 = {0};
 
   int64_t const t = time_now_us();
-#if defined KPM_V2
+#if defined KPM_V2_03
   hdr_frm_1.collectStartTime = t/1000000; // seconds
-#elif defined KPM_V3 
+#elif defined KPM_V3_00 
   hdr_frm_1.collectStartTime = t; // microseconds
 #else
   static_assert(0!=0, "Undefined KPM SM Version");
@@ -690,31 +690,31 @@ static void capture_sst_sd(test_info_lst_t* test, uint8_t *sst, uint32_t **sd)
   // we made a mistake in the past: NSSAI is supposed to be an OCTET_STRING,
   // but earlier version of the RAN function and the xApp used integer, so
   // handle this gracefully by accepting integer as well
-  switch (*test->test_cond_value) {
+  switch (test->test_cond_value->type) {
     case INTEGER_TEST_COND_VALUE:
-      AssertFatal(*test->int_value <= 0xff, "illegal SST %ld\n", *test->int_value);
-      *sst = *test->int_value;
+      AssertFatal(*test->test_cond_value->int_value <= 0xff, "illegal SST %ld\n", *test->test_cond_value->int_value);
+      *sst = *test->test_cond_value->int_value;
       *sd = NULL;
       break;
     case OCTET_STRING_TEST_COND_VALUE:
-      if (test->octet_string_value->len == 1) {
-        *sst = test->octet_string_value->buf[0];
+      if (test->test_cond_value->octet_string_value->len == 1) {
+        *sst = test->test_cond_value->octet_string_value->buf[0];
         *sd = NULL;
       } else {
-        DevAssert(test->octet_string_value->len == 4);
-        uint8_t *buf = test->octet_string_value->buf;
+        DevAssert(test->test_cond_value->octet_string_value->len == 4);
+        uint8_t *buf = test->test_cond_value->octet_string_value->buf;
         *sst = buf[0];
         *sd = malloc(**sd);
         **sd = buf[1] << 16 | buf[2] << 8 | buf[3];
       }
       break;
     default:
-      AssertFatal(false, "test condition value %d impossible\n", *test->test_cond_value);
+      AssertFatal(false, "test condition value %d impossible\n", test->test_cond_value->type);
       break;
   }
 }
 
-void read_kpm_sm(void* data)
+bool read_kpm_sm(void* data)
 {
   assert(data != NULL);
   // assert(data->type == KPM_STATS_V3_0);
@@ -767,9 +767,7 @@ void read_kpm_sm(void* data)
           }
 
           case CQI_TEST_COND_TYPE: {
-            // This is a bad idea. Done only to check FlexRIC xAPP
-            printf("CQI not implemented!. Randomly filling the data \n");
-            goto rnd_data_label;
+            assert(0 != 0 && "Not implemented");
             break;
           }
 
@@ -786,7 +784,7 @@ void read_kpm_sm(void* data)
           case S_NSSAI_TEST_COND_TYPE: {
             assert(frm_4->matching_cond_lst[i].test_info_lst.S_NSSAI == TRUE_TEST_COND_TYPE && "Must be true");
             assert(frm_4->matching_cond_lst[i].test_info_lst.test_cond != NULL && "Even though is optional..");
-            assert(frm_4->matching_cond_lst[i].test_info_lst.int_value != NULL && "Even though is optional..");
+            assert(frm_4->matching_cond_lst[i].test_info_lst.test_cond_value != NULL && "Even though is optional..");
 
             test_cond_e const test_cond = *frm_4->matching_cond_lst[i].test_info_lst.test_cond;
             uint8_t sst = 0;
@@ -796,14 +794,17 @@ void read_kpm_sm(void* data)
             if (NODE_IS_DU(RC.nrrrc[0]->node_type)) {
               matched_ues_mac_t matched_ues = {0};
               matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, sst, sd, &matched_ues);
+              if (matched_ues.num_ues == 0) return false;
               kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_du(&matched_ues, &frm_4->action_def_format_1);
             } else if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
               matched_ues_rrc_t matched_ues = {0};
               matched_ues.num_ues = filter_ues_by_s_nssai_in_cu(test_cond, sst, sd, &matched_ues);
+              if (matched_ues.num_ues == 0) return false;
               kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_cu(&matched_ues, &frm_4->action_def_format_1);
             } else if (NODE_IS_MONOLITHIC(RC.nrrrc[0]->node_type)) {
               matched_ues_mac_t matched_ues = {0};
               matched_ues.num_ues = filter_ues_by_s_nssai_in_du_or_monolithic(test_cond, sst, sd, &matched_ues);
+              if (matched_ues.num_ues == 0) return false;
               kpm->ind.msg.frm_3 = fill_kpm_ind_msg_frm_3_in_monolithic(&matched_ues, &frm_4->action_def_format_1);
             } else {
               assert(false && "NG-RAN Type not implemented");
@@ -822,13 +823,11 @@ void read_kpm_sm(void* data)
     }
 
     default: {
-    rnd_data_label:
-      kpm->ind.hdr = fill_rnd_kpm_ind_hdr();
-      kpm->ind.msg = fill_rnd_kpm_ind_msg();
-
-      break;
+      AssertFatal(kpm->act_def->type == FORMAT_4_ACTION_DEFINITION, "Action Definition Format %d not yet implemented", kpm->act_def->type);
     }
   }
+  
+  return true;
 }
 
 void read_kpm_setup_sm(void* e2ap)

@@ -30,11 +30,13 @@
 #include <pthread.h>
 #include <unistd.h>
 
-void read_rc_sm(void* data)
+bool read_rc_sm(void* data)
 {
   assert(data != NULL);
 //  assert(data->type == RAN_CTRL_STATS_V1_03);
   assert(0!=0 && "Not implemented");
+
+  return true;
 }
 
 void read_rc_setup_sm(void* data)
