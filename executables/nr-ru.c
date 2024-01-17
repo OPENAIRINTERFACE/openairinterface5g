@@ -936,6 +936,30 @@ static void fill_rf_config(RU_t *ru, char *rf_config_file)
   }
 }
 
+static void fill_split7_2_config(split7_config_t *split7, const nfapi_nr_config_request_scf_t *config, int slots_per_frame)
+{
+  const nfapi_nr_prach_config_t *prach_config = &config->prach_config;
+  const nfapi_nr_tdd_table_t *tdd_table = &config->tdd_table;
+  const nfapi_nr_cell_config_t *cell_config = &config->cell_config;
+
+  DevAssert(prach_config->prach_ConfigurationIndex.tl.tag == NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG);
+  split7->prach_index = prach_config->prach_ConfigurationIndex.value;
+  AssertFatal(prach_config->num_prach_fd_occasions.value == 1, "cannot handle more than one PRACH occasion\n");
+  split7->prach_freq_start = prach_config->num_prach_fd_occasions_list[0].k1.value;
+
+  DevAssert(cell_config->frame_duplex_type.tl.tag == NFAPI_NR_CONFIG_FRAME_DUPLEX_TYPE_TAG);
+  if (cell_config->frame_duplex_type.value == 1 /* TDD */) {
+    DevAssert(tdd_table->tdd_period.tl.tag == NFAPI_NR_CONFIG_TDD_PERIOD_TAG);
+    int nb_periods_per_frame = get_nb_periods_per_frame(tdd_table->tdd_period.value);
+    split7->n_tdd_period = slots_per_frame / nb_periods_per_frame;
+    for (int slot = 0; slot < split7->n_tdd_period; ++slot) {
+      for (int sym = 0; sym < 14; ++sym) {
+        split7->slot_dirs[slot].sym_dir[sym] = tdd_table->max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[sym].slot_config.value;
+      }
+    }
+  }
+}
+
 /* this function maps the RU tx and rx buffers to the available rf chains.
    Each rf chain is is addressed by the card number and the chain on the card. The
    rf_map specifies for each antenna port, on which rf chain the mapping should start. Multiple
@@ -1154,6 +1178,7 @@ void *ru_thread( void *param ) {
   nr_dump_frame_parms(fp);
   nr_phy_init_RU(ru);
   fill_rf_config(ru, ru->rf_config_file);
+  fill_split7_2_config(&ru->openair0_cfg.split7, &ru->config, fp->slots_per_frame);
 
   if(!emulate_rf) {
     // Start IF device if any

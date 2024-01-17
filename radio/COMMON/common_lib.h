@@ -178,8 +178,27 @@ typedef enum {
   RU_GPIO_CONTROL_INTERDIGITAL,
 } gpio_control_t;
 
+/*! \brief defines the direction of each symbol. Int values intentional and
+ * analogous to FAPI/FHI 7.2 */
+typedef enum { SYMBOL_DIR_DL = 0, SYMBOL_DIR_UL = 1, SYMBOL_DIR_GU = 2 } symbol_direction_t;
+/*! \brief Contains information about PRACH and Frame structure, for
+ * initialization of split 7 radios which reuses the interface of split 8.
+ */
+typedef struct split7_config {
+  /*! PRACH index used for PRACH */
+  int prach_index;
+  /*! PRACH frequency start, from RRC's msg1-FrequencyStart */
+  int prach_freq_start;
+  /*! the TDD period length, if TDD indicated in parent struct */
+  int n_tdd_period;
+  /*! TDD frame structure, if TDD indicated */
+  struct {
+    symbol_direction_t sym_dir[14];
+  } slot_dirs[160];
+} split7_config_t;
+
 /*! \brief RF frontend parameters set by application */
-typedef struct {
+typedef struct openair0_config {
   //! Module ID for this configuration
   int Mod_id;
   //! device log level
@@ -281,6 +300,8 @@ typedef struct {
   int txfh_cores[4];
   //! select the GPIO control method
   gpio_control_t gpio_controller;
+  //! this interface is reused for split 7, so split 7 options provided below
+  split7_config_t split7;
 } openair0_config_t;
 
 /*! \brief RF mapping */
