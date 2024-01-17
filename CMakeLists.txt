@@ -1433,7 +1433,7 @@ target_link_libraries(L2 PRIVATE x2ap s1ap lte_rrc m2ap)
 target_link_libraries(L2 PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 if(E2_AGENT)
-  target_link_libraries(L2 PUBLIC e2_agent e2_ran_func)
+  target_link_libraries(L2 PUBLIC e2_agent e2_agent_arg e2_ran_func)
   target_compile_definitions(L2 PRIVATE E2_AGENT)
   target_compile_definitions(L2 PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
 endif()
@@ -1460,7 +1460,7 @@ target_link_libraries(e1_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs asn1_f1ap
 
 target_link_libraries(L2_NR PRIVATE f1ap x2ap s1ap ngap nr_rrc e1ap nr_rlc)
 if(E2_AGENT)
-  target_link_libraries(L2_NR PUBLIC e2_agent e2_ran_func)
+  target_link_libraries(L2_NR PUBLIC e2_agent e2_agent_arg e2_ran_func)
   target_compile_definitions(L2_NR PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
   target_compile_definitions(L2_NR PRIVATE E2_AGENT)
 endif()
@@ -2114,6 +2114,10 @@ target_link_libraries(nr-cuup PRIVATE
                       GTPV1U e1ap f1ap SIMU_ETH
                       z sctp dl pthread shlib_loader ${T_LIB})
 target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
+if(E2_AGENT)
+  target_link_libraries(nr-cuup PRIVATE e2_agent e2_agent_arg)  # RAN functions to be added
+  target_compile_definitions(nr-cuup PRIVATE ${E2AP_VERSION} ${KPM_VERSION} E2_AGENT)
+endif()
                      
 # nr-uesoftmodem is  UE implementation
 #######################################
