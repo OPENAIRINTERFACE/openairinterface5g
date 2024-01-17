@@ -20,7 +20,6 @@
  */
 
 #include "ran_func_mac.h"
-#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_mac.h"
 #include <assert.h>
 
 static

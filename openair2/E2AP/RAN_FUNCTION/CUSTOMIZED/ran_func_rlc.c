@@ -28,7 +28,6 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "openair2/E2AP/flexric/src/util/time_now_us.h"
-#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_rlc.h"
 
 static
 const int mod_id = 0;
