@@ -658,19 +658,15 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
-  int drb_id_to_setup_start = 1;
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(ue_p);
-  int nb_drb_to_setup = DRB_configList ? DRB_configList->list.count : 0;
   ue_p->xids[xid] = RRC_PDUSESSION_ESTABLISH;
   struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList = NULL;
   NR_DedicatedNAS_Message_t *dedicatedNAS_Message = NULL;
   dedicatedNAS_MessageList = CALLOC(1, sizeof(struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList));
 
+  int nb_drb_to_setup = DRB_configList ? DRB_configList->list.count : 0;
   for (int i=0; i < nb_drb_to_setup; i++) {
-    NR_DRB_ToAddMod_t *DRB_config = DRB_configList->list.array[i];
-    if (drb_id_to_setup_start == 1)
-      drb_id_to_setup_start = DRB_config->drb_Identity;
     int j = ue_p->nb_of_pdusessions - 1;
     AssertFatal(j >= 0, "");
     if (ue_p->pduSession[j].param.nas_pdu.buffer != NULL) {
