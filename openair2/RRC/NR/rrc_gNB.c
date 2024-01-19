@@ -429,6 +429,10 @@ static NR_DRB_ToAddModList_t *createDRBlist(gNB_RRC_UE_t *ue, bool reestablish)
       asn1cSeqAdd(&DRB_configList->list, DRB_config);
     }
   }
+  if (DRB_configList->list.count == 0) {
+    free(DRB_configList);
+    return NULL;
+  }
   return DRB_configList;
 }
 
