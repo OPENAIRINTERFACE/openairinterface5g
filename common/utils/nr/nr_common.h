@@ -76,6 +76,8 @@ static inline const char *rnti_types(nr_rnti_type_t rr)
 }
 #undef R
 
+#define NR_MAX_NB_LAYERS 4 // 8
+
 typedef enum {
   nr_FR1 = 0,
   nr_FR2

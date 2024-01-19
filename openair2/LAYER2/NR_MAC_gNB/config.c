@@ -50,10 +50,318 @@
 #include "../../../../nfapi/oai_integration/vendor_ext.h"
 /* Softmodem params */
 #include "executables/softmodem-common.h"
+#include <complex.h>
 
 extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
 extern uint8_t nfapi_mode;
+
+c16_t convert_precoder_weight(double complex c_in)
+{
+  double cr = creal(c_in) * 32768 + 0.5;
+  if (cr < 0)
+    cr -= 1;
+  double ci = cimag(c_in) * 32768 + 0.5;
+  if (ci < 0)
+    ci -= 1;
+  return (c16_t) {.r = (short)cr, .i = (short)ci};
+}
+
+nfapi_nr_pm_list_t init_DL_MIMO_codebook(gNB_MAC_INST *gNB, nr_pdsch_AntennaPorts_t antenna_ports)
+{
+  int num_antenna_ports = antenna_ports.N1 * antenna_ports.N2 * antenna_ports.XP;
+  if (num_antenna_ports < 2)
+    return (nfapi_nr_pm_list_t) {0};
+
+  //NR Codebook Generation for codebook type1 SinglePanel
+  int N1 = antenna_ports.N1;
+  int N2 = antenna_ports.N2;
+  //Uniform Planner Array: UPA
+  //    X X X X ... X
+  //    X X X X ... X
+  // N2 . . . . ... .
+  //    X X X X ... X
+  //   |<-----N1---->|
+
+  //Get the uniform planar array parameters
+  // To be confirmed
+  int O2 = N2 > 1 ? 4 : 1; //Vertical beam oversampling (1 or 4)
+  int O1 = num_antenna_ports > 2 ? 4 : 1; //Horizontal beam oversampling (1 or 4)
+
+  int K1, K2;
+  get_K1_K2(N1, N2, &K1, &K2);
+
+  int max_mimo_layers = (num_antenna_ports < NR_MAX_NB_LAYERS) ? num_antenna_ports : NR_MAX_NB_LAYERS;
+  AssertFatal(max_mimo_layers <= 4, "Max number of layers supported is 4\n");
+
+  gNB->precoding_matrix_size[0] = N1 * O1 * N2 * O2 * 4;
+  nfapi_nr_pm_list_t mat = {.num_pm_idx = gNB->precoding_matrix_size[0]};
+  for (int i = 1; i < max_mimo_layers; i++) {
+    gNB->precoding_matrix_size[i] = 2 * N1 * O1 * N2 * O2 * K1 * K2;
+    mat.num_pm_idx += gNB->precoding_matrix_size[i];
+  }
+
+  nfapi_nr_pm_pdu_t *pmi_pdu = malloc16(mat.num_pm_idx * sizeof(*pmi_pdu));
+  AssertFatal(pmi_pdu != NULL, "out of memory\n");
+  mat.pmi_pdu = pmi_pdu;
+
+  // Generation of codebook Type1 with codebookMode 1 (num_antenna_ports < 16)
+  if (num_antenna_ports < 16) {
+    //Generate DFT vertical beams
+    //ll: index of a vertical beams vector (represented by i1_1 in TS 38.214)
+    const int max_l = N1 * O1 + (K1 - 1) * O1;
+    double complex v[max_l][N1];
+    for (int ll = 0; ll < max_l; ll++) { //i1_1
+      for (int nn = 0; nn < N1; nn++) {
+        v[ll][nn] = cexp(I * (2 * M_PI * nn * ll) / (N1 * O1));
+        LOG_D(PHY,"v[%d][%d] = %f +j %f\n", ll, nn, creal(v[ll][nn]), cimag(v[ll][nn]));
+      }
+    }
+    //Generate DFT Horizontal beams
+    //mm: index of a Horizontal beams vector (represented by i1_2 in TS 38.214)
+    const int max_m = N2 * O2 + (K2 - 1) * O2;
+    double complex u[max_m][N2];
+    for (int mm = 0; mm < max_m; mm++) { //i1_2
+      for (int nn = 0; nn < N2; nn++) {
+        u[mm][nn] = cexp(I * (2 * M_PI * nn * mm) / (N2 * O2));
+        LOG_D(PHY,"u[%d][%d] = %f +j %f\n", mm, nn, creal(u[mm][nn]), cimag(u[mm][nn]));
+      }
+    }
+    //Generate co-phasing angles
+    //i_2: index of a co-phasing vector
+    //i1_1, i1_2, and i_2 are reported from UEs
+    double complex theta_n[4];
+    for (int nn = 0; nn < 4; nn++) {
+      theta_n[nn] = cexp(I * M_PI * nn / 2);
+      LOG_D(PHY,"theta_n[%d] = %f +j %f\n", nn, creal(theta_n[nn]), cimag(theta_n[nn]));
+    }
+    //Kronecker product v_lm
+    double complex v_lm[max_l][max_m][N2 * N1];
+    //v_ll_mm_codebook denotes the elements of a precoding matrix W_i1,1_i_1,2
+    for(int ll = 0; ll < max_l; ll++) { //i_1_1
+      for (int mm = 0; mm < max_m; mm++) { //i_1_2
+        for (int nn1 = 0; nn1 < N1; nn1++) {
+          for (int nn2 = 0; nn2 < N2; nn2++) {
+            v_lm[ll][mm][nn1 * N2 + nn2] = v[ll][nn1] * u[mm][nn2];
+            LOG_D(PHY,"v_lm[%d][%d][%d] = %f +j %f\n",ll, mm, nn1 * N2 + nn2, creal(v_lm[ll][mm][nn1*N2+nn2]), cimag(v_lm[ll][mm][nn1*N2+nn2]));
+          }
+        }
+      }
+    }
+
+    double complex res_code;
+
+    //Table 5.2.2.2.1-5:
+    int pmiq = 0;
+    //Codebook for 1-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
+    for(int ll = 0; ll < N1 * O1; ll++) { //i_1_1
+      for (int mm = 0; mm < N2 * O2; mm++) { //i_1_2
+        for (int nn = 0; nn < 4; nn++) {
+          pmiq = ll * N2 * O2 * 4 + mm * 4 + nn;
+          pmi_pdu[pmiq].pm_idx = pmiq + 1; // index 0 is the identity matrix
+          pmi_pdu[pmiq].numLayers = 1;
+          pmi_pdu[pmiq].num_ant_ports = num_antenna_ports;
+          LOG_D(PHY, "layer 1 Codebook pmiq = %d\n", pmiq);
+          for (int len = 0; len < N1 * N2; len++) {
+            nfapi_nr_pm_weights_t *weights = &pmi_pdu[pmiq].weights[0][len];
+            res_code = sqrt( 1 /(double)num_antenna_ports) * v_lm[ll][mm][len];
+            c16_t precoder_weight = convert_precoder_weight(res_code);
+            weights->precoder_weight_Re = precoder_weight.r;
+            weights->precoder_weight_Im = precoder_weight.i;
+            LOG_D(PHY, "1 Layer Precoding Matrix[0][pmi %d][antPort %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                  pmiq, len, creal(res_code), cimag(res_code), weights->precoder_weight_Re, weights->precoder_weight_Im);
+          }
+
+          for(int len = N1 * N2; len < 2 * N1 * N2; len++) {
+            nfapi_nr_pm_weights_t *weights = &pmi_pdu[pmiq].weights[0][len];
+            res_code = sqrt(1 / (double)num_antenna_ports) * theta_n[nn] * v_lm[ll][mm][len-N1*N2];
+            c16_t precoder_weight = convert_precoder_weight(res_code);
+            weights->precoder_weight_Re = precoder_weight.r;
+            weights->precoder_weight_Im = precoder_weight.i;
+            LOG_D(PHY, "1 Layer Precoding Matrix[0][pmi %d][antPort %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                  pmiq, len, creal(res_code), cimag(res_code), weights->precoder_weight_Re, weights->precoder_weight_Im);
+          }
+        }
+      }
+    }
+    int llc = 0;
+    int mmc = 0;
+    double complex phase_sign = 0;
+    //Table 5.2.2.2.1-6:
+    //Codebook for 2-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
+    //Compute the code book size for generating 2 layers out of Tx antenna ports
+
+    //pmi=1,...,pmi_size, we construct
+    for(int ll = 0; ll < N1 * O1; ll++) { //i_1_1
+      for (int mm = 0; mm < N2 * O2; mm++) { // i_1_2
+        for(int k1 = 0; k1 < K1; k1++) {
+          for (int k2 = 0; k2 < K2; k2++) {
+            for (int nn = 0; nn < 2; nn++) {  // i_2
+              pmiq ++;
+              pmi_pdu[pmiq].pm_idx = pmiq + 1;  // index 0 is the identity matrix
+              pmi_pdu[pmiq].numLayers = 2;
+              pmi_pdu[pmiq].num_ant_ports = num_antenna_ports;
+              LOG_D(PHY, "layer 2 Codebook pmiq = %d\n", pmiq);
+              for(int j_col = 0; j_col < 2; j_col++) {
+                if (j_col == 0) {
+                  llc = ll;
+                  mmc = mm;
+                  phase_sign = 1;
+                }
+                if (j_col == 1) {
+                  llc = ll + k1 * O1;
+                  mmc = mm + k2 * O2;
+                  phase_sign = -1;
+                }
+                for (int i_rows = 0; i_rows < N1 * N2; i_rows++) {
+                  nfapi_nr_pm_weights_t *weights = &pmi_pdu[pmiq].weights[j_col][i_rows];
+                  res_code = sqrt(1 / (double)(2 * num_antenna_ports)) * v_lm[llc][mmc][i_rows];
+                  c16_t precoder_weight = convert_precoder_weight(res_code);
+                  weights->precoder_weight_Re = precoder_weight.r;
+                  weights->precoder_weight_Im = precoder_weight.i;
+                  LOG_D(PHY, "2 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                        pmiq, i_rows, j_col, creal(res_code), cimag(res_code), weights->precoder_weight_Re, weights->precoder_weight_Im);
+                }
+                for (int i_rows = N1 * N2; i_rows < 2 * N1 * N2; i_rows++) {
+                  nfapi_nr_pm_weights_t *weights = &pmi_pdu[pmiq].weights[j_col][i_rows];
+                  res_code = sqrt(1 / (double)(2 * num_antenna_ports)) * (phase_sign) * theta_n[nn] * v_lm[llc][mmc][i_rows - N1 * N2];
+                  c16_t precoder_weight = convert_precoder_weight(res_code);
+                  weights->precoder_weight_Re = precoder_weight.r;
+                  weights->precoder_weight_Im = precoder_weight.i;
+                  LOG_D(PHY, "2 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                        pmiq, i_rows, j_col, creal(res_code), cimag(res_code), weights->precoder_weight_Re, weights->precoder_weight_Im);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if(max_mimo_layers < 3)
+      return mat;
+
+    //Table 5.2.2.2.1-7:
+    //Codebook for 3-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
+
+    //pmi=1,...,pmi_size are computed as follows
+    for(int ll = 0; ll < N1 * O1; ll++) { //i_1_1
+      for (int mm = 0; mm < N2 * O2; mm++) { // i_1_2
+        for(int k1 = 0; k1 < K1; k1++) {
+          for (int k2 = 0; k2 < K2; k2++) {
+            for (int nn = 0; nn < 2; nn++) {  // i_2
+              pmiq ++;
+              pmi_pdu[pmiq].pm_idx = pmiq + 1;  // index 0 is the identity matrix
+              pmi_pdu[pmiq].numLayers = 3;
+              pmi_pdu[pmiq].num_ant_ports = num_antenna_ports;
+              LOG_D(PHY, "layer 3 Codebook pmiq = %d\n",pmiq);
+              for(int j_col = 0; j_col < 3; j_col++) {
+                if (j_col == 0) {
+                  llc = ll;
+                  mmc = mm;
+                  phase_sign = 1;
+                }
+                if (j_col==1) {
+                  llc = ll + k1 * O1;
+                  mmc = mm + k2 * O2;
+                  phase_sign = 1;
+                }
+                if (j_col==2) {
+                  llc = ll;
+                  mmc = mm;
+                  phase_sign = -1;
+                }
+                for (int i_rows = 0; i_rows < N1 * N2; i_rows++) {
+                  nfapi_nr_pm_weights_t *weights = &pmi_pdu[pmiq].weights[j_col][i_rows];
+                  res_code = sqrt(1 / (double)(3 * num_antenna_ports)) * v_lm[llc][mmc][i_rows];
+                  c16_t precoder_weight = convert_precoder_weight(res_code);
+                  weights->precoder_weight_Re = precoder_weight.r;
+                  weights->precoder_weight_Im = precoder_weight.i;
+                  LOG_D(PHY, "3 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                        pmiq, i_rows, j_col, creal(res_code), cimag(res_code), weights->precoder_weight_Re, weights->precoder_weight_Im);
+                }
+                for (int i_rows = N1 * N2; i_rows < 2 * N1 * N2; i_rows++) {
+                  nfapi_nr_pm_weights_t *weights = &pmi_pdu[pmiq].weights[j_col][i_rows];
+                  res_code=sqrt(1 / (double)(3 * num_antenna_ports)) * (phase_sign) * theta_n[nn] * v_lm[llc][mmc][i_rows - N1 * N2];
+                  c16_t precoder_weight = convert_precoder_weight(res_code);
+                  weights->precoder_weight_Re = precoder_weight.r;
+                  weights->precoder_weight_Im = precoder_weight.i;
+                  LOG_D(PHY, "3 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                        pmiq, i_rows, j_col, creal(res_code), cimag(res_code), weights->precoder_weight_Re, weights->precoder_weight_Im);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if(max_mimo_layers < 4)
+      return mat;
+
+    //Table 5.2.2.2.1-8:
+    //Codebook for 4-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
+
+    for(int ll = 0; ll < N1 * O1; ll++) { //i_1_1
+      for (int mm = 0; mm < N2 * O2; mm++) { // i_1_2
+        for(int k1 = 0; k1 < K1; k1++) {
+          for (int k2 = 0; k2 < K2; k2++) {
+            for (int nn = 0; nn < 2; nn++) {  // i_2
+              pmiq ++;
+              pmi_pdu[pmiq].pm_idx = pmiq + 1;  // index 0 is the identity matrix
+              pmi_pdu[pmiq].numLayers = 4;
+              pmi_pdu[pmiq].num_ant_ports = num_antenna_ports;
+              LOG_D(PHY, "layer 4 pmiq = %d\n", pmiq);
+              for(int j_col = 0; j_col < 4; j_col++) {
+                if (j_col == 0) {
+                  llc = ll;
+                  mmc = mm;
+                  phase_sign = 1;
+                }
+                if (j_col == 1) {
+                  llc = ll + k1 * O1;
+                  mmc = mm + k2 * O2;
+                  phase_sign = 1;
+                }
+                if (j_col == 2) {
+                  llc = ll;
+                  mmc = mm;
+                  phase_sign = -1;
+                }
+                if (j_col == 3) {
+                  llc = ll + k1 * O1;
+                  mmc = mm + k2 * O2;
+                  phase_sign = -1;
+                }
+                for (int i_rows = 0; i_rows < N1 * N2; i_rows++) {
+                  nfapi_nr_pm_weights_t *weights = &pmi_pdu[pmiq].weights[j_col][i_rows];
+                  res_code=sqrt(1 / (double)(4 * num_antenna_ports)) * v_lm[llc][mmc][i_rows];
+                  c16_t precoder_weight = convert_precoder_weight(res_code);
+                  weights->precoder_weight_Re = precoder_weight.r;
+                  weights->precoder_weight_Im = precoder_weight.i;
+                  LOG_D(PHY, "4 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                        pmiq, i_rows, j_col, creal(res_code), cimag(res_code), weights->precoder_weight_Re, weights->precoder_weight_Im);
+                }
+                for (int i_rows = N1 * N2; i_rows < 2 * N1 * N2; i_rows++) {
+                  nfapi_nr_pm_weights_t *weights = &pmi_pdu[pmiq].weights[j_col][i_rows];
+                  res_code=sqrt(1 / (double)(4 * num_antenna_ports)) * (phase_sign) * theta_n[nn] * v_lm[llc][mmc][i_rows - N1 * N2];
+                  c16_t precoder_weight = convert_precoder_weight(res_code);
+                  weights->precoder_weight_Re = precoder_weight.r;
+                  weights->precoder_weight_Im = precoder_weight.i;
+                  LOG_D(PHY, "4 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                        pmiq, i_rows, j_col, creal(res_code), cimag(res_code), weights->precoder_weight_Re, weights->precoder_weight_Im);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return mat;
+  }
+  else
+    AssertFatal(false, "Max number of antenna ports supported is currently 16\n");
+}
 
 static void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list,
                                     struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
@@ -122,30 +430,30 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_info_t *UE)
    process_rlcBearerConfig(CellGroup->rlc_BearerToAddModList, CellGroup->rlc_BearerToReleaseList, &UE->UE_sched_ctrl);
 }
 
-static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc)
+static void config_common(gNB_MAC_INST *nrmac, nr_pdsch_AntennaPorts_t pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc)
 {
-   nfapi_nr_config_request_scf_t *cfg = &nrmac->config[0];
-   nrmac->common_channels[0].ServingCellConfigCommon = scc;
+  nfapi_nr_config_request_scf_t *cfg = &nrmac->config[0];
+  nrmac->common_channels[0].ServingCellConfigCommon = scc;
 
-   // Carrier configuration
-   struct NR_FrequencyInfoDL *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
-   int bw_index = get_supported_band_index(frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                                           *frequencyInfoDL->frequencyBandList.list.array[0],
-                                           frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth);
-   cfg->carrier_config.dl_bandwidth.value =
+  // Carrier configuration
+  struct NR_FrequencyInfoDL *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
+  int bw_index = get_supported_band_index(frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                          *frequencyInfoDL->frequencyBandList.list.array[0],
+                                          frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth);
+  cfg->carrier_config.dl_bandwidth.value =
        get_supported_bw_mhz(*frequencyInfoDL->frequencyBandList.list.array[0] > 256 ? FR2 : FR1, bw_index);
-   cfg->carrier_config.dl_bandwidth.tl.tag = NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG; // temporary
-   cfg->num_tlv++;
-   LOG_I(NR_MAC, "%s() dl_BandwidthP:%d\n", __FUNCTION__, cfg->carrier_config.dl_bandwidth.value);
+  cfg->carrier_config.dl_bandwidth.tl.tag = NFAPI_NR_CONFIG_DL_BANDWIDTH_TAG; // temporary
+  cfg->num_tlv++;
+  LOG_I(NR_MAC, "DL_Bandwidth:%d\n", cfg->carrier_config.dl_bandwidth.value);
 
-   cfg->carrier_config.dl_frequency.value = from_nrarfcn(*frequencyInfoDL->frequencyBandList.list.array[0],
-                                                         *scc->ssbSubcarrierSpacing,
-                                                         frequencyInfoDL->absoluteFrequencyPointA)
+  cfg->carrier_config.dl_frequency.value = from_nrarfcn(*frequencyInfoDL->frequencyBandList.list.array[0],
+                                                        *scc->ssbSubcarrierSpacing,
+                                                        frequencyInfoDL->absoluteFrequencyPointA)
                                             / 1000; // freq in kHz
-   cfg->carrier_config.dl_frequency.tl.tag = NFAPI_NR_CONFIG_DL_FREQUENCY_TAG;
-   cfg->num_tlv++;
+  cfg->carrier_config.dl_frequency.tl.tag = NFAPI_NR_CONFIG_DL_FREQUENCY_TAG;
+  cfg->num_tlv++;
 
-   for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++) {
     if (i == frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
       cfg->carrier_config.dl_grid_size[i].value = frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
       cfg->carrier_config.dl_k0[i].value = frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
@@ -157,31 +465,31 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
       cfg->carrier_config.dl_grid_size[i].value = 0;
       cfg->carrier_config.dl_k0[i].value = 0;
     }
-   }
-   struct NR_FrequencyInfoUL *frequencyInfoUL = scc->uplinkConfigCommon->frequencyInfoUL;
-   bw_index = get_supported_band_index(frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                                       *frequencyInfoUL->frequencyBandList->list.array[0],
-                                       frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth);
-   cfg->carrier_config.uplink_bandwidth.value =
+  }
+  struct NR_FrequencyInfoUL *frequencyInfoUL = scc->uplinkConfigCommon->frequencyInfoUL;
+  bw_index = get_supported_band_index(frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                      *frequencyInfoUL->frequencyBandList->list.array[0],
+                                      frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth);
+  cfg->carrier_config.uplink_bandwidth.value =
        get_supported_bw_mhz(*frequencyInfoUL->frequencyBandList->list.array[0] > 256 ? FR2 : FR1, bw_index);
-   cfg->carrier_config.uplink_bandwidth.tl.tag = NFAPI_NR_CONFIG_UPLINK_BANDWIDTH_TAG; // temporary
-   cfg->num_tlv++;
-   LOG_I(NR_MAC, "%s() dl_BandwidthP:%d\n", __FUNCTION__, cfg->carrier_config.uplink_bandwidth.value);
+  cfg->carrier_config.uplink_bandwidth.tl.tag = NFAPI_NR_CONFIG_UPLINK_BANDWIDTH_TAG; // temporary
+  cfg->num_tlv++;
+  LOG_I(NR_MAC, "DL_Bandwidth:%d\n", cfg->carrier_config.uplink_bandwidth.value);
 
-   int UL_pointA;
-   if (frequencyInfoUL->absoluteFrequencyPointA == NULL)
+  int UL_pointA;
+  if (frequencyInfoUL->absoluteFrequencyPointA == NULL)
     UL_pointA = frequencyInfoDL->absoluteFrequencyPointA;
-   else
+  else
     UL_pointA = *frequencyInfoUL->absoluteFrequencyPointA;
 
-   cfg->carrier_config.uplink_frequency.value = from_nrarfcn(*frequencyInfoUL->frequencyBandList->list.array[0],
-                                                             *scc->ssbSubcarrierSpacing,
-                                                             UL_pointA)
-                                                / 1000; // freq in kHz
-   cfg->carrier_config.uplink_frequency.tl.tag = NFAPI_NR_CONFIG_UPLINK_FREQUENCY_TAG;
-   cfg->num_tlv++;
+  cfg->carrier_config.uplink_frequency.value = from_nrarfcn(*frequencyInfoUL->frequencyBandList->list.array[0],
+                                                            *scc->ssbSubcarrierSpacing,
+                                                            UL_pointA)
+                                               / 1000; // freq in kHz
+  cfg->carrier_config.uplink_frequency.tl.tag = NFAPI_NR_CONFIG_UPLINK_FREQUENCY_TAG;
+  cfg->num_tlv++;
 
-   for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++) {
     if (i == frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
       cfg->carrier_config.ul_grid_size[i].value = frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
       cfg->carrier_config.ul_k0[i].value = frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
@@ -193,61 +501,61 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
       cfg->carrier_config.ul_grid_size[i].value = 0;
       cfg->carrier_config.ul_k0[i].value = 0;
     }
-   }
+  }
 
-   uint32_t band = *frequencyInfoDL->frequencyBandList.list.array[0];
-   frequency_range_t frequency_range = band < 100 ? FR1 : FR2;
+  uint32_t band = *frequencyInfoDL->frequencyBandList.list.array[0];
+  frequency_range_t frequency_range = band < 100 ? FR1 : FR2;
 
-   frame_type_t frame_type = get_frame_type(*frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
-   nrmac->common_channels[0].frame_type = frame_type;
+  frame_type_t frame_type = get_frame_type(*frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  nrmac->common_channels[0].frame_type = frame_type;
 
-   // Cell configuration
-   cfg->cell_config.phy_cell_id.value = *scc->physCellId;
-   cfg->cell_config.phy_cell_id.tl.tag = NFAPI_NR_CONFIG_PHY_CELL_ID_TAG;
-   cfg->num_tlv++;
+  // Cell configuration
+  cfg->cell_config.phy_cell_id.value = *scc->physCellId;
+  cfg->cell_config.phy_cell_id.tl.tag = NFAPI_NR_CONFIG_PHY_CELL_ID_TAG;
+  cfg->num_tlv++;
 
-   cfg->cell_config.frame_duplex_type.value = frame_type;
-   cfg->cell_config.frame_duplex_type.tl.tag = NFAPI_NR_CONFIG_FRAME_DUPLEX_TYPE_TAG;
-   cfg->num_tlv++;
+  cfg->cell_config.frame_duplex_type.value = frame_type;
+  cfg->cell_config.frame_duplex_type.tl.tag = NFAPI_NR_CONFIG_FRAME_DUPLEX_TYPE_TAG;
+  cfg->num_tlv++;
 
-   // SSB configuration
-   cfg->ssb_config.ss_pbch_power.value = scc->ss_PBCH_BlockPower;
-   cfg->ssb_config.ss_pbch_power.tl.tag = NFAPI_NR_CONFIG_SS_PBCH_POWER_TAG;
-   cfg->num_tlv++;
+  // SSB configuration
+  cfg->ssb_config.ss_pbch_power.value = scc->ss_PBCH_BlockPower;
+  cfg->ssb_config.ss_pbch_power.tl.tag = NFAPI_NR_CONFIG_SS_PBCH_POWER_TAG;
+  cfg->num_tlv++;
 
-   cfg->ssb_config.bch_payload.value = 1;
-   cfg->ssb_config.bch_payload.tl.tag = NFAPI_NR_CONFIG_BCH_PAYLOAD_TAG;
-   cfg->num_tlv++;
+  cfg->ssb_config.bch_payload.value = 1;
+  cfg->ssb_config.bch_payload.tl.tag = NFAPI_NR_CONFIG_BCH_PAYLOAD_TAG;
+  cfg->num_tlv++;
 
-   cfg->ssb_config.scs_common.value = *scc->ssbSubcarrierSpacing;
-   cfg->ssb_config.scs_common.tl.tag = NFAPI_NR_CONFIG_SCS_COMMON_TAG;
-   cfg->num_tlv++;
+  cfg->ssb_config.scs_common.value = *scc->ssbSubcarrierSpacing;
+  cfg->ssb_config.scs_common.tl.tag = NFAPI_NR_CONFIG_SCS_COMMON_TAG;
+  cfg->num_tlv++;
 
-   // PRACH configuration
+  // PRACH configuration
 
-   uint8_t nb_preambles = 64;
-   NR_RACH_ConfigCommon_t *rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-   if (rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
+  uint8_t nb_preambles = 64;
+  NR_RACH_ConfigCommon_t *rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  if (rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
     nb_preambles = *rach_ConfigCommon->totalNumberOfRA_Preambles;
 
-   cfg->prach_config.prach_sequence_length.value = rach_ConfigCommon->prach_RootSequenceIndex.present - 1;
-   cfg->prach_config.prach_sequence_length.tl.tag = NFAPI_NR_CONFIG_PRACH_SEQUENCE_LENGTH_TAG;
-   cfg->num_tlv++;
+  cfg->prach_config.prach_sequence_length.value = rach_ConfigCommon->prach_RootSequenceIndex.present - 1;
+  cfg->prach_config.prach_sequence_length.tl.tag = NFAPI_NR_CONFIG_PRACH_SEQUENCE_LENGTH_TAG;
+  cfg->num_tlv++;
 
-   if (rach_ConfigCommon->msg1_SubcarrierSpacing)
+  if (rach_ConfigCommon->msg1_SubcarrierSpacing)
     cfg->prach_config.prach_sub_c_spacing.value = *rach_ConfigCommon->msg1_SubcarrierSpacing;
-   else
+  else
     cfg->prach_config.prach_sub_c_spacing.value = frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-   cfg->prach_config.prach_sub_c_spacing.tl.tag = NFAPI_NR_CONFIG_PRACH_SUB_C_SPACING_TAG;
-   cfg->num_tlv++;
-   cfg->prach_config.restricted_set_config.value = rach_ConfigCommon->restrictedSetConfig;
-   cfg->prach_config.restricted_set_config.tl.tag = NFAPI_NR_CONFIG_RESTRICTED_SET_CONFIG_TAG;
-   cfg->num_tlv++;
-   cfg->prach_config.prach_ConfigurationIndex.value = rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
-   cfg->prach_config.prach_ConfigurationIndex.tl.tag = NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG;
-   cfg->num_tlv++;
+  cfg->prach_config.prach_sub_c_spacing.tl.tag = NFAPI_NR_CONFIG_PRACH_SUB_C_SPACING_TAG;
+  cfg->num_tlv++;
+  cfg->prach_config.restricted_set_config.value = rach_ConfigCommon->restrictedSetConfig;
+  cfg->prach_config.restricted_set_config.tl.tag = NFAPI_NR_CONFIG_RESTRICTED_SET_CONFIG_TAG;
+  cfg->num_tlv++;
+  cfg->prach_config.prach_ConfigurationIndex.value = rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
+  cfg->prach_config.prach_ConfigurationIndex.tl.tag = NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG;
+  cfg->num_tlv++;
 
-   switch (rach_ConfigCommon->rach_ConfigGeneric.msg1_FDM) {
+  switch (rach_ConfigCommon->rach_ConfigGeneric.msg1_FDM) {
     case 0:
       cfg->prach_config.num_prach_fd_occasions.value = 1;
       break;
@@ -262,17 +570,17 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
       break;
     default:
       AssertFatal(1 == 0, "msg1 FDM identifier %ld undefined (0,1,2,3) \n", rach_ConfigCommon->rach_ConfigGeneric.msg1_FDM);
-   }
-   cfg->prach_config.num_prach_fd_occasions.tl.tag = NFAPI_NR_CONFIG_NUM_PRACH_FD_OCCASIONS_TAG;
-   cfg->num_tlv++;
+  }
+  cfg->prach_config.num_prach_fd_occasions.tl.tag = NFAPI_NR_CONFIG_NUM_PRACH_FD_OCCASIONS_TAG;
+  cfg->num_tlv++;
 
-   cfg->prach_config.prach_ConfigurationIndex.value = rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
-   cfg->prach_config.prach_ConfigurationIndex.tl.tag = NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG;
-   cfg->num_tlv++;
+  cfg->prach_config.prach_ConfigurationIndex.value = rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
+  cfg->prach_config.prach_ConfigurationIndex.tl.tag = NFAPI_NR_CONFIG_PRACH_CONFIG_INDEX_TAG;
+  cfg->num_tlv++;
 
-   cfg->prach_config.num_prach_fd_occasions_list = (nfapi_nr_num_prach_fd_occasions_t *)malloc(
+  cfg->prach_config.num_prach_fd_occasions_list = (nfapi_nr_num_prach_fd_occasions_t *)malloc(
        cfg->prach_config.num_prach_fd_occasions.value * sizeof(nfapi_nr_num_prach_fd_occasions_t));
-   for (int i = 0; i < cfg->prach_config.num_prach_fd_occasions.value; i++) {
+  for (int i = 0; i < cfg->prach_config.num_prach_fd_occasions.value; i++) {
     nfapi_nr_num_prach_fd_occasions_t *prach_fd_occasion = &cfg->prach_config.num_prach_fd_occasions_list[i];
     // prach_fd_occasion->num_prach_fd_occasions = i;
     if (cfg->prach_config.prach_sequence_length.value)
@@ -311,44 +619,45 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
     prach_fd_occasion->num_unused_root_sequences.tl.tag = NFAPI_NR_CONFIG_NUM_UNUSED_ROOT_SEQUENCES_TAG;
     prach_fd_occasion->num_unused_root_sequences.value = 0;
     cfg->num_tlv++;
-   }
+  }
 
-   cfg->prach_config.ssb_per_rach.value = rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present - 1;
-   cfg->prach_config.ssb_per_rach.tl.tag = NFAPI_NR_CONFIG_SSB_PER_RACH_TAG;
-   cfg->num_tlv++;
+  cfg->prach_config.ssb_per_rach.value = rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present - 1;
+  cfg->prach_config.ssb_per_rach.tl.tag = NFAPI_NR_CONFIG_SSB_PER_RACH_TAG;
+  cfg->num_tlv++;
 
-   // SSB Table Configuration
+  // SSB Table Configuration
 
-   cfg->ssb_table.ssb_offset_point_a.value =
+  cfg->ssb_table.ssb_offset_point_a.value =
        get_ssb_offset_to_pointA(*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
                                 scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
                                 *scc->ssbSubcarrierSpacing,
                                 frequency_range);
-   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
-   cfg->num_tlv++;
-   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
-   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
-   cfg->num_tlv++;
-   cfg->ssb_table.ssb_subcarrier_offset.value =
+  cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
+  cfg->num_tlv++;
+  cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
+  cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
+  cfg->num_tlv++;
+  cfg->ssb_table.ssb_subcarrier_offset.value =
        get_ssb_subcarrier_offset(*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
                                  scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
-   AssertFatal(cfg->ssb_table.ssb_subcarrier_offset.value < 16,
-               "cannot handle ssb_subcarrier_offset %d resulting from Point A %ld SSB %ld: please increase dl_absoluteFrequencyPointA "
-               "in the config by 16\n",
-               cfg->ssb_table.ssb_subcarrier_offset.value,
-               scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
-               *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB);
-   cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
-   cfg->num_tlv++;
 
-   nrmac->ssb_SubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value;
-   nrmac->ssb_OffsetPointA = cfg->ssb_table.ssb_offset_point_a.value;
-   LOG_I(NR_MAC,
-         "ssb_OffsetPointA %d, ssb_SubcarrierOffset %d\n",
-         cfg->ssb_table.ssb_offset_point_a.value,
-         cfg->ssb_table.ssb_subcarrier_offset.value);
+  AssertFatal(cfg->ssb_table.ssb_subcarrier_offset.value < 16,
+              "cannot handle ssb_subcarrier_offset %d resulting from Point A %ld SSB %ld: please increase dl_absoluteFrequencyPointA "
+              "in the config by 16\n",
+              cfg->ssb_table.ssb_subcarrier_offset.value,
+              scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+              *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB);
+  cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
+  cfg->num_tlv++;
 
-   switch (scc->ssb_PositionsInBurst->present) {
+  nrmac->ssb_SubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value;
+  nrmac->ssb_OffsetPointA = cfg->ssb_table.ssb_offset_point_a.value;
+  LOG_I(NR_MAC,
+        "ssb_OffsetPointA %d, ssb_SubcarrierOffset %d\n",
+        cfg->ssb_table.ssb_offset_point_a.value,
+        cfg->ssb_table.ssb_subcarrier_offset.value);
+
+  switch (scc->ssb_PositionsInBurst->present) {
     case 1:
       cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] << 24;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
@@ -369,19 +678,20 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
       break;
     default:
       AssertFatal(1 == 0, "SSB bitmap size value %d undefined (allowed values 1,2,3) \n", scc->ssb_PositionsInBurst->present);
-   }
+  }
 
-   cfg->ssb_table.ssb_mask_list[0].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
-   cfg->ssb_table.ssb_mask_list[1].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
-   cfg->num_tlv += 2;
+  cfg->ssb_table.ssb_mask_list[0].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
+  cfg->ssb_table.ssb_mask_list[1].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
+  cfg->num_tlv += 2;
 
-   // logical antenna ports
-   cfg->carrier_config.num_tx_ant.value = pdsch_AntennaPorts;
-   AssertFatal(pdsch_AntennaPorts > 0 && pdsch_AntennaPorts < 33, "pdsch_AntennaPorts in 1...32\n");
-   cfg->carrier_config.num_tx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_TX_ANT_TAG;
+  // logical antenna ports
+  int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
+  cfg->carrier_config.num_tx_ant.value = num_pdsch_antenna_ports;
+  AssertFatal(num_pdsch_antenna_ports > 0 && num_pdsch_antenna_ports < 33, "pdsch_AntennaPorts in 1...32\n");
+  cfg->carrier_config.num_tx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_TX_ANT_TAG;
 
-   int num_ssb = 0;
-   for (int i = 0; i < 32; i++) {
+  int num_ssb = 0;
+  for (int i = 0; i < 32; i++) {
     cfg->ssb_table.ssb_beam_id_list[i].beam_id.tl.tag = NFAPI_NR_CONFIG_BEAM_ID_TAG;
     if ((cfg->ssb_table.ssb_mask_list[0].ssb_mask.value >> (31 - i)) & 1) {
       cfg->ssb_table.ssb_beam_id_list[i].beam_id.value = num_ssb;
@@ -396,26 +706,26 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
       num_ssb++;
     }
     cfg->num_tlv++;
-   }
+  }
 
-   cfg->carrier_config.num_rx_ant.value = pusch_AntennaPorts;
-   AssertFatal(pusch_AntennaPorts > 0 && pusch_AntennaPorts < 13, "pusch_AntennaPorts in 1...12\n");
-   cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
-   LOG_I(NR_MAC,
-         "Set RX antenna number to %d, Set TX antenna number to %d (num ssb %d: %x,%x)\n",
-         cfg->carrier_config.num_tx_ant.value,
-         cfg->carrier_config.num_rx_ant.value,
-         num_ssb,
-         cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,
-         cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
-   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,
-               "carrier_config.num_tx_ant.value %d !\n",
-               cfg->carrier_config.num_tx_ant.value);
-   cfg->num_tlv++;
-   cfg->num_tlv++;
+  cfg->carrier_config.num_rx_ant.value = pusch_AntennaPorts;
+  AssertFatal(pusch_AntennaPorts > 0 && pusch_AntennaPorts < 13, "pusch_AntennaPorts in 1...12\n");
+  cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
+  LOG_I(NR_MAC,
+        "Set RX antenna number to %d, Set TX antenna number to %d (num ssb %d: %x,%x)\n",
+        cfg->carrier_config.num_tx_ant.value,
+        cfg->carrier_config.num_rx_ant.value,
+        num_ssb,
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
+  AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,
+              "carrier_config.num_tx_ant.value %d !\n",
+              cfg->carrier_config.num_tx_ant.value);
+  cfg->num_tlv++;
+  cfg->num_tlv++;
 
-   // TDD Table Configuration
-   if (cfg->cell_config.frame_duplex_type.value == TDD) {
+  // TDD Table Configuration
+  if (cfg->cell_config.frame_duplex_type.value == TDD) {
     cfg->tdd_table.tdd_period.tl.tag = NFAPI_NR_CONFIG_TDD_PERIOD_TAG;
     cfg->num_tlv++;
     if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1 == NULL) {
@@ -440,7 +750,10 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
       LOG_I(NR_MAC, "TDD has been properly configurated\n");
       nrmac->tdd_beam_association = (int16_t *)malloc16(periods_per_frame * sizeof(int16_t));
     }
-   }
+  }
+
+  // precoding matrix configuration (to be improved)
+  cfg->pmi_list = init_DL_MIMO_codebook(nrmac, pdsch_AntennaPorts);
 }
 
 void nr_mac_config_scc(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, const nr_mac_config_t *config)
@@ -464,8 +777,7 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, c
 
   LOG_I(NR_MAC, "Configuring common parameters from NR ServingCellConfig\n");
 
-  int num_pdsch_antenna_ports = config->pdsch_AntennaPorts.N1 * config->pdsch_AntennaPorts.N2 * config->pdsch_AntennaPorts.XP;
-  config_common(nrmac, num_pdsch_antenna_ports, config->pusch_AntennaPorts, scc);
+  config_common(nrmac, config->pdsch_AntennaPorts, config->pusch_AntennaPorts, scc);
 
   if (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
     // fake that the gNB is configured in nFAPI mode, which would normally be

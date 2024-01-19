@@ -138,11 +138,13 @@ void apply_nr_rotation_RX(NR_DL_FRAME_PARMS *frame_parms,
   @param[in] n_layers, number of DLSCH layers
 */
 int nr_layer_precoder(int16_t **datatx_F_precoding, const char *prec_matrix, uint8_t n_layers, int32_t re_offset);
+
 c16_t nr_layer_precoder_cm(int n_layers,
                            int n_symbols,
                            int symSz,
                            c16_t datatx_F_precoding[n_layers][n_symbols][symSz],
-                           c16_t *prec_matrix,
+                           int ap,
+                           nfapi_nr_pm_pdu_t *pmi_pdu,
                            int symbol,
                            int offset);
 
@@ -156,7 +158,8 @@ void nr_layer_precoder_simd(const int n_layers,
                            const int n_symbols,
                            const int symSz,
                            const c16_t txdataF_res_mapped[n_layers][n_symbols][symSz],
-                           const c16_t prec_matrix[n_layers],
+                           const int ant,
+                           const nfapi_nr_pm_pdu_t *pmi_pdu,
                            const int symbol,
                            const int sc_offset,
                            const int re_cnt,

@@ -703,13 +703,17 @@ c16_t nr_layer_precoder_cm(int n_layers,
                            int n_symbols,
                            int symSz,
                            c16_t datatx_F_precoding[n_layers][n_symbols][symSz],
-                           c16_t *prec_matrix,
+                           int ap,
+                           nfapi_nr_pm_pdu_t *pmi_pdu,
                            int symbol,
                            int offset)
 {
   c16_t precodatatx_F = {0};
-  for (int al = 0; al < n_layers; al++)
-    precodatatx_F = c16maddShift(datatx_F_precoding[al][symbol][offset], prec_matrix[al], precodatatx_F, 15);
+  for (int al = 0; al < n_layers; al++) {
+    nfapi_nr_pm_weights_t *w = &pmi_pdu->weights[al][ap];
+    c16_t prec_weight = {.r = w->precoder_weight_Re, .i = w->precoder_weight_Im};
+    precodatatx_F = c16maddShift(datatx_F_precoding[al][symbol][offset], prec_weight, precodatatx_F, 15);
+  }
   return precodatatx_F;
 }
 
@@ -717,69 +721,77 @@ void nr_layer_precoder_simd(const int n_layers,
                            const int n_symbols,
                            const int symSz,
                            const c16_t txdataF_res_mapped[n_layers][n_symbols][symSz],
-                           const c16_t prec_matrix[n_layers],
+                           const int ant,
+                           const nfapi_nr_pm_pdu_t *pmi_pdu,
                            const int symbol,
                            const int sc_offset,
                            const int re_cnt,
                            c16_t *txdataF_precoded)
 {
   uint32_t sc = sc_offset;
-
+  c16_t prec_weight = {0};
   // For x86, use 256 SIMD for every 8 RE and 128 SIMD for last 4 RE
   // For aarch64, use 128 SIMD for every 4 RE
 
   // 256 SIMD: Do 8 RE in one iteration, 3 iterations for 2 RB
-  #ifdef __AVX2__
-    const uint32_t re_cnt_align8 = re_cnt & ~7;
-    for(; sc<sc_offset+(re_cnt_align8); sc+=sizeof(simde__m256i)/sizeof(*prec_matrix)){
-      // Matrix multiplication for 4 elements of the result (sizeof(simde__m256i) / sizeof(*prec_matrix) = 8)
-      simde__m256i y = simde_mm256_set1_epi16(0); // Y = W[0]*X[0] + W[1]*X[1] + ... + W[nrOfLayers-1]*X[nrOfLayers-1]
-      for(int nl=0; nl<n_layers; nl++){
-        const simde__m256i x = simde_mm256_loadu_epi32(&txdataF_res_mapped[nl][symbol][sc]);
+#ifdef __AVX2__
+  const uint32_t re_cnt_align8 = re_cnt & ~7;
+  for(; sc < sc_offset + (re_cnt_align8); sc += sizeof(simde__m256i) / sizeof(prec_weight)) {
+    // Matrix multiplication for 4 elements of the result (sizeof(simde__m256i) / sizeof(*prec_matrix) = 8)
+    simde__m256i y = simde_mm256_set1_epi16(0); // Y = W[0]*X[0] + W[1]*X[1] + ... + W[nrOfLayers-1]*X[nrOfLayers-1]
+    for(int nl = 0; nl < n_layers; nl++) {
+      prec_weight.r = pmi_pdu->weights[nl][ant].precoder_weight_Re;
+      prec_weight.i = pmi_pdu->weights[nl][ant].precoder_weight_Im;
 
-        // Rearrange precoding matrix weight to match complex multiplication and broadcast it to match SIMD size
-        const simde__m256i w_c   = simde_mm256_set1_epi32(c16toI32(c16conj(prec_matrix[nl])));   // broadcast conjugate of w
-        const simde__m256i w_s   = simde_mm256_set1_epi32(c16toI32(c16swap(prec_matrix[nl])));   // broadcast swapped real and img of w
+      const simde__m256i x = simde_mm256_loadu_epi32(&txdataF_res_mapped[nl][symbol][sc]);
 
-        // Multiplication and shift
-        const simde__m256i reals = simde_mm256_srai_epi32(simde_mm256_madd_epi16(x, w_c), 15); // (int32_t) .r = (x.r * w.r - x.i * w.i) >> 15
-        const simde__m256i imags = simde_mm256_slli_epi32(simde_mm256_madd_epi16(x, w_s), 1);  // (int32_t) .i = (x.r * w.i + x.i * w.r) << 1, since higher 16 bit of each 32 bit is taken by blend_epi16
+      // Rearrange precoding matrix weight to match complex multiplication and broadcast it to match SIMD size
+      const simde__m256i w_c   = simde_mm256_set1_epi32(c16toI32(c16conj(prec_weight)));   // broadcast conjugate of w
+      const simde__m256i w_s   = simde_mm256_set1_epi32(c16toI32(c16swap(prec_weight)));   // broadcast swapped real and img of w
 
-        // Re-arrange to match c16_t format
-        const simde__m256i produ = simde_mm256_blend_epi16(reals, imags, 0xAA);
+      // Multiplication and shift
+      const simde__m256i reals = simde_mm256_srai_epi32(simde_mm256_madd_epi16(x, w_c), 15); // (int32_t) .r = (x.r * w.r - x.i * w.i) >> 15
+      const simde__m256i imags = simde_mm256_slli_epi32(simde_mm256_madd_epi16(x, w_s), 1);  // (int32_t) .i = (x.r * w.i + x.i * w.r) << 1, since higher 16 bit of each 32 bit is taken by blend_epi16
 
-        // Accumulate the product
-        y = simde_mm256_adds_epi16(y, produ);
-      }
-      // Store the result to txdataF
-      simde_mm256_storeu_si256(&txdataF_precoded[sc], y);
+      // Re-arrange to match c16_t format
+      const simde__m256i produ = simde_mm256_blend_epi16(reals, imags, 0xAA);
+
+      // Accumulate the product
+      y = simde_mm256_adds_epi16(y, produ);
     }
-  #endif
+    // Store the result to txdataF
+    simde_mm256_storeu_si256(&txdataF_precoded[sc], y);
+  }
+#endif
 
   // 128 SIMD: Do 4 RE in one iteration, 3 iterations for 1 RB
   const uint32_t re_cnt_align4 = re_cnt & ~3;
-  for(; sc<sc_offset+re_cnt_align4; sc+=sizeof(simde__m128i)/sizeof(*prec_matrix)){
+  for(; sc < sc_offset+re_cnt_align4; sc += sizeof(simde__m128i) / sizeof(prec_weight)) {
     #ifdef DEBUG_DLSCH_PRECODING_PRINT_WITH_TRIVIAL // Get result with trivial solution, TODO: To be removed
       c16_t y_triv[4];
-      for(int i=0; i<4; i++)
+      for(int i = 0; i < 4; i++)
         y_triv[i] = nr_layer_precoder_cm(n_layers,
-                                  NR_SYMBOLS_PER_SLOT,
-                                  symSz,
-                                  txdataF_res_mapped,
-                                  prec_matrix,
-                                  symbol,
-                                  sc + i);
+                                         NR_SYMBOLS_PER_SLOT,
+                                         symSz,
+                                         txdataF_res_mapped,
+                                         ant,
+                                         pmi_pdu,
+                                         symbol,
+                                         sc + i);
       memcpy(&txdataF_precoded[sc], y_triv, sizeof(y_triv));
     #endif
 
     // Matrix multiplication for 4 elements of the result (sizeof(simde__m128i) / sizeof(c16_t) = 4)
     simde__m128i y = simde_mm_set1_epi16(0); // Y = W[0]*X[0] + W[1]*X[1] + ... + W[nrOfLayers-1]*X[nrOfLayers-1]
-    for(int nl=0; nl<n_layers; nl++){
+    for(int nl = 0; nl < n_layers; nl++) {
+      prec_weight.r = pmi_pdu->weights[nl][ant].precoder_weight_Re;
+      prec_weight.i = pmi_pdu->weights[nl][ant].precoder_weight_Im;
+
       const simde__m128i x = simde_mm_loadu_epi32(&txdataF_res_mapped[nl][symbol][sc]);
 
       // Rearrange precoding matrix weight to match complex multiplication and broadcast it to match SIMD size
-      const simde__m128i w_c   = simde_mm_set1_epi32(c16toI32(c16conj(prec_matrix[nl])));   // broadcast conjugate of w
-      const simde__m128i w_s   = simde_mm_set1_epi32(c16toI32(c16swap(prec_matrix[nl])));   // broadcast swapped real and img of w
+      const simde__m128i w_c   = simde_mm_set1_epi32(c16toI32(c16conj(prec_weight)));   // broadcast conjugate of w
+      const simde__m128i w_s   = simde_mm_set1_epi32(c16toI32(c16swap(prec_weight)));   // broadcast swapped real and img of w
 
       // Multiplication and shift
       const simde__m128i reals = simde_mm_srai_epi32(simde_mm_madd_epi16(x, w_c), 15); // (int32_t) .r = (x.r * w.r - x.i * w.i) >> 15
