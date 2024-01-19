@@ -61,6 +61,7 @@ static void f1_setup_request_direct(const f1ap_setup_req_t *req)
       }
     }
   }
+  memcpy(f1ap_msg->rrc_ver, req->rrc_ver, sizeof(req->rrc_ver));
 
   itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
 }

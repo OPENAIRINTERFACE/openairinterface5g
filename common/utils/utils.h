@@ -107,6 +107,10 @@ void set_priority(int priority);
 
 char *itoa(int i);
 
+#define STRINGIFY(S) #S
+#define TO_STRING(S) STRINGIFY(S)
+int read_version(const char *version, uint8_t *major, uint8_t *minor, uint8_t *patch);
+
 #define findInList(keY, result, list, element_type) {\
     int i;\
     for (i=0; i<sizeof(list)/sizeof(element_type) ; i++)\

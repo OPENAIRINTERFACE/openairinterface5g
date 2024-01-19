@@ -1153,18 +1153,20 @@ static f1ap_setup_req_t *RC_read_F1Setup(uint64_t id,
 
   req->cell[0].info.measurement_timing_information = "0";
 
-  int buf_len = 3; // this is what we assume in monolithic
-  req->cell[0].sys_info = calloc(1, sizeof(*req->cell[0].sys_info));
-  AssertFatal(req->cell[0].sys_info != NULL, "out of memory\n");
-  f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
-  sys_info->mib = calloc(buf_len, sizeof(*sys_info->mib));
-  DevAssert(sys_info->mib != NULL);
-  DevAssert(mib != NULL);
-  sys_info->mib_length = encode_MIB_NR(mib, 0, sys_info->mib, buf_len);
-  DevAssert(sys_info->mib_length == buf_len);
-
   if (get_softmodem_params()->sa) {
-    // in NSA we don't transmit SIB1
+    // in NSA we don't transmit SIB1, so cannot fill DU system information
+    // so cannot send MIB either
+
+    int buf_len = 3; // this is what we assume in monolithic
+    req->cell[0].sys_info = calloc(1, sizeof(*req->cell[0].sys_info));
+    AssertFatal(req->cell[0].sys_info != NULL, "out of memory\n");
+    f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
+    sys_info->mib = calloc(buf_len, sizeof(*sys_info->mib));
+    DevAssert(sys_info->mib != NULL);
+    DevAssert(mib != NULL);
+    sys_info->mib_length = encode_MIB_NR(mib, 0, sys_info->mib, buf_len);
+    DevAssert(sys_info->mib_length == buf_len);
+
     DevAssert(sib1 != NULL);
     NR_SIB1_t *bcch_SIB1 = sib1->message.choice.c1->choice.systemInformationBlockType1;
     sys_info->sib1 = calloc(NR_MAX_SIB_LENGTH / 8, sizeof(*sys_info->sib1));
@@ -1172,6 +1174,9 @@ static f1ap_setup_req_t *RC_read_F1Setup(uint64_t id,
     AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
     sys_info->sib1_length = (enc_rval.encoded + 7) / 8;
   }
+
+  int num = read_version(TO_STRING(NR_RRC_VERSION), &req->rrc_ver[0], &req->rrc_ver[1], &req->rrc_ver[2]);
+  AssertFatal(num == 3, "could not read RRC version string %s\n", TO_STRING(NR_RRC_VERSION));
 
   return req;
 }

@@ -93,6 +93,7 @@ static void f1_setup_request_f1ap(const f1ap_setup_req_t *req)
       }
     }
   }
+  memcpy(f1ap_setup->rrc_ver, req->rrc_ver, sizeof(req->rrc_ver));
 
   F1AP_DU_REGISTER_REQ(msg).net_config = read_DU_IP_config(&RC.nrmac[0]->eth_params_n);
 
