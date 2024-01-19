@@ -442,6 +442,38 @@ static void freeSRBlist(NR_SRB_ToAddModList_t *l)
     LOG_E(NR_RRC, "Call free SRB list on NULL pointer\n");
 }
 
+static void activate_srb(gNB_RRC_UE_t *UE, int srb_id)
+{
+  AssertFatal(srb_id == 1 || srb_id == 2, "handling only SRB 1 or 2\n");
+  if (UE->Srb[srb_id].Active == 1) {
+    LOG_W(RRC, "UE %d SRB %d already activated\n", UE->rrc_ue_id, srb_id);
+    return;
+  }
+  LOG_I(RRC, "activate SRB %d of UE %d\n", srb_id, UE->rrc_ue_id);
+  UE->Srb[srb_id].Active = 1;
+
+  NR_SRB_ToAddModList_t *list = CALLOC(sizeof(*list), 1);
+  asn1cSequenceAdd(list->list, NR_SRB_ToAddMod_t, srb);
+  srb->srb_Identity = srb_id;
+
+  if (srb_id == 1) {
+    nr_pdcp_add_srbs(true, UE->rrc_ue_id, list, 0, NULL, NULL);
+  } else {
+    uint8_t kRRCenc[16] = {0};
+    uint8_t kRRCint[16] = {0};
+    nr_derive_key(RRC_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kRRCenc);
+    nr_derive_key(RRC_INT_ALG, UE->integrity_algorithm, UE->kgnb, kRRCint);
+
+    nr_pdcp_add_srbs(true,
+                     UE->rrc_ue_id,
+                     list,
+                     (UE->integrity_algorithm << 4) | UE->ciphering_algorithm,
+                     kRRCenc,
+                     kRRCint);
+  }
+  freeSRBlist(list);
+}
+
 //-----------------------------------------------------------------------------
 static void rrc_gNB_generate_RRCSetup(instance_t instance,
                                       rnti_t rnti,
@@ -463,12 +495,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
   AssertFatal(size > 0, "do_RRCSetup failed\n");
   AssertFatal(size <= 1024, "memory corruption\n");
 
-  LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
-              (char *)buf,
-              size,
-              "[MSG] RRC Setup\n");
-  nr_pdcp_add_srbs(true, ue_p->rrc_ue_id, SRBs, 0, NULL, NULL);
-
+  LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buf, size, "[MSG] RRC Setup\n");
   freeSRBlist(SRBs);
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
   RETURN_IF_INVALID_ASSOC_ID(ue_data);
@@ -944,14 +971,6 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
   LOG_D(NR_RRC, "Configuring PDCP DRBs/SRBs for UE %04x\n", ue_p->rnti);
   ue_context_pP->ue_context.ue_reconfiguration_after_reestablishment_counter++;
 
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
-  nr_pdcp_add_srbs(ctxt_pP->enb_flag,
-                   ue_p->rrc_ue_id,
-                   SRBs,
-                   (ue_p->integrity_algorithm << 4) | ue_p->ciphering_algorithm,
-                   kRRCenc,
-                   kRRCint);
-  freeSRBlist(SRBs);
   nr_pdcp_add_drbs(ctxt_pP->enb_flag,
                    ue_p->rrc_ue_id,
                    DRB_configList,
@@ -1235,7 +1254,7 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id,
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   UE = &ue_context_p->ue_context;
   UE->establishment_cause = rrcSetupRequest->establishmentCause;
-  UE->Srb[1].Active = 1;
+  activate_srb(UE, 1);
   rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
 }
 
@@ -1330,7 +1349,7 @@ fallback_rrc_setup:
   random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
 
   rrc_gNB_ue_context_t *new = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
-  new->ue_context.Srb[1].Active = 1;
+  activate_srb(&new->ue_context, 1);
   rrc_gNB_generate_RRCSetup(0, msg->crnti, new, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
   return;
 }
@@ -2114,7 +2133,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   int nb_srb = 0;
   f1ap_srb_to_be_setup_t srbs[1];
   if (UE->Srb[2].Active == 0) {
-    UE->Srb[2].Active = 1;
+    activate_srb(UE, 2);
     nb_srb = 1;
     srbs[0].srb_id = 2;
     srbs[0].lcid = 2;
