@@ -277,7 +277,6 @@ services:
                                     -r 106 --numerology 1 -C 3619200000
                                     --uicc0.imsi 208990100001100
                                     --rfsimulator.serveraddr 192.168.78.2
-            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-du
         networks:
@@ -300,7 +299,6 @@ services:
                                     -r 106 --numerology 1 -C 3619200000
                                     --uicc0.imsi 208990100001101 --uicc0.nssai_sst 2
                                     --rfsimulator.serveraddr 192.168.78.3
-            ASAN_OPTIONS: detect_leaks=0
         depends_on:
             - oai-du2
         networks:

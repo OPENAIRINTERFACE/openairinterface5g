@@ -211,12 +211,13 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac)
   free(sc->maxMIMO_Layers_PUSCH);
   memset(&mac->sc_info, 0, sizeof(mac->sc_info));
 
+  mac->current_DL_BWP = NULL;
+  mac->current_UL_BWP = NULL;
+
   for (int i = 0; i < mac->dl_BWPs.count; i++)
     release_dl_BWP(mac, i);
   for (int i = 0; i < mac->ul_BWPs.count; i++)
     release_ul_BWP(mac, i);
-  mac->current_DL_BWP = NULL;
-  mac->current_UL_BWP = NULL;
 
   for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
     nr_release_mac_config_logicalChannelBearer(mac, i + 1);
