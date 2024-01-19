@@ -20,14 +20,13 @@
  */
 
 #include "ran_func_mac.h"
-#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_mac.h"
 #include <assert.h>
 
 static
 const int mod_id = 0;
 
 
-void read_mac_sm(void* data)
+bool read_mac_sm(void* data)
 {
   assert(data != NULL);
 
@@ -110,6 +109,8 @@ void read_mac_sm(void* data)
 
     ++i;
   }
+
+  return num_ues > 0;
 }
 
 void read_mac_setup_sm(void* data)

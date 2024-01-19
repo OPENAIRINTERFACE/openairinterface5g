@@ -128,3 +128,4 @@ add_subdirectory(flexric/src/sm)
 add_subdirectory(flexric/src/util)
 add_subdirectory(RAN_FUNCTION)
 
+add_library(e2_agent_arg STATIC e2_agent_arg.c)

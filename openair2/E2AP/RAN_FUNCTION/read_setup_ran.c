@@ -25,18 +25,66 @@
 #include <assert.h>
 #include <stdlib.h>
 
-void read_setup_ran(void* data)
+void read_setup_ran(void* data, const ngran_node_t node_type)
 {
   assert(data != NULL);
 #ifdef E2AP_V1
 
 #elif defined(E2AP_V2) || defined(E2AP_V3) 
-  *((e2ap_node_component_config_add_t*)data) = fill_e2ap_node_component_config_add();
+
+  arr_node_component_config_add_t* dst = (arr_node_component_config_add_t*)data;
+  if(node_type == ngran_gNB){
+    dst->len_cca = 1;
+    dst->cca = calloc(1, sizeof(e2ap_node_component_config_add_t));
+    assert(dst->cca != NULL);
+    // NGAP
+    dst->cca[0] = fill_ngap_e2ap_node_component_config_add();
+  } else if(node_type == ngran_gNB_CU){
+    dst->len_cca = 2;
+    dst->cca = calloc(2, sizeof(e2ap_node_component_config_add_t));
+    assert(dst->cca != NULL);
+    // NGAP
+    dst->cca[0] = fill_ngap_e2ap_node_component_config_add();
+    // F1AP
+    dst->cca[1] = fill_f1ap_e2ap_node_component_config_add();
+  } else if(node_type == ngran_gNB_DU){
+    dst->len_cca = 1;
+    dst->cca = calloc(1, sizeof(e2ap_node_component_config_add_t));
+    assert(dst->cca != NULL);
+    // F1AP
+    dst->cca[0] = fill_f1ap_e2ap_node_component_config_add();
+  } else if(node_type == ngran_gNB_CUCP){
+    dst->len_cca = 3;
+    dst->cca = calloc(3, sizeof(e2ap_node_component_config_add_t));
+    assert(dst->cca != NULL);
+    // NGAP
+    dst->cca[0] = fill_ngap_e2ap_node_component_config_add();
+    // F1AP
+    dst->cca[1] = fill_f1ap_e2ap_node_component_config_add();
+    // E1AP
+    dst->cca[2] = fill_e1ap_e2ap_node_component_config_add();
+  } else if(node_type == ngran_gNB_CUUP){
+    dst->len_cca = 3;
+    dst->cca = calloc(3, sizeof(e2ap_node_component_config_add_t));
+    assert(dst->cca != NULL);
+    // NGAP
+    dst->cca[0] = fill_ngap_e2ap_node_component_config_add();
+    // F1AP
+    dst->cca[1] = fill_f1ap_e2ap_node_component_config_add();
+    // E1AP
+    dst->cca[2] = fill_e1ap_e2ap_node_component_config_add();
+  } else if(node_type == ngran_eNB){
+    dst->len_cca = 1;
+    dst->cca = calloc(1, sizeof(e2ap_node_component_config_add_t));
+    assert(dst->cca != NULL);
+    // S1AP
+    dst->cca[0] = fill_s1ap_e2ap_node_component_config_add();
+  } else {
+    assert(0 != 0 && "Not implemented");
+  }
+
 #else
   static_assert(0!=0, "Unknown E2AP version");
 #endif
 
 }
-
-
-

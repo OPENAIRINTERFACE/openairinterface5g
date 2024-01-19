@@ -24,7 +24,7 @@
 
 #include "openair2/E2AP/flexric/src/agent/../sm/sm_io.h"
 
-void read_rlc_sm(void*);
+bool read_rlc_sm(void*);
 
 void read_rlc_setup_sm(void* data);
 

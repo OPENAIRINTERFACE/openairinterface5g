@@ -23,17 +23,17 @@
 
 #include <assert.h>
 
-#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_gtp.h"
 #include "common/ran_context.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/E2AP/flexric/src/util/time_now_us.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
+
+
+#if defined (NGRAN_GNB_CUCP)
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
+#endif
 
-
-static
-const int mod_id = 0;
-
-void read_gtp_sm(void * data)
+bool read_gtp_sm(void * data)
 {
   assert(data != NULL);
 
@@ -42,44 +42,46 @@ void read_gtp_sm(void * data)
 
   gtp->msg.tstamp = time_now_us();
 
-  NR_UEs_t *UE_info = &RC.nrmac[mod_id]->UE_info;
-  size_t num_ues = 0;
-  UE_iterator(UE_info->list, ue) {
-    if (ue)
-      num_ues += 1;
-  }
-
+  uint64_t ue_id_list[MAX_MOBILES_PER_GNB];
+  size_t num_ues = nr_pdcp_get_num_ues(ue_id_list, MAX_MOBILES_PER_GNB);
+  
   gtp->msg.len = num_ues;
   if(gtp->msg.len > 0){
     gtp->msg.ngut = calloc(gtp->msg.len, sizeof(gtp_ngu_t_stats_t) );
     assert(gtp->msg.ngut != NULL);
   }
-
-  size_t i = 0;
-  UE_iterator(UE_info->list, UE)
-  {
-    uint16_t const rnti = UE->rnti;
-    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context_by_rnti_any_du(RC.nrrrc[mod_id], rnti);
-    if (ue_context_p != NULL) {
-      gtp->msg.ngut[i].rnti = ue_context_p->ue_context.rnti;
-      int nb_pdu_session = ue_context_p->ue_context.nb_of_pdusessions;
-      if (nb_pdu_session > 0) {
-        int nb_pdu_idx = nb_pdu_session - 1;
-        gtp->msg.ngut[i].teidgnb = ue_context_p->ue_context.pduSession[nb_pdu_idx].param.gNB_teid_N3;
-        gtp->msg.ngut[i].teidupf = ue_context_p->ue_context.pduSession[nb_pdu_idx].param.UPF_teid_N3;
-        // TODO: one PDU session has multiple QoS Flow
-        int nb_qos_flow = ue_context_p->ue_context.pduSession[nb_pdu_idx].param.nb_qos;
-        if (nb_qos_flow > 0) {
-          gtp->msg.ngut[i].qfi = ue_context_p->ue_context.pduSession[nb_pdu_idx].param.qos[nb_qos_flow - 1].qfi;
-        }
-      }
-    } else {
-      LOG_W(NR_RRC,"rrc_gNB_get_ue_context return NULL\n");
-      // if (gtp->msg.ngut != NULL) free(gtp->msg.ngut);
-    }
-    i++;
+  else {
+    return false;
   }
 
+  #if defined (NGRAN_GNB_CUCP) && defined (NGRAN_GNB_CUUP)
+  if (RC.nrrrc[0]->node_type == ngran_gNB_DU || RC.nrrrc[0]->node_type == ngran_gNB_CUCP) return false;
+  assert((RC.nrrrc[0]->node_type == ngran_gNB_CU || RC.nrrrc[0]->node_type == ngran_gNB) && "Expected node types: CU or gNB-mono");
+
+  for (size_t i = 0; i < num_ues; i++) {
+    rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[0], ue_id_list[i]);
+
+    gtp->msg.ngut[i].rnti = ue_id_list[i];
+    int nb_pdu_session = ue_context_p->ue_context.nb_of_pdusessions;
+    if (nb_pdu_session > 0) {
+      int nb_pdu_idx = nb_pdu_session - 1;
+      gtp->msg.ngut[i].teidgnb = ue_context_p->ue_context.pduSession[nb_pdu_idx].param.gNB_teid_N3;
+      gtp->msg.ngut[i].teidupf = ue_context_p->ue_context.pduSession[nb_pdu_idx].param.UPF_teid_N3;
+      // TODO: one PDU session has multiple QoS Flow
+      int nb_qos_flow = ue_context_p->ue_context.pduSession[nb_pdu_idx].param.nb_qos;
+      if (nb_qos_flow > 0) {
+        gtp->msg.ngut[i].qfi = ue_context_p->ue_context.pduSession[nb_pdu_idx].param.qos[nb_qos_flow - 1].qfi;
+      }
+    }
+  }
+
+  return true;
+
+  #elif defined (NGRAN_GNB_CUUP)
+  // For the moment, CU-UP doesn't store PDU session information
+  printf("GTP SM not yet implemented in CU-UP\n");
+  return false;  
+  #endif
 }
 
 void read_gtp_setup_sm(void* data)

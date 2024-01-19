@@ -1366,3 +1366,15 @@ bool nr_pdcp_get_statistics(ue_id_t ue_id, int srb_flag, int rb_id, nr_pdcp_stat
 
   return ret;
 }
+
+int nr_pdcp_get_num_ues(ue_id_t *ue_list, int len)
+{
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  int num_ues = nr_pdcp_manager_get_ue_count(nr_pdcp_ue_manager);
+  nr_pdcp_ue_t **nr_pdcp_ue_list = nr_pdcp_manager_get_ue_list(nr_pdcp_ue_manager);
+  for (int i = 0; i < num_ues && i < len; i++)
+    ue_list[i] = nr_pdcp_ue_list[i]->ue_id;
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+  
+  return num_ues;
+}

@@ -19,16 +19,24 @@
  *      contact@openairinterface.org
  */
 
-#ifndef RAN_FUNC_SM_SLICE_READ_WRITE_AGENT_H
-#define RAN_FUNC_SM_SLICE_READ_WRITE_AGENT_H
+#ifndef E2_AGENT_PARAMDEF_H_
+#define E2_AGENT_PARAMDEF_H_
 
-#include "openair2/E2AP/flexric/src/agent/../sm/sm_io.h"
+/* E2 Agent configuration */
+#define CONFIG_STRING_E2AGENT "e2_agent"
 
-bool read_slice_sm(void*);
+#define E2AGENT_CONFIG_IP    "near_ric_ip_addr"
+#define E2AGENT_CONFIG_SMDIR "sm_dir"
 
-void read_slice_setup_sm(void* data);
+static const char* const e2agent_config_ip_default = "127.0.0.1";
+static const char* const e2agent_config_smdir_default = ".";
 
-sm_ag_if_ans_t write_ctrl_slice_sm(void const* data);
+#define E2AGENT_PARAMS_DESC { \
+  {E2AGENT_CONFIG_IP,    "RIC IP address",             0, strptr:NULL, defstrval:(char*)e2agent_config_ip_default,    TYPE_STRING, 0}, \
+  {E2AGENT_CONFIG_SMDIR, "Directory with SMs to load", 0, strptr:NULL, defstrval:(char*)e2agent_config_smdir_default, TYPE_STRING, 0}, \
+}
 
-#endif
+#define E2AGENT_CONFIG_IP_IDX    0
+#define E2AGENT_CONFIG_SMDIR_IDX 1
 
+#endif 
