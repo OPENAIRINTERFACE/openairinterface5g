@@ -992,7 +992,6 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(module_id);
   ue_p->xids[xid] = RRC_REESTABLISH;
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
   const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
   uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
   int size = do_RRCReestablishment(ue_context_pP, buffer, RRC_BUF_SIZE, xid, cell_info->nr_pci, ssb_arfcn);
@@ -1008,7 +1007,7 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
 
   nr_derive_key(RRC_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kRRCenc);
   nr_derive_key(RRC_INT_ALG, ue_p->integrity_algorithm, ue_p->kgnb, kRRCint);
-  freeSRBlist(SRBs);
+
   LOG_I(NR_RRC, "Set PDCP security UE %d RNTI %04x nca %ld nia %d in RRCReestablishment\n", ue_p->rrc_ue_id, ue_p->rnti, ue_p->ciphering_algorithm, ue_p->integrity_algorithm);
   uint8_t security_mode =
       enable_ciphering ? ue_p->ciphering_algorithm | (ue_p->integrity_algorithm << 4) : 0 | (ue_p->integrity_algorithm << 4);
