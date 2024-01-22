@@ -96,10 +96,9 @@ Now pull images.
 
 ```bash
 docker pull mysql:8.0
-docker pull oaisoftwarealliance/oai-amf:v1.5.0
-docker pull oaisoftwarealliance/oai-nrf:v1.5.0
-docker pull oaisoftwarealliance/oai-smf:v1.5.0
-docker pull oaisoftwarealliance/oai-spgwu-tiny:v1.5.0
+docker pull oaisoftwarealliance/oai-amf:v2.0.0
+docker pull oaisoftwarealliance/oai-smf:v2.0.0
+docker pull oaisoftwarealliance/oai-upf:v2.0.0
 docker pull oaisoftwarealliance/trf-gen-cn5g:focal
 
 docker pull oaisoftwarealliance/oai-gnb:develop
@@ -139,14 +138,13 @@ sudo ifconfig lo: 127.0.0.2 netmask 255.0.0.0 up
 
 ```bash
 cd ci-scripts/yaml_files/5g_l2sim_tdd
-docker-compose up -d mysql oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn
+docker-compose up -d mysql oai-amf oai-smf oai-upf oai-ext-dn
 ```
 ```bash
 Creating network "l2sim-oai-public-net" with driver "bridge"
 Creating network "l2sim-oai-traffic_net-net" with driver "bridge"
-Creating l2sim-oai-nrf ... done
 Creating l2sim-mysql      ... done
-Creating l2sim-oai-spgwu ... done
+Creating l2sim-oai-upf   ... done
 Creating l2sim-oai-amf   ... done
 Creating l2sim-oai-smf   ... done
 Creating l2sim-oai-ext-dn ... done
@@ -160,12 +158,11 @@ docker-compose ps -a
 ```bash
        Name                     Command                  State                  Ports
 -------------------------------------------------------------------------------------------------
-l2sim-mysql        docker-entrypoint.sh mysqld      Up (healthy)   3306/tcp, 33060/tcp         
+l2sim-mysql        docker-entrypoint.sh mysqld      Up (healthy)   3306/tcp, 33060/tcp
 l2sim-oai-amf      /bin/bash /openair-amf/bin ...   Up (healthy)   38412/sctp, 80/tcp, 9090/tcp
-l2sim-oai-ext-dn   /bin/bash -c  apt update;  ...   Up (healthy)                               
-l2sim-oai-nrf      /bin/bash /openair-nrf/bin ...   Up (healthy)   80/tcp, 9090/tcp            
-l2sim-oai-smf      /bin/bash /openair-smf/bin ...   Up (healthy)   80/tcp, 8805/udp, 9090/tcp  
-l2sim-oai-spgwu    /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp          
+l2sim-oai-ext-dn   /bin/bash -c  apt update;  ...   Up (healthy)
+l2sim-oai-smf      /bin/bash /openair-smf/bin ...   Up (healthy)   80/tcp, 8805/udp, 9090/tcp
+l2sim-oai-upf      /bin/bash /openair-upf/bin ...   Up (healthy)   2152/udp, 8805/udp
 ```
 
 At this point, you can prepare a capture on the newly-created public docker bridges:
@@ -206,8 +203,7 @@ sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135
 docker-compose up -d oai-gnb
 ```
 ```bash
-l2sim-oai-nrf is up-to-date
-l2sim-oai-spgwu is up-to-date
+l2sim-oai-upf is up-to-date
 l2sim-oai-ext-dn is up-to-date
 Creating l2sim-oai-gnb ... done
 ```
@@ -220,13 +216,12 @@ $ docker-compose ps -a
 ```bash
        Name                     Command                  State                  Ports
 -------------------------------------------------------------------------------------------------
-l2sim-mysql        docker-entrypoint.sh mysqld      Up (healthy)   3306/tcp, 33060/tcp         
+l2sim-mysql        docker-entrypoint.sh mysqld      Up (healthy)   3306/tcp, 33060/tcp
 l2sim-oai-amf      /bin/bash /openair-amf/bin ...   Up (healthy)   38412/sctp, 80/tcp, 9090/tcp
-l2sim-oai-ext-dn   /bin/bash -c  apt update;  ...   Up (healthy)                               
-l2sim-oai-gnb      /opt/oai-gnb/bin/entrypoin ...   Up (healthy)                               
-l2sim-oai-nrf      /bin/bash /openair-nrf/bin ...   Up (healthy)   80/tcp, 9090/tcp            
-l2sim-oai-smf      /bin/bash /openair-smf/bin ...   Up (healthy)   80/tcp, 8805/udp, 9090/tcp  
-l2sim-oai-spgwu    /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp          
+l2sim-oai-ext-dn   /bin/bash -c  apt update;  ...   Up (healthy)
+l2sim-oai-gnb      /opt/oai-gnb/bin/entrypoin ...   Up (healthy)
+l2sim-oai-smf      /bin/bash /openair-smf/bin ...   Up (healthy)   80/tcp, 8805/udp, 9090/tcp
+l2sim-oai-upf      /bin/bash /openair-upf/bin ...   Up (healthy)   2152/udp, 8805/udp
 ```
 
 You can verify that the `gNB` is connected with the `AMF`:
@@ -250,10 +245,9 @@ docker-compose up -d proxy oai-nr-ue
 ```
 ```bash
 l2sim-mysql is up-to-date
-l2sim-oai-nrf is up-to-date
 l2sim-oai-amf is up-to-date
 l2sim-oai-smf is up-to-date
-l2sim-oai-spgwu is up-to-date
+l2sim-oai-upf is up-to-date
 l2sim-oai-ext-dn is up-to-date
 l2sim-oai-gnb is up-to-date
 Creating l2sim-oai-nr-ue ... done
@@ -268,18 +262,17 @@ docker-compose ps -a
 ```bash
        Name                     Command                  State                  Ports
 -------------------------------------------------------------------------------------------------
-l2sim-mysql        docker-entrypoint.sh mysqld      Up (healthy)   3306/tcp, 33060/tcp         
+l2sim-mysql        docker-entrypoint.sh mysqld      Up (healthy)   3306/tcp, 33060/tcp
 l2sim-oai-amf      /bin/bash /openair-amf/bin ...   Up (healthy)   38412/sctp, 80/tcp, 9090/tcp
-l2sim-oai-ext-dn   /bin/bash -c  apt update;  ...   Up (healthy)                               
-l2sim-oai-gnb      /opt/oai-gnb/bin/entrypoin ...   Up (healthy)                               
-l2sim-oai-nr-ue0   /opt/oai-nr-ue/bin/entrypo ...   Up (healthy)                               
-l2sim-oai-nrf      /bin/bash /openair-nrf/bin ...   Up (healthy)   80/tcp, 9090/tcp            
-l2sim-oai-smf      /bin/bash /openair-smf/bin ...   Up (healthy)   80/tcp, 8805/udp, 9090/tcp  
-l2sim-oai-spgwu    /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp          
-l2sim-proxy        /oai-lte-multi-ue-proxy/bi ...   Up (healthy)                               
+l2sim-oai-ext-dn   /bin/bash -c  apt update;  ...   Up (healthy)
+l2sim-oai-gnb      /opt/oai-gnb/bin/entrypoin ...   Up (healthy)
+l2sim-oai-nr-ue0   /opt/oai-nr-ue/bin/entrypo ...   Up (healthy)
+l2sim-oai-smf      /bin/bash /openair-smf/bin ...   Up (healthy)   80/tcp, 8805/udp, 9090/tcp
+l2sim-oai-upf      /bin/bash /openair-upf/bin ...   Up (healthy)   2152/udp, 8805/udp
+l2sim-proxy        /oai-lte-multi-ue-proxy/bi ...   Up (healthy)
 ```
 ```bash
-docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}	{{.MemUsage}}\t{{.MemPerc}}" l2sim-mysql l2sim-oai-amf l2sim-oai-ext-dn l2sim-oai-gnb l2sim-oai-nr-ue0 l2sim-oai-nrf l2sim-oai-smf l2sim-oai-spgwu l2sim-proxy
+docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}	{{.MemUsage}}\t{{.MemPerc}}" l2sim-mysql l2sim-oai-amf l2sim-oai-ext-dn l2sim-oai-gnb l2sim-oai-nr-ue0 l2sim-oai-smf l2sim-oai-upf l2sim-proxy
 ```
 ```bash
 CONTAINER          CPU %     MEM USAGE / LIMIT     MEM %
@@ -288,9 +281,8 @@ l2sim-oai-amf      4.05%     29.49MiB / 62.54GiB   0.05%
 l2sim-oai-ext-dn   0.00%     31.27MiB / 62.54GiB   0.05%
 l2sim-oai-gnb      1.29%     1.853GiB / 62.54GiB   2.96%
 l2sim-oai-nr-ue0   1.43%     350.8MiB / 62.54GiB   0.55%
-l2sim-oai-nrf      0.21%     9.105MiB / 62.54GiB   0.01%
 l2sim-oai-smf      3.24%     30.23MiB / 62.54GiB   0.05%
-l2sim-oai-spgwu    0.00%     11.78MiB / 62.54GiB   0.02%
+l2sim-oai-upf      0.00%     11.78MiB / 62.54GiB   0.02%
 l2sim-proxy        6.97%     290.4MiB / 62.54GiB   0.45%
 ```
 
@@ -389,19 +381,17 @@ Stopping l2sim-oai-nr-ue2 ... done
 Stopping l2sim-oai-nr-ue  ... done
 Stopping l2sim-oai-gnb    ... done
 Stopping l2sim-oai-ext-dn ... done
-Stopping l2sim-oai-spgwu  ... done
+Stopping l2sim-oai-upf    ... done
 Stopping l2sim-oai-smf    ... done
 Stopping l2sim-oai-amf    ... done
-Stopping l2sim-oai-nrf    ... done
 Stopping l2sim-mysql      ... done
 Removing l2sim-oai-nr-ue2 ... done
 Removing l2sim-oai-nr-ue  ... done
 Removing l2sim-oai-gnb    ... done
 Removing l2sim-oai-ext-dn ... done
-Removing l2sim-oai-spgwu  ... done
+Removing l2sim-oai-upf    ... done
 Removing l2sim-oai-smf    ... done
 Removing l2sim-oai-amf    ... done
-Removing l2sim-oai-nrf    ... done
 Removing l2sim-mysql      ... done
 Removing network l2sim-oai-public-net
 Removing network l2sim-oai-traffic-net

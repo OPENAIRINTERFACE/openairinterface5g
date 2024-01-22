@@ -98,7 +98,7 @@ void nr_rrc_SI_timers(NR_UE_RRC_SI_INFO *SInfo)
   }
 }
 
-void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc, instance_t instance)
+void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc)
 {
   NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
 
@@ -107,7 +107,7 @@ void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc, instance_t instance)
     if(timers->T300_cnt >= timers->T300_k) {
       timers->T300_active = false;
       timers->T300_cnt = 0;
-      handle_t300_expiry(instance);
+      handle_t300_expiry(rrc);
     }
   }
   if (timers->T304_active == true) {
@@ -134,7 +134,7 @@ void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc, instance_t instance)
     if(timers->T311_cnt >= timers->T311_k) {
       // Upon T311 expiry, the UE shall perform the actions upon going to RRC_IDLE
       // with release cause 'RRC connection failure'
-      nr_rrc_going_to_IDLE(instance, RRC_CONNECTION_FAILURE, NULL);
+      nr_rrc_going_to_IDLE(rrc, RRC_CONNECTION_FAILURE, NULL);
     }
   }
 }

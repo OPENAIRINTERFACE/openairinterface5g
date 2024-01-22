@@ -21,11 +21,11 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Rocky 8.7
+#   Valid for Rocky 9
 #
 #---------------------------------------------------------------------
 
-ARG BASE_IMAGE=docker.io/rockylinux:8.7
+ARG BASE_IMAGE=docker.io/rockylinux:9
 FROM ran-base:latest AS gnb-base
 
 FROM ran-build:latest AS gnb-build
@@ -55,11 +55,11 @@ RUN dnf update -y && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
+COPY ./libori.so /usr/local/lib
+
 WORKDIR /opt/oai-gnb-aw2s/bin
-COPY --from=gnb-build \
-    /oai-ran/cmake_targets/ran_build/build/nr-softmodem \
-    ./
-COPY ./docker/scripts/gnb-aw2s_entrypoint.sh ./entrypoint.sh
+COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/nr-softmodem ./
+COPY ./docker/scripts/gnb-aw2s_entrypoint.sh /opt/oai-gnb-aw2s/bin/entrypoint.sh
 
 COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
@@ -70,21 +70,30 @@ COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc*.so \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
-    /usr/local/lib/libori.so \
     /usr/local/lib/
 
 COPY --from=gnb-base \
-    /lib64/libconfig.so.9 \
+    /lib64/libconfig.so.11 \
     /lib64/libforms.so.2 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/
 
 RUN ln -s /usr/local/lib/libaw2sori_transpro.so /usr/local/lib/libthirdparty_transpro.so && \
     ln -s /usr/local/lib/liboai_eth_transpro.so /usr/local/lib/liboai_transpro.so && \
-    ldconfig
+    ldconfig && \
+    echo "ldd on nr-softmodem" && ldd /opt/oai-gnb-aw2s/bin/nr-softmodem && \
+    echo "ldd on liboai_eth_transpro.so" && ldd /usr/local/lib/liboai_eth_transpro.so && \
+    echo "ldd on librfsimulator.so" && ldd /usr/local/lib/librfsimulator.so && \
+    echo "ldd on libthirdparty_transpro.so" && ldd /usr/local/lib/libthirdparty_transpro.so && \
+    echo "ldd on libcoding.so" && ldd /usr/local/lib/libcoding.so && \
+    echo "ldd on libparams_libconfig.so" && ldd /usr/local/lib/libparams_libconfig.so && \
+    echo "ldd on libdfts.so" && ldd /usr/local/lib/libdfts.so && \
+    echo "ldd on libtelnetsrv.so" && ldd /usr/local/lib/libtelnetsrv.so
 
 WORKDIR /opt/oai-gnb-aw2s
+
 ENTRYPOINT ["/opt/oai-gnb-aw2s/bin/entrypoint.sh"]
 CMD ["/opt/oai-gnb-aw2s/bin/nr-softmodem", "-O", "/opt/oai-gnb-aw2s/etc/gnb.conf"]

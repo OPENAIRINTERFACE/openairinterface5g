@@ -274,25 +274,49 @@ int DU_send_F1_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_setup_req_t *setup_req)
     OCTET_STRING_fromBuf(&served_cell_information->measurementTimingConfiguration,
                          measurementTimingConfiguration,
                          strlen(measurementTimingConfiguration));
-    asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, gNB_DU_System_Information);
+
     /* 4.1.2 gNB-DU System Information */
-    AssertFatal(setup_req->cell[i].sys_info != NULL, "assume that sys_info is present, which is not the case\n");
-    const f1ap_gnb_du_system_info_t *sys_info = setup_req->cell[i].sys_info;
-    OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message, (const char *)sys_info->mib, sys_info->mib_length);
-    OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message, (const char *)sys_info->sib1, sys_info->sib1_length);
+    if (setup_req->cell[i].sys_info != NULL) {
+      asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, gNB_DU_System_Information);
+      const f1ap_gnb_du_system_info_t *sys_info = setup_req->cell[i].sys_info;
+      AssertFatal(sys_info->mib != NULL, "MIB must be present in DU sys info\n");
+      OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message, (const char *)sys_info->mib, sys_info->mib_length);
+      AssertFatal(sys_info->sib1 != NULL, "SIB1 must be present in DU sys info\n");
+      OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message, (const char *)sys_info->sib1, sys_info->sib1_length);
+    }
   }
 
   /* mandatory */
   /* c5. RRC VERSION */
   asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ie2);
-  ie2->id                        = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
-  ie2->criticality               = F1AP_Criticality_reject;
-  ie2->value.present             = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
-  ie2->value.choice.RRC_Version.latest_RRC_Version.buf=calloc(1,sizeof(char));
-  ie2->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
-  ie2->value.choice.RRC_Version.latest_RRC_Version.size = 1;
-  ie2->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
+  ie2->id = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
+  ie2->criticality = F1AP_Criticality_reject;
+  ie2->value.present = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
+  // RRC Version: "This IE is not used in this release."
+  // we put one bit for each byte in rrc_ver that is != 0
+  uint8_t bits = 0;
+  for (int i = 0; i < 3; ++i)
+    bits |= (setup_req->rrc_ver[i] != 0) << i;
+  BIT_STRING_t *bs = &ie2->value.choice.RRC_Version.latest_RRC_Version;
+  bs->buf = calloc(1, sizeof(char));
+  AssertFatal(bs->buf != NULL, "out of memory\n");
+  bs->buf[0] = bits;
+  bs->size = 1;
+  bs->bits_unused = 5;
 
+  F1AP_ProtocolExtensionContainer_10696P228_t *p = calloc(1, sizeof(F1AP_ProtocolExtensionContainer_10696P228_t));
+  asn1cSequenceAdd(p->list, F1AP_RRC_Version_ExtIEs_t, rrcv_ext);
+  rrcv_ext->id = F1AP_ProtocolIE_ID_id_latest_RRC_Version_Enhanced;
+  rrcv_ext->criticality = F1AP_Criticality_ignore;
+  rrcv_ext->extensionValue.present = F1AP_RRC_Version_ExtIEs__extensionValue_PR_OCTET_STRING_SIZE_3_;
+  OCTET_STRING_t *os = &rrcv_ext->extensionValue.choice.OCTET_STRING_SIZE_3_;
+  os->size = 3;
+  os->buf = malloc(3 * sizeof(*os->buf));
+  AssertFatal(os->buf != NULL, "out of memory\n");
+  for (int i = 0; i < 3; ++i)
+    os->buf[i] = setup_req->rrc_ver[i];
+  ie2->value.choice.RRC_Version.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)p;
+  
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 setup request\n");
@@ -339,7 +363,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint
         AssertFatal(ie->criticality == F1AP_Criticality_ignore,
                     "ie->criticality != F1AP_Criticality_ignore\n");
         AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_GNB_CU_Name,
-                    "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
+                    "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_GNB_CU_Name\n");
         resp.gNB_CU_name = malloc(ie->value.choice.GNB_CU_Name.size+1);
         memcpy(resp.gNB_CU_name, ie->value.choice.GNB_CU_Name.buf, ie->value.choice.GNB_CU_Name.size);
         resp.gNB_CU_name[ie->value.choice.GNB_CU_Name.size] = '\0';
@@ -347,7 +371,21 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint
         break;
 
       case F1AP_ProtocolIE_ID_id_GNB_CU_RRC_Version:
-        LOG_D(F1AP, "F1AP: Received GNB-CU-RRC-Version, ignoring\n");
+        AssertFatal(ie->criticality == F1AP_Criticality_reject,
+                    "ie->criticality != F1AP_Criticality_reject\n");
+        AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_RRC_Version,
+                    "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_RRC_Version\n");
+        // RRC Version: "This IE is not used in this release."
+        if(ie->value.choice.RRC_Version.iE_Extensions) {
+          F1AP_ProtocolExtensionContainer_10696P228_t *ext =
+              (F1AP_ProtocolExtensionContainer_10696P228_t *)ie->value.choice.RRC_Version.iE_Extensions;
+          if(ext->list.count > 0){
+            F1AP_RRC_Version_ExtIEs_t *rrcext = ext->list.array[0];
+            OCTET_STRING_t *os = &rrcext->extensionValue.choice.OCTET_STRING_SIZE_3_;
+            for (int i = 0; i < 3; i++)
+              resp.rrc_ver[i] = os->buf[i];
+          }
+        }
         break;
 
       case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List: {

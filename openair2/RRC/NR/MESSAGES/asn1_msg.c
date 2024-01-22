@@ -242,10 +242,7 @@ uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier)
   return((enc_rval.encoded+7)/8);
 }
 
-//------------------------------------------------------------------------------
-int do_RRCReject(uint8_t Mod_id,
-                 uint8_t *const buffer)
-//------------------------------------------------------------------------------
+int do_RRCReject(uint8_t *const buffer)
 {
     asn_enc_rval_t                                   enc_rval;
     NR_DL_CCCH_Message_t                             dl_ccch_msg;
@@ -877,8 +874,7 @@ uint8_t do_NR_RRCReconfigurationComplete(uint8_t *buffer, size_t buffer_size, co
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_RRCSetupComplete(uint8_t Mod_id,
-                            uint8_t *buffer,
+uint8_t do_RRCSetupComplete(uint8_t *buffer,
                             size_t buffer_size,
                             const uint8_t Transaction_id,
                             uint8_t sel_plmn_id,
@@ -886,7 +882,6 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id,
                             const char *dedicatedInfoNAS)
 {
   NR_UL_DCCH_Message_t ul_dcch_msg = {0};
-
   ul_dcch_msg.message.present = NR_UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1 = CALLOC(1,sizeof(struct NR_UL_DCCH_MessageType__c1));
   ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_rrcSetupComplete;
@@ -931,14 +926,11 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id,
   return((enc_rval.encoded+7)/8);
 }
 
-//------------------------------------------------------------------------------
-uint8_t do_NR_DLInformationTransfer(uint8_t Mod_id,
-                                    uint8_t *buffer,
+uint8_t do_NR_DLInformationTransfer(uint8_t *buffer,
                                     size_t buffer_len,
                                     uint8_t transaction_id,
                                     uint32_t pdu_length,
                                     uint8_t *pdu_buffer)
-//------------------------------------------------------------------------------
 {
   NR_DL_DCCH_Message_t dl_dcch_msg = {0};
   dl_dcch_msg.message.present = NR_DL_DCCH_MessageType_PR_c1;
@@ -987,7 +979,8 @@ uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8
     return encoded;
 }
 
-uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c_rnti) {
+uint8_t do_RRCReestablishmentRequest(uint8_t *buffer, uint16_t c_rnti)
+{
   asn_enc_rval_t enc_rval;
   NR_UL_CCCH_Message_t ul_ccch_msg;
   NR_RRCReestablishmentRequest_t *rrcReestablishmentRequest;
@@ -1195,7 +1188,8 @@ void free_defaultMeasConfig(NR_MeasConfig_t *mc)
   ASN_STRUCT_FREE(asn_DEF_NR_MeasConfig, mc);
 }
 
-uint8_t do_NR_Paging(uint8_t Mod_id, uint8_t *buffer, uint32_t tmsi) {
+uint8_t do_NR_Paging(uint8_t Mod_id, uint8_t *buffer, uint32_t tmsi)
+{
   LOG_D(NR_RRC, "[gNB %d] do_NR_Paging start\n", Mod_id);
   NR_PCCH_Message_t pcch_msg;
   pcch_msg.message.present           = NR_PCCH_MessageType_PR_c1;

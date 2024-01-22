@@ -65,8 +65,8 @@
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
-                <services>mysql oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
-                <nb_healthy>6</nb_healthy>
+                <services>mysql oai-amf oai-smf oai-upf oai-ext-dn</services>
+                <nb_healthy>5</nb_healthy>
         </testCase>
 
         <testCase id="000002">
@@ -74,7 +74,7 @@
                 <desc>Deploy OAI 5G gNB RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
                 <services>oai-gnb</services>
-                <nb_healthy>7</nb_healthy>
+                <nb_healthy>6</nb_healthy>
         </testCase>
 
         <testCase id="000003">
@@ -82,7 +82,7 @@
                 <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
                 <services>oai-nr-ue</services>
-                <nb_healthy>8</nb_healthy>
+                <nb_healthy>7</nb_healthy>
         </testCase>
 
         <testCase id="000004">
@@ -90,7 +90,7 @@
                 <desc>Deploy Second OAI 5G NR-UE RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
                 <services>oai-nr-ue2</services>
-                <nb_healthy>9</nb_healthy>
+                <nb_healthy>8</nb_healthy>
         </testCase>
 
         <testCase id="000005">
@@ -98,7 +98,7 @@
                 <desc>Deploy OAI 5G NR-UEs (#3, #4, #5) RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
                 <services>oai-nr-ue3 oai-nr-ue4 oai-nr-ue5</services>
-                <nb_healthy>12</nb_healthy>
+                <nb_healthy>11</nb_healthy>
         </testCase>
 
         <testCase id="000006">
@@ -106,7 +106,7 @@
                 <desc>Deploy OAI 5G NR-UEs (#6, #7, #8) RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
                 <services>oai-nr-ue6 oai-nr-ue7 oai-nr-ue8</services>
-                <nb_healthy>15</nb_healthy>
+                <nb_healthy>14</nb_healthy>
         </testCase>
 
         <testCase id="000007">
@@ -114,7 +114,7 @@
                 <desc>Deploy OAI 5G NR-UEs (#9, #10) RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
                 <services>oai-nr-ue9 oai-nr-ue10</services>
-                <nb_healthy>17</nb_healthy>
+                <nb_healthy>16</nb_healthy>
         </testCase>
 
         <testCase id="000008">

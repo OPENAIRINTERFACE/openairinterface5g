@@ -21,11 +21,11 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Rocky 8.7
+#   Valid for Rocky 9
 #
 #---------------------------------------------------------------------
 
-ARG BASE_IMAGE=docker.io/rockylinux:8.7
+ARG BASE_IMAGE=docker.io/rockylinux:9
 FROM $BASE_IMAGE AS ran-base
 
 ENV TZ=Europe/Paris
@@ -33,7 +33,6 @@ ENV BUILD_UHD_FROM_SOURCE=True
 ENV UHD_VERSION=4.4.0.0
 
 RUN dnf install 'dnf-command(config-manager)' -y && \
-    dnf config-manager --set-enabled powertools && \
     dnf install epel-release -y && crb enable && \
     dnf update -y && \
     dnf install -y \

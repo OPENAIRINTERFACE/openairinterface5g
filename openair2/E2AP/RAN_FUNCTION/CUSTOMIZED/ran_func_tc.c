@@ -23,13 +23,15 @@
 #include "../../flexric/test/rnd/fill_rnd_data_tc.h"
 #include <assert.h>
 
-void read_tc_sm(void* data)
+bool read_tc_sm(void* data)
 {
   assert(data != NULL);
   //assert(data->type == TC_STATS_V0);
 
   tc_ind_data_t* tc = (tc_ind_data_t*)data;
   fill_tc_ind_data(tc);
+
+  return true;
 }
 
 void read_tc_setup_sm(void* data)

@@ -159,7 +159,6 @@ typedef struct RrcMacCcchDataInd_s {
 } RrcMacCcchDataInd;
 
 typedef struct NRRrcMacCcchDataInd_s {
-  uint16_t  rnti;
   uint32_t  sdu_size;
   uint8_t   sdu[CCCH_SDU_SIZE];
 } NRRrcMacCcchDataInd;

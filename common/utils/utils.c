@@ -132,3 +132,21 @@ void set_priority(int priority)
     abort();
   }
 }
+
+/**
+ * @brief Convert a version string x.y.z into numbers.
+ *
+ * The function takes a version string of format "x.y.z" where x is the major
+ * version number, y minor, z patch. It tries to match version, and outputs the
+ * numbers in the correspondingly named variables.
+ *
+ * @return The number of version parts matched (should be three on x.y.z).
+ */
+int read_version(const char *version, uint8_t *major, uint8_t *minor, uint8_t *patch)
+{
+  int ret = sscanf(version, "%hhu.%hhu.%hhu", major, minor, patch);
+  // EOF means "end of input reached or matching failure"
+  if (ret == EOF)
+    return 3;
+  return ret; // ret has number of items matched
+}

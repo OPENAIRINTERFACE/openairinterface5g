@@ -149,7 +149,7 @@
    \param module_id      module id */
 void nr_ue_init_mac(module_id_t module_idP);
 
-void send_srb0_rrc(int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *data);
+void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data);
 
 /**\brief apply default configuration values in nr_mac instance
    \param mac           mac instance */
@@ -197,10 +197,10 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
 
 void nr_rrc_mac_config_req_reset(module_id_t module_id, NR_UE_MAC_reset_cause_t cause);
 
-/**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
-NR_UE_MAC_INST_t * nr_l2_init_ue();
+/**\brief initialization NR UE MAC instance(s)*/
+NR_UE_MAC_INST_t * nr_l2_init_ue(int nb_inst);
 
-/**\brief fetch MAC instance by module_id, within 0 - (NB_NR_UE_MAC_INST-1)
+/**\brief fetch MAC instance by module_id
    \param module_id index of MAC instance(s)*/
 NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id);
 

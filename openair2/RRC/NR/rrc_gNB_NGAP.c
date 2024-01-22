@@ -623,8 +623,7 @@ int rrc_gNB_process_NGAP_DOWNLINK_NAS(MessageDef *msg_p, instance_t instance, mu
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, UE->rrc_ue_id, 0, 0);
 
   /* Create message for PDCP (DLInformationTransfer_t) */
-  length = do_NR_DLInformationTransfer(instance,
-                                       buffer,
+  length = do_NR_DLInformationTransfer(buffer,
                                        sizeof(buffer),
                                        rrc_gNB_get_next_transaction_identifier(instance),
                                        req->nas_pdu.length,

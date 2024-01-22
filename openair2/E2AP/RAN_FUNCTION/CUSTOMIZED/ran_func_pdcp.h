@@ -24,7 +24,7 @@
 
 #include "openair2/E2AP/flexric/src/agent/../sm/sm_io.h"
 
-void read_pdcp_sm(void*);
+bool read_pdcp_sm(void*);
 
 void read_pdcp_setup_sm(void* data);
 

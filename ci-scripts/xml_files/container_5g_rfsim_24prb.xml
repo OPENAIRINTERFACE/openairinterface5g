@@ -59,8 +59,8 @@
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_24prb</yaml_path>
-                <services>oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
-                <nb_healthy>6</nb_healthy>
+                <services>oai-amf oai-smf oai-upf oai-ext-dn</services>
+                <nb_healthy>5</nb_healthy>
         </testCase>
 
         <testCase id="000002">
@@ -68,7 +68,7 @@
                 <desc>Deploy OAI 5G gNB RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_24prb</yaml_path>
                 <services>oai-gnb</services>
-                <nb_healthy>7</nb_healthy>
+                <nb_healthy>6</nb_healthy>
         </testCase>
 
         <testCase id="000003">
@@ -76,7 +76,7 @@
                 <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_24prb</yaml_path>
                 <services>oai-nr-ue</services>
-                <nb_healthy>8</nb_healthy>
+                <nb_healthy>7</nb_healthy>
         </testCase>
 
         <testCase id="020001">

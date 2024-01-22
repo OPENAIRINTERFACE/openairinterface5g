@@ -24,7 +24,7 @@
 
 #include "openair2/E2AP/flexric/src/agent/../sm/sm_io.h"
 
-void read_gtp_sm(void*);
+bool read_gtp_sm(void*);
 
 void read_gtp_setup_sm(void*);
 

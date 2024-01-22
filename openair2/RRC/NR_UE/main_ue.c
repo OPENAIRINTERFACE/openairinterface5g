@@ -35,11 +35,6 @@
 #include "common/utils/LOG/log.h"
 #include "executables/softmodem-common.h"
 
-NR_UE_RRC_INST_t* nr_l3_init_ue(char* uecap)
-{
-  return openair_rrc_top_init_ue_nr(uecap);
-}
-
 void init_nsa_message(NR_UE_RRC_INST_t *rrc, char* reconfig_file, char* rbconfig_file)
 {
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1) {

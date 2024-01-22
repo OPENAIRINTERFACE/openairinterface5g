@@ -82,17 +82,17 @@ void nr_pdcp_manager_unlock(nr_pdcp_ue_manager_t *_m)
 }
 
 /* must be called with lock acquired */
-nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *_m, ue_id_t rntiMaybeUEid)
+nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *_m, ue_id_t UEid)
 {
   /* TODO: optimze */
   nr_pdcp_ue_manager_internal_t *m = _m;
   int i;
 
   for (i = 0; i < m->ue_count; i++)
-    if (m->ue_list[i]->rntiMaybeUEid == rntiMaybeUEid)
+    if (m->ue_list[i]->ue_id == UEid)
       return m->ue_list[i];
 
-  LOG_D(PDCP, "%s:%d:%s: new UE ID/RNTI 0x%" PRIx64 "\n", __FILE__, __LINE__, __FUNCTION__, rntiMaybeUEid);
+  LOG_D(PDCP, "%s:%d:%s: new UE ID/RNTI 0x%" PRIx64 "\n", __FILE__, __LINE__, __FUNCTION__, UEid);
 
   m->ue_count++;
   m->ue_list = realloc(m->ue_list, sizeof(nr_pdcp_ue_t *) * m->ue_count);
@@ -106,13 +106,13 @@ nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *_m, ue_id_t rntiMaybe
     exit(1);
   }
 
-  m->ue_list[m->ue_count - 1]->rntiMaybeUEid = rntiMaybeUEid;
+  m->ue_list[m->ue_count - 1]->ue_id = UEid;
 
   return m->ue_list[m->ue_count-1];
 }
 
 /* must be called with lock acquired */
-void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *_m, ue_id_t rntiMaybeUEid)
+void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *_m, ue_id_t UEid)
 {
   nr_pdcp_ue_manager_internal_t *m = _m;
   nr_pdcp_ue_t *ue;
@@ -120,11 +120,11 @@ void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *_m, ue_id_t rntiMaybeUEid)
   int j;
 
   for (i = 0; i < m->ue_count; i++)
-    if (m->ue_list[i]->rntiMaybeUEid == rntiMaybeUEid)
+    if (m->ue_list[i]->ue_id == UEid)
       break;
 
   if (i == m->ue_count) {
-    LOG_D(PDCP, "%s:%d:%s: warning: UE ID/RNTI 0x%" PRIx64 " not found\n", __FILE__, __LINE__, __FUNCTION__, rntiMaybeUEid);
+    LOG_D(PDCP, "%s:%d:%s: warning: UE ID/RNTI 0x%" PRIx64 " not found\n", __FILE__, __LINE__, __FUNCTION__, UEid);
     return;
   }
 
@@ -213,6 +213,6 @@ bool nr_pdcp_get_first_ue_id(nr_pdcp_ue_manager_t *_m, ue_id_t *ret)
   nr_pdcp_ue_manager_internal_t *m = _m;
   if (m->ue_count == 0)
     return false;
-  *ret = m->ue_list[0]->rntiMaybeUEid;
+  *ret = m->ue_list[0]->ue_id;
   return true;
 }

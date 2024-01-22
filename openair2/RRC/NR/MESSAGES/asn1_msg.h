@@ -57,8 +57,7 @@ int xer_sprint_NR(char *string, size_t string_size, struct asn_TYPE_descriptor_s
 
 uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier);
 
-int do_RRCReject(uint8_t Mod_id,
-                 uint8_t *const buffer);
+int do_RRCReject(uint8_t *const buffer);
 
 NR_RLC_BearerConfig_t *get_SRB_RLC_BearerConfig(
     long channelId,
@@ -109,8 +108,7 @@ int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
                               struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
                               NR_CellGroupConfig_t *cellGroupConfig);
 
-uint8_t do_RRCSetupComplete(uint8_t Mod_id,
-                            uint8_t *buffer,
+uint8_t do_RRCSetupComplete(uint8_t *buffer,
                             size_t buffer_size,
                             const uint8_t Transaction_id,
                             uint8_t sel_plmn_id,
@@ -123,8 +121,7 @@ uint8_t do_NR_RRCReconfigurationComplete_for_nsa(uint8_t *buffer, size_t buffer_
 
 uint8_t do_NR_RRCReconfigurationComplete(uint8_t *buffer, size_t buffer_size, const uint8_t Transaction_id);
 
-uint8_t do_NR_DLInformationTransfer(uint8_t Mod_id,
-                                    uint8_t *buffer,
+uint8_t do_NR_DLInformationTransfer(uint8_t *buffer,
                                     size_t buffer_len,
                                     uint8_t transaction_id,
                                     uint32_t pdu_length,
@@ -134,7 +131,7 @@ uint8_t do_NR_ULInformationTransfer(uint8_t **buffer,
                         uint32_t pdu_length,
                         uint8_t *pdu_buffer);
 
-uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c_rnti);
+uint8_t do_RRCReestablishmentRequest(uint8_t *buffer, uint16_t c_rnti);
 
 int do_RRCReestablishment(rrc_gNB_ue_context_t *const ue_context_pP,
                           uint8_t *const buffer,

@@ -52,25 +52,13 @@ extern queue_t nr_dl_tti_req_queue;
 extern queue_t nr_tx_req_queue;
 extern queue_t nr_ul_dci_req_queue;
 extern queue_t nr_ul_tti_req_queue;
-//
-//  main_rrc.c
-//
-/**\brief Layer 3 initialization*/
-NR_UE_RRC_INST_t *nr_l3_init_ue(char *);
 
-//
-//  UE_rrc.c
-//
-
-/**\brief Initial the top level RRC structure instance*/
-NR_UE_RRC_INST_t *openair_rrc_top_init_ue_nr(char *);
+NR_UE_RRC_INST_t *nr_rrc_init_ue(char* uecap_file, int nb_inst);
 void init_nsa_message (NR_UE_RRC_INST_t *rrc, char* reconfig_file, char* rbconfig_file);
 
 void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, void *message, int msg_len);
 
-void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB,
-                                    instance_t instance,
-                                    NR_CellGroupConfig_t *cellGroupConfig);
+void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB, NR_UE_RRC_INST_t *rrc, NR_CellGroupConfig_t *cellGroupConfig);
 
 /**\brief interface between MAC and RRC thru SRB0 (RLC TM/no PDCP)
    \param module_id  module id
@@ -93,19 +81,19 @@ void nr_mac_rrc_sync_ind(const module_id_t module_id,
                          const frame_t frame,
                          const bool in_sync);
 
-void nr_rrc_going_to_IDLE(instance_t instance,
+void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
                           NR_Release_Cause_t release_cause,
                           NR_RRCRelease_t *RRCRelease);
 
 void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success);
-void nr_mac_rrc_msg3_ind(const module_id_t mod_id, int rnti);
+void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti);
 
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_nrue_task(void *args_p);
 void *rrc_nrue(void *args_p);
 
-void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc, instance_t instance);
+void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc);
 
 /**\brief RRC NSA UE task.
    \param void *args_p Pointer on arguments to start the task. */
@@ -122,7 +110,7 @@ int get_from_lte_ue_fd();
 void nr_rrc_SI_timers(NR_UE_RRC_SI_INFO *SInfo);
 
 void nr_ue_rrc_timer_trigger(int module_id, int frame, int gnb_id);
-void handle_t300_expiry(instance_t instance);
+void handle_t300_expiry(NR_UE_RRC_INST_t *rrc);
 
 void reset_rlf_timers_and_constants(NR_UE_Timers_Constants_t *tac);
 void set_default_timers_and_constants(NR_UE_Timers_Constants_t *tac);

@@ -39,6 +39,42 @@ int asn1_xer_print;
 int oai_exit = 0;
 instance_t CUuniqInstance = 0;
 
+#ifdef E2_AGENT
+#include "openair2/E2AP/flexric/src/agent/e2_agent_api.h"
+#include "openair2/E2AP/RAN_FUNCTION/init_ran_func.h"
+
+static void initialize_agent(ngran_node_t node_type, e2_agent_args_t oai_args)
+{
+  AssertFatal(oai_args.sm_dir != NULL , "Please, specify the directory where the SMs are located in the config file, i.e., add in config file the next line: e2_agent = {near_ric_ip_addr = \"127.0.0.1\"; sm_dir = \"/usr/local/lib/flexric/\");} ");
+  AssertFatal(oai_args.ip != NULL , "Please, specify the IP address of the nearRT-RIC in the config file, i.e., e2_agent = {near_ric_ip_addr = \"127.0.0.1\"; sm_dir = \"/usr/local/lib/flexric/\"");
+
+  printf("After RCconfig_NR_E2agent %s %s \n",oai_args.sm_dir, oai_args.ip  );
+
+  fr_args_t args = { .ip = oai_args.ip }; // init_fr_args(0, NULL);
+  memcpy(args.libs_dir, oai_args.sm_dir, 128);
+
+  sleep(1);
+
+  // Only 1 instances is supported in one executable
+  // Advice: run multiple executables to have multiple instances
+  const e1ap_upcp_inst_t *e1inst = getCxtE1(CUuniqInstance);
+
+  const int nb_id = e1inst->gnb_id;
+  const int cu_up_id = e1inst->cuup.setupReq.gNB_cu_up_id;
+  const int mcc = e1inst->cuup.setupReq.plmn[0].id.mcc;
+  const int mnc = e1inst->cuup.setupReq.plmn[0].id.mnc;
+  const int mnc_digit_len = e1inst->cuup.setupReq.plmn[0].id.mnc_digit_length;
+
+  printf("[E2 NODE]: mcc = %d mnc = %d mnc_digit = %d nb_id = %d \n", mcc, mnc, mnc_digit_len, nb_id);
+
+  printf("[E2 NODE]: Args %s %s \n", args.ip, args.libs_dir);
+
+  sm_io_ag_ran_t io = init_ran_func_ag();
+  init_agent_api(mcc, mnc, mnc_digit_len, nb_id, cu_up_id, node_type, io, &args);
+}
+#endif  // E2_AGENT
+
+
 void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
 {
   if (assert) {
@@ -134,6 +170,22 @@ int main(int argc, char **argv)
   MessageDef *msg = RCconfig_NR_CU_E1(&e1type);
   AssertFatal(msg != NULL, "Send init to task for E1AP UP failed\n");
   itti_send_msg_to_task(TASK_CUUP_E1, 0, msg);
+
+  #ifdef E2_AGENT
+  //////////////////////////////////
+  //////////////////////////////////
+  //// Init the E2 Agent
+
+  // OAI Wrapper 
+  e2_agent_args_t oai_args = RCconfig_NR_E2agent();
+
+  if (oai_args.enabled) {
+    const ngran_node_t node_type = get_node_type();
+    assert(node_type == ngran_gNB_CUUP);
+    initialize_agent(node_type, oai_args);
+  }
+
+  #endif // E2_AGENT
 
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   itti_wait_tasks_end(NULL);

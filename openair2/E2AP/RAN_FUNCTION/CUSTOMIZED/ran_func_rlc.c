@@ -28,7 +28,6 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "openair2/E2AP/flexric/src/util/time_now_us.h"
-#include "openair2/E2AP/flexric/test/rnd/fill_rnd_data_rlc.h"
 
 static
 const int mod_id = 0;
@@ -67,7 +66,7 @@ void active_avg_to_tx(NR_UEs_t* const UE_info)
   }
 }
 
-void read_rlc_sm(void* data)
+bool read_rlc_sm(void* data)
 {
   assert(data != NULL);
 //  assert(data->type ==  RLC_STATS_V0);
@@ -161,6 +160,8 @@ void read_rlc_sm(void* data)
       ++i;
     }
   }
+
+  return act_rb > 0;
 }
 
 void read_rlc_setup_sm(void* data)

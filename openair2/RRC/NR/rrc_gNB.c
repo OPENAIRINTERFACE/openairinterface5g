@@ -492,7 +492,7 @@ static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
   unsigned char buf[1024];
-  int size = do_RRCReject(module_id, buf);
+  int size = do_RRCReject(buf);
   AssertFatal(size > 0, "do_RRCReject failed\n");
   AssertFatal(size <= 1024, "memory corruption\n");
 
@@ -576,8 +576,13 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
   f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
   int scs = get_ssb_scs(cell_info);
   int band = get_dl_band(cell_info);
-  uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
-  NR_MeasConfig_t *measconfig = get_defaultMeasConfig(ssb_arfcn, band, scs);
+  NR_MeasConfig_t *measconfig = NULL;
+  if (du->mib != NULL && du->sib1 != NULL) {
+    /* we cannot calculate the default measurement config without MIB&SIB1, as
+     * we don't know the DU's SSB ARFCN */
+    uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
+    measconfig = get_defaultMeasConfig(ssb_arfcn, band, scs);
+  }
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   int size = do_RRCReconfiguration(ue_p,
@@ -1288,12 +1293,22 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
     return;
   }
 
-  rnti_t old_rnti = req->ue_Identity.c_RNTI;
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, assoc_id, old_rnti);
   /* in case we need to do RRC Setup, give the UE a new random identity */
   uint64_t random_value;
   fill_random(&random_value, sizeof(random_value));
   random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
+  if (du->mib == NULL || du->sib1 == NULL) {
+    /* we don't have MIB/SIB1 of the DU, and therefore cannot generate the
+     * Reestablishment (as we would need the SSB's ARFCN, which we cannot
+     * compute). So generate RRC Setup instead */
+    LOG_E(NR_RRC, "Reestablishment request: no MIB/SIB1 of DU present, cannot do reestablishment, force setup request\n");
+    rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+    ue_context_p->ue_context.Srb[1].Active = 1;
+    rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+  }
+
+  rnti_t old_rnti = req->ue_Identity.c_RNTI;
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, assoc_id, old_rnti);
   if (ue_context_p == NULL) {
     LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC setup\n");
     ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);

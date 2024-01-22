@@ -20,8 +20,7 @@ Core network components are on `core_net` network, CU-CP <--> CU-UP X communicat
 ```
 AMF  --> 192.168.71.132 (N2,Namf)
 SMF  --> 192.168.71.133 (N4,Nsmf)
-NRF  --> 192.168.71.130 (Nnrf)
-SPGWU  --> 192.168.71.134 (N3)
+UPF    --> 192.168.71.134 (N3)
 CU-CP  --> 192.168.71.X (N2), 192.168.72.2 (F1C), 192.168.77.2 (E1)
 CU-UP1 --> 192.168.71.X (N3), 192.168.73.2 (F1U), 192.168.77.3 (E1)
 CU-UP2 --> 192.168.71.X (N3), 192.168.74.2 (F1U), 192.168.77.4 (E1)
@@ -41,7 +40,7 @@ You should be able to deploy the [basic 5G RFsim deployment](../5g_rfsimulator/R
 First, start the MySQL server and 5GC:
 
 ```bash
-docker-compose up -d mysql oai-nrf oai-amf oai-smf oai-spgwu
+docker-compose up -d mysql oai-amf oai-smf oai-upf
 docker-compose ps -a
 ```
 

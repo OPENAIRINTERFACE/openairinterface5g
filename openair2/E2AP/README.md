@@ -62,6 +62,15 @@ cd oai/
 
 - By default, OAI will build the E2 Agent with E2AP v2 and KPM v2. If you want a different version, edit the variable E2AP\_VERSION and KPM\_VERSION at OAI's CMakeLists.txt file.
 
+Currently available versions:
+|            |KPM v2.03|KPM v3.00|
+|:-----------|:--------|:--------|
+| E2AP v1.01 | Y       | Y       |
+| E2AP v2.03 | Y       | Y       |
+| E2AP v3.01 | Y       | Y       |
+
+  Please note that KPM SM v2.01 is supported only in FlexRIC, but not in OAI.
+
 ```bash
 cd cmake_targets/
 ./build_oai -I -w SIMU --gNB --nrUE --build-e2 --ninja
@@ -89,7 +98,7 @@ git submodule update
 ```bash
 git clone https://gitlab.eurecom.fr/mosaic5g/flexric flexric
 cd flexric/
-git checkout 93961d2480b2c7a5721e03435cb34cf9446d1ad1
+git checkout 70dd779f5339f4dac3ac176a24b49c45046a59fa
 ```
 
 ### 2.2.2 Build FlexRIC
@@ -104,11 +113,21 @@ sudo make install
 
 By default the service model libraries will be installed in the path `/usr/local/lib/flexric` while the configuration file in `/usr/local/etc/flexric`.
 
-Available SMs in this version are:
-* KPM v02.03 and KPM v03.00 (xapp_kpm_moni)
-* RC v01.03 (xapp_kpm_rc)
-* GTP (xapp_gtp_moni)
-* MAC + RLC + PDCP (xapp_mac_rlc_pdcp_moni)
+#### 2.2.3.1 Available Service Models
+1. KPM v02.03 and KPM v03.00 (`xapp_kpm_moni`)
+At the moment, the following measurements are supported in OAI RAN:
+* "DRB.PdcpSduVolumeDL"
+* "DRB.PdcpSduVolumeUL"
+* "DRB.RlcSduDelayDl"
+* "DRB.UEThpDl"
+* "DRB.UEThpUl"
+* "RRU.PrbTotDl"
+* "RRU.PrbTotUl"
+
+2. RC v01.03 (`xapp_kpm_rc`)
+At the moment, OAI RAN supports the RAN control function "QoS flow mapping configuration", i.e. creating a new DRB.
+
+3. MAC + RLC + PDCP + GTP (`xapp_gtp_mac_rlc_pdcp_moni`)
 
 If you are interested in TC and SLICE SMs, please follow the instructions at https://gitlab.eurecom.fr/mosaic5g/flexric.
 
@@ -122,16 +141,23 @@ e2_agent = {
 }
 ```
 
-* start the gNB
+* start the gNB-mono
 ```bash
 cd oai/cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa -E
 ```
 
-* if CU-DU split is used, start the gNB as follows
+* if CU/DU split is used, start the gNB as follows
 ```bash
 sudo ./nr-softmodem -O <path_to_du_conf_file> --rfsim --sa -E
-sudo ./nr-softmodem -O <path_to_cu_conf_file> --rfsim --sa -E
+sudo ./nr-softmodem -O <path_to_cu_conf_file> --sa
+```
+
+* if CU-CP/CU-UP/DU split is used, start the gNB as follows
+```bash
+sudo ./nr-softmodem -O <path_to_du_conf_file> --rfsim --sa -E
+sudo ./nr-softmodem -O <path_to_cu_cp_conf_file> --sa
+sudo ./nr-cuup -O <path_to_cu_up_conf_file> --sa
 ```
 
 * start the nrUE
@@ -152,17 +178,17 @@ cd flexric
 ./build/examples/xApp/c/monitor/xapp_kpm_moni
 ```
 
-* start the GTP xApp
+* start the (MAC + RLC + PDCP + GTP) xApp
 ```bash
 cd flexric
-./build/examples/xApp/c/monitor/xapp_gtp_moni
+./build/examples/xApp/c/monitor/xapp_gtp_mac_rlc_pdcp_moni
 ```
-
-* start the (MAC + RLC + PDCP) xApp
-```bash
-cd flexric
-./build/examples/xApp/c/monitor/xapp_mac_rlc_pdcp_moni
-```
+The latency that you observe in your monitor xApp is the latency from the E2 Agent to the nearRT-RIC and xApp. 
+Therefore, FlexRIC is well suited for use cases with ultra low-latency requirements.
+Additionally, all the data received in the `xapp_gtp_mac_rlc_pdcp_moni` xApp is also written to /tmp/xapp_db in case that offline data processing is wanted (e.g., Machine Learning/Artificial Intelligence applications). You can browse the data using e.g., sqlitebrowser.
+Please note:
+* KPM SM database is not been updated, therefore commented in `flexric/src/xApp/db/sqlite3/sqlite3_wrapper.c:1152`
+* RC SM database is not yet implemented.
 
 # Optional - Multiple UEs
 

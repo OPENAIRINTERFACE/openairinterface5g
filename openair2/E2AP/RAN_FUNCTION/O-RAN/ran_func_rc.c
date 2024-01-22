@@ -20,7 +20,7 @@
  */
 
 #include "ran_func_rc.h"
-#include "../../flexric/test/rnd/fill_rnd_data_rc.h"
+#include "../../flexric/test/rnd/fill_rnd_data_rc.h"  // this dependancy will be taken out once RAN Function Definition is implemented
 #include "../../flexric/src/sm/rc_sm/ie/ir/lst_ran_param.h"
 #include "../../flexric/src/sm/rc_sm/ie/ir/ran_param_list.h"
 #include "../../flexric/src/agent/e2_agent_api.h"
@@ -30,11 +30,15 @@
 #include <pthread.h>
 #include <unistd.h>
 
-void read_rc_sm(void* data)
+// Please note: current implementation doesn't take split architecture into account, neither CU/DU nor CU-UP/CU-CP
+
+bool read_rc_sm(void* data)
 {
   assert(data != NULL);
 //  assert(data->type == RAN_CTRL_STATS_V1_03);
   assert(0!=0 && "Not implemented");
+
+  return true;
 }
 
 void read_rc_setup_sm(void* data)

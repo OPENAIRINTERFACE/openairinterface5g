@@ -1177,7 +1177,16 @@ bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t
         lcgid_buffer_remain[lcgid] += mac->scheduling_info.lc_sched_info[lcid - 1].LCID_buffer_remain;
       }
 
-      mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(module_idP, mac->crnti,gNB_index,frameP,slotP,ENB_FLAG_NO,MBMS_FLAG_NO, lcid, 0, 0);
+      mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(module_idP,
+                                                            mac->ue_id,
+                                                            gNB_index,
+                                                            frameP,
+                                                            slotP,
+                                                            ENB_FLAG_NO,
+                                                            MBMS_FLAG_NO,
+                                                            lcid,
+                                                            0,
+                                                            0);
 
       lcid_bytes_in_buffer[lcid - 1] = rlc_status.bytes_in_buffer;
 
@@ -2997,7 +3006,7 @@ static bool fill_mac_sdu(module_id_t module_idP,
       get_num_bytes_to_reqlc(mac, count_same_priority_lcids, lcid, buflen_ep, *buflen_remain, *counter, lcids_bytes_tot, &target);
 
   uint16_t sdu_length = mac_rlc_data_req(module_idP,
-                                         mac->crnti,
+                                         mac->ue_id,
                                          gNB_index,
                                          frameP,
                                          ENB_FLAG_NO,

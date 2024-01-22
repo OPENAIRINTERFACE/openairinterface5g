@@ -101,11 +101,21 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
   return(0);
 }
 
-void nr_mac_rrc_msg3_ind(const module_id_t mod_id, int rnti)
+void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti)
 {
   MessageDef *message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_MSG3_IND);
   NR_RRC_MAC_MSG3_IND (message_p).rnti = rnti;
   itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(mod_id), message_p);
+}
+
+void nr_ue_rrc_timer_trigger(int instance, int frame, int gnb_id)
+{
+  MessageDef *message_p;
+  message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NRRRC_FRAME_PROCESS);
+  NRRRC_FRAME_PROCESS(message_p).frame = frame;
+  NRRRC_FRAME_PROCESS(message_p).gnb_id = gnb_id;
+  LOG_D(NR_RRC, "RRC timer trigger: frame %d\n", frame);
+  itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
 }
 
 void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success)

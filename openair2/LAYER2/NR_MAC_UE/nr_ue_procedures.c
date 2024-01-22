@@ -2409,7 +2409,6 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *p
 int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot)
 {
   // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
-  DevCheck(module_idP < NB_NR_UE_MAC_INST, module_idP, NB_NR_UE_MAC_INST, 0);
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   NR_UE_SCHEDULING_INFO *si = &mac->scheduling_info;
   int max_sr_transmissions = (1 << (2 + si->sr_TransMax));
@@ -3607,7 +3606,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
           }
 
           mac_rlc_data_ind(module_idP,
-                           mac->crnti,
+                           mac->ue_id,
                            module_idP,
                            frameP,
                            ENB_FLAG_NO,
@@ -3745,7 +3744,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         LOG_D(NR_MAC, "%4d.%2d : DLSCH -> LCID %d %d bytes\n", frameP, slot, rx_lcid, mac_len);
 
         mac_rlc_data_ind(module_idP,
-                         mac->crnti,
+                         mac->ue_id,
                          gNB_index,
                          frameP,
                          ENB_FLAG_NO,
