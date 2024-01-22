@@ -230,7 +230,7 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   int ret;
   int settingPriority = 1;
   ret=pthread_attr_init(&attr);
-  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  AssertFatal(ret == 0, "Error in pthread_attr_init(): ret: %d, errno: %d\n", ret, errno);
 
   LOG_I(UTIL,"Creating thread %s with affinity %d and priority %d\n",name,affinity,priority);
 
@@ -241,9 +241,9 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   
   if (settingPriority) {
     ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+    AssertFatal(ret == 0, "Error in pthread_attr_setinheritsched(): ret: %d, errno: %d\n", ret, errno);
     ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
-    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+    AssertFatal(ret == 0, "Error in pthread_attr_setschedpolicy(): ret: %d, errno: %d\n", ret, errno);
     if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_OAI)) {
       LOG_E(UTIL,"Prio not possible: %d, min is %d, max: %d, forced in the range\n",
 	    priority,
@@ -258,18 +258,19 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
     struct sched_param sparam={0};
     sparam.sched_priority = priority;
     ret=pthread_attr_setschedparam(&attr, &sparam);
-    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+    AssertFatal(ret == 0, "Error in pthread_attr_setschedparam(): ret: %d errno: %d\n", ret, errno);
   }
   
   ret=pthread_create(t, &attr, func, param);
-  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  AssertFatal(ret == 0, "Error in pthread_create(): ret: %d, errno: %d\n", ret, errno);
   
   pthread_setname_np(*t, name);
   if (affinity != -1 ) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(affinity, &cpuset);
-    AssertFatal( pthread_setaffinity_np(*t, sizeof(cpu_set_t), &cpuset) == 0, "Error setting processor affinity");
+    ret = pthread_setaffinity_np(*t, sizeof(cpu_set_t), &cpuset);
+    AssertFatal(ret == 0, "Error in pthread_getaffinity_np(): ret: %d, errno: %d", ret, errno);
   }
   pthread_attr_destroy(&attr);
 }
