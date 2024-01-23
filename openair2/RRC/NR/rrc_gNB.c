@@ -348,7 +348,7 @@ static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue, bool reestablish)
     return NULL;
   }
   NR_SRB_ToAddModList_t *list = CALLOC(sizeof(*list), 1);
-  for (int i = 0; i < maxSRBs; i++)
+  for (int i = 0; i < NR_NUM_SRB; i++)
     if (ue->Srb[i].Active) {
       asn1cSequenceAdd(list->list, NR_SRB_ToAddMod_t, srb);
       srb->srb_Identity = i;
@@ -918,7 +918,8 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   uint8_t security_mode =
       enable_ciphering ? ue_p->ciphering_algorithm | (ue_p->integrity_algorithm << 4) : 0 | (ue_p->integrity_algorithm << 4);
 
-  for (int srb_id = 1; srb_id < maxSRBs; srb_id++) {
+  /* SRBs */
+  for (int srb_id = 1; srb_id < NR_NUM_SRB; srb_id++) {
     if (ue_p->Srb[srb_id].Active) {
       nr_pdcp_config_set_security(ue_p->rrc_ue_id, srb_id, security_mode, kRRCenc, kRRCint, kUPenc);
       // TODO: should send E1 UE Bearer Modification with PDCP Reestablishment flag

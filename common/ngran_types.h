@@ -56,5 +56,4 @@ typedef enum { CPtype = 0, UPtype } E1_t;
 #define GTPV1_U_PORT_NUMBER (2152)
 
 typedef enum { non_dynamic, dynamic } fiveQI_type_t;
-#define maxSRBs 4
 #endif

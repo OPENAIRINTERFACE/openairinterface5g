@@ -241,7 +241,7 @@ typedef struct gNB_RRC_UE_s {
   drb_t                              established_drbs[MAX_DRBS_PER_UE];
   NR_DRB_ToReleaseList_t            *DRB_ReleaseList;
 
-  NR_SRB_INFO_TABLE_ENTRY Srb[maxSRBs]; // 3gpp max is 3 SRBs, number 1..3, we waste the entry 0 for code simplicity
+  NR_SRB_INFO_TABLE_ENTRY Srb[NR_NUM_SRB];
   NR_MeasConfig_t                   *measConfig;
   NR_HANDOVER_INFO                  *handover_info;
   NR_MeasResults_t                  *measResults;
