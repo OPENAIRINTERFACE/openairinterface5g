@@ -1420,7 +1420,13 @@ int nr_get_sf_retxBSRTimer(uint8_t sf_offset) {
 // PUSCH Msg3 scheduler:
 // - scheduled by RAR UL grant according to 8.3 of TS 38.213
 // Note: Msg3 tx in the uplink symbols of mixed slot
-int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, long k2)
+int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
+                          const uint8_t is_Msg3,
+                          const frame_t current_frame,
+                          const int current_slot,
+                          frame_t *frame_tx,
+                          int *slot_tx,
+                          const long k2)
 {
   AssertFatal(k2 > DURATION_RX_TO_TX,
               "Slot offset K2 (%ld) needs to be higher than DURATION_RX_TO_TX (%d). Please set min_rxtxtime at least to %d in gNB config file or gNBs.[0].min_rxtxtime=%d via command line.\n",
@@ -1430,7 +1436,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t curren
               DURATION_RX_TO_TX);
 
   int delta = 0;
-  NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
+  const NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
 
   // Get the numerology to calculate the Tx frame and slot
   int mu = current_UL_BWP->scs;

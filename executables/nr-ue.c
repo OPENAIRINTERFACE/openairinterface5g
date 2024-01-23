@@ -540,7 +540,12 @@ void processSlotTX(void *arg) {
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   nr_phy_data_tx_t phy_data = {0};
 
-  LOG_D(PHY,"%d.%d => slot type %d\n", proc->frame_tx, proc->nr_slot_tx, proc->tx_slot_type);
+  LOG_D(PHY,
+        "SlotTx %d.%d => slot type %d, wait: %d \n",
+        proc->frame_tx,
+        proc->nr_slot_tx,
+        proc->tx_slot_type,
+        rxtxD->tx_wait_for_dlsch);
   if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT){
     if (rxtxD->tx_wait_for_dlsch)
       LOG_D(PHY, "enter wait for tx, slot %d, nb events to wait %d; ", proc->nr_slot_tx, rxtxD->tx_wait_for_dlsch);

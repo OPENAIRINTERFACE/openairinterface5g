@@ -382,7 +382,7 @@ int get_deltatf(uint16_t nb_of_prbs,
                 int N_sc_ctrl_RB,
                 int O_UCI);
 
-void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
+int nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            int slot,
                            uint16_t rnti,
                            PUCCH_sched_t *pucch,
@@ -496,7 +496,13 @@ int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm);
 // - in which ULSCH should be scheduled. K2 is configured in RRC configuration.  
 // PUSCH Msg3 scheduler:
 // - scheduled by RAR UL grant according to 8.3 of TS 38.213
-int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, long k2);
+int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
+                          const uint8_t is_Msg3,
+                          const frame_t current_frame,
+                          const int current_slot,
+                          frame_t *frame_tx,
+                          int *slot_tx,
+                          const long k2);
 
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
 

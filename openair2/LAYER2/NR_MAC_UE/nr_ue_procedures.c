@@ -102,7 +102,7 @@ random-access procedure
 @param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
-static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id);
+static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id);
 
 int get_pucch0_mcs(const int O_ACK, const int O_SR, const int ack_payload, const int sr_payload)
 {
@@ -190,7 +190,7 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
     } else if (rnti == 0xFFFF) {
       rnti_type = TYPE_SI_RNTI_;
     } else {
-      AssertFatal(1 == 0, "In %s: Not identified/handled rnti %d \n", __FUNCTION__, rnti);
+      AssertFatal(1 == 0, "Not identified/handled rnti %d \n", rnti);
     }
 
     LOG_D(MAC, "Returning rnti_type %s \n", rnti_types(rnti_type));
@@ -1279,7 +1279,7 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
         harq_id, frame, slot, current_harq->ul_frame, current_harq->ul_slot, data_toul_fb);
 }
 
-void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
+int nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            int slot,
                            uint16_t rnti,
                            PUCCH_sched_t *pucch,
@@ -1341,11 +1341,11 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
     if (mac->harq_ACK_SpatialBundlingPUCCH ||
         mac->pdsch_HARQ_ACK_Codebook != NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) {
-      LOG_E(MAC,"PUCCH Unsupported cell group configuration\n");
-      return;
+      LOG_E(NR_MAC, "PUCCH Unsupported cell group configuration\n");
+      return -1;
     } else if (sc_info->pdsch_CGB_Transmission) {
-      LOG_E(MAC,"PUCCH Unsupported code block group for serving cell config\n");
-      return;
+      LOG_E(NR_MAC, "PUCCH Unsupported code block group for serving cell config\n");
+      return -1;
     }
 
     NR_PUSCH_Config_t *pusch_Config = current_UL_BWP ? current_UL_BWP->pusch_Config : NULL;
@@ -1371,8 +1371,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
     int n_uci = pucch->n_sr + pucch->n_harq + pucch->n_csi;
     if (n_uci > (sizeof(uint64_t) * 8)) {
-      LOG_E(MAC,"PUCCH number of UCI bits exceeds payload size\n");
-      return;
+      LOG_E(NR_MAC, "PUCCH number of UCI bits exceeds payload size\n");
+      return -1;
     }
 
     switch(pucchres->format.present) {
@@ -1470,7 +1470,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         pucch_pdu->payload = (pucch->csi_part1_payload << (pucch->n_harq + pucch->n_sr)) | (pucch->sr_payload << pucch->n_harq) | pucch->ack_payload;
         break;
       default :
-        AssertFatal(1==0,"Undefined PUCCH format \n");
+        LOG_E(NR_MAC, "Undefined PUCCH format \n");
+        return -1;
     }
 
     pucch_pdu->pucch_tx_power = get_pucch_tx_power_ue(mac,
@@ -1484,8 +1485,10 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                                                       pucch_pdu->nr_of_symbols,
                                                       subframe_number,
                                                       n_uci);
-  } else
-    AssertFatal(1 == 0, "problem with pucch configuration\n");
+  } else {
+    LOG_E(NR_MAC, "problem with pucch configuration\n");
+    return -1;
+  }
 
   NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon = current_UL_BWP->pucch_ConfigCommon;
 
@@ -1511,8 +1514,10 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
       pucch_pdu->sequence_hop_flag = 1;
       break;
     default:
-      AssertFatal(1==0,"Group hopping flag undefined (0,1,2) \n");
+      LOG_E(NR_MAC, "Group hopping flag undefined (0,1,2) \n");
+      return -1;
   }
+  return 0;
 }
 
 int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
@@ -1696,7 +1701,7 @@ NR_PUCCH_Resource_t *find_pucch_resource_from_list(struct NR_PUCCH_Config__resou
   return pucch_resource;
 }
 
-bool check_mux_acknack_csi(NR_PUCCH_Resource_t *csi_res, NR_PUCCH_Config_t *pucch_Config)
+static bool check_mux_acknack_csi(NR_PUCCH_Resource_t *csi_res, NR_PUCCH_Config_t *pucch_Config)
 {
   bool ret;
   switch (csi_res->format.present) {
@@ -2823,7 +2828,7 @@ void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, int pdu_id)
     nr_ue_process_mac_pdu(dl_info, pdu_id);
     break;
     case FAPI_NR_RX_PDU_TYPE_RAR:
-    nr_ue_process_rar(dl_info, pdu_id);
+      nr_ue_process_rar(dl_info, pdu_id);
     break;
     default:
     break;
@@ -3969,7 +3974,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 // - b buffer
 // - ulsch power offset
 // - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
-static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
+static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 {
   module_id_t mod_id       = dl_info->module_id;
   frame_t frame            = dl_info->frame;
@@ -3977,7 +3982,7 @@ static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack == 0) {
     LOG_W(NR_MAC,"[UE %d][RAPROC][%d.%d] CRC check failed on RAR (NAK)\n", mod_id, frame, slot);
-    return 0;
+    return;
   }
 
   NR_UE_MAC_INST_t *mac    = get_mac_inst(mod_id);
@@ -4046,7 +4051,6 @@ static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
   #endif
 
   if (ra->RA_RAPID_found) {
-
     RAR_grant_t rar_grant;
 
     unsigned char tpc_command;
@@ -4147,7 +4151,7 @@ static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
                                              rar_grant.Msg3_t_alloc);
     if (tda_info.nrOfSymbols == 0) {
       LOG_E(MAC, "Cannot schedule Msg3. Something wrong in TDA information\n");
-      return -1;
+      return;
     }
     ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, tda_info.k2);
 
@@ -4158,7 +4162,6 @@ static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 
       if (!ul_config) {
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
-        return -1;
       }
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                   "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
@@ -4185,7 +4188,7 @@ static int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
     ra->t_crnti = 0;
   }
 
-  return ret;
+  return;
 }
 
 // Returns the pathloss in dB for the active UL BWP on the selected carrier based on the DL RS associated with the PRACH transmission
