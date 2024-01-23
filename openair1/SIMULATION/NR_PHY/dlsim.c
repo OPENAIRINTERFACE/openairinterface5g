@@ -874,23 +874,9 @@ int main(int argc, char **argv)
   UE_mac->ra.ra_state = RA_SUCCEEDED;
 
   nr_dcireq_t dcireq;
-  nr_scheduled_response_t scheduled_response;
   nr_phy_data_t phy_data = {0};
-
-  memset((void*)&dcireq,0,sizeof(dcireq));
-  memset((void*)&scheduled_response,0,sizeof(scheduled_response));
-  dcireq.module_id = 0;
-  dcireq.gNB_index = 0;
-  dcireq.cc_id = 0;
-  
-  scheduled_response.dl_config = &dcireq.dl_config_req;
-  scheduled_response.ul_config = &dcireq.ul_config_req;
-  scheduled_response.tx_request = NULL;
-  scheduled_response.module_id = 0;
-  scheduled_response.CC_id = 0;
-  scheduled_response.frame = frame;
-  scheduled_response.slot  = slot;
-  scheduled_response.phy_data = &phy_data;
+  fapi_nr_dl_config_request_t dl_config = {.sfn = frame, .slot = slot};
+  nr_scheduled_response_t scheduled_response = {.dl_config = &dl_config, .phy_data = &phy_data, .mac = UE_mac};
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;

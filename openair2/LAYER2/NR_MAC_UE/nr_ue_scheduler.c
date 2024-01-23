@@ -64,22 +64,33 @@ void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, in
   AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
               "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
   // clear ul_config for new frame/slot
-  if ((ul_config->slot != slot_tx || ul_config->sfn != frame_tx) &&
-      ul_config->number_pdus != 0 &&
-      !get_softmodem_params()->emulate_l1) {
-    LOG_D(MAC, "%d.%d %d.%d f clear ul_config %p t %d pdu %d\n", frame_tx, slot_tx, ul_config->sfn, ul_config->slot, ul_config, pdu_type, ul_config->number_pdus);
+  if ((ul_config->slot != slot_tx || ul_config->frame != frame_tx) && ul_config->number_pdus != 0
+      && !get_softmodem_params()->emulate_l1) {
+    LOG_D(MAC,
+          "%d.%d %d.%d f clear ul_config %p t %d pdu %d\n",
+          frame_tx,
+          slot_tx,
+          ul_config->frame,
+          ul_config->slot,
+          ul_config,
+          pdu_type,
+          ul_config->number_pdus);
     ul_config->number_pdus = 0;
-    memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list)); 
+    memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list));
   }
   ul_config->ul_config_list[ul_config->number_pdus].pdu_type = pdu_type;
   //ul_config->slot = slot_tx;
   //ul_config->sfn = frame_tx;
   ul_config->slot = slot_tx;
-  ul_config->sfn = frame_tx;
+  ul_config->frame = frame_tx;
   ul_config->number_pdus++;
 
-  LOG_D(NR_MAC, "In %s: Set config request for UL transmission in [%d.%d], number of UL PDUs: %d\n", __FUNCTION__, ul_config->sfn, ul_config->slot, ul_config->number_pdus);
-
+  LOG_D(NR_MAC,
+        "In %s: Set config request for UL transmission in [%d.%d], number of UL PDUs: %d\n",
+        __FUNCTION__,
+        ul_config->frame,
+        ul_config->slot,
+        ul_config->number_pdus);
 }
 
 void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
@@ -97,8 +108,14 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
   scheduled_response->tx_request = tx_request;
   scheduled_response->module_id  = mod_id;
   scheduled_response->CC_id      = cc_id;
-  scheduled_response->frame      = frame;
-  scheduled_response->slot       = slot;
+  if (dl_config) {
+    dl_config->sfn = frame;
+    dl_config->slot = slot;
+  }
+  if (ul_config) {
+    ul_config->frame = frame;
+    ul_config->slot = slot;
+  }
   scheduled_response->phy_data   = phy_data;
 
 }
@@ -988,8 +1005,8 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
 void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
 {
   int cc_id             = ul_info->cc_id;
-  frame_t frame_tx      = ul_info->frame_tx;
-  slot_t slot_tx        = ul_info->slot_tx;
+  frame_t frame_tx = ul_info->frame;
+  slot_t slot_tx = ul_info->slot;
   module_id_t mod_id    = ul_info->module_id;
   uint32_t gNB_index    = ul_info->gNB_index;
 
@@ -1013,9 +1030,14 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
   // AND if a UL grant (UL DCI or Msg3) has been received (as indicated by num_pdus)
   if (ul_config) {
     pthread_mutex_lock(&ul_config->mutex_ul_config);
-    if ((ul_info->slot_tx == ul_config->slot && ul_info->frame_tx == ul_config->sfn) && ul_config->number_pdus > 0){
-
-      LOG_D(NR_MAC, "[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n", frame_tx, slot_tx, ul_config->number_pdus, ul_config->sfn, ul_config->slot);
+    if (frame_tx == ul_config->frame && ul_config->number_pdus > 0) {
+      LOG_D(NR_MAC,
+            "[%d.%d]: number of UL PDUs: %d with UL transmission in [%d.%d]\n",
+            frame_tx,
+            slot_tx,
+            ul_config->number_pdus,
+            ul_config->frame,
+            ul_config->slot);
 
       uint8_t ulsch_input_buffer_array[NFAPI_MAX_NUM_UL_PDU][MAX_ULSCH_PAYLOAD_BYTES];
       nr_scheduled_response_t scheduled_response;
@@ -1062,11 +1084,11 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
           if (ra->ra_state == WAIT_CONTENTION_RESOLUTION && !ra->cfra){
             LOG_I(NR_MAC,"[RAPROC][%d.%d] RA-Msg3 retransmitted\n", frame_tx, slot_tx);
             // 38.321 restart the ra-ContentionResolutionTimer at each HARQ retransmission in the first symbol after the end of the Msg3 transmission
-            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
+            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame, ul_info->slot, ul_info->gNB_index);
           }
           if (ra->ra_state == WAIT_RAR && !ra->cfra){
             LOG_A(NR_MAC, "[RAPROC][%d.%d] RA-Msg3 transmitted\n", frame_tx, slot_tx);
-            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->gNB_index);
+            nr_Msg3_transmitted(ul_info->module_id, ul_info->cc_id, frame_tx, slot_tx, ul_info->gNB_index);
           }
         }
       }

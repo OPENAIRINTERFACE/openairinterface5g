@@ -268,8 +268,6 @@ typedef enum {
 #endif
 typedef struct {
   int nb_search_space;
-  uint16_t sfn;
-  uint16_t slot;
   fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS];
 } NR_UE_PDCCH_CONFIG;
 
@@ -330,7 +328,7 @@ typedef struct UE_NR_SCAN_INFO_s {
 } UE_NR_SCAN_INFO_t;
 
 /// Top-level PHY Data Structure for UE
-typedef struct {
+typedef struct PHY_VARS_NR_UE_s {
   /// \brief Module ID indicator for this instance
   uint8_t Mod_id;
   /// \brief Component carrier ID for this PHY instance
