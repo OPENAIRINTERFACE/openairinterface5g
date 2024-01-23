@@ -724,9 +724,9 @@ void nr_configure_mac_config_logicalChannelBearer(module_id_t module_id,
     mac->scheduling_info.lc_sched_info[channel_identity - 1].LCGID = 0;
 }
 
-void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
-                                                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
-                                                   struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list)
+static void configure_logicalChannelBearer(module_id_t module_id,
+                                           struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
+                                           struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   if (rlc_torelease_list) {
@@ -1955,6 +1955,10 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
       configure_BWPs(mac, scd);
     }
   }
+
+  configure_logicalChannelBearer(module_id,
+                                 cell_group_config->rlc_BearerToAddModList,
+                                 cell_group_config->rlc_BearerToReleaseList);
 
   // Setup the SSB to Rach Occasions mapping according to the config
   // Only if RACH is configured for current BWP

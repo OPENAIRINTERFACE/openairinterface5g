@@ -745,9 +745,6 @@ static void nr_rrc_manage_rlc_bearers(const NR_UE_RRC_INST_t *rrc,
       }
     }
   }
-  nr_rrc_mac_config_req_ue_logicalChannelBearer(rrc->ue_id,
-                                                cellGroupConfig->rlc_BearerToAddModList,
-                                                cellGroupConfig->rlc_BearerToReleaseList);
 }
 
 void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB, NR_UE_RRC_INST_t *rrc, NR_CellGroupConfig_t *cellGroupConfig)
