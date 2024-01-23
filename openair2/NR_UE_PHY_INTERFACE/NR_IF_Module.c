@@ -1171,8 +1171,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
     if (dl_info && dl_info->dci_ind && dl_info->dci_ind->number_of_dcis) {
       LOG_T(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
       for (int i = 0; i < dl_info->dci_ind->number_of_dcis; i++) {
-        LOG_T(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
-        nr_scheduled_response_t scheduled_response;
+        LOG_T(MAC, ">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n", i, dl_info->dci_ind->number_of_dcis);
         int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
@@ -1193,10 +1192,13 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
         LOG_T(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
 
         ret_mask |= (ret << FAPI_NR_DCI_IND);
-        AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
-        AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
+        AssertFatal(nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n");
         fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, dl_info->slot);
-        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->phy_data);
+        nr_scheduled_response_t scheduled_response = {.dl_config = dl_config,
+                                                      .mac = mac,
+                                                      .module_id = dl_info->module_id,
+                                                      .CC_id = dl_info->cc_id,
+                                                      .phy_data = dl_info->phy_data};
         nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
       }
@@ -1287,28 +1289,6 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id)
   pthread_mutex_init(&mac_IF_mutex, NULL);
 
   return nr_ue_if_module_inst[module_id];
-}
-
-int nr_ue_if_module_kill(uint32_t module_id) {
-
-  if (nr_ue_if_module_inst[module_id] != NULL){
-    free(nr_ue_if_module_inst[module_id]);
-  }
-  return 0;
-}
-
-int nr_ue_dcireq(nr_dcireq_t *dcireq) {
-
-  fapi_nr_dl_config_request_t *dl_config = &dcireq->dl_config_req;
-  NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
-  dl_config->sfn = dcireq->frame;
-  dl_config->slot = dcireq->slot;
-
-  LOG_T(PHY, "Entering UE DCI configuration frame %d slot %d \n", dcireq->frame, dcireq->slot);
-
-  ue_dci_configuration(UE_mac, dl_config, dcireq->frame, dcireq->slot);
-
-  return 0;
 }
 
 void RCconfig_nr_ue_macrlc(void) {

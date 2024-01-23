@@ -215,26 +215,6 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac);
 void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info);
 void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info);
 
-/**\brief fill nr_scheduled_response struct instance
-   @param nr_scheduled_response_t *    pointer to scheduled_response instance to fill
-   @param fapi_nr_dl_config_request_t* pointer to dl_config,
-   @param fapi_nr_ul_config_request_t* pointer to ul_config,
-   @param fapi_nr_tx_request_t*        pointer to tx_request;
-   @param module_id_t mod_id           module ID
-   @param int cc_id                    CC ID
-   @param frame_t frame                frame number
-   @param int slot                     reference number
-   @param void *phy_pata               pointer to a PHY specific structure to be filled in the scheduler response (can be null) */
-void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
-                             fapi_nr_dl_config_request_t *dl_config,
-                             fapi_nr_ul_config_request_t *ul_config,
-                             fapi_nr_tx_request_t *tx_request,
-                             module_id_t mod_id,
-                             int cc_id,
-                             frame_t frame,
-                             int slot,
-                             void *phy_data);
-
 /*! \fn int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
    \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and
 DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and

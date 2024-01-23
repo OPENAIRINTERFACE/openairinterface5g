@@ -58,22 +58,6 @@ typedef struct {
   /// slot
   int slot;
 
-  fapi_nr_dl_config_request_t dl_config_req;
-  fapi_nr_ul_config_request_t ul_config_req;
-} nr_dcireq_t;
-
-typedef struct {
-    /// module id
-    module_id_t module_id;
-    /// gNB index
-    uint32_t gNB_index;
-    /// component carrier id
-    int cc_id;
-    /// frame 
-    frame_t frame;
-    /// slot
-    int slot;
-
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
     fapi_nr_rx_indication_t *rx_ind;
@@ -315,18 +299,11 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
 
 bool sfn_slot_matcher(void *wanted, void *candidate);
 
-/**\brief done free of memory allocation by module_id and release to pointer pool.
-   \param module_id module id*/
-int nr_ue_if_module_kill(uint32_t module_id);
-
-
 /**\brief interface between L1/L2, indicating the downlink related information, like dci_ind and rx_req
    \param dl_info including dci_ind and rx_request messages*/
 int nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info);
-
-int nr_ue_dcireq(nr_dcireq_t *dcireq);
 
 #endif
 

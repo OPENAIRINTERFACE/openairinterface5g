@@ -873,7 +873,6 @@ int main(int argc, char **argv)
   UE_mac->state = UE_CONNECTED;
   UE_mac->ra.ra_state = RA_SUCCEEDED;
 
-  nr_dcireq_t dcireq;
   nr_phy_data_t phy_data = {0};
   fapi_nr_dl_config_request_t dl_config = {.sfn = frame, .slot = slot};
   nr_scheduled_response_t scheduled_response = {.dl_config = &dl_config, .phy_data = &phy_data, .mac = UE_mac};
@@ -961,9 +960,6 @@ int main(int argc, char **argv)
       UE_proc.frame_rx = frame;
       UE_proc.nr_slot_rx = slot;
       UE_proc.gNB_id = 0;
-      
-      dcireq.frame = frame;
-      dcireq.slot = slot;
 
       NR_UE_DLSCH_t *dlsch0 = &phy_data.dlsch[0];
 
@@ -1099,8 +1095,9 @@ int main(int argc, char **argv)
         // Apply MIMO Channel
         multipath_channel(gNB2UE, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials == 1) ? 1 : 0);
         add_noise(UE->common_vars.rxdata, (const double **) r_re, (const double **) r_im, sigma2, slot_length, slot_offset, ts, delay, pdu_bit_map, 0x1, frame_parms->nb_antennas_rx);
-
-        nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
+        dl_config.sfn = frame;
+        dl_config.slot = slot;
+        ue_dci_configuration(UE_mac, &dl_config, frame, slot);
         nr_ue_scheduled_response(&scheduled_response);
 
         pbch_pdcch_processing(UE,

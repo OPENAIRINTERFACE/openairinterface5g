@@ -93,33 +93,6 @@ void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, in
         ul_config->number_pdus);
 }
 
-void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
-                             fapi_nr_dl_config_request_t *dl_config,
-                             fapi_nr_ul_config_request_t *ul_config,
-                             fapi_nr_tx_request_t *tx_request,
-                             module_id_t mod_id,
-                             int cc_id,
-                             frame_t frame,
-                             int slot,
-                             void *phy_data)
-{
-  scheduled_response->dl_config  = dl_config;
-  scheduled_response->ul_config  = ul_config;
-  scheduled_response->tx_request = tx_request;
-  scheduled_response->module_id  = mod_id;
-  scheduled_response->CC_id      = cc_id;
-  if (dl_config) {
-    dl_config->sfn = frame;
-    dl_config->slot = slot;
-  }
-  if (ul_config) {
-    ul_config->frame = frame;
-    ul_config->slot = slot;
-  }
-  scheduled_response->phy_data   = phy_data;
-
-}
-
 /*
  * This function returns the UL config corresponding to a given UL slot
  * from MAC instance .
@@ -959,9 +932,7 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
 // 3. TODO: Perform PHR procedures
 void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
 {
-  module_id_t mod_id    = dl_info->module_id;
-  uint32_t gNB_index    = dl_info->gNB_index;
-  int cc_id             = dl_info->cc_id;
+  module_id_t mod_id = dl_info->module_id;
   frame_t rx_frame      = dl_info->frame;
   slot_t rx_slot        = dl_info->slot;
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
@@ -969,37 +940,29 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
   fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, rx_slot);
   dl_config->sfn  = rx_frame;
   dl_config->slot = rx_slot;
+  dl_config->number_pdus = 0;
 
-  nr_scheduled_response_t scheduled_response;
-  nr_dcireq_t dcireq;
+  if (mac->state == UE_NOT_SYNC)
+    return;
 
-  if(mac->state > UE_NOT_SYNC) {
+  ue_dci_configuration(mac, dl_config, rx_frame, rx_slot);
 
-    dcireq.module_id = mod_id;
-    dcireq.gNB_index = gNB_index;
-    dcireq.cc_id     = cc_id;
-    dcireq.frame     = rx_frame;
-    dcireq.slot      = rx_slot;
-    dcireq.dl_config_req.number_pdus = 0;
-    nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
-    *dl_config = dcireq.dl_config_req;
-
-    if(mac->ul_time_alignment.ta_apply)
-      schedule_ta_command(dl_config, &mac->ul_time_alignment);
-    if(mac->state == UE_CONNECTED) {
-      nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
-      nr_schedule_csi_for_im(mac, rx_frame, rx_slot);
-    }
-    dcireq.dl_config_req = *dl_config;
-
-    fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->phy_data);
-    if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL) {
-      LOG_D(NR_MAC,"1# scheduled_response transmitted, %d, %d\n", rx_frame, rx_slot);
-      mac->if_module->scheduled_response(&scheduled_response);
-    }
+  if (mac->ul_time_alignment.ta_apply)
+    schedule_ta_command(dl_config, &mac->ul_time_alignment);
+  if (mac->state == UE_CONNECTED) {
+    nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
+    nr_schedule_csi_for_im(mac, rx_frame, rx_slot);
   }
+
+  nr_scheduled_response_t scheduled_response = {.dl_config = dl_config,
+                                                .module_id = dl_info->module_id,
+                                                .CC_id = dl_info->cc_id,
+                                                .phy_data = dl_info->phy_data,
+                                                .mac = mac};
+  if (mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+    mac->if_module->scheduled_response(&scheduled_response);
   else
-    dl_config->number_pdus = 0;
+    LOG_E(NR_MAC, "Internal error, no scheduled_response function\n");
 }
 
 void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
@@ -1040,7 +1003,6 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
             ul_config->slot);
 
       uint8_t ulsch_input_buffer_array[NFAPI_MAX_NUM_UL_PDU][MAX_ULSCH_PAYLOAD_BYTES];
-      nr_scheduled_response_t scheduled_response;
       fapi_nr_tx_request_t tx_req;
       tx_req.slot = slot_tx;
       tx_req.sfn = frame_tx;
@@ -1093,7 +1055,12 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
         }
       }
       pthread_mutex_unlock(&ul_config->mutex_ul_config); // avoid double lock
-      fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, ul_info->phy_data);
+      nr_scheduled_response_t scheduled_response = {.ul_config = ul_config,
+                                                    .mac = mac,
+                                                    .module_id = ul_info->module_id,
+                                                    .CC_id = ul_info->cc_id,
+                                                    .phy_data = ul_info->phy_data,
+                                                    .tx_request = &tx_req};
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
         LOG_D(NR_MAC,"3# scheduled_response transmitted,%d, %d\n", frame_tx, slot_tx);
         mac->if_module->scheduled_response(&scheduled_response);
@@ -1569,7 +1536,6 @@ static void build_ro_list(NR_UE_MAC_INST_t *mac)
   }
 
   // Create the PRACH occasions map
-  // ==============================
   // WIP: For now assume no rejected PRACH occasions because of conflict with SSB or TDD_UL_DL_ConfigurationCommon schedule
 
   int unpaired = mac->phy_config.config_req.cell_config.frame_duplex_type;
@@ -1724,7 +1690,6 @@ static void build_ssb_list(NR_UE_MAC_INST_t *mac)
 static void map_ssb_to_ro(NR_UE_MAC_INST_t *mac)
 {
   // Map SSBs to PRACH occasions
-  // ===========================
   // WIP: Assumption: No PRACH occasion is rejected because of a conflict with SSBs or TDD_UL_DL_ConfigurationCommon schedule
   NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP->rach_ConfigCommon;
   NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR ssb_perRACH_config = setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
@@ -1735,7 +1700,6 @@ static void map_ssb_to_ro(NR_UE_MAC_INST_t *mac)
   uint8_t required_nb_of_prach_conf_period; // Nb of PRACH configuration periods required to map all the SSBs
 
   // Determine the SSB to RACH mapping ratio
-  // =======================================
   switch (ssb_perRACH_config){
     case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth:
       multiple_ssb_per_ro = false;
@@ -1779,8 +1743,8 @@ static void map_ssb_to_ro(NR_UE_MAC_INST_t *mac)
   ssb_list_info_t *ssb_list = &mac->ssb_list[bwp_id];
 
   // Evaluate the number of PRACH configuration periods required to map all the SSBs and set the association period
-  // ==============================================================================================================
-  // WIP: Assumption for now is that all the PRACH configuration periods within a maximum association pattern period have the same number of PRACH occasions
+  // WIP: Assumption for now is that all the PRACH configuration periods within a maximum association pattern period have the same
+  // number of PRACH occasions
   //      (No PRACH occasions are conflicting with SSBs nor TDD_UL_DL_ConfigurationCommon schedule)
   //      There is only one possible association period which can contain up to 16 PRACH configuration periods
   LOG_D(NR_MAC,"Evaluate the number of PRACH configuration periods required to map all the SSBs and set the association period\n");
@@ -1827,7 +1791,6 @@ static void map_ssb_to_ro(NR_UE_MAC_INST_t *mac)
         prach_association_period_list->nb_of_frame);
 
   // Proceed to the SSB to RO mapping
-  // ================================
   uint8_t ssb_idx = 0;
   uint8_t prach_configuration_period_idx; // PRACH Configuration period index within the association pattern
   prach_conf_period_t *prach_conf_period_p;
@@ -2176,8 +2139,11 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, vo
                             mac->crnti, // FIXME not sure this is valid for all pucch instances
                             &pucch[j],
                             pucch_pdu);
-      nr_scheduled_response_t scheduled_response;
-      fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, phy_data);
+      nr_scheduled_response_t scheduled_response = {.ul_config = ul_config,
+                                                    .mac = mac,
+                                                    .module_id = module_idP,
+                                                    .CC_id = 0 /*TBR fix*/,
+                                                    .phy_data = phy_data};
       if (mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
     }
@@ -2490,7 +2456,6 @@ static void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_fr
   fapi_nr_ul_config_prach_pdu *prach_config_pdu;
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
   fapi_nr_prach_config_t *prach_config = &cfg->prach_config;
-  nr_scheduled_response_t scheduled_response;
 
   NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP->rach_ConfigCommon;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
@@ -2616,8 +2581,10 @@ static void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_fr
       prach_config_pdu->ra_PreambleIndex = ra->ra_PreambleIndex;
       prach_config_pdu->prach_tx_power = get_prach_tx_power(module_idP);
       set_ra_rnti(mac, prach_config_pdu);
-
-      fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, NULL);
+      nr_scheduled_response_t scheduled_response = {.ul_config = ul_config,
+                                                    .mac = mac,
+                                                    .module_id = module_idP,
+                                                    .CC_id = 0 /*TBR fix*/};
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
 
