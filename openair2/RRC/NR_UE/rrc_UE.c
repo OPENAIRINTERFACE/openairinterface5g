@@ -216,8 +216,10 @@ static void nr_rrc_ue_process_rrcReconfiguration(NR_UE_RRC_INST_t *rrc,
 
         nr_rrc_cellgroup_configuration(rrcNB, rrc, cellGroupConfig);
 
-        if (!get_softmodem_params()->sa)
-          nr_rrc_mac_config_req_cg(0, 0, cellGroupConfig);
+        AssertFatal(!get_softmodem_params()->sa, "secondaryCellGroup only used in NSA for now\n");
+        nr_rrc_mac_config_req_cg(rrc->ue_id, 0, cellGroupConfig);
+
+        asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, cellGroupConfig);
       }
       if (ie->measConfig != NULL) {
         LOG_I(NR_RRC, "Measurement Configuration is present\n");
@@ -821,6 +823,8 @@ static void nr_rrc_ue_process_masterCellGroup(NR_UE_RRC_INST_t *rrc,
 
   LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
   nr_rrc_mac_config_req_cg(rrc->ue_id, 0, cellGroupConfig);
+
+  asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, cellGroupConfig);
 }
 
 static void rrc_ue_generate_RRCSetupComplete(const NR_UE_RRC_INST_t *rrc, const uint8_t Transaction_id)

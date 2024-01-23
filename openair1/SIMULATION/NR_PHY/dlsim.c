@@ -870,6 +870,8 @@ int main(int argc, char **argv)
   nr_rrc_mac_config_req_mib(0, 0, mib->message.choice.mib, false);
   nr_rrc_mac_config_req_cg(0, 0, UE_CellGroup);
 
+  asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, UE_CellGroup);
+
   UE_mac->state = UE_CONNECTED;
   UE_mac->ra.ra_state = RA_SUCCEEDED;
 

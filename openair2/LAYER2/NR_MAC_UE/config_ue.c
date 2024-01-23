@@ -1967,6 +1967,4 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
 
   if (!mac->dl_config_request || !mac->ul_config_request)
     ue_init_config_request(mac, mac->current_DL_BWP->scs);
-
-  asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, cell_group_config);
 }
