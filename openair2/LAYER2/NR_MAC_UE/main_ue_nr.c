@@ -80,6 +80,10 @@ void nr_ue_init_mac(module_id_t module_idP)
     memset(&mac->ssb_list[i], 0, sizeof(mac->ssb_list[i]));
     memset(&mac->prach_assoc_pattern[i], 0, sizeof(mac->prach_assoc_pattern[i]));
   }
+  for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++) {
+    mac->ul_harq_info[k].last_ndi = -1; // initialize to invalid value
+    mac->dl_harq_info[k].last_ndi = -1; // initialize to invalid value
+  }
 }
 
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
@@ -106,11 +110,6 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
     mac->scheduling_info.lc_sched_info[i].LCGID = 0; // defaults to 0 irrespective of SRB or DRB
     mac->scheduling_info.lc_sched_info[i].LCID_status = LCID_EMPTY;
     mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
-  }
-
-  for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++) {
-    mac->UL_ndi[k] = -1; // initialize to invalid value
-    mac->DL_ndi[k] = -1; // initialize to invalid value
   }
 }
 
@@ -147,6 +146,7 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   // MAC reset according to 38.321 Section 5.12
 
   nr_ue_mac_default_configs(nr_mac);
+
   // initialize Bj for each logical channel to zero
   // Done in default config but to -1 (is that correct?)
 
@@ -158,7 +158,7 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
 
   // set the NDIs for all uplink HARQ processes to the value 0
   for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
-    nr_mac->UL_ndi[k] = -1; // initialize to invalid value
+    nr_mac->ul_harq_info[k].last_ndi = -1; // initialize to invalid value
 
   // stop any ongoing RACH procedure
   if (nr_mac->ra.ra_state < RA_SUCCEEDED)
@@ -184,7 +184,8 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
     memset(&nr_mac->dl_harq_info[k], 0, sizeof(NR_UE_HARQ_STATUS_t));
 
   // for each DL HARQ process, consider the next received transmission for a TB as the very first transmission
-  // TODO there is nothing in the MAC indicating first transmission
+  for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
+    nr_mac->dl_harq_info[k].last_ndi = -1; // initialize to invalid value
 
   // release, if any, Temporary C-RNTI
   nr_mac->ra.t_crnti = 0;

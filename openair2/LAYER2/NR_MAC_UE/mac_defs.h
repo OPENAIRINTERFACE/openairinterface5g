@@ -348,11 +348,13 @@ typedef struct {
   int8_t delta_pucch;
   uint32_t R;
   uint32_t TBS;
+  int last_ndi;
 } NR_UE_HARQ_STATUS_t;
 
 typedef struct {
   uint32_t R;
   uint32_t TBS;
+  int last_ndi;
 } NR_UL_HARQ_INFO_t;
 
 typedef struct {
@@ -499,9 +501,6 @@ typedef struct {
   /// measurements from CSI-RS
   fapi_nr_csirs_measurements_t csirs_measurements;
 
-  /// Last NDI of UL HARQ processes
-  int DL_ndi[NR_MAX_HARQ_PROCESSES];
-  int UL_ndi[NR_MAX_HARQ_PROCESSES];
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;
   fapi_nr_dl_config_request_t *dl_config_request;

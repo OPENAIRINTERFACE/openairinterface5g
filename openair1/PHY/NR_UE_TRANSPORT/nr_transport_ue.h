@@ -104,8 +104,6 @@ typedef struct {
 typedef struct {
   /// Indicator of first reception
   uint8_t first_rx;
-  /// Last Ndi received for this process on DCI (used for C-RNTI only)
-  uint8_t Ndi;
   /// DLSCH status flag indicating
   SCH_status_t status;
   /// Transport block size

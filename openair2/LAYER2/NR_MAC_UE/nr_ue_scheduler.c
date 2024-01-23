@@ -627,13 +627,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* NDI */
-    pusch_config_pdu->pusch_data.new_data_indicator = 0;
-    if (dci->ndi != mac->UL_ndi[dci->harq_pid]) {
-      pusch_config_pdu->pusch_data.new_data_indicator = 1;
+    NR_UL_HARQ_INFO_t *harq = &mac->ul_harq_info[dci->harq_pid];
+    pusch_config_pdu->pusch_data.new_data_indicator = false;
+    if (dci->ndi != harq->last_ndi) {
+      pusch_config_pdu->pusch_data.new_data_indicator = true;
       // if new data reset harq structure
-      memset(&mac->ul_harq_info[dci->harq_pid], 0, sizeof(mac->ul_harq_info[dci->harq_pid]));
+      memset(harq, 0, sizeof(*harq));
     }
-    mac->UL_ndi[dci->harq_pid] = dci->ndi;
+    harq->last_ndi = dci->ndi;
     /* RV */
     pusch_config_pdu->pusch_data.rv_index = dci->rv;
     /* HARQ_PROCESS_NUMBER */
