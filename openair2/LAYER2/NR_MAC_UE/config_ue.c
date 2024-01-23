@@ -669,29 +669,29 @@ void nr_release_mac_config_logicalChannelBearer(NR_UE_MAC_INST_t *mac, long chan
   }
 }
 
-static uint16_t nr_get_ms_bucketsizeduration(uint8_t bucketsizeduration)
+static int nr_get_ms_bucketsizeduration(long bucketsizeduration)
 {
   switch (bucketsizeduration) {
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms5:
+      return 5;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms10:
+      return 10;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms20:
+      return 20;
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50:
       return 50;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100:
       return 100;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms150:
       return 150;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms300:
       return 300;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms500:
       return 500;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000:
       return 1000;
-
     default:
-      return 0;
+      AssertFatal(false, "Invalid bucketSizeDuration %ld\n", bucketsizeduration);
   }
 }
 

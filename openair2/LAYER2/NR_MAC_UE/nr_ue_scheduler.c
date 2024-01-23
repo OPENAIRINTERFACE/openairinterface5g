@@ -1087,8 +1087,9 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
     int lcid = lc_bearer->lcids_ordered;
     NR_LogicalChannelConfig_t *lcconfig = mac->logicalChannelConfig[lcid - 1];
     NR_LC_SCHEDULING_INFO *sched_lc = &mac->scheduling_info.lc_sched_info[lcid - 1];
-    int32_t bucketSize_max =
-        sched_lc->bucket_size; // max amount of data that can be buffered/accumulated in a logical channel buffer
+    // max amount of data that can be buffered/accumulated in a logical channel buffer
+    int32_t bucketSize_max = sched_lc->bucket_size;
+    AssertFatal(bucketSize_max >= 0, "negative bucketSize_max %d, will never schedule UE: lcid %d\n",bucketSize_max, lcid);
 
     /*
       measure Bj
