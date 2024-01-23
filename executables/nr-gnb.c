@@ -154,6 +154,8 @@ void *L1_rx_thread(void *arg)
 
   while (oai_exit == 0) {
      notifiedFIFO_elt_t *res = pullNotifiedFIFO(&gNB->resp_L1);
+     if (res == NULL)
+       break;
      processingData_L1_t *info = (processingData_L1_t *)NotifiedFifoData(res);
      rx_func(info);
      delNotifiedFIFO_elt(res);
