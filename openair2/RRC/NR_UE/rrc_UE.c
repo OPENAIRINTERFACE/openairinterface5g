@@ -987,9 +987,9 @@ static void nr_rrc_ue_process_securityModeCommand(NR_UE_RRC_INST_t *ue_rrc,
     c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeComplete;
   }
 
-  uint8_t kRRCenc[16] = {0};
-  uint8_t kUPenc[16] = {0};
-  uint8_t kRRCint[16] = {0};
+  uint8_t kRRCenc[NR_K_KEY_SIZE] = {0};
+  uint8_t  kUPenc[NR_K_KEY_SIZE] = {0};
+  uint8_t kRRCint[NR_K_KEY_SIZE] = {0};
   nr_derive_key(UP_ENC_ALG, ue_rrc->cipheringAlgorithm, ue_rrc->kgnb, kUPenc);
   nr_derive_key(RRC_ENC_ALG, ue_rrc->cipheringAlgorithm, ue_rrc->kgnb, kRRCenc);
   nr_derive_key(RRC_INT_ALG, ue_rrc->integrityProtAlgorithm, ue_rrc->kgnb, kRRCint);
@@ -1167,8 +1167,8 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
   if (radioBearerConfig->srb3_ToRelease)
     nr_pdcp_release_srb(ue_rrc->ue_id, 3);
 
-  uint8_t kRRCenc[16] = {0};
-  uint8_t kRRCint[16] = {0};
+  uint8_t kRRCenc[NR_K_KEY_SIZE] = {0};
+  uint8_t kRRCint[NR_K_KEY_SIZE] = {0};
   if (ue_rrc->as_security_activated) {
     if (radioBearerConfig->securityConfig != NULL) {
       // When the field is not included, continue to use the currently configured keyToUse

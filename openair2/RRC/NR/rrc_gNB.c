@@ -408,8 +408,8 @@ static void activate_srb(gNB_RRC_UE_t *UE, int srb_id)
   if (srb_id == 1) {
     nr_pdcp_add_srbs(true, UE->rrc_ue_id, list, 0, NULL, NULL);
   } else {
-    uint8_t kRRCenc[16] = {0};
-    uint8_t kRRCint[16] = {0};
+    uint8_t kRRCenc[NR_K_KEY_SIZE] = {0};
+    uint8_t kRRCint[NR_K_KEY_SIZE] = {0};
     nr_derive_key(RRC_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kRRCenc);
     nr_derive_key(RRC_INT_ALG, UE->integrity_algorithm, UE->kgnb, kRRCint);
 
@@ -904,13 +904,13 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
 
   LOG_I(NR_RRC, "[RAPROC] UE %04x Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n", ue_p->rnti, size);
 
-  uint8_t kRRCenc[16] = {0};
-  uint8_t kRRCint[16] = {0};
-  uint8_t kUPenc[16] = {0};
+  /* Ciphering and Integrity according to TS 33.501 */
+  uint8_t kRRCenc[NR_K_KEY_SIZE] = {0};
+  uint8_t kRRCint[NR_K_KEY_SIZE] = {0};
+  uint8_t  kUPenc[NR_K_KEY_SIZE] = {0};
   /* Derive the keys from kgnb */
   if (ue_p->Srb[1].Active)
     nr_derive_key(UP_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kUPenc);
-
   nr_derive_key(RRC_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kRRCenc);
   nr_derive_key(RRC_INT_ALG, ue_p->integrity_algorithm, ue_p->kgnb, kRRCint);
 
