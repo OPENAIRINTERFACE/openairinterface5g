@@ -442,9 +442,9 @@ We are evaluating if we can share RU configuration steps.
 # Configure OAI gNB
 
 Sample configuration files for OAI gNB, specific to the manufacturer of the radio unit, are available at:
-1. LITE-ON RU: [`gnb.sa.band78.273prb.fhi72.4x4-liteon.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon.conf) (band n78, 273 PRBs, 3.5GHz center freq, 4x4 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2x2 DL MIMO, UL SISO)
-2. Benetel 650 RU: [`gnb.sa.band78.273prb.fhi72.4x2-benetel650.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x2-benetel650.conf) (band n78, 273 PRBs, 3.5GHz center freq, 4x2 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2x2 DL MIMO, UL SISO)
-3. VVDN RU: [`gnb.sa.band77.273prb.fhi72.4x4-vvdn.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.273prb.fhi72.4x4-vvdn.conf) (band n77, 273 PRBs, 4.0GHz center freq, 4x4 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2x2 DL MIMO, UL SISO)
+1. LITE-ON RU: [`gnb.sa.band78.273prb.fhi72.4x4-liteon.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon.conf) (band n78, 273 PRBs, 3.5GHz center freq, 4x4 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
+2. Benetel 650 RU: [`gnb.sa.band78.273prb.fhi72.4x2-benetel650.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x2-benetel650.conf) (band n78, 273 PRBs, 3.5GHz center freq, 4x2 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
+3. VVDN RU: [`gnb.sa.band77.273prb.fhi72.4x4-vvdn.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.273prb.fhi72.4x4-vvdn.conf) (band n77, 273 PRBs, 4.0GHz center freq, 4x4 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
 
 ## Adapt the OAI-gNB configuration file to your system/workspace
 
