@@ -79,7 +79,7 @@ sequenceDiagram
 
 # 2. Running the E1 Split
 
-The setup is assuming that all modules are running on the same machine. The user can refer to the [F1 design document](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/doc/F1-design.md) for the mutual configuration of DU and the E1 CUCP-CUUP split.
+The setup is assuming that all modules are running on the same machine. The user can refer to the [F1 design document](./F1-design.md) for local deployment of the DU.
 
 ## 2.1 Configuration File
 
@@ -113,7 +113,7 @@ E1_INTERFACE =
 )
 ```
 
-For CUUP, it is
+For CUUP, it is:
 ```
 E1_INTERFACE =
 (
