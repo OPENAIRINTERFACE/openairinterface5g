@@ -505,8 +505,6 @@ class Containerize():
 			cmd.run(f"{self.cli} image prune --force")
 
 		# Remove all intermediate build images and clean up
-		if self.ranAllowMerge and forceBaseImageBuild:
-			cmd.run(f"{self.cli} image rm {baseImage}:{baseTag}")
 		cmd.run(f"{self.cli} image rm ran-build:{imageTag} ran-build-asan:{imageTag}")
 		cmd.run(f"{self.cli} volume prune --force")
 
