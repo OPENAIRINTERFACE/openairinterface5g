@@ -424,14 +424,13 @@ class Containerize():
 
 		# Let's remove any previous run artifacts if still there
 		cmd.run(f"{self.cli} image prune --force")
-		if forceBaseImageBuild:
-			cmd.run(f"{self.cli} image rm {baseImage}:{baseTag}")
 		for image,pattern,name,option in imageNames:
 			cmd.run(f"{self.cli} image rm {name}:{imageTag}")
 
 		# Build the base image only on Push Events (not on Merge Requests)
 		# On when the base image docker file is being modified.
 		if forceBaseImageBuild:
+			cmd.run(f"{self.cli} image rm {baseImage}:{baseTag}")
 			cmd.run(f"{self.cli} build {self.cliBuildOptions} --target {baseImage} --tag {baseImage}:{baseTag} --file docker/Dockerfile.base{self.dockerfileprefix} . &> cmake_targets/log/ran-base.log", timeout=1600)
 		# First verify if the base image was properly created.
 		ret = cmd.run(f"{self.cli} image inspect --format=\'Size = {{{{.Size}}}} bytes\' {baseImage}:{baseTag}")
