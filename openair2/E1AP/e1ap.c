@@ -39,7 +39,7 @@ typedef int (*e1ap_message_processing_t)(sctp_assoc_t assoc_id, e1ap_upcp_inst_t
 
 /**
  * @brief E1AP messages handlers
-*/
+ */
 const e1ap_message_processing_t e1ap_message_processing[E1AP_NUM_MSG_HANDLERS][3] = {
 
     {0, 0, 0}, /* Reset */
@@ -65,17 +65,17 @@ const e1ap_message_processing_t e1ap_message_processing[E1AP_NUM_MSG_HANDLERS][3
 const char *const e1ap_direction2String(int e1ap_dir)
 {
   static const char *e1ap_direction_String[] = {
-    "", /* Nothing */
-    "Initiating message", /* initiating message */
-    "Successfull outcome", /* successfull outcome */
-    "UnSuccessfull outcome", /* successfull outcome */
+      "", /* Nothing */
+      "Initiating message", /* initiating message */
+      "Successfull outcome", /* successfull outcome */
+      "UnSuccessfull outcome", /* successfull outcome */
   };
-  return(e1ap_direction_String[e1ap_dir]);
+  return (e1ap_direction_String[e1ap_dir]);
 }
 
 static int e1ap_handle_message(instance_t instance, sctp_assoc_t assoc_id, const uint8_t *const data, const uint32_t data_length)
 {
-  E1AP_E1AP_PDU_t pdu= {0};
+  E1AP_E1AP_PDU_t pdu = {0};
   int ret;
   DevAssert(data != NULL);
 
@@ -85,19 +85,25 @@ static int e1ap_handle_message(instance_t instance, sctp_assoc_t assoc_id, const
   }
   const E1AP_ProcedureCode_t procedureCode = pdu.choice.initiatingMessage->procedureCode;
   /* Checking procedure Code and direction of message */
-  if ((procedureCode >= E1AP_NUM_MSG_HANDLERS) || (pdu.present > E1AP_E1AP_PDU_PR_unsuccessfulOutcome) || (pdu.present <= E1AP_E1AP_PDU_PR_NOTHING)) {
+  if ((procedureCode >= E1AP_NUM_MSG_HANDLERS) || (pdu.present > E1AP_E1AP_PDU_PR_unsuccessfulOutcome)
+      || (pdu.present <= E1AP_E1AP_PDU_PR_NOTHING)) {
     LOG_E(E1AP, "[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n", assoc_id, procedureCode, pdu.present);
     ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_E1AP_E1AP_PDU, &pdu);
     return -1;
   }
 
   if (e1ap_message_processing[procedureCode][pdu.present - 1] == NULL) {
-    // No handler present. This can mean not implemented or no procedure for eNB (wrong direction).
-    LOG_E(E1AP, "[SCTP %d] No handler for procedureCode %ld in %s\n", assoc_id, procedureCode, e1ap_direction2String(pdu.present - 1));
-    ret=-1;
+    // No handler present. This can mean not implemented or no procedure for eNB
+    // (wrong direction).
+    LOG_E(E1AP,
+          "[SCTP %d] No handler for procedureCode %ld in %s\n",
+          assoc_id,
+          procedureCode,
+          e1ap_direction2String(pdu.present - 1));
+    ret = -1;
   } else {
     /* Calling the right handler */
-    LOG_D(E1AP, "Calling handler with instance %ld\n",instance);
+    LOG_D(E1AP, "Calling handler with instance %ld\n", instance);
     ret = (*e1ap_message_processing[procedureCode][pdu.present - 1])(assoc_id, getCxtE1(instance), &pdu);
   }
 
@@ -109,33 +115,33 @@ static void e1_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *s
 {
   int result;
   DevAssert(sctp_data_ind != NULL);
-  e1ap_handle_message(instance, sctp_data_ind->assoc_id,
-                      sctp_data_ind->buffer, sctp_data_ind->buffer_length);
+  e1ap_handle_message(instance, sctp_data_ind->assoc_id, sctp_data_ind->buffer, sctp_data_ind->buffer_length);
   result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
-  AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+  AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 }
 
 int e1ap_send_RESET(bool isCu, sctp_assoc_t assoc_id, E1AP_Reset_t *Reset)
 {
-  AssertFatal(false,"Not implemented yet\n");
-  E1AP_E1AP_PDU_t pdu= {0};
+  AssertFatal(false, "Not implemented yet\n");
+  E1AP_E1AP_PDU_t pdu = {0};
   return e1ap_encode_send(isCu, assoc_id, &pdu, 0, __func__);
 }
 
-int e1ap_send_RESET_ACKNOWLEDGE(instance_t instance, E1AP_Reset_t *Reset) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1ap_send_RESET_ACKNOWLEDGE(instance_t instance, E1AP_Reset_t *Reset)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
 int e1ap_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
 int e1ap_handle_RESET_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -144,15 +150,15 @@ int e1ap_handle_RESET_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, ui
 */
 int e1ap_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-int e1ap_send_ERROR_INDICATION(instance_t instance, E1AP_ErrorIndication_t *ErrorIndication) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1ap_send_ERROR_INDICATION(instance_t instance, E1AP_ErrorIndication_t *ErrorIndication)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
-
 
 /*
     E1 Setup: can be sent on both ways, to be refined
@@ -211,7 +217,7 @@ static void fill_SETUP_REQUEST(e1ap_setup_req_t *setup, E1AP_E1AP_PDU_t *pdu)
 
   int numSupportedPLMNs = setup->supported_plmns;
 
-  for (int i=0; i < numSupportedPLMNs; i++) {
+  for (int i = 0; i < numSupportedPLMNs; i++) {
     asn1cSequenceAdd(ieC5->value.choice.SupportedPLMNs_List.list, E1AP_SupportedPLMNs_Item_t, supportedPLMN);
     /* 5.1 PLMN Identity */
     PLMN_ID_t *id = &setup->plmn[i].id;
@@ -264,7 +270,7 @@ void e1ap_send_SETUP_RESPONSE(sctp_assoc_t assoc_id, const e1ap_setup_resp_t *e1
 /**
  * @brief E1 Setup Failure ASN1 messager builder
  * @ref 9.2.1.6 GNB-CU-UP E1 SETUP FAILURE of 3GPP TS 38.463
-*/
+ */
 static void fill_SETUP_FAILURE(long transac_id, E1AP_E1AP_PDU_t *pdu)
 {
   /* Create */
@@ -301,7 +307,7 @@ static void fill_SETUP_FAILURE(long transac_id, E1AP_E1AP_PDU_t *pdu)
 
 /**
  * @brief E1 Setup Failure ASN1 messager encoder
-*/
+ */
 void e1apCUCP_send_SETUP_FAILURE(sctp_assoc_t assoc_id, long transac_id)
 {
   LOG_D(E1AP, "CU-CP: Encoding E1AP Setup Failure for transac_id %ld...\n", transac_id);
@@ -310,27 +316,23 @@ void e1apCUCP_send_SETUP_FAILURE(sctp_assoc_t assoc_id, long transac_id)
   e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
 }
 
-static void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
-                                  e1ap_setup_req_t *req)
+static void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_setup_req_t *req)
 {
   E1AP_GNB_CU_UP_E1SetupRequestIEs_t *ie;
   E1AP_GNB_CU_UP_E1SetupRequest_t *in = &pdu->choice.initiatingMessage->value.choice.GNB_CU_UP_E1SetupRequest;
 
   /* transac_id */
-  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
-                             E1AP_ProtocolIE_ID_id_TransactionID, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in, E1AP_ProtocolIE_ID_id_TransactionID, true);
   req->transac_id = ie->value.choice.TransactionID;
   LOG_D(E1AP, "gNB CU UP E1 setup request transaction ID: %ld\n", req->transac_id);
 
   /* gNB CU UP ID */
-  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
-                             E1AP_ProtocolIE_ID_id_gNB_CU_UP_ID, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in, E1AP_ProtocolIE_ID_id_gNB_CU_UP_ID, true);
   asn_INTEGER2ulong(&ie->value.choice.GNB_CU_UP_ID, &req->gNB_cu_up_id);
   LOG_D(E1AP, "gNB CU UP ID: %ld\n", req->gNB_cu_up_id);
 
   /* gNB CU UP name */
-  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
-                             E1AP_ProtocolIE_ID_id_gNB_CU_UP_Name, false);
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in, E1AP_ProtocolIE_ID_id_gNB_CU_UP_Name, false);
   req->gNB_cu_up_name = NULL;
   if (ie != NULL) {
     req->gNB_cu_up_name = calloc(ie->value.choice.GNB_CU_UP_Name.size + 1, sizeof(char));
@@ -340,18 +342,17 @@ static void extract_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
   }
 
   /* CN Support */
-  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
-                             E1AP_ProtocolIE_ID_id_CNSupport, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in, E1AP_ProtocolIE_ID_id_CNSupport, true);
   AssertFatal(ie->value.choice.CNSupport == E1AP_CNSupport_c_5gc, "only 5GC CN Support supported\n");
 
   /* Supported PLMNs */
-  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in,
-                             E1AP_ProtocolIE_ID_id_SupportedPLMNs, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupRequestIEs_t, ie, in, E1AP_ProtocolIE_ID_id_SupportedPLMNs, true);
   req->supported_plmns = ie->value.choice.SupportedPLMNs_List.list.count;
   LOG_D(E1AP, "Number of supported PLMNs: %d\n", req->supported_plmns);
 
-  for (int i=0; i < req->supported_plmns; i++) {
-    E1AP_SupportedPLMNs_Item_t *supported_plmn_item = (E1AP_SupportedPLMNs_Item_t *)(ie->value.choice.SupportedPLMNs_List.list.array[i]);
+  for (int i = 0; i < req->supported_plmns; i++) {
+    E1AP_SupportedPLMNs_Item_t *supported_plmn_item =
+        (E1AP_SupportedPLMNs_Item_t *)(ie->value.choice.SupportedPLMNs_List.list.array[i]);
 
     /* PLMN Identity */
     PLMN_ID_t *id = &req->plmn[i].id;
@@ -409,8 +410,7 @@ int e1apCUUP_handle_SETUP_RESPONSE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst
   /* transac_id */
   long transaction_id;
   long old_transaction_id = inst->cuup.setupReq.transac_id;
-  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupResponseIEs_t, ie, in,
-                             E1AP_ProtocolIE_ID_id_TransactionID, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupResponseIEs_t, ie, in, E1AP_ProtocolIE_ID_id_TransactionID, true);
   transaction_id = ie->value.choice.TransactionID;
   LOG_D(E1AP, "gNB CU UP E1 setup response transaction ID: %ld\n", transaction_id);
 
@@ -426,7 +426,7 @@ int e1apCUUP_handle_SETUP_RESPONSE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst
 
 /**
  * @brief E1 Setup Failure ASN1 messager decoder on CU-UP
-*/
+ */
 int e1apCUUP_handle_SETUP_FAILURE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu)
 {
   LOG_D(E1AP, "CU-UP: Decoding E1AP Setup Failure...\n");
@@ -434,8 +434,7 @@ int e1apCUUP_handle_SETUP_FAILURE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst,
   DevAssert(pdu != NULL);
   E1AP_GNB_CU_UP_E1SetupFailure_t *in = &pdu->choice.unsuccessfulOutcome->value.choice.GNB_CU_UP_E1SetupFailure;
   /* Transaction ID */
-  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ie, in,
-                             E1AP_ProtocolIE_ID_id_TransactionID, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ie, in, E1AP_ProtocolIE_ID_id_TransactionID, true);
   long transaction_id;
   long old_transaction_id = inst->cuup.setupReq.transac_id;
   transaction_id = ie->value.choice.TransactionID;
@@ -444,8 +443,7 @@ int e1apCUUP_handle_SETUP_FAILURE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst,
   E1AP_free_transaction_identifier(transaction_id);
 
   /* Cause */
-  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ie, in,
-                             E1AP_ProtocolIE_ID_id_Cause, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ie, in, E1AP_ProtocolIE_ID_id_Cause, true);
 
   LOG_E(E1AP, "received E1 Setup Failure, please check the CU-CP output and the CU-UP parameters\n");
   exit(1);
@@ -478,7 +476,7 @@ static void fill_CONFIGURATION_UPDATE(E1AP_E1AP_PDU_t *pdu)
 
   int numSupportedPLMNs = 1;
 
-  for (int i=0; i < numSupportedPLMNs; i++) {
+  for (int i = 0; i < numSupportedPLMNs; i++) {
     asn1cSequenceAdd(ieC2->value.choice.SupportedPLMNs_List.list, E1AP_SupportedPLMNs_Item_t, supportedPLMN);
     /* 5.1 PLMN Identity */
     OCTET_STRING_fromBuf(&supportedPLMN->pLMN_Identity, "OAI", strlen("OAI"));
@@ -493,7 +491,7 @@ static void fill_CONFIGURATION_UPDATE(E1AP_E1AP_PDU_t *pdu)
 
   int numTNLAtoRemoveList = 1;
 
-  for (int i=0; i < numTNLAtoRemoveList; i++) {
+  for (int i = 0; i < numTNLAtoRemoveList; i++) {
     asn1cSequenceAdd(ieC2->value.choice.GNB_CU_UP_TNLA_To_Remove_List.list, E1AP_GNB_CU_UP_TNLA_To_Remove_Item_t, TNLAtoRemove);
     TNLAtoRemove->tNLAssociationTransportLayerAddress.present = E1AP_CP_TNL_Information_PR_endpoint_IP_Address;
     TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &TNLAtoRemove->tNLAssociationTransportLayerAddress.choice.endpoint_IP_Address); // TODO: correct me
@@ -513,13 +511,13 @@ void e1apCUUP_send_CONFIGURATION_UPDATE(sctp_assoc_t assoc_id)
 
 int e1apCUCP_send_gNB_DU_CONFIGURATION_FAILURE(void)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
 int e1apCUCP_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(void)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -531,23 +529,19 @@ int e1apCUCP_handle_CONFIGURATION_UPDATE(E1AP_E1AP_PDU_t *pdu)
   E1AP_GNB_CU_UP_E1SetupRequest_t *in = &pdu->choice.initiatingMessage->value.choice.GNB_CU_UP_E1SetupRequest;
   */
 
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-int e1apCUUP_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(sctp_assoc_t assoc_id,
-                                                            uint32_t stream,
-                                                            E1AP_E1AP_PDU_t *pdu)
+int e1apCUUP_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-int e1apCUUP_handle_gNB_DU_CONFIGURATION_FAILURE(sctp_assoc_t assoc_id,
-                                                 uint32_t stream,
-                                                 E1AP_E1AP_PDU_t *pdu)
+int e1apCUUP_handle_gNB_DU_CONFIGURATION_FAILURE(sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -555,25 +549,27 @@ int e1apCUUP_handle_gNB_DU_CONFIGURATION_FAILURE(sctp_assoc_t assoc_id,
   E1 release
 */
 
-int e1ap_send_RELEASE_REQUEST(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1ap_send_RELEASE_REQUEST(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-int e1ap_send_RELEASE_ACKNOWLEDGE(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1ap_send_RELEASE_ACKNOWLEDGE(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
 int e1ap_handle_RELEASE_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
 int e1ap_handle_RELEASE_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -645,7 +641,7 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_bearer_setup_req_t *const bear
   msgNGRAN->criticality = E1AP_Criticality_reject;
   msgNGRAN->value.present = E1AP_NG_RAN_BearerContextSetupRequest__value_PR_PDU_Session_Resource_To_Setup_List;
   E1AP_PDU_Session_Resource_To_Setup_List_t *pdu2Setup = &msgNGRAN->value.choice.PDU_Session_Resource_To_Setup_List;
-  for(pdu_session_to_setup_t *i=bearerCxt->pduSession; i < bearerCxt->pduSession+bearerCxt->numPDUSessions; i++) {
+  for (pdu_session_to_setup_t *i = bearerCxt->pduSession; i < bearerCxt->pduSession + bearerCxt->numPDUSessions; i++) {
     asn1cSequenceAdd(pdu2Setup->list, E1AP_PDU_Session_Resource_To_Setup_Item_t, ieC6_1);
     ieC6_1->pDU_Session_ID = i->sessionId;
     ieC6_1->pDU_Session_Type = i->sessionType;
@@ -665,7 +661,7 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_bearer_setup_req_t *const bear
     TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(i->tlAddress, &gTPTunnel->transportLayerAddress);
     INT32_TO_OCTET_STRING(i->teId, &gTPTunnel->gTP_TEID);
 
-    for (DRB_nGRAN_to_setup_t *j=i->DRBnGRanList; j < i->DRBnGRanList+i->numDRB2Setup; j++) {
+    for (DRB_nGRAN_to_setup_t *j = i->DRBnGRanList; j < i->DRBnGRanList + i->numDRB2Setup; j++) {
       asn1cSequenceAdd(ieC6_1->dRB_To_Setup_List_NG_RAN.list, E1AP_DRB_To_Setup_Item_NG_RAN_t, ieC6_1_1);
       ieC6_1_1->dRB_ID = j->id;
 
@@ -681,12 +677,12 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_bearer_setup_req_t *const bear
       roTimer->t_Reordering = j->reorderingTimer;
       ieC6_1_1->pDCP_Configuration.rLC_Mode        = j->rLC_Mode;
 
-      for (cell_group_t *k=j->cellGroupList; k < j->cellGroupList+j->numCellGroups; k++) {
+      for (cell_group_t *k = j->cellGroupList; k < j->cellGroupList + j->numCellGroups; k++) {
         asn1cSequenceAdd(ieC6_1_1->cell_Group_Information.list, E1AP_Cell_Group_Information_Item_t, ieC6_1_1_1);
         ieC6_1_1_1->cell_Group_ID = k->id;
       }
 
-      for (qos_flow_to_setup_t *k=j->qosFlows; k < j->qosFlows+j->numQosFlow2Setup; k++) {
+      for (qos_flow_to_setup_t *k = j->qosFlows; k < j->qosFlows + j->numQosFlow2Setup; k++) {
         asn1cSequenceAdd(ieC6_1_1->qos_flow_Information_To_Be_Setup, E1AP_QoS_Flow_QoS_Parameter_Item_t, ieC6_1_1_1);
         ieC6_1_1_1->qoS_Flow_Identifier = k->qfi;
 
@@ -730,66 +726,78 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(const e1ap_bearer_setup_resp_t *r
   pdu->present = E1AP_E1AP_PDU_PR_successfulOutcome;
   asn1cCalloc(pdu->choice.successfulOutcome, msg);
   msg->procedureCode = E1AP_ProcedureCode_id_bearerContextSetup;
-  msg->criticality   = E1AP_Criticality_reject;
+  msg->criticality = E1AP_Criticality_reject;
   msg->value.present = E1AP_SuccessfulOutcome__value_PR_BearerContextSetupResponse;
   E1AP_BearerContextSetupResponse_t *out = &pdu->choice.successfulOutcome->value.choice.BearerContextSetupResponse;
   /* mandatory */
   /* c1. gNB-CU-CP UE E1AP ID */
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextSetupResponseIEs_t, ieC1);
-  ieC1->id                         = E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID;
-  ieC1->criticality                = E1AP_Criticality_reject;
-  ieC1->value.present              = E1AP_BearerContextSetupResponseIEs__value_PR_GNB_CU_CP_UE_E1AP_ID;
+  ieC1->id = E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID;
+  ieC1->criticality = E1AP_Criticality_reject;
+  ieC1->value.present = E1AP_BearerContextSetupResponseIEs__value_PR_GNB_CU_CP_UE_E1AP_ID;
   ieC1->value.choice.GNB_CU_CP_UE_E1AP_ID = resp->gNB_cu_cp_ue_id;
   /* mandatory */
   /* c2. gNB-CU-UP UE E1AP ID */
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextSetupResponseIEs_t, ieC2);
-  ieC2->id                         = E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID;
-  ieC2->criticality                = E1AP_Criticality_reject;
-  ieC2->value.present              = E1AP_BearerContextSetupResponseIEs__value_PR_GNB_CU_UP_UE_E1AP_ID;
+  ieC2->id = E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID;
+  ieC2->criticality = E1AP_Criticality_reject;
+  ieC2->value.present = E1AP_BearerContextSetupResponseIEs__value_PR_GNB_CU_UP_UE_E1AP_ID;
   ieC2->value.choice.GNB_CU_CP_UE_E1AP_ID = resp->gNB_cu_up_ue_id;
 
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextSetupResponseIEs_t, ieC3);
-  ieC3->id            = E1AP_ProtocolIE_ID_id_System_BearerContextSetupResponse;
-  ieC3->criticality   = E1AP_Criticality_reject;
+  ieC3->id = E1AP_ProtocolIE_ID_id_System_BearerContextSetupResponse;
+  ieC3->criticality = E1AP_Criticality_reject;
   ieC3->value.present = E1AP_BearerContextSetupResponseIEs__value_PR_System_BearerContextSetupResponse;
   /*if (0) { // EUTRAN
-    ieC3->value.choice.System_BearerContextSetupResponse.present = E1AP_System_BearerContextSetupResponse_PR_e_UTRAN_BearerContextSetupResponse;
-    E1AP_ProtocolIE_Container_4932P21_t *msgEUTRAN_list = calloc(1, sizeof(E1AP_ProtocolIE_Container_4932P21_t));
-    ieC3->value.choice.System_BearerContextSetupResponse.choice.e_UTRAN_BearerContextSetupResponse = (struct E1AP_ProtocolIE_Container *) msgEUTRAN_list;
-    asn1cSequenceAdd(msgEUTRAN_list->list, E1AP_EUTRAN_BearerContextSetupResponse_t, msgEUTRAN);
-    msgEUTRAN->id = E1AP_ProtocolIE_ID_id_DRB_Setup_List_EUTRAN;
-    msgEUTRAN->criticality = E1AP_Criticality_reject;
-    msgEUTRAN->value.present = E1AP_EUTRAN_BearerContextSetupResponse__value_PR_DRB_Setup_List_EUTRAN;
-    E1AP_DRB_Setup_List_EUTRAN_t *drbSetup = &msgEUTRAN->value.choice.DRB_Setup_List_EUTRAN;
+    ieC3->value.choice.System_BearerContextSetupResponse.present =
+  E1AP_System_BearerContextSetupResponse_PR_e_UTRAN_BearerContextSetupResponse;
+  E1AP_ProtocolIE_Container_4932P21_t *msgEUTRAN_list = calloc(1,
+  sizeof(E1AP_ProtocolIE_Container_4932P21_t));
+    ieC3->value.choice.System_BearerContextSetupResponse.choice.e_UTRAN_BearerContextSetupResponse
+  = (struct E1AP_ProtocolIE_Container *) msgEUTRAN_list;
+  asn1cSequenceAdd(msgEUTRAN_list->list,
+  E1AP_EUTRAN_BearerContextSetupResponse_t, msgEUTRAN); msgEUTRAN->id =
+  E1AP_ProtocolIE_ID_id_DRB_Setup_List_EUTRAN; msgEUTRAN->criticality =
+  E1AP_Criticality_reject; msgEUTRAN->value.present =
+  E1AP_EUTRAN_BearerContextSetupResponse__value_PR_DRB_Setup_List_EUTRAN;
+    E1AP_DRB_Setup_List_EUTRAN_t *drbSetup =
+  &msgEUTRAN->value.choice.DRB_Setup_List_EUTRAN;
 
     for (drb_setup_t *i=resp->DRBList; i < resp->DRBList+resp->numDRBs; i++) {
       asn1cSequenceAdd(drbSetup->list, E1AP_DRB_Setup_Item_EUTRAN_t, ieC3_1);
       ieC3_1->dRB_ID = i->drbId;
 
-      ieC3_1->s1_DL_UP_TNL_Information.present = E1AP_UP_TNL_Information_PR_gTPTunnel;
+      ieC3_1->s1_DL_UP_TNL_Information.present =
+  E1AP_UP_TNL_Information_PR_gTPTunnel;
       asn1cCalloc(ieC3_1->s1_DL_UP_TNL_Information.choice.gTPTunnel, gTPTunnel);
-      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(i->tlAddress, &gTPTunnel->transportLayerAddress);
-      INT32_TO_OCTET_STRING(i->teId, &gTPTunnel->gTP_TEID);
+      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(i->tlAddress,
+  &gTPTunnel->transportLayerAddress); INT32_TO_OCTET_STRING(i->teId,
+  &gTPTunnel->gTP_TEID);
 
-      for (up_params_t *j=i->UpParamList; j < i->UpParamList+i->numUpParam; j++) {
-        asn1cSequenceAdd(ieC3_1->uL_UP_Transport_Parameters.list, E1AP_UP_Parameters_Item_t, ieC3_1_1);
-        ieC3_1_1->uP_TNL_Information.present = E1AP_UP_TNL_Information_PR_gTPTunnel;
+      for (up_params_t *j=i->UpParamList; j < i->UpParamList+i->numUpParam; j++)
+  { asn1cSequenceAdd(ieC3_1->uL_UP_Transport_Parameters.list,
+  E1AP_UP_Parameters_Item_t, ieC3_1_1); ieC3_1_1->uP_TNL_Information.present =
+  E1AP_UP_TNL_Information_PR_gTPTunnel;
         asn1cCalloc(ieC3_1_1->uP_TNL_Information.choice.gTPTunnel, gTPTunnel);
-        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(j->tlAddress, &gTPTunnel->transportLayerAddress);
-        INT32_TO_OCTET_STRING(j->teId, &gTPTunnel->gTP_TEID);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(j->tlAddress,
+  &gTPTunnel->transportLayerAddress); INT32_TO_OCTET_STRING(j->teId,
+  &gTPTunnel->gTP_TEID);
       }
     }
-  } else */{
-    ieC3->value.choice.System_BearerContextSetupResponse.present = E1AP_System_BearerContextSetupResponse_PR_nG_RAN_BearerContextSetupResponse;
+  } else */
+  {
+    ieC3->value.choice.System_BearerContextSetupResponse.present =
+        E1AP_System_BearerContextSetupResponse_PR_nG_RAN_BearerContextSetupResponse;
     E1AP_ProtocolIE_Container_4932P22_t *msgNGRAN_list = calloc(1, sizeof(E1AP_ProtocolIE_Container_4932P22_t));
-    ieC3->value.choice.System_BearerContextSetupResponse.choice.nG_RAN_BearerContextSetupResponse = (struct E1AP_ProtocolIE_Container *) msgNGRAN_list;
+    ieC3->value.choice.System_BearerContextSetupResponse.choice.nG_RAN_BearerContextSetupResponse =
+        (struct E1AP_ProtocolIE_Container *)msgNGRAN_list;
     asn1cSequenceAdd(msgNGRAN_list->list, E1AP_NG_RAN_BearerContextSetupResponse_t, msgNGRAN);
     msgNGRAN->id = E1AP_ProtocolIE_ID_id_PDU_Session_Resource_Setup_List;
     msgNGRAN->criticality = E1AP_Criticality_reject;
     msgNGRAN->value.present = E1AP_NG_RAN_BearerContextSetupResponse__value_PR_PDU_Session_Resource_Setup_List;
     E1AP_PDU_Session_Resource_Setup_List_t *pduSetup = &msgNGRAN->value.choice.PDU_Session_Resource_Setup_List;
 
-    for (const pdu_session_setup_t *i=resp->pduSession; i < resp->pduSession+resp->numPDUSessions; i++) {
+    for (const pdu_session_setup_t *i = resp->pduSession; i < resp->pduSession + resp->numPDUSessions; i++) {
       asn1cSequenceAdd(pduSetup->list, E1AP_PDU_Session_Resource_Setup_Item_t, ieC3_1);
       ieC3_1->pDU_Session_ID = i->id;
 
@@ -798,11 +806,11 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(const e1ap_bearer_setup_resp_t *r
       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(i->tlAddress, &gTPTunnel->transportLayerAddress);
       INT32_TO_OCTET_STRING(i->teId, &gTPTunnel->gTP_TEID);
 
-      for (const DRB_nGRAN_setup_t *j=i->DRBnGRanList; j < i->DRBnGRanList+i->numDRBSetup; j++) {
+      for (const DRB_nGRAN_setup_t *j = i->DRBnGRanList; j < i->DRBnGRanList + i->numDRBSetup; j++) {
         asn1cSequenceAdd(ieC3_1->dRB_Setup_List_NG_RAN.list, E1AP_DRB_Setup_Item_NG_RAN_t, ieC3_1_1);
         ieC3_1_1->dRB_ID = j->id;
 
-        for (const up_params_t *k=j->UpParamList; k < j->UpParamList+j->numUpParam; k++) {
+        for (const up_params_t *k = j->UpParamList; k < j->UpParamList + j->numUpParam; k++) {
           asn1cSequenceAdd(ieC3_1_1->uL_UP_Transport_Parameters.list, E1AP_UP_Parameters_Item_t, ieC3_1_1_1);
           ieC3_1_1_1->uP_TNL_Information.present = E1AP_UP_TNL_Information_PR_gTPTunnel;
           asn1cCalloc(ieC3_1_1_1->uP_TNL_Information.choice.gTPTunnel, gTPTunnel);
@@ -810,7 +818,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(const e1ap_bearer_setup_resp_t *r
           INT32_TO_OCTET_STRING(k->teId, &gTPTunnel->gTP_TEID);
         }
 
-        for (const qos_flow_setup_t *k=j->qosFlows; k < j->qosFlows+j->numQosFlowSetup; k++) {
+        for (const qos_flow_setup_t *k = j->qosFlows; k < j->qosFlows + j->numQosFlowSetup; k++) {
           asn1cSequenceAdd(ieC3_1_1->flow_Setup_List.list, E1AP_QoS_Flow_Item_t, ieC3_1_1_1);
           ieC3_1_1_1->qoS_Flow_Identifier = k->qfi;
         }
@@ -819,7 +827,7 @@ static void fill_BEARER_CONTEXT_SETUP_RESPONSE(const e1ap_bearer_setup_resp_t *r
       if (i->numDRBFailed > 0)
         ieC3_1->dRB_Failed_List_NG_RAN = calloc(1, sizeof(E1AP_DRB_Failed_List_NG_RAN_t));
 
-      for (const DRB_nGRAN_failed_t *j=i->DRBnGRanFailedList; j < i->DRBnGRanFailedList+i->numDRBFailed; j++) {
+      for (const DRB_nGRAN_failed_t *j = i->DRBnGRanFailedList; j < i->DRBnGRanFailedList + i->numDRBFailed; j++) {
         asn1cSequenceAdd(ieC3_1->dRB_Failed_List_NG_RAN->list, E1AP_DRB_Failed_Item_NG_RAN_t, ieC3_1_1);
         ieC3_1_1->dRB_ID = j->id;
 
@@ -857,19 +865,20 @@ void e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, const e1
   e1ap_encode_send(UPtype, assoc_id, &pdu, 0, __func__);
 }
 
-int e1apCUUP_send_BEARER_CONTEXT_SETUP_FAILURE(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1apCUUP_send_BEARER_CONTEXT_SETUP_FAILURE(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
-                                          e1ap_bearer_setup_req_t *bearerCxt) {
+void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_setup_req_t *bearerCxt)
+{
   const E1AP_BearerContextSetupRequest_t *in = &pdu->choice.initiatingMessage->value.choice.BearerContextSetupRequest;
   E1AP_BearerContextSetupRequestIEs_t *ie;
 
   LOG_D(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
 
-  for (int i=0; i < in->protocolIEs.list.count; i++) {
+  for (int i = 0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
 
     switch(ie->id) {
@@ -931,7 +940,7 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
 
         E1AP_PDU_Session_Resource_To_Setup_List_t *pdu2SetupList = &msgNGRAN->value.choice.PDU_Session_Resource_To_Setup_List;
         bearerCxt->numPDUSessions = pdu2SetupList->list.count;
-        for (int i=0; i < pdu2SetupList->list.count; i++) {
+        for (int i = 0; i < pdu2SetupList->list.count; i++) {
           pdu_session_to_setup_t *pdu_session = bearerCxt->pduSession + i;
           E1AP_PDU_Session_Resource_To_Setup_Item_t *pdu2Setup = pdu2SetupList->list.array[i];
 
@@ -956,7 +965,7 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
 
           E1AP_DRB_To_Setup_List_NG_RAN_t *drb2SetupList = &pdu2Setup->dRB_To_Setup_List_NG_RAN;
           pdu_session->numDRB2Setup = drb2SetupList->list.count;
-          for (int j=0; j < drb2SetupList->list.count; j++) {
+          for (int j = 0; j < drb2SetupList->list.count; j++) {
             DRB_nGRAN_to_setup_t *drb = pdu_session->DRBnGRanList + j;
             E1AP_DRB_To_Setup_Item_NG_RAN_t *drb2Setup = drb2SetupList->list.array[j];
 
@@ -981,7 +990,7 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
 
             E1AP_Cell_Group_Information_t *cellGroupList = &drb2Setup->cell_Group_Information;
             drb->numCellGroups = cellGroupList->list.count;
-            for (int k=0; k < cellGroupList->list.count; k++) {
+            for (int k = 0; k < cellGroupList->list.count; k++) {
               E1AP_Cell_Group_Information_Item_t *cg2Setup = cellGroupList->list.array[k];
 
               drb->cellGroupList[k].id = cg2Setup->cell_Group_ID;
@@ -989,7 +998,7 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
 
             E1AP_QoS_Flow_QoS_Parameter_List_t *qos2SetupList = &drb2Setup->qos_flow_Information_To_Be_Setup;
             drb->numQosFlow2Setup = qos2SetupList->list.count;
-            for (int k=0; k < qos2SetupList->list.count; k++) {
+            for (int k = 0; k < qos2SetupList->list.count; k++) {
               qos_flow_to_setup_t *qos_flow = drb->qosFlows + k;
               E1AP_QoS_Flow_QoS_Parameter_Item_t *qos2Setup = qos2SetupList->list.array[k];
 
@@ -1026,8 +1035,6 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu,
         break;
     }
   }
-
-
 }
 
 int e1apCUUP_handle_BEARER_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *e1_inst, const E1AP_E1AP_PDU_t *pdu)
@@ -1045,14 +1052,14 @@ int e1apCUUP_handle_BEARER_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, e1ap_upc
   return 0;
 }
 
-void extract_BEARER_CONTEXT_SETUP_RESPONSE(const E1AP_E1AP_PDU_t *pdu,
-                                           e1ap_bearer_setup_resp_t *bearerCxt) {
+void extract_BEARER_CONTEXT_SETUP_RESPONSE(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_setup_resp_t *bearerCxt)
+{
   const E1AP_BearerContextSetupResponse_t *in = &pdu->choice.successfulOutcome->value.choice.BearerContextSetupResponse;
   E1AP_BearerContextSetupResponseIEs_t *ie;
 
   LOG_D(E1AP, "Bearer context setup response number of IEs %d\n", in->protocolIEs.list.count);
 
-  for (int i=0; i < in->protocolIEs.list.count; i++) {
+  for (int i = 0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
 
     switch(ie->id) {
@@ -1082,7 +1089,7 @@ void extract_BEARER_CONTEXT_SETUP_RESPONSE(const E1AP_E1AP_PDU_t *pdu,
         E1AP_PDU_Session_Resource_Setup_List_t *pduSetupList = &msgNGRAN->value.choice.PDU_Session_Resource_Setup_List;
         bearerCxt->numPDUSessions = pduSetupList->list.count;
 
-        for (int i=0; i < pduSetupList->list.count; i++) {
+        for (int i = 0; i < pduSetupList->list.count; i++) {
           pdu_session_setup_t *pduSetup = bearerCxt->pduSession + i;
           E1AP_PDU_Session_Resource_Setup_Item_t *pdu_session = pduSetupList->list.array[i];
           pduSetup->id = pdu_session->pDU_Session_ID;
@@ -1096,14 +1103,14 @@ void extract_BEARER_CONTEXT_SETUP_RESPONSE(const E1AP_E1AP_PDU_t *pdu,
           }
 
           pduSetup->numDRBSetup = pdu_session->dRB_Setup_List_NG_RAN.list.count;
-          for (int j=0; j < pdu_session->dRB_Setup_List_NG_RAN.list.count; j++) {
+          for (int j = 0; j < pdu_session->dRB_Setup_List_NG_RAN.list.count; j++) {
             DRB_nGRAN_setup_t *drbSetup = pduSetup->DRBnGRanList + j;
             E1AP_DRB_Setup_Item_NG_RAN_t *drb = pdu_session->dRB_Setup_List_NG_RAN.list.array[j];
 
             drbSetup->id = drb->dRB_ID;
 
             drbSetup->numUpParam = drb->uL_UP_Transport_Parameters.list.count;
-            for (int k=0; k < drb->uL_UP_Transport_Parameters.list.count; k++) {
+            for (int k = 0; k < drb->uL_UP_Transport_Parameters.list.count; k++) {
               up_params_t *UL_UP_param = drbSetup->UpParamList + k;
               E1AP_UP_Parameters_Item_t *in_UL_UP_param = drb->uL_UP_Transport_Parameters.list.array[k];
 
@@ -1159,7 +1166,7 @@ int e1apCUCP_handle_BEARER_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, e1ap_up
 
 int e1apCUCP_handle_BEARER_CONTEXT_SETUP_FAILURE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -1203,18 +1210,18 @@ static int fill_BEARER_CONTEXT_MODIFICATION_REQUEST(e1ap_bearer_setup_req_t *con
   msgNGRAN->criticality = E1AP_Criticality_reject;
   msgNGRAN->value.present = E1AP_NG_RAN_BearerContextModificationRequest__value_PR_PDU_Session_Resource_To_Modify_List;
   E1AP_PDU_Session_Resource_To_Modify_List_t *pdu2Setup = &msgNGRAN->value.choice.PDU_Session_Resource_To_Modify_List;
-  for(pdu_session_to_setup_t *i=bearerCxt->pduSessionMod; i < bearerCxt->pduSessionMod+bearerCxt->numPDUSessionsMod; i++) {
+  for (pdu_session_to_setup_t *i = bearerCxt->pduSessionMod; i < bearerCxt->pduSessionMod + bearerCxt->numPDUSessionsMod; i++) {
     asn1cSequenceAdd(pdu2Setup->list, E1AP_PDU_Session_Resource_To_Modify_Item_t, ieC3_1);
     ieC3_1->pDU_Session_ID = i->sessionId;
 
-    for (DRB_nGRAN_to_setup_t *j=i->DRBnGRanModList; j < i->DRBnGRanModList+i->numDRB2Modify; j++) {
+    for (DRB_nGRAN_to_setup_t *j = i->DRBnGRanModList; j < i->DRBnGRanModList + i->numDRB2Modify; j++) {
       asn1cCalloc(ieC3_1->dRB_To_Modify_List_NG_RAN, drb2Mod_List);
       asn1cSequenceAdd(drb2Mod_List->list, E1AP_DRB_To_Modify_Item_NG_RAN_t, drb2Mod);
       drb2Mod->dRB_ID = j->id;
 
       if (j->numDlUpParam > 0) {
         asn1cCalloc(drb2Mod->dL_UP_Parameters, DL_UP_Param_List);
-        for (up_params_t *k=j->DlUpParamList; k < j->DlUpParamList+j->numDlUpParam; k++) {
+        for (up_params_t *k = j->DlUpParamList; k < j->DlUpParamList + j->numDlUpParam; k++) {
           asn1cSequenceAdd(DL_UP_Param_List->list, E1AP_UP_Parameters_Item_t, DL_UP_Param);
           DL_UP_Param->uP_TNL_Information.present = E1AP_UP_TNL_Information_PR_gTPTunnel;
           asn1cCalloc(DL_UP_Param->uP_TNL_Information.choice.gTPTunnel, gTPTunnel);
@@ -1301,19 +1308,20 @@ static int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc
   return e1ap_encode_send(UPtype, assoc_id, &pdu, 0, __func__);
 }
 
-int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_FAILURE(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_FAILURE(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu,
-                                                 e1ap_bearer_setup_req_t *bearerCxt) {
+void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_setup_req_t *bearerCxt)
+{
   const E1AP_BearerContextModificationRequest_t *in = &pdu->choice.initiatingMessage->value.choice.BearerContextModificationRequest;
   E1AP_BearerContextModificationRequestIEs_t *ie;
 
   LOG_D(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
 
-  for (int i=0; i < in->protocolIEs.list.count; i++) {
+  for (int i = 0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
 
     switch(ie->id) {
@@ -1344,7 +1352,7 @@ void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu,
 
         E1AP_PDU_Session_Resource_To_Modify_List_t *pdu2ModList = &msgNGRAN->value.choice.PDU_Session_Resource_To_Modify_List;
         bearerCxt->numPDUSessionsMod = pdu2ModList->list.count;
-        for (int i=0; i < pdu2ModList->list.count; i++) {
+        for (int i = 0; i < pdu2ModList->list.count; i++) {
           pdu_session_to_setup_t *pdu_session = bearerCxt->pduSessionMod + i;
           E1AP_PDU_Session_Resource_To_Modify_Item_t *pdu2Mod = pdu2ModList->list.array[i];
 
@@ -1352,7 +1360,7 @@ void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu,
 
           E1AP_DRB_To_Modify_List_NG_RAN_t *drb2ModList = pdu2Mod->dRB_To_Modify_List_NG_RAN;
           pdu_session->numDRB2Modify = drb2ModList->list.count;
-          for (int j=0; j < drb2ModList->list.count; j++) {
+          for (int j = 0; j < drb2ModList->list.count; j++) {
             DRB_nGRAN_to_setup_t *drb = pdu_session->DRBnGRanModList + j;
             E1AP_DRB_To_Modify_Item_NG_RAN_t *drb2Mod = drb2ModList->list.array[j];
 
@@ -1360,9 +1368,9 @@ void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu,
 
             E1AP_UP_Parameters_t *dl_up_paramList = drb2Mod->dL_UP_Parameters;
             drb->numDlUpParam = dl_up_paramList->list.count;
-            for (int k=0; k < dl_up_paramList->list.count; k++) {
+            for (int k = 0; k < dl_up_paramList->list.count; k++) {
               up_params_t *dl_up_param = drb->DlUpParamList + k;
-              E1AP_UP_Parameters_Item_t *dl_up_param_in = dl_up_paramList->list.array[k]; 
+              E1AP_UP_Parameters_Item_t *dl_up_param_in = dl_up_paramList->list.array[k];
               if (dl_up_param_in->uP_TNL_Information.choice.gTPTunnel) { // Optional IE
                 DevAssert(dl_up_param_in->uP_TNL_Information.present = E1AP_UP_TNL_Information_PR_gTPTunnel);
                 BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&dl_up_param_in->uP_TNL_Information.choice.gTPTunnel->transportLayerAddress,
@@ -1384,7 +1392,9 @@ void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu,
   }
 }
 
-int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *e1_inst, const E1AP_E1AP_PDU_t *pdu)
+int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id,
+                                                        e1ap_upcp_inst_t *e1_inst,
+                                                        const E1AP_E1AP_PDU_t *pdu)
 {
   DevAssert(pdu != NULL);
   DevAssert(pdu->present == E1AP_E1AP_PDU_PR_initiatingMessage);
@@ -1436,7 +1446,7 @@ static void extract_BEARER_CONTEXT_MODIFICATION_RESPONSE(const E1AP_E1AP_PDU_t *
         E1AP_PDU_Session_Resource_Modified_List_t *pduModifiedList = &msgNGRAN->value.choice.PDU_Session_Resource_Modified_List;
         resp->numPDUSessionsMod = pduModifiedList->list.count;
 
-        for (int i=0; i < pduModifiedList->list.count; i++) {
+        for (int i = 0; i < pduModifiedList->list.count; i++) {
           pdu_session_modif_t *pduModified = &resp->pduSessionMod[i];
           E1AP_PDU_Session_Resource_Modified_Item_t *mod_it = pduModifiedList->list.array[i];
           pduModified->id = mod_it->pDU_Session_ID;
@@ -1449,7 +1459,7 @@ static void extract_BEARER_CONTEXT_MODIFICATION_RESPONSE(const E1AP_E1AP_PDU_t *
           AssertFatal(mod_it->dRB_Failed_To_Modify_List_NG_RAN == NULL, "not implemented\n");
 
           pduModified->numDRBModified = mod_it->dRB_Modified_List_NG_RAN->list.count;
-          for (int j=0; j < mod_it->dRB_Modified_List_NG_RAN->list.count; j++) {
+          for (int j = 0; j < mod_it->dRB_Modified_List_NG_RAN->list.count; j++) {
             DRB_nGRAN_modified_t *drbModified = &pduModified->DRBnGRanModList[j];
             E1AP_DRB_Modified_Item_NG_RAN_t *drb = mod_it->dRB_Modified_List_NG_RAN->list.array[j];
 
@@ -1466,7 +1476,9 @@ static void extract_BEARER_CONTEXT_MODIFICATION_RESPONSE(const E1AP_E1AP_PDU_t *
   }
 }
 
-int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *e1_inst, const E1AP_E1AP_PDU_t *pdu)
+int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc_id,
+                                                         e1ap_upcp_inst_t *e1_inst,
+                                                         const E1AP_E1AP_PDU_t *pdu)
 {
   DevAssert(pdu != NULL);
   DevAssert(pdu->present == E1AP_E1AP_PDU_PR_successfulOutcome);
@@ -1486,17 +1498,19 @@ int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_FAILURE(instance_t instance,
                                                         uint32_t stream,
                                                         E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_REQUIRED(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_REQUIRED(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-int e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_CONFIRM(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_CONFIRM(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -1505,7 +1519,7 @@ int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_REQUIRED(instance_t instance,
                                                          uint32_t stream,
                                                          E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -1514,7 +1528,7 @@ int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_CONFIRM(instance_t instance,
                                                         uint32_t stream,
                                                         E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 /*
@@ -1587,19 +1601,20 @@ int e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(sctp_assoc_t assoc_id, const e
   return e1ap_encode_send(CPtype, assoc_id, &pdu, 0, __func__);
 }
 
-int e1apCUUP_send_BEARER_CONTEXT_RELEASE_REQUEST(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1apCUUP_send_BEARER_CONTEXT_RELEASE_REQUEST(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-void extract_BEARER_CONTEXT_RELEASE_COMMAND(const E1AP_E1AP_PDU_t *pdu,
-                                            e1ap_bearer_release_cmd_t *bearerCxt) {
+void extract_BEARER_CONTEXT_RELEASE_COMMAND(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_release_cmd_t *bearerCxt)
+{
   const E1AP_BearerContextReleaseCommand_t *in = &pdu->choice.initiatingMessage->value.choice.BearerContextReleaseCommand;
   E1AP_BearerContextReleaseCommandIEs_t *ie;
 
   LOG_D(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
 
-  for (int i=0; i < in->protocolIEs.list.count; i++) {
+  for (int i = 0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
 
     switch(ie->id) {
@@ -1645,14 +1660,14 @@ int e1apCUUP_handle_BEARER_CONTEXT_RELEASE_COMMAND(sctp_assoc_t assoc_id, e1ap_u
   return 0;
 }
 
-void extract_BEARER_CONTEXT_RELEASE_COMPLETE(const E1AP_E1AP_PDU_t *pdu,
-                                             e1ap_bearer_release_cplt_t *bearerCxt) {
+void extract_BEARER_CONTEXT_RELEASE_COMPLETE(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_release_cplt_t *bearerCxt)
+{
   const E1AP_BearerContextReleaseComplete_t *in = &pdu->choice.successfulOutcome->value.choice.BearerContextReleaseComplete;
   E1AP_BearerContextReleaseCompleteIEs_t *ie;
 
   LOG_D(E1AP, "Bearer context setup number of IEs %d\n", in->protocolIEs.list.count);
 
-  for (int i=0; i < in->protocolIEs.list.count; i++) {
+  for (int i = 0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
 
     switch(ie->id) {
@@ -1697,7 +1712,7 @@ int e1apCUCP_handle_BEARER_CONTEXT_RELEASE_REQUEST(instance_t instance,
                                                    uint32_t stream,
                                                    E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -1705,8 +1720,9 @@ int e1apCUCP_handle_BEARER_CONTEXT_RELEASE_REQUEST(instance_t instance,
 BEARER CONTEXT INACTIVITY NOTIFICATION
  */
 
-int e1apCUUP_send_BEARER_CONTEXT_INACTIVITY_NOTIFICATION(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1apCUUP_send_BEARER_CONTEXT_INACTIVITY_NOTIFICATION(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
@@ -1715,39 +1731,42 @@ int e1apCUCP_handle_BEARER_CONTEXT_INACTIVITY_NOTIFICATION(instance_t instance,
                                                            uint32_t stream,
                                                            E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 /*
   DL DATA
 */
 
-int e1apCUUP_send_DL_DATA_NOTIFICATION(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1apCUUP_send_DL_DATA_NOTIFICATION(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-int e1apCUUP_send_DATA_USAGE_REPORT(instance_t instance) {
-  AssertFatal(false,"Not implemented yet\n");
+int e1apCUUP_send_DATA_USAGE_REPORT(instance_t instance)
+{
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
 int e1apCUCP_handle_DL_DATA_NOTIFICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
 int e1apCUCP_handle_send_DATA_USAGE_REPORT(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, E1AP_E1AP_PDU_t *pdu)
 {
-  AssertFatal(false,"Not implemented yet\n");
+  AssertFatal(false, "Not implemented yet\n");
   return -1;
 }
 
-static instance_t cuup_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
-  openAddr_t tmp= {0};
-  strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost)-1);
-  sprintf(tmp.originService, "%d",  IPaddrs->my_portd);
+static instance_t cuup_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs)
+{
+  openAddr_t tmp = {0};
+  strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost) - 1);
+  sprintf(tmp.originService, "%d", IPaddrs->my_portd);
   sprintf(tmp.destinationService, "%d", IPaddrs->remote_portd);
   return gtpv1Init(tmp);
 }
@@ -1775,7 +1794,9 @@ static void e1apCUUP_send_SETUP_REQUEST(sctp_assoc_t assoc_id, e1ap_setup_req_t 
   e1ap_encode_send(UPtype, assoc_id, &pdu, 0, __func__);
 }
 
-static void e1_task_handle_sctp_association_resp(E1_t type, instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp)
+static void e1_task_handle_sctp_association_resp(E1_t type,
+                                                 instance_t instance,
+                                                 sctp_new_association_resp_t *sctp_new_association_resp)
 {
   DevAssert(sctp_new_association_resp != NULL);
   getCxtE1(instance)->sockState = sctp_new_association_resp->sctp_state;
@@ -1790,7 +1811,9 @@ static void e1_task_handle_sctp_association_resp(E1_t type, instance_t instance,
   }
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-    LOG_W(E1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
+    LOG_W(E1AP,
+          "Received unsuccessful result for SCTP association (%u), instance "
+          "%ld, cnx_id %u\n",
           sctp_new_association_resp->sctp_state,
           instance,
           sctp_new_association_resp->ulp_cnx_id);
@@ -1839,7 +1862,8 @@ void cuup_init_n3(instance_t instance)
   N3GTPUInst = &getCxtE1(instance)->gtpInstN3;
 }
 
-void cucp_task_send_sctp_init_req(instance_t instance, char *my_addr) {
+void cucp_task_send_sctp_init_req(instance_t instance, char *my_addr)
+{
   LOG_I(E1AP, "E1AP_CUCP_SCTP_REQ(create socket)\n");
   MessageDef  *message_p = NULL;
   message_p = itti_alloc_new_message (TASK_CUCP_E1, 0, SCTP_INIT_MSG);
@@ -1883,7 +1907,8 @@ void e1apHandleTimer(instance_t myInstance)
  * and calls the relevant handlers for each message type.
  *
  */
-void *E1AP_CUCP_task(void *arg) {
+void *E1AP_CUCP_task(void *arg)
+{
   LOG_I(E1AP, "Starting E1AP at CU CP\n");
   MessageDef *msg = NULL;
   e1ap_common_init();
@@ -1891,7 +1916,7 @@ void *E1AP_CUCP_task(void *arg) {
 
   while (1) {
     itti_receive_msg(TASK_CUCP_E1, &msg);
-    instance_t myInstance=ITTI_MSG_DESTINATION_INSTANCE(msg);
+    instance_t myInstance = ITTI_MSG_DESTINATION_INSTANCE(msg);
     const int msgType = ITTI_MSG_ID(msg);
     LOG_D(E1AP, "CUCP received %s for instance %ld\n", messages_info[msgType].name, myInstance);
     sctp_assoc_t assoc_id = msg->ittiMsgHeader.originInstance;
@@ -1950,7 +1975,6 @@ void *E1AP_CUCP_task(void *arg) {
     result = itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d) in E1AP_CUCP_task!\n", result);
     msg = NULL;
-
   }
 }
 
@@ -1962,7 +1986,8 @@ void *E1AP_CUCP_task(void *arg) {
  * and calls the relevant handlers for each message type.
  *
  */
-void *E1AP_CUUP_task(void *arg) {
+void *E1AP_CUUP_task(void *arg)
+{
   LOG_I(E1AP, "Starting E1AP at CU UP\n");
   e1ap_common_init();
   int result;
@@ -1998,21 +2023,21 @@ void *E1AP_CUUP_task(void *arg) {
         const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
         AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
         e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(inst->cuup.assoc_id, resp);
-        } break;
+      } break;
 
       case E1AP_BEARER_CONTEXT_MODIFICATION_RESP: {
         const e1ap_bearer_modif_resp_t *resp = &E1AP_BEARER_CONTEXT_MODIFICATION_RESP(msg);
         const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
         AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
         e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_RESPONSE(inst->cuup.assoc_id, resp);
-        } break;
+      } break;
 
       case E1AP_BEARER_CONTEXT_RELEASE_CPLT: {
         const e1ap_bearer_release_cplt_t *cplt = &E1AP_BEARER_CONTEXT_RELEASE_CPLT(msg);
         const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
         AssertFatal(inst != NULL, "no E1 instance found for instance %ld\n", myInstance);
         e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(inst->cuup.assoc_id, cplt);
-        } break;
+      } break;
 
       default:
         LOG_E(E1AP, "Unknown message received in TASK_CUUP_E1\n");
@@ -2022,7 +2047,5 @@ void *E1AP_CUUP_task(void *arg) {
     result = itti_free(ITTI_MSG_ORIGIN_ID(msg), msg);
     AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d) in E1AP_CUUP_task!\n", result);
     msg = NULL;
-
   }
 }
-
