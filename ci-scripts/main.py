@@ -830,9 +830,13 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if not CLUSTER.BuildClusterImage(HTML):
 						RAN.prematureExit = True
 				elif action == 'Build_Image':
-					CONTAINERS.BuildImage(HTML)
+					success = CONTAINERS.BuildImage(HTML)
+					if not success:
+						RAN.prematureExit = True
 				elif action == 'Build_Proxy':
-					CONTAINERS.BuildProxy(HTML)
+					success = CONTAINERS.BuildProxy(HTML)
+					if not success:
+						RAN.prematureExit = True
 				elif action == 'Push_Local_Registry':
 					success = CONTAINERS.Push_Image_to_Local_Registry(HTML)
 					if not success:
