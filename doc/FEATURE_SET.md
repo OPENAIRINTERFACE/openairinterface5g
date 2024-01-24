@@ -203,10 +203,17 @@ Furthermore, the gNB and UE support
 
 ## gNB E1AP
 
-- Integration of E1AP messages and procedures for exchange between CU-CP and CU-UP according to 38.463 Rel. 16
-  - gNB-CU-UP E1 Setup Setup request/response
-  - E1 Bearer Context Setup
+- Integration of E1AP messages and procedures for exchange between CU-CP and CU-UP according to TS 38.463 Rel. 16
+  - E1 Setup (gNB-CU-UP initiated)
+      - E1 Setup Request
+      - E1 Setup Response
+      - E1 Setup Failure
+  - E1 Bearer Context Setup (gNB-CU-CP initiated)
+      - E1 Bearer Context Setup Request
+      - E1 Bearer Context Setup Response
   - Bearer Context Modification (gNB-CU-CP initiated)
+      - E1 Bearer Context Modification Request
+      - E1 Bearer Context Modification Response
 - Interface with RRC and PDCP
 
 ## gNB GTP-U
