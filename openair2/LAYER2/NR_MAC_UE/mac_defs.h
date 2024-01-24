@@ -340,10 +340,9 @@ typedef struct {
   frame_t ul_frame;
   int ul_slot;
   uint8_t ack;
-  uint8_t dai;
   int n_CCE;
   int N_CCE;
-  int j_dai;
+  int dai_cumul;
   int8_t delta_pucch;
   uint32_t R;
   uint32_t TBS;
