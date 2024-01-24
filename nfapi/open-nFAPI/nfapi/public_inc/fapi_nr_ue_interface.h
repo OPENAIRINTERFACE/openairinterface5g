@@ -391,20 +391,22 @@ typedef struct {
 } fapi_nr_ul_config_srs_pdu;
 
 typedef struct {
-  uint8_t pdu_type;
+  int pdu_type;
   union {
     fapi_nr_ul_config_prach_pdu prach_config_pdu;
     fapi_nr_ul_config_pucch_pdu pucch_config_pdu;
     nfapi_nr_ue_pusch_pdu_t     pusch_config_pdu;
     fapi_nr_ul_config_srs_pdu   srs_config_pdu;
   };
+  pthread_mutex_t* lock;
+  int* privateNBpdus;
 } fapi_nr_ul_config_request_pdu_t;
 
 typedef struct {
   int frame;
   int slot;
   int number_pdus;
-  fapi_nr_ul_config_request_pdu_t ul_config_list[FAPI_NR_UL_CONFIG_LIST_NUM];
+  fapi_nr_ul_config_request_pdu_t ul_config_list[FAPI_NR_UL_CONFIG_LIST_NUM + 1]; // +1 to have space for iterator ending
   pthread_mutex_t mutex_ul_config;
 } fapi_nr_ul_config_request_t;
 

@@ -949,19 +949,12 @@ void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, int pid, int ack_nack)
   NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[pid];
   int sched_slot = current_harq->ul_slot;
   int sched_frame = current_harq->ul_frame;
-  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, sched_slot, 0);
-  pthread_mutex_lock(&ul_config->mutex_ul_config);
   mac->nr_ue_emul_l1.num_harqs = 1;
-  AssertFatal(ul_config->number_pdus < FAPI_NR_UL_CONFIG_LIST_NUM,
-              "ul_config->number_pdus %d out of bounds\n",
-              ul_config->number_pdus);
-  fapi_nr_ul_config_pucch_pdu *pucch_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu;
-  PUCCH_sched_t pucch = {0};
-  pucch.n_CCE = current_harq->n_CCE;
-  pucch.N_CCE = current_harq->N_CCE;
-  pucch.delta_pucch = current_harq->delta_pucch;
-  pucch.ack_payload = ack_nack;
-  pucch.n_harq = 1;
+  PUCCH_sched_t pucch = {.n_CCE = current_harq->n_CCE,
+                         .N_CCE = current_harq->N_CCE,
+                         .delta_pucch = current_harq->delta_pucch,
+                         .ack_payload = ack_nack,
+                         .n_harq = 1};
   current_harq->active = false;
   current_harq->ack_received = false;
   if (get_softmodem_params()->emulate_l1) {
@@ -969,11 +962,11 @@ void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, int pid, int ack_nack)
     mac->nr_ue_emul_l1.harq[pid].active_dl_harq_sfn = sched_frame;
     mac->nr_ue_emul_l1.harq[pid].active_dl_harq_slot = sched_slot;
   }
-  nr_ue_configure_pucch(mac,
-                        sched_slot,
-                        mac->ra.t_crnti,
-                        &pucch,
-                        pucch_pdu);
-  fill_ul_config(ul_config, sched_frame, sched_slot, FAPI_NR_UL_CONFIG_TYPE_PUCCH);
-  pthread_mutex_unlock(&ul_config->mutex_ul_config);
+  fapi_nr_ul_config_request_pdu_t *pdu = lockGet_ul_config(mac, sched_frame, sched_slot, FAPI_NR_UL_CONFIG_TYPE_PUCCH);
+  if (!pdu)
+    return;
+  int ret = nr_ue_configure_pucch(mac, sched_slot, mac->ra.t_crnti, &pucch, &pdu->pucch_config_pdu);
+  if (ret != 0)
+    remove_ul_config_last_item(pdu);
+  release_ul_config(pdu, false);
 }

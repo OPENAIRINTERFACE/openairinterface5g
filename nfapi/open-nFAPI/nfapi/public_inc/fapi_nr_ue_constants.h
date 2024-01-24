@@ -69,4 +69,5 @@
 #define FAPI_NR_UL_CONFIG_TYPE_SRS   0x04
 #define FAPI_NR_UL_CONFIG_TYPES      0x04
 
+#define FAPI_NR_END 0xff
 #endif
