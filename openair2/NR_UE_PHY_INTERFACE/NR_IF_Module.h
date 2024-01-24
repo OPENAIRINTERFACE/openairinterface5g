@@ -142,9 +142,6 @@ typedef struct {
     // Sidelink TX configuration request
     sl_nr_tx_config_request_t *sl_tx_config;
 
-    /// data transmission request structure
-    fapi_nr_tx_request_t *tx_request;
-
     /// PHY data structure initially passed on to L2 via the nr_downlink_indication_t and
     /// returned to L1 via nr_scheduled_response_t
     void *phy_data;

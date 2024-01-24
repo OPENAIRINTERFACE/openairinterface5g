@@ -152,18 +152,14 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
             nfapi_nr_rx_data_indication_t *rx_ind = CALLOC(1, sizeof(*rx_ind));
             nfapi_nr_crc_indication_t *crc_ind = CALLOC(1, sizeof(*crc_ind));
             nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
-            if (scheduled_response->tx_request) {
-              AssertFatal(
-                  scheduled_response->tx_request->number_of_pdus < sizeofArray(scheduled_response->tx_request->tx_request_body),
-                  "Too many tx_req pdus %d",
-                  scheduled_response->tx_request->number_of_pdus);
+            if (pusch_config_pdu->tx_request_body.pdu) {
               rx_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
               rx_ind->sfn = frame;
               rx_ind->slot = slot;
-              rx_ind->number_of_pdus = scheduled_response->tx_request->number_of_pdus;
+              rx_ind->number_of_pdus = 1; // scheduled_response->tx_request->number_of_pdus;
               rx_ind->pdu_list = CALLOC(rx_ind->number_of_pdus, sizeof(*rx_ind->pdu_list));
               for (int j = 0; j < rx_ind->number_of_pdus; j++) {
-                fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
+                fapi_nr_tx_request_body_t *tx_req_body = &pusch_config_pdu->tx_request_body;
                 rx_ind->pdu_list[j].handle = pusch_config_pdu->handle;
                 rx_ind->pdu_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
                 rx_ind->pdu_list[j].pdu_length = tx_req_body->pdu_length;
@@ -226,7 +222,6 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               }
 
               LOG_D(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
-              scheduled_response->tx_request->number_of_pdus = 0;
             }
             break;
           }
@@ -447,7 +442,6 @@ static void nr_ue_scheduled_response_dl(NR_UE_MAC_INST_t *mac,
 
 static void nr_ue_scheduled_response_ul(PHY_VARS_NR_UE *phy,
                                         fapi_nr_ul_config_request_t *ul_config,
-                                        fapi_nr_tx_request_t *tx_request,
                                         nr_phy_data_tx_t *phy_data,
                                         int module_id,
                                         int cc_id)
@@ -511,36 +505,27 @@ static void nr_ue_scheduled_response_ul(PHY_VARS_NR_UE *phy,
               pusch_config_pdu->num_dmrs_cdm_grps_no_data);
 
         memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
-        if (tx_request) {
-          for (int j = 0; j < tx_request->number_of_pdus; j++) {
-            fapi_nr_tx_request_body_t *tx_req_body = &tx_request->tx_request_body[j];
-            if ((tx_req_body->pdu_index == i) && (tx_req_body->pdu_length > 0)) {
-              LOG_D(PHY,
-                    "%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",
-                    ul_config->frame,
-                    slot,
-                    tx_req_body->pdu_length,
-                    current_harq_pid);
-              memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
-              break;
-            }
-          }
-
-          harq_process_ul_ue->status = ACTIVE;
-          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
-          pdu_done++;
+        if (pusch_config_pdu->tx_request_body.pdu) {
           LOG_D(PHY,
-                "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n",
+                "%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",
                 ul_config->frame,
                 slot,
-                ul_config,
-                pdu_type,
-                pdu_done,
-                ul_config->number_pdus);
-
-        } else {
-          LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
+                pusch_config_pdu->tx_request_body.pdu_length,
+                current_harq_pid);
+          memcpy(harq_process_ul_ue->a, pusch_config_pdu->tx_request_body.pdu, pusch_config_pdu->tx_request_body.pdu_length);
         }
+
+        harq_process_ul_ue->status = ACTIVE;
+        ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+        pdu_done++;
+        LOG_D(PHY,
+              "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n",
+              ul_config->frame,
+              slot,
+              ul_config,
+              pdu_type,
+              pdu_done,
+              ul_config->number_pdus);
       } break;
 
       case FAPI_NR_UL_CONFIG_TYPE_PUCCH: {
@@ -629,8 +614,6 @@ static void nr_ue_scheduled_response_ul(PHY_VARS_NR_UE *phy,
 
   // Clear the fields when all the config pdu are done
   if (pdu_done == ul_config->number_pdus) {
-    if (tx_request)
-      tx_request->number_of_pdus = 0;
     ul_config->frame = 0;
     ul_config->slot = 0;
     ul_config->number_pdus = 0;
@@ -654,7 +637,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response)
   if (scheduled_response->ul_config)
     nr_ue_scheduled_response_ul(phy,
                                 scheduled_response->ul_config,
-                                scheduled_response->tx_request,
                                 (nr_phy_data_tx_t *)scheduled_response->phy_data,
                                 scheduled_response->module_id,
                                 scheduled_response->CC_id);

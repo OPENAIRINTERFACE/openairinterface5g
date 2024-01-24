@@ -1003,13 +1003,10 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
             ul_config->slot);
 
       uint8_t ulsch_input_buffer_array[NFAPI_MAX_NUM_UL_PDU][MAX_ULSCH_PAYLOAD_BYTES];
-      fapi_nr_tx_request_t tx_req;
-      tx_req.slot = slot_tx;
-      tx_req.sfn = frame_tx;
-      tx_req.number_of_pdus = 0;
+      int number_of_pdus = 0;
 
       for (int j = 0; j < ul_config->number_pdus; j++) {
-        uint8_t *ulsch_input_buffer = ulsch_input_buffer_array[tx_req.number_of_pdus];
+        uint8_t *ulsch_input_buffer = ulsch_input_buffer_array[number_of_pdus];
 
         fapi_nr_ul_config_request_pdu_t *ulcfg_pdu = &ul_config->ul_config_list[j];
 
@@ -1038,10 +1035,9 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
 
           // Config UL TX PDU
           if (mac_pdu_exist) {
-            tx_req.tx_request_body[tx_req.number_of_pdus].pdu_length = TBS_bytes;
-            tx_req.tx_request_body[tx_req.number_of_pdus].pdu_index = j;
-            tx_req.tx_request_body[tx_req.number_of_pdus].pdu = ulsch_input_buffer;
-            tx_req.number_of_pdus++;
+            ulcfg_pdu->pusch_config_pdu.tx_request_body.pdu = ulsch_input_buffer;
+            ulcfg_pdu->pusch_config_pdu.tx_request_body.pdu_length = TBS_bytes;
+            number_of_pdus++;
           }
           if (ra->ra_state == WAIT_CONTENTION_RESOLUTION && !ra->cfra){
             LOG_I(NR_MAC,"[RAPROC][%d.%d] RA-Msg3 retransmitted\n", frame_tx, slot_tx);
@@ -1059,8 +1055,7 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
                                                     .mac = mac,
                                                     .module_id = ul_info->module_id,
                                                     .CC_id = ul_info->cc_id,
-                                                    .phy_data = ul_info->phy_data,
-                                                    .tx_request = &tx_req};
+                                                    .phy_data = ul_info->phy_data};
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
         LOG_D(NR_MAC,"3# scheduled_response transmitted,%d, %d\n", frame_tx, slot_tx);
         mac->if_module->scheduled_response(&scheduled_response);

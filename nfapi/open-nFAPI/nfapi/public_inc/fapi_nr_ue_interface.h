@@ -168,7 +168,6 @@ typedef struct {
 
 typedef struct {
   uint16_t pdu_length;
-  uint16_t pdu_index;
   uint8_t* pdu;
 } fapi_nr_tx_request_body_t;
 
@@ -358,6 +357,7 @@ typedef struct
   nfapi_nr_ue_ul_beamforming_t beamforming;
   //OAI specific
   int8_t absolute_delta_PUSCH;
+  fapi_nr_tx_request_body_t tx_request_body;
 } nfapi_nr_ue_pusch_pdu_t;
 
 typedef struct {
