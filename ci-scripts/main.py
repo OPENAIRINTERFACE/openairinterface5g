@@ -102,7 +102,7 @@ def AssignParams(params_dict):
 
 
 def GetParametersFromXML(action):
-	if action == 'Build_eNB' or action == 'Build_Image' or action == 'Build_Proxy' or action == "Build_Cluster_Image":
+	if action == 'Build_eNB' or action == 'Build_Image' or action == 'Build_Proxy' or action == "Build_Cluster_Image" or action == "Build_Run_Tests":
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		CONTAINERS.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
@@ -831,6 +831,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						RAN.prematureExit = True
 				elif action == 'Build_Image':
 					success = CONTAINERS.BuildImage(HTML)
+					if not success:
+						RAN.prematureExit = True
+				elif action == 'Build_Run_Tests':
+					success = CONTAINERS.BuildRunTests(HTML)
 					if not success:
 						RAN.prematureExit = True
 				elif action == 'Build_Proxy':

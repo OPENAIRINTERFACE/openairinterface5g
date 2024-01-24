@@ -671,6 +671,87 @@ class Containerize():
 		HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
 		HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
 
+	def BuildRunTests(self, HTML):
+		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		if self.eNB_serverId[self.eNB_instance] == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId[self.eNB_instance] == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId[self.eNB_instance] == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		logging.debug('Building on server: ' + lIpAddr)
+		cmd = cls_cmd.RemoteCmd(lIpAddr)
+		cmd.cd(lSourcePath)
+
+		ret = cmd.run('hostnamectl')
+		result = re.search('Ubuntu', ret.stdout)
+		host = result.group(0)
+		if host != 'Ubuntu':
+			cmd.close()
+			raise Exception("Can build unit tests only on Ubuntu server")
+		logging.debug('running on Ubuntu as expected')
+
+		if self.forcedWorkspaceCleanup:
+			cmd.run(f'sudo -S rm -Rf {lSourcePath}')
+		self.testCase_id = HTML.testCase_id
+	
+		# check that ran-base image exists as we expect it
+		baseImage = 'ran-base'
+		baseTag = 'develop'
+		if self.ranAllowMerge:
+			if self.ranTargetBranch == 'develop':
+				cmd.run(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base{self.dockerfileprefix} | grep --colour=never -i INDEX')
+				result = re.search('index', cmd.getBefore())
+				if result is not None:
+					baseTag = 'develop'
+		ret = cmd.run(f"docker image inspect --format=\'Size = {{{{.Size}}}} bytes\' {baseImage}:{baseTag}")
+		if ret.returncode != 0:
+			logging.error(f'No {baseImage} image present, cannot build tests')
+			HTML.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTabFooter(False)
+			return False
+
+		# build ran-unittests image
+		dockerfile = "ci-scripts/docker/Dockerfile.unittest.ubuntu20"
+		ret = cmd.run(f'docker build --progress=plain --tag ran-unittests:{baseTag} --file {dockerfile} . &> {lSourcePath}/cmake_targets/log/unittest-build.log')
+		if ret.returncode != 0:
+			logging.error(f'Cannot build unit tests')
+			HTML.CreateHtmlTestRow("Unit test build failed", 'KO', [dockerfile])
+			HTML.CreateHtmlTabFooter(False)
+			return False
+
+		HTML.CreateHtmlTestRowQueue("Build unit tests", 'OK', [dockerfile])
+
+		# it worked, build and execute tests, and close connection
+		ret = cmd.run(f'docker run -a STDOUT --rm ran-unittests:develop ctest --output-on-failure --no-label-summary -j$(nproc)')
+		cmd.run(f'docker rmi ran-unittests:develop')
+		build_log_name = f'build_log_{self.testCase_id}'
+		CopyLogsToExecutor(cmd, lSourcePath, build_log_name)
+		cmd.close()
+
+		if ret.returncode == 0:
+			HTML.CreateHtmlTestRowQueue('Unit tests succeeded', 'OK', [ret.stdout])
+			HTML.CreateHtmlTabFooter(True)
+			return True
+		else:
+			HTML.CreateHtmlTestRowQueue('Unit tests failed (see also doc/UnitTests.md)', 'KO', [ret.stdout])
+			HTML.CreateHtmlTabFooter(False)
+			return False
+
 	def Push_Image_to_Local_Registry(self, HTML):
 		if self.registrySvrId == '0':
 			lIpAddr = self.eNBIPAddress
