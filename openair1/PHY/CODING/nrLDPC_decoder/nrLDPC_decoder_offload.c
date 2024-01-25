@@ -1106,7 +1106,7 @@ int32_t LDPCencoder(unsigned char **input, unsigned char **output, encoder_imple
                                           .rv = impp->rv,
                                           .F = impp->F,
                                           .Qm = impp->Qm,
-                                          .Kr = (impp->K - impp->F + 7)/8};
+                                          .Kr = (impp->K - impp->F + 7) / 8};
   struct rte_bbdev_info info;
   rte_bbdev_info_get(ad->dev_id, &info);
   int socket_id = GET_SOCKET(info.socket_id);

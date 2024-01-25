@@ -50,7 +50,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 {
   start_meas(&ue->ulsch_encoding_stats);
 
-/////////////////////////parameters and variables initialization/////////////////////////
+  /////////////////////////parameters and variables initialization/////////////////////////
 
   unsigned int crc = 1;
   NR_UL_UE_HARQ_t *harq_process = &ue->ul_harq_processes[harq_pid];
@@ -72,7 +72,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                                  .tprep = NULL,
                                  .tparity = NULL,
                                  .toutput = NULL};
-/////////////////////////////////////////////////////////////////////////////////////////  
+  /////////////////////////////////////////////////////////////////////////////////////////
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_IN);
   LOG_D(NR_PHY, "ulsch coding nb_rb %d, Nl = %d\n", nb_rb, ulsch->pusch_pdu.nrOfLayers);
@@ -82,7 +82,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 #ifdef DEBUG_ULSCH_CODING
     printf("encoding thinks this is a new packet \n");
 #endif
-///////////////////////// a---->| add CRC |---->b /////////////////////////
+    ///////////////////////// a---->| add CRC |---->b /////////////////////////
     int max_payload_bytes = MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER*ulsch->pusch_pdu.nrOfLayers*1056;
     int B;
     if (A > NR_MAX_PDSCH_TBS) {
@@ -90,41 +90,41 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
       crc = crc24a(harq_process->a,A)>>8;
       harq_process->a[A>>3] = ((uint8_t*)&crc)[2];
       harq_process->a[1+(A>>3)] = ((uint8_t*)&crc)[1];
-      harq_process->a[2+(A>>3)] = ((uint8_t*)&crc)[0];
+      harq_process->a[2 + (A >> 3)] = ((uint8_t *)&crc)[0];
       B = A + 24;
-      AssertFatal((A/8)+4 <= max_payload_bytes,"A %d is too big (A/8+4 = %d > %d)\n",A,(A/8)+4,max_payload_bytes);
+      AssertFatal((A / 8) + 4 <= max_payload_bytes, "A %d is too big (A/8+4 = %d > %d)\n", A, (A / 8) + 4, max_payload_bytes);
       memcpy(harq_process->b,harq_process->a,(A/8)+4);
     } else {
       // Add 16-bit crc (polynomial A) to payload
       crc = crc16(harq_process->a,A)>>16;
       harq_process->a[A>>3] = ((uint8_t*)&crc)[1];
-      harq_process->a[1+(A>>3)] = ((uint8_t*)&crc)[0];
+      harq_process->a[1 + (A >> 3)] = ((uint8_t *)&crc)[0];
       B = A + 16;
-      AssertFatal((A/8)+3 <= max_payload_bytes,"A %d is too big (A/8+3 = %d > %d)\n",A,(A/8)+3,max_payload_bytes);
+      AssertFatal((A / 8) + 3 <= max_payload_bytes, "A %d is too big (A/8+3 = %d > %d)\n", A, (A / 8) + 3, max_payload_bytes);
       memcpy(harq_process->b,harq_process->a,(A/8)+3);  // using 3 bytes to mimic the case of 24 bit crc
     }
 
-///////////////////////// b---->| block segmentation |---->c /////////////////////////
+    ///////////////////////// b---->| block segmentation |---->c /////////////////////////
 
     harq_process->BG = ulsch->pusch_pdu.ldpcBaseGraph;
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_IN);
     start_meas(&ue->ulsch_segmentation_stats);
     impp.Kb = nr_segmentation(harq_process->b,
-                    harq_process->c,
-                    B,
-                    &harq_process->C,
-                    &harq_process->K,
-                    &harq_process->Z,
-                    &harq_process->F,
-                    harq_process->BG);
+                              harq_process->c,
+                              B,
+                              &harq_process->C,
+                              &harq_process->K,
+                              &harq_process->Z,
+                              &harq_process->F,
+                              harq_process->BG);
     impp.n_segments = harq_process->C;
     impp.K = harq_process->K;
     impp.Kr = impp.K;
     impp.Zc = harq_process->Z;
     impp.F = harq_process->F;
     impp.BG = harq_process->BG;
-    if (impp.n_segments > MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*ulsch->pusch_pdu.nrOfLayers) {
+    if (impp.n_segments > MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER * ulsch->pusch_pdu.nrOfLayers) {
       LOG_E(PHY, "nr_segmentation.c: too many segments %d, B %d\n", impp.n_segments, B);
       return(-1);
     }
@@ -133,10 +133,10 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
 #ifdef DEBUG_ULSCH_CODING
     uint16_t Kr_bytes;
-    Kr_bytes = impp.Kr>>3;
+    Kr_bytes = impp.Kr >> 3;
 #endif
 
-///////////////////////// c---->| LDCP coding |---->d ////////////////////////////////////
+    ///////////////////////// c---->| LDCP coding |---->d ////////////////////////////////////
     for (int r = 0; r < impp.n_segments; r++) {
 #ifdef DEBUG_ULSCH_CODING
       printf("Encoder: B %d F %d \n", B, impp.F);
@@ -169,8 +169,8 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LDPC_ENCODER_OPTIM, VCD_FUNCTION_OUT);
 
 #ifdef DEBUG_ULSCH_CODING
-      write_output("ulsch_enc_input0.m","enc_in0",&harq_process->c[0][0],Kr_bytes,1,4);
-      write_output("ulsch_enc_output0.m","enc0",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,4);
+      write_output("ulsch_enc_input0.m", "enc_in0", &harq_process->c[0][0], Kr_bytes, 1, 4);
+      write_output("ulsch_enc_output0.m", "enc0", &harq_process->d[0][0], (3 * 8 * Kr_bytes) + 12, 1, 4);
 #endif
     }
 ///////////////////////////////////////////////////////////////////////////////
@@ -181,9 +181,18 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
         }
       }
 
-      LOG_D(PHY,"Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb %d, rvidx %d)...\n", r, G, impp.Kr*3, impp.Qm, nb_rb, ulsch->pusch_pdu.pusch_data.rv_index);
+      LOG_D(PHY,
+            "Rate Matching, Code segment %d (coded bits (G) %u, unpunctured/repeated bits per code segment %d, mod_order %d, nb_rb "
+            "%d, "
+            "rvidx %d)...\n",
+            r,
+            G,
+            impp.Kr * 3,
+            impp.Qm,
+            nb_rb,
+            ulsch->pusch_pdu.pusch_data.rv_index);
 
-///////////////////////// d---->| Rate matching bit selection |---->e /////////////////////////
+      ///////////////////////// d---->| Rate matching bit selection |---->e /////////////////////////
       impp.E = nr_get_E(G, impp.n_segments, impp.Qm, ulsch->pusch_pdu.nrOfLayers, r);
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
@@ -204,8 +213,8 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_OUT);
 
 #ifdef DEBUG_ULSCH_CODING
-        for (int i =0; i<16; i++)
-          printf("output ratematching e[%d]= %d r_offset %u\n", i,harq_process->e[i + r_offset], r_offset);
+      for (int i = 0; i < 16; i++)
+        printf("output ratematching e[%d]= %d r_offset %u\n", i, harq_process->e[i + r_offset], r_offset);
 #endif
 
 ///////////////////////// e---->| Rate matching bit interleaving |---->f /////////////////////////
@@ -227,7 +236,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
       r_offset += impp.E;
     }
   }
-///////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_OUT);
   stop_meas(&ue->ulsch_encoding_stats);
   return(0);
