@@ -191,12 +191,13 @@ Furthermore, the gNB and UE support
 ## gNB F1AP
 
 - Integration of F1AP messages and procedures for the control plane exchanges between the CU and DU entities according to 38.473 Rel. 16
-  - F1 Setup request/response
+  - F1 Setup request/response/failure
   - F1 DL/UL RRC message transfer
   - F1 Initial UL RRC message transfer
   - F1 UE Context setup request/response
   - F1 UE Context modification request/response
-  - F1 UE Context release
+  - F1 UE Context modification required
+  - F1 UE Context release req/cmd/complete
   - F1 gNB CU configuration update
 - Interface with RRC
 - Interface with gtp-u (tunnel creation/handling for F1-U interface)
