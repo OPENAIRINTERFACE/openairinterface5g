@@ -1261,22 +1261,27 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id,
   rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
 }
 
+static const char *get_reestab_cause(NR_ReestablishmentCause_t c)
+{
+  switch (c) {
+    case NR_ReestablishmentCause_otherFailure:
+      return "Other Failure";
+    case NR_ReestablishmentCause_handoverFailure:
+      return "Handover Failure";
+    case NR_ReestablishmentCause_reconfigurationFailure:
+      return "Reconfiguration Failure";
+    default:
+      break;
+  }
+  return "UNKNOWN Failure (ASN.1 decoder error?)";
+}
+
 static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t assoc_id, const NR_RRCReestablishmentRequest_IEs_t *req, const f1ap_initial_ul_rrc_message_t *msg)
 {
-  /* in case we need to do RRC Setup, give the UE a new random identity */
-  uint64_t random_value;
-  fill_random(&random_value, sizeof(random_value));
-  random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
-
-  const NR_ReestablishmentCause_t cause = req->reestablishmentCause;
+  uint64_t random_value = 0;
+  const char *scause = get_reestab_cause(req->reestablishmentCause);
   const long physCellId = req->ue_Identity.physCellId;
-  LOG_I(NR_RRC,
-        "UE %04x physCellId %ld NR_RRCReestablishmentRequest cause %s\n",
-        msg->crnti,
-        physCellId,
-        cause == NR_ReestablishmentCause_otherFailure
-            ? "Other Failure"
-            : (cause == NR_ReestablishmentCause_handoverFailure ? "Handover Failure" : "reconfigurationFailure"));
+  LOG_D(NR_RRC, "UE %04x physCellId %ld NR_RRCReestablishmentRequest cause %s\n", msg->crnti, physCellId, scause);
 
   const nr_rrc_du_container_t *du = get_du_by_assoc_id(rrc, assoc_id);
   if (du == NULL) {
@@ -1289,19 +1294,14 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
      * Reestablishment (as we would need the SSB's ARFCN, which we cannot
      * compute). So generate RRC Setup instead */
     LOG_E(NR_RRC, "Reestablishment request: no MIB/SIB1 of DU present, cannot do reestablishment, force setup request\n");
-    rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
-    ue_context_p->ue_context.Srb[1].Active = 1;
-    rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+    goto fallback_rrc_setup;
   }
 
   rnti_t old_rnti = req->ue_Identity.c_RNTI;
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, assoc_id, old_rnti);
   if (ue_context_p == NULL) {
     LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC setup\n");
-    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
-    ue_context_p->ue_context.Srb[1].Active = 1;
-    rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
-    return;
+    goto fallback_rrc_setup;
   }
 
   const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
@@ -1315,10 +1315,7 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
      * one, the gNB-CU should trigger the UE Context Setup procedure". Let's
      * assume that the old DU will trigger a release request, also freeing the
      * ongoing context at the CU. Hence, create new below */
-    rrc_gNB_ue_context_t *new = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
-    new->ue_context.Srb[1].Active = 1;
-    rrc_gNB_generate_RRCSetup(0, msg->crnti, new, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
-    return;
+    goto fallback_rrc_setup;
   }
 
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
@@ -1328,19 +1325,13 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
     LOG_E(NR_RRC,
           "NR_RRCReestablishmentRequest c_RNTI %04lx range error, fallback to RRC setup\n",
           req->ue_Identity.c_RNTI);
-    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
-    ue_context_p->ue_context.Srb[1].Active = 1;
-    rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
-    return;
+    goto fallback_rrc_setup;
   }
 
   if (!UE->as_security_active) {
     /* no active security context, need to restart entire connection */
     LOG_E(NR_RRC, "UE requested Reestablishment without activated AS security\n");
-    ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
-    ue_context_p->ue_context.Srb[1].Active = 1;
-    rrc_gNB_generate_RRCSetup(0, msg->crnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
-    return;
+    goto fallback_rrc_setup;
   }
 
   /* TODO: start timer in ITTI and drop UE if it does not come back */
@@ -1351,9 +1342,19 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
   f1_ue_data_t ue_data = {.secondary_ue = msg->gNB_DU_ue_id, .du_assoc_id = assoc_id};
   cu_add_f1_ue_data(UE->rrc_ue_id, &ue_data);
 
-  LOG_D(NR_RRC, "Accept req-> UE physCellId %ld cause %ld\n", physCellId, cause);
+  LOG_I(NR_RRC, "Accept Reestablishment Request UE physCellId %ld cause %s\n", physCellId, scause);
 
   rrc_gNB_generate_RRCReestablishment(ue_context_p, msg->du2cu_rrc_container, old_rnti, du);
+  return;
+
+fallback_rrc_setup:
+  fill_random(&random_value, sizeof(random_value));
+  random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
+
+  rrc_gNB_ue_context_t *new = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
+  new->ue_context.Srb[1].Active = 1;
+  rrc_gNB_generate_RRCSetup(0, msg->crnti, new, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+  return;
 }
 
 /*! \fn uint64_t bitStr_to_uint64(BIT_STRING_t *)
