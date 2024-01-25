@@ -596,7 +596,20 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  ue_p->xids[xid] = RRC_PDUSESSION_ESTABLISH;
+  /* hack: in many cases, we want to send a PDU session resource setup response
+   * after this dedicated RRC Reconfiguration (e.g., new PDU session). However,
+   * this is not always the case, e.g., when the PDU sessions came through the
+   * NG initial UE context setup, in which case all PDU sessions are
+   * established, and we end up here after a UE Capability Enquiry. So below,
+   * check if we are currently setting up any PDU sessions, and only then, set
+   * the xid to trigger a PDU session setup response. */
+  ue_p->xids[xid] = RRC_DEDICATED_RECONF;
+  for (int i = 0; i < ue_p->nb_of_pdusessions; ++i) {
+    if (ue_p->pduSession[i].status < PDU_SESSION_STATUS_ESTABLISHED) {
+      ue_p->xids[xid] = RRC_PDUSESSION_ESTABLISH;
+      break;
+    }
+  }
   struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList = CALLOC(1, sizeof(*dedicatedNAS_MessageList));
 
   for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
@@ -1325,12 +1338,34 @@ static int handle_ueCapabilityInformation(const protocol_ctxt_t *const ctxt_pP,
 
   rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(ctxt_pP, ue_context_p, ue_cap_info);
 
-  // we send the UE capabilities request before RRC connection is complete,
-  // so we cannot have a PDU session yet
-  AssertFatal(UE->nb_of_pdusessions == 0, "logic bug: received capabilities while PDU session established\n");
-  // TODO: send UE context modification response with UE capabilities to
-  // allow DU configure CellGroupConfig
-  rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
+  /* if we already have DRBs setup (SRB2 exists if there is at least one DRB),
+   * there might not be a further reconfiguration on which we can rely, so send
+   * the UE capabilities to the DU to have it trigger a reconfiguration. */
+  if (UE->Srb[2].Active && UE->ue_cap_buffer.len > 0 && UE->ue_cap_buffer.buf != NULL) {
+    cu_to_du_rrc_information_t cu2du = {0};
+    if (UE->ue_cap_buffer.len > 0 && UE->ue_cap_buffer.buf != NULL) {
+      cu2du.uE_CapabilityRAT_ContainerList = UE->ue_cap_buffer.buf;
+      cu2du.uE_CapabilityRAT_ContainerList_length = UE->ue_cap_buffer.len;
+    }
+
+    f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
+    if (ue_data.du_assoc_id == 0) {
+      LOG_E(NR_RRC, "cannot send data: invalid assoc_id 0, DU offline\n");
+      return -1;
+    }
+    gNB_RRC_INST *rrc = RC.nrrrc[0];
+    f1ap_ue_context_modif_req_t ue_context_modif_req = {
+        .gNB_CU_ue_id = UE->rrc_ue_id,
+        .gNB_DU_ue_id = ue_data.secondary_ue,
+        .plmn.mcc = rrc->configuration.mcc[0],
+        .plmn.mnc = rrc->configuration.mnc[0],
+        .plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0],
+        .nr_cellid = rrc->nr_cellid,
+        .servCellId = 0, /* TODO: correct value? */
+        .cu_to_du_rrc_information = &cu2du,
+    };
+    rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
+  }
 
   return 0;
 }
@@ -1467,6 +1502,14 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
     .ReconfigComplOutcome = successful_reconfig ? RRCreconf_success : RRCreconf_failure,
   };
   rrc->mac_rrc.ue_context_modification_request(ue_data.du_assoc_id, &ue_context_modif_req);
+
+  /* if we did not receive any UE Capabilities, let's do that now. It should
+   * only happen on the first time a reconfiguration arrives. Afterwards, we
+   * should have them. If the UE does not give us anything, we will re-request
+   * the capabilities after each reconfiguration, which is a finite number */
+  if (UE->ue_cap_buffer.len == 0) {
+    rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
+  }
 }
 //-----------------------------------------------------------------------------
 int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
@@ -1574,24 +1617,18 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
         nr_rrc_pdcp_config_security(ctxt_pP, ue_context_p, 1);
         ue_context_p->ue_context.as_security_active = true;
 
-        rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
+        rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
         break;
 
       case NR_UL_DCCH_MessageType__c1_PR_securityModeFailure:
         LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)Rx_sdu, sdu_sizeP, "[MSG] NR RRC Security Mode Failure\n");
-        LOG_W(NR_RRC,
-              PROTOCOL_RRC_CTXT_UE_FMT
-              " RLC RB %02d --- RLC_DATA_IND %d bytes "
-              "(securityModeFailure) ---> RRC_gNB\n",
-              PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-              DCCH,
-              sdu_sizeP);
+        LOG_E(NR_RRC, "UE %d: received securityModeFailure\n", ue_context_p->ue_context.rrc_ue_id);
 
         if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
           xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)ul_dcch_msg);
         }
 
-        rrc_gNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
+        LOG_W(NR_RRC, "Cannot continue as no AS security is activated (implementation missing)\n");
         break;
 
       case NR_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
