@@ -184,7 +184,7 @@ void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req)
                               sdap_data_req,
                               &resp_n3);
     AssertFatal(ret >= 0, "Unable to create GTP Tunnel for NG-U\n");
-    AssertFatal(resp_n3.num_tunnels == req->numPDUSessions, "could not create all tunnels\n");
+    AssertFatal(resp_n3.num_tunnels == req_pdu->numDRB2Setup, "could not create all tunnels\n");
     resp_pdu->teId = resp_n3.gnb_NGu_teid[i];
     memcpy(&resp_pdu->tlAddress, &resp_n3.gnb_addr.buffer, 4);
 
