@@ -85,7 +85,6 @@ void clear_mac_stats(gNB_MAC_INST *gNB) {
 
 size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset_rsrp)
 {
-  int num = 1;
   const char *begin = output;
   const char *end = output + strlen;
 
@@ -99,11 +98,19 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
     NR_mac_stats_t *stats = &UE->mac_stats;
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
 
+    output += snprintf(output, end - output, "UE RNTI %04x CU-UE-ID ", UE->rnti);
+    if (du_exists_f1_ue_data(UE->rnti)) {
+      f1_ue_data_t ued = du_get_f1_ue_data(UE->rnti);
+      output += snprintf(output, end - output, "%d", ued.secondary_ue);
+    } else {
+      output += snprintf(output, end-output, "(none)");
+    }
+
+    bool in_sync = !sched_ctrl->ul_failure;
     output += snprintf(output,
                        end - output,
-                       "UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
-                       UE->rnti,
-                       num++,
+                       " %s PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
+                       in_sync ? "in-sync" : "out-of-sync",
                        sched_ctrl->ph,
                        sched_ctrl->pcmax,
                        avg_rsrp,
@@ -132,19 +139,16 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
 
     output += snprintf(output,
                        end - output,
-                       ", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
+                       ", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS (%d) %d\n",
                        stats->dl.errors,
                        stats->pucch0_DTX,
                        sched_ctrl->dl_bler_stats.bler,
+                       UE->current_DL_BWP.mcsTableIdx,
                        sched_ctrl->dl_bler_stats.mcs);
     if (reset_rsrp) {
       stats->num_rsrp_meas = 0;
       stats->cumul_rsrp = 0;
     }
-    output += snprintf(output,
-                       end - output,
-                       "UE %04x: dlsch_total_bytes %"PRIu64"\n",
-                       UE->rnti, stats->dl.total_bytes);
     output += snprintf(output,
                        end - output,
                        "UE %04x: ulsch_rounds ", UE->rnti);
@@ -154,16 +158,17 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
 
     output += snprintf(output,
                        end - output,
-                       ", ulsch_DTX %d, ulsch_errors %"PRIu64", BLER %.5f MCS %d\n",
-                       stats->ulsch_DTX,
+                       ", ulsch_errors %"PRIu64", ulsch_DTX %d, BLER %.5f MCS (%d) %d\n",
                        stats->ul.errors,
+                       stats->ulsch_DTX,
                        sched_ctrl->ul_bler_stats.bler,
+                       UE->current_UL_BWP.mcs_table,
                        sched_ctrl->ul_bler_stats.mcs);
+
     output += snprintf(output,
                        end - output,
-                       "UE %04x: ulsch_total_bytes_scheduled %"PRIu64", ulsch_total_bytes_received %"PRIu64"\n",
-                       UE->rnti,
-                       stats->ulsch_total_bytes_scheduled, stats->ul.total_bytes);
+                       "UE %04x: MAC:    TX %14"PRIu64" RX %14"PRIu64" bytes\n",
+                       UE->rnti, stats->dl.total_bytes, stats->ul.total_bytes);
 
     for (int i = 0; i < sched_ctrl->dl_lc_num; i++) {
       int lc_id = sched_ctrl->dl_lc_ids[i];
