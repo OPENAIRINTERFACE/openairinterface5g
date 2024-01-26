@@ -955,81 +955,21 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP, const uint8_t xid)
 {
   int                                 drb_id;
-  uint8_t kRRCenc[16] = {0};
-  uint8_t kRRCint[16] = {0};
-  uint8_t kUPenc[16] = {0};
-  uint8_t kUPint[16] = {0};
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   NR_DRB_ToAddModList_t *DRB_configList = createDRBlist(ue_p, false);
-
-  /* Derive the keys from kgnb */
-  if (DRB_configList != NULL) {
-    nr_derive_key(UP_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kUPenc);
-    nr_derive_key(UP_INT_ALG, ue_p->integrity_algorithm, ue_p->kgnb, kUPint);
-  }
-
-  nr_derive_key(RRC_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kRRCenc);
-  nr_derive_key(RRC_INT_ALG, ue_p->integrity_algorithm, ue_p->kgnb, kRRCint);
 
   /* Refresh SRBs/DRBs */
   LOG_D(NR_RRC, "Configuring PDCP DRBs/SRBs for UE %04x\n", ue_p->rnti);
   ue_context_pP->ue_context.ue_reconfiguration_after_reestablishment_counter++;
-
-  nr_pdcp_add_drbs(ctxt_pP->enb_flag,
-                   ue_p->rrc_ue_id,
-                   DRB_configList,
-                   (ue_p->integrity_algorithm << 4) | ue_p->ciphering_algorithm,
-                   kUPenc,
-                   kUPint);
 
   /* Loop through DRBs and establish if necessary */
   if (DRB_configList != NULL) {
     for (int i = 0; i < DRB_configList->list.count; i++) {
       if (DRB_configList->list.array[i]) {
         drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
-        LOG_A(NR_RRC,
-              "[gNB %d] Frame  %d : Logical Channel UL-DCCH, Received NR_RRCReconfigurationComplete from UE rnti %lx, reconfiguring DRB %d\n",
-              ctxt_pP->module_id,
-              ctxt_pP->frame,
-              ctxt_pP->rntiMaybeUEid,
-              (int)DRB_configList->list.array[i]->drb_Identity);
-        //(int)*DRB_configList->list.array[i]->pdcp_Config->moreThanOneRLC->primaryPath.logicalChannel);
-
         if (ue_p->DRB_active[drb_id - 1] == 0) {
           ue_p->DRB_active[drb_id - 1] = DRB_ACTIVE;
-          LOG_D(NR_RRC, "[gNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
-                  ctxt_pP->module_id, ctxt_pP->frame, (int)DRB_configList->list.array[i]->drb_Identity);
-
-          LOG_D(NR_RRC,
-                  PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_gNB\n",
-                  PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-
-          //if (DRB_configList->list.array[i]->pdcp_Config->moreThanOneRLC->primaryPath.logicalChannel) {
-          //  nr_DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->pdcp_Config->moreThanOneRLC->primaryPath.logicalChannel;
-          //}
-
-            // rrc_mac_config_req_eNB
-        } else { // remove LCHAN from MAC/PHY
-          if (ue_p->DRB_active[drb_id] == 1) {
-            /* TODO : It may be needed if gNB goes into full stack working. */
-            // DRB has just been removed so remove RLC + PDCP for DRB
-            /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
-            (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
-            */
-            /*rrc_rlc_config_req(ctxt_pP,
-                                SRB_FLAG_NO,
-                                MBMS_FLAG_NO,
-                                CONFIG_ACTION_REMOVE,
-                                nr_DRB2LCHAN[i]);*/
-          }
-
-          // ue_p->DRB_active[drb_id] = 0;
-          LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
-                  PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-
-          // rrc_mac_config_req_eNB
-
-        } // end else of if (ue_p->DRB_active[drb_id] == 0)
+        }
       } // end if (DRB_configList->list.array[i])
     } // end for (int i = 0; i < DRB_configList->list.count; i++)
 
