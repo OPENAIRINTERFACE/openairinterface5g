@@ -509,7 +509,6 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
 {
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  AssertFatal(ue_p->nb_of_pdusessions == 0, "logic bug: PDU sessions present before RRC Connection established\n");
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   ue_p->xids[xid] = RRC_DEFAULT_RECONF;
 
@@ -551,14 +550,16 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
     measconfig = get_defaultMeasConfig(ssb_arfcn, band, scs);
   }
+  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
+  NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, false);
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   int size = do_RRCReconfiguration(ue_p,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    xid,
-                                   NULL, //*SRB_configList2,
-                                   NULL, //*DRB_configList,
+                                   SRBs,
+                                   DRBs,
                                    NULL,
                                    NULL,
                                    measconfig,
@@ -566,6 +567,8 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
                                    ue_p->masterCellGroup);
   AssertFatal(size > 0, "cannot encode RRCReconfiguration in %s()\n", __func__);
   free_defaultMeasConfig(measconfig);
+  freeSRBlist(SRBs);
+  freeDRBlist(DRBs);
 
   if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
@@ -1759,6 +1762,11 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance
   if (LOG_DEBUGFLAG(DEBUG_ASN1))
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, UE->masterCellGroup);
 
+  if (resp->drbs_to_be_setup_length > 0) {
+    AssertFatal(resp->srbs_to_be_setup_length > 0 && resp->srbs_to_be_setup[0].srb_id == 2, "logic bug: we set up DRBs, so need to have both SRB1&SRB2\n");
+    e1_send_bearer_updates(rrc, UE, resp->drbs_to_be_setup_length, resp->drbs_to_be_setup);
+  }
+
   /* at this point, we don't have to do anything: the UE context setup request
    * includes the Security Command, whose response will trigger the following
    * messages (UE capability, to be specific) */
@@ -2006,7 +2014,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
 
   /* Instruction towards the DU for SRB2 configuration */
   int nb_srb = 0;
-  f1ap_srb_to_be_setup_t srbs[1];
+  f1ap_srb_to_be_setup_t srbs[1] = {0};
   if (UE->Srb[2].Active == 0) {
     activate_srb(UE, 2);
     nb_srb = 1;
@@ -2017,7 +2025,8 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   if (!UE->as_security_active) {
     /* no AS security active, need to send UE context setup req with security
      * command (and the bearers) */
-    AssertFatal(false, "not implemented yet\n");
+    protocol_ctxt_t ctxt = {.rntiMaybeUEid = UE->rrc_ue_id};
+    rrc_gNB_generate_SecurityModeCommand(&ctxt, ue_context_p, nb_drb, drbs);
     return;
   }
 
@@ -2387,7 +2396,9 @@ static void rrc_deliver_ue_ctxt_setup_req(void *deliver_pdu_data, ue_id_t ue_id,
 void
 rrc_gNB_generate_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,
-  rrc_gNB_ue_context_t  *const ue_context_pP
+  rrc_gNB_ue_context_t  *const ue_context_pP,
+  int n_drbs,
+  const f1ap_drb_to_be_setup_t *drbs
 )
 //-----------------------------------------------------------------------------
 {
@@ -2413,6 +2424,16 @@ rrc_gNB_generate_SecurityModeCommand(
     cu2du.uE_CapabilityRAT_ContainerList_length = ue_p->ue_cap_buffer.len;
   }
 
+  int nb_srb = 0;
+  f1ap_srb_to_be_setup_t srb_buf[1] = {0};
+  f1ap_srb_to_be_setup_t *srbs = 0;
+  if (n_drbs > 0) {
+    nb_srb = 1;
+    srb_buf[0].srb_id = 2;
+    srb_buf[0].lcid = 2;
+    srbs = srb_buf;
+  }
+
   /* the callback will fill the UE context setup request and forward it */
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
   RETURN_IF_INVALID_ASSOC_ID(ue_data);
@@ -2424,8 +2445,10 @@ rrc_gNB_generate_SecurityModeCommand(
       .plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0],
       .nr_cellid = rrc->nr_cellid,
       .servCellId = 0, /* TODO: correct value? */
-      .srbs_to_be_setup = 0, /* no new SRBs */
-      .drbs_to_be_setup = 0, /* no new DRBs */
+      .srbs_to_be_setup_length = nb_srb,
+      .srbs_to_be_setup = srbs,
+      .drbs_to_be_setup_length = n_drbs,
+      .drbs_to_be_setup = (f1ap_drb_to_be_setup_t *) drbs,
       .cu_to_du_rrc_information = cu2du_p,
   };
   deliver_ue_ctxt_setup_data_t data = {.rrc = rrc, .setup_req = &ue_context_setup_req, .assoc_id = ue_data.du_assoc_id };

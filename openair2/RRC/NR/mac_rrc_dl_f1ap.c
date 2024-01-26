@@ -51,8 +51,20 @@ static void ue_context_setup_request_f1ap(sctp_assoc_t assoc_id, const f1ap_ue_c
   f1ap_ue_context_setup_t *f1ap_msg = &F1AP_UE_CONTEXT_SETUP_REQ(msg);
   *f1ap_msg = *req;
   AssertFatal(req->cu_to_du_rrc_information == NULL, "cu_to_du_rrc_information not supported yet\n");
-  AssertFatal(req->drbs_to_be_setup == NULL, "drbs_to_be_setup not supported yet\n");
-  AssertFatal(req->srbs_to_be_setup == NULL, "drbs_to_be_setup not supported yet\n");
+  if (req->drbs_to_be_setup_length > 0) {
+    int n = req->drbs_to_be_setup_length;
+    f1ap_msg->drbs_to_be_setup_length = n;
+    f1ap_msg->drbs_to_be_setup = calloc(n, sizeof(*f1ap_msg->drbs_to_be_setup));
+    AssertFatal(f1ap_msg->drbs_to_be_setup != NULL, "out of memory\n");
+    memcpy(f1ap_msg->drbs_to_be_setup, req->drbs_to_be_setup, n * sizeof(*f1ap_msg->drbs_to_be_setup));
+  }
+  if (req->srbs_to_be_setup_length > 0) {
+    int n = req->srbs_to_be_setup_length;
+    f1ap_msg->srbs_to_be_setup_length = n;
+    f1ap_msg->srbs_to_be_setup = calloc(n, sizeof(*f1ap_msg->srbs_to_be_setup));
+    AssertFatal(f1ap_msg->srbs_to_be_setup != NULL, "out of memory\n");
+    memcpy(f1ap_msg->srbs_to_be_setup, req->srbs_to_be_setup, n * sizeof(*f1ap_msg->srbs_to_be_setup));
+  }
   if (req->rrc_container_length > 0) {
     f1ap_msg->rrc_container = calloc(req->rrc_container_length, sizeof(*f1ap_msg->rrc_container));
     AssertFatal(f1ap_msg->rrc_container != NULL, "out of memory\n");

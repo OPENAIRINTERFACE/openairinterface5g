@@ -81,7 +81,9 @@ int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2
 void
 rrc_gNB_generate_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,
-  rrc_gNB_ue_context_t          *const ue_context_pP
+  rrc_gNB_ue_context_t          *const ue_context_pP,
+  int n_drbs,
+  const f1ap_drb_to_be_setup_t *drbs
 );
 
 unsigned int rrc_gNB_get_next_transaction_identifier(module_id_t gnb_mod_idP);
