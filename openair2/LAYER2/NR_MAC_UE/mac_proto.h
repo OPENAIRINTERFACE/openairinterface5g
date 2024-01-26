@@ -470,9 +470,11 @@ void nr_ue_msg2_scheduler(module_id_t mod_id, uint16_t rach_frame, uint16_t rach
 
 int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      NR_PDSCH_Config_t *pdsch_Config,
                                                       uint16_t n_RB_ULBWP,
                                                       uint16_t n_RB_DLBWP,
-                                                      uint16_t riv);
+                                                      int start_DLBWP,
+                                                      dci_field_t frequency_domain_assignment);
 
 void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 

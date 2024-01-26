@@ -510,6 +510,9 @@ static int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
     uint16_t s0             = dlsch0->dlsch_config.start_symbol;
     uint16_t s1             = dlsch0->dlsch_config.number_symbols;
 
+    AssertFatal(dlsch0->dlsch_config.resource_alloc == 1,
+                "DLSCH resource allocation type0 not supported at PHY\n");
+
     LOG_D(PHY,"[UE %d] nr_slot_rx %d, harq_pid %d (%d), BWP start %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x, Nl %d\n",
           ue->Mod_id,nr_slot_rx,harq_pid,dlsch0_harq->status,BWPStart,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->dlsch_config.dlDmrsSymbPos, dlsch0->Nl);
 
