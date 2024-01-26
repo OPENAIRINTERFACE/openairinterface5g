@@ -3734,11 +3734,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         //  end of MAC PDU, can ignore the rest.
         break;
         //  MAC SDU
-      case DL_SCH_LCID_DCCH:
-        //  check if LCID is valid at current time.
-      case DL_SCH_LCID_DCCH1:
-        //  check if LCID is valid at current time.
-      case DL_SCH_LCID_DTCH ... (DL_SCH_LCID_DTCH + 28):
+      // From values 1 to 32 it equals to the identity of the logical channel
+      case 1 ... 32:
         if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
           return;
         LOG_D(NR_MAC, "%4d.%2d : DLSCH -> LCID %d %d bytes\n", frameP, slot, rx_lcid, mac_len);
