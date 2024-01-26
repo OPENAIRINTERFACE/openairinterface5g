@@ -121,73 +121,6 @@ mui_t rrc_gNB_mui = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
-{
-  gNB_RRC_INST *rrc = RC.nrrrc[0];
-  if (ue->nb_of_pdusessions == 0)
-    return NULL;
-  int nb_drb_to_setup = rrc->configuration.drbs;
-  long drb_priority[MAX_DRBS_PER_UE] = {0};
-  uint8_t drb_id_to_setup_start = 0;
-  NR_DRB_ToAddModList_t *DRB_configList = CALLOC(sizeof(*DRB_configList), 1);
-  for (int i = 0; i < ue->nb_of_pdusessions; i++) {
-    if (ue->pduSession[i].status >= PDU_SESSION_STATUS_DONE) {
-      continue;
-    }
-    LOG_I(NR_RRC, "adding rnti %x pdusession %d, nb drb %d\n", ue->rnti, ue->pduSession[i].param.pdusession_id, nb_drb_to_setup);
-    for (long drb_id_add = 1; drb_id_add <= nb_drb_to_setup; drb_id_add++) {
-      uint8_t drb_id;
-      // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
-      for (int qos_flow_index = 0; qos_flow_index < ue->pduSession[i].param.nb_qos; qos_flow_index++) {
-        switch (ue->pduSession[i].param.qos[qos_flow_index].fiveQI) {
-          case 1 ... 4: /* GBR */
-            drb_id = next_available_drb(ue, &ue->pduSession[i], GBR_FLOW);
-            break;
-          case 5 ... 9: /* Non-GBR */
-            if (rrc->configuration.drbs > 1) { /* Force the creation from gNB Conf file */
-              LOG_W(NR_RRC, "Adding %d DRBs, from gNB config file (not decided by 5GC\n", rrc->configuration.drbs);
-              drb_id = next_available_drb(ue, &ue->pduSession[i], GBR_FLOW);
-            } else {
-              drb_id = next_available_drb(ue, &ue->pduSession[i], NONGBR_FLOW);
-            }
-            break;
-
-          default:
-            LOG_E(NR_RRC, "not supported 5qi %lu\n", ue->pduSession[i].param.qos[qos_flow_index].fiveQI);
-            ue->pduSession[i].status = PDU_SESSION_STATUS_FAILED;
-            continue;
-        }
-        drb_priority[drb_id - 1] = ue->pduSession[i].param.qos[qos_flow_index].allocation_retention_priority.priority_level;
-        if (drb_priority[drb_id - 1] < 0 || drb_priority[drb_id - 1] > NGAP_PRIORITY_LEVEL_NO_PRIORITY) {
-          LOG_E(NR_RRC, "invalid allocation_retention_priority.priority_level %ld set to _NO_PRIORITY\n", drb_priority[drb_id - 1]);
-          drb_priority[drb_id - 1] = NGAP_PRIORITY_LEVEL_NO_PRIORITY;
-        }
-
-        if (drb_is_active(ue, drb_id)) { /* Non-GBR flow using the same DRB or a GBR flow with no available DRBs*/
-          nb_drb_to_setup--;
-        } else {
-          generateDRB(ue,
-                      drb_id,
-                      &ue->pduSession[i],
-                      rrc->configuration.enable_sdap,
-                      rrc->security.do_drb_integrity,
-                      rrc->security.do_drb_ciphering);
-          NR_DRB_ToAddMod_t *DRB_config = generateDRB_ASN1(&ue->established_drbs[drb_id - 1]);
-          if (drb_id_to_setup_start == 0)
-            drb_id_to_setup_start = DRB_config->drb_Identity;
-          asn1cSeqAdd(&DRB_configList->list, DRB_config);
-        }
-        LOG_D(RRC, "DRB Priority %ld\n", drb_priority[drb_id]); // To supress warning for now
-      }
-    }
-  }
-  if (DRB_configList->list.count == 0) {
-    free(DRB_configList);
-    return NULL;
-  }
-  return DRB_configList;
-}
-
 static void freeDRBlist(NR_DRB_ToAddModList_t *list)
 {
   //ASN_STRUCT_FREE(asn_DEF_NR_DRB_ToAddModList, list);
@@ -579,10 +512,12 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
       asn1cSequenceAdd(dedicatedNAS_MessageList->list, NR_DedicatedNAS_Message_t, msg);
       OCTET_STRING_fromBuf(msg, (char *)ue_p->pduSession[i].param.nas_pdu.buffer, ue_p->pduSession[i].param.nas_pdu.length);
-    }
 
-    ue_p->pduSession[i].status = PDU_SESSION_STATUS_DONE;
-    LOG_D(NR_RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n", i, ue_p->pduSession[i].status, "PDU_SESSION_STATUS_DONE");
+    }
+    if (ue_p->pduSession[i].status < PDU_SESSION_STATUS_ESTABLISHED) {
+      ue_p->pduSession[i].status = PDU_SESSION_STATUS_DONE;
+      LOG_D(NR_RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n", i, ue_p->pduSession[i].status, "PDU_SESSION_STATUS_DONE");
+    }
   }
 
   if (ue_p->nas_pdu.length) {
@@ -659,34 +594,29 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(ue_p);
   ue_p->xids[xid] = RRC_PDUSESSION_ESTABLISH;
-  struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList = NULL;
-  NR_DedicatedNAS_Message_t *dedicatedNAS_Message = NULL;
-  dedicatedNAS_MessageList = CALLOC(1, sizeof(struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList));
+  struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList = CALLOC(1, sizeof(*dedicatedNAS_MessageList));
 
-  int nb_drb_to_setup = DRB_configList ? DRB_configList->list.count : 0;
-  for (int i=0; i < nb_drb_to_setup; i++) {
-    int j = ue_p->nb_of_pdusessions - 1;
-    AssertFatal(j >= 0, "");
-    if (ue_p->pduSession[j].param.nas_pdu.buffer != NULL) {
-      dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
-      memset(dedicatedNAS_Message, 0, sizeof(OCTET_STRING_t));
-      OCTET_STRING_fromBuf(dedicatedNAS_Message,
-                           (char *)ue_p->pduSession[j].param.nas_pdu.buffer,
-                           ue_p->pduSession[j].param.nas_pdu.length);
-      ue_p->pduSession[j].status = PDU_SESSION_STATUS_DONE;
-      asn1cSeqAdd(&dedicatedNAS_MessageList->list, dedicatedNAS_Message);
+  for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
+    if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
+      asn1cSequenceAdd(dedicatedNAS_MessageList->list, NR_DedicatedNAS_Message_t, msg);
+      OCTET_STRING_fromBuf(msg,
+                           (char *)ue_p->pduSession[i].param.nas_pdu.buffer,
+                           ue_p->pduSession[i].param.nas_pdu.length);
+      asn1cSeqAdd(&dedicatedNAS_MessageList->list, msg);
 
-      LOG_I(NR_RRC, "add NAS info with size %d (pdusession idx %d)\n", ue_p->pduSession[j].param.nas_pdu.length, j);
-    } else {
-      // TODO
-      LOG_E(NR_RRC, "no NAS info (pdusession idx %d)\n", j);
+      LOG_D(NR_RRC, "add NAS info with size %d (pdusession idx %d)\n", ue_p->pduSession[i].param.nas_pdu.length, i);
+      ue_p->pduSession[i].xid = xid;
     }
-
-    ue_p->pduSession[j].xid = xid;
+    if (ue_p->pduSession[i].status < PDU_SESSION_STATUS_ESTABLISHED) {
+      ue_p->pduSession[i].status = PDU_SESSION_STATUS_DONE;
+    }
   }
-  freeDRBlist(DRB_configList);
+
+  if (ue_p->nas_pdu.length) {
+    asn1cSequenceAdd(dedicatedNAS_MessageList->list, NR_DedicatedNAS_Message_t, msg);
+    OCTET_STRING_fromBuf(msg, (char *)ue_p->nas_pdu.buffer, ue_p->nas_pdu.length);
+  }
 
   /* If list is empty free the list and reset the address */
   if (dedicatedNAS_MessageList->list.count == 0) {
@@ -748,7 +678,6 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
 //-----------------------------------------------------------------------------
 {
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(ue_p);
   int qos_flow_index = 0;
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   ue_p->xids[xid] = RRC_PDUSESSION_MODIFY;
@@ -819,8 +748,6 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
             ue_p->pduSession[i].param.qos[qos_flow_index].fiveQI);
     }
 
-    asn1cSeqAdd(&DRB_configList->list, DRB_config);
-
     ue_p->pduSession[i].status = PDU_SESSION_STATUS_DONE;
     ue_p->pduSession[i].xid = xid;
 
@@ -839,19 +766,21 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
+  NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, false);
   uint8_t buffer[RRC_BUF_SIZE];
   int size = do_RRCReconfiguration(ue_p,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    xid,
                                    NULL,
-                                   DRB_configList,
+                                   DRBs,
                                    NULL,
                                    NULL,
                                    NULL,
                                    dedicatedNAS_MessageList,
                                    NULL);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
+  freeDRBlist(DRBs);
 
   /* Free all NAS PDUs */
   for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
@@ -2442,7 +2371,7 @@ rrc_gNB_generate_SecurityModeCommand(
   NR_IntegrityProtAlgorithm_t integrity_algorithm = (NR_IntegrityProtAlgorithm_t)ue_p->integrity_algorithm;
   size = do_NR_SecurityModeCommand(ctxt_pP, buffer, rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id), ue_p->ciphering_algorithm, integrity_algorithm);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Security Mode Command\n");
-  LOG_I(NR_RRC, "UE %04x Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes %d)\n", ue_p->rnti, size);
+  LOG_I(NR_RRC, "UE %u Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes %d)\n", ue_p->rrc_ue_id, size);
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");

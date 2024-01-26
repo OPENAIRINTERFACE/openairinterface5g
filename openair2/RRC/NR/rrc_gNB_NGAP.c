@@ -795,24 +795,35 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     pdu->confidentialityProtectionIndication = rrc->security.do_drb_ciphering ? E1AP_ConfidentialityProtectionIndication_required : E1AP_ConfidentialityProtectionIndication_not_needed;
     pdu->teId = session->gtp_teid;
     memcpy(&pdu->tlAddress, session->upf_addr.buffer, 4); // Fixme: dirty IPv4 target
+
+    /* we assume for the moment one DRB per PDU session. Activate the bearer,
+     * and configure in RRC. */
+    int drb_id = get_next_available_drb_id(UE);
+    drb_t *rrc_drb = generateDRB(UE,
+                                 drb_id,
+                                 pduSession,
+                                 rrc->configuration.enable_sdap,
+                                 rrc->security.do_drb_integrity,
+                                 rrc->security.do_drb_ciphering);
+
     pdu->numDRB2Setup = 1; // One DRB per PDU Session. TODO: Remove hardcoding
     for (int j=0; j < pdu->numDRB2Setup; j++) {
       DRB_nGRAN_to_setup_t *drb = pdu->DRBnGRanList + j;
 
-      drb->id = i + j + UE->nb_of_pdusessions;
+      drb->id = rrc_drb->drb_id;
 
-      drb->defaultDRB = true;
+      struct sdap_config_s *sdap_config = &rrc_drb->cnAssociation.sdap_config;
+      drb->defaultDRB = sdap_config->defaultDRB ? E1AP_DefaultDRB_true : E1AP_DefaultDRB_false;
+      drb->sDAP_Header_UL = sdap_config->sdap_HeaderUL;
+      drb->sDAP_Header_DL = sdap_config->sdap_HeaderDL;
 
-      drb->sDAP_Header_UL = !(rrc->configuration.enable_sdap);
-      drb->sDAP_Header_DL = !(rrc->configuration.enable_sdap);
+      struct pdcp_config_s *pdcp_config = &rrc_drb->pdcp_config;
+      drb->pDCP_SN_Size_UL = pdcp_config->pdcp_SN_SizeUL;
+      drb->pDCP_SN_Size_DL = pdcp_config->pdcp_SN_SizeDL;
+      drb->discardTimer = pdcp_config->discardTimer;
+      drb->reorderingTimer = pdcp_config->t_Reordering;
 
-      drb->pDCP_SN_Size_UL = E1AP_PDCP_SN_Size_s_18;
-      drb->pDCP_SN_Size_DL = E1AP_PDCP_SN_Size_s_18;
-
-      drb->discardTimer = E1AP_DiscardTimer_infinity;
-      drb->reorderingTimer = E1AP_T_Reordering_ms100;
-
-      drb->rLC_Mode = E1AP_RLC_Mode_rlc_am;
+      drb->rLC_Mode = rrc->configuration.um_on_default_drb ? E1AP_RLC_Mode_rlc_um_bidirectional : E1AP_RLC_Mode_rlc_am;
 
       drb->numCellGroups = 1; // assume one cell group associated with a DRB
 
