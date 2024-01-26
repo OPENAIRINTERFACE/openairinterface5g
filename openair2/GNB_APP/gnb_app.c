@@ -148,7 +148,7 @@ void *gNB_app_task(void *args_p)
         AssertFatal(false, "Create task for E1AP CP failed\n");
       E1_t e1type = CPtype;
       MessageDef *msg = RCconfig_NR_CU_E1(&e1type);
-      AssertFatal(msg != NULL, "Send inti to task for E1AP CP failed\n");
+      AssertFatal(msg != NULL, "Send ITTI to task for E1AP CP failed\n");
       // this sends the E1AP_REGISTER_REQ to CU-CP so it sets up the socket
       // it does NOT use the E1AP part
       itti_send_msg_to_task(TASK_CUCP_E1, 0, msg);

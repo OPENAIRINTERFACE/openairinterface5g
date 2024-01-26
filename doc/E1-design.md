@@ -17,17 +17,22 @@ connection setup only in split-mode, the rest is the same for CU):
 sequenceDiagram
   participant c as CUCP
   participant u as CUUP
-  u->c: SCTP connection setup (in split mode)
-  u->>c: E1AP Setup Request
-  Note over c: Execute rrc_gNB_process_e1_setup_req()
-  c->>u: E1AP Setup Response
 
+  Note over c,u: E1 Setup Procedure
+  u->c: SCTP connection setup (in split mode)
+  u->>c: E1 Setup Request
+  Note over c: Execute rrc_gNB_process_e1_setup_req()
+  c->>u: E1 Setup Response
+  c-->>u: E1 Setup Failure
+
+  Note over c,u: E1 Bearer Context Setup Procedure
   Note over c: Receives PDU session setup request from AMF
   c->>u: Bearer Context Setup Request
   Note over u: Execute e1_bearer_context_setup()<br/>Configure DRBs and create GTP Tunnels for F1-U and N3
   u->>c: Bearer Context Setup Response
   Note over c: Execute rrc_gNB_process_e1_setup_req()<br/>Sends F1-U UL TNL info to DU and receives DL TNL info
 
+  Note over c,u: E1 Bearer Context Modification (CU-CP Initiated) Procedure
   c->>u: Bearer Context Modification Request
   Note over u: Execute e1_bearer_context_modif()<br/>Updates GTP Tunnels with received info
   u->>c: Bearer Context Modification Response
@@ -40,19 +45,63 @@ sequenceDiagram
   Note over c: Execute rrc_gNB_process_e1_bearer_context_release_cplt()
 ```
 
-The files that implement the callback towards these handlers are in
-- `cucp_cuup_direct.c`: integrated CU (for CP=>UP messages)
-- `cucp_cuup_e1ap.c`: E1 split mode (for CP=>UP messages)
-- `cuup_cucp_direct.c`: integrated CU (for UP=>CP messages)
-- `cuup_cucp_e1ap.c`: E1 split mode (for UP=>CP messages)
+The implementation of callbacks towards these handlers is distributed across the following file, depending on the operating mode:
+
+| Mode          | CP=>UP messages     |UP=>CP messages     |
+| --------------| --------------------|--------------------|
+| Integrated CU | `cucp_cuup_direct.c`|`cuup_cucp_direct.c`|
+| E1 Split      | `cucp_cuup_e1ap.c`  |`cuup_cucp_e1ap.c`  |
+
+As long as concerns E1 Interface Management Procedures, the code flow of request messages towards northbound looks like this:
+
+```mermaid
+sequenceDiagram
+  participant r as RRC
+  participant c as CUCP
+  participant u as CUUP
+
+  Note over u: E1AP_CUUP_task (SCTP Handler)
+  Note over u: ASN1 encoder
+  u->>c: e.g. E1 Setup Request (SCTP)
+  Note over c: E1AP_CUCP_task (SCTP Handler)
+  Note over c: ASN1 decoder
+  c->>r: E1AP_SETUP_REQ (ITTI)
+  Note over r: TASK_RRC_GNB (RRC Handler)
+  r->>c: E1AP_SETUP_RESP (ITTI)
+  Note over c: E1AP_CUCP_task (E1AP Callback)
+  Note over c: ASN1 encoder
+
+  c->>u: e.g. E1 Setup Response/Failure
+  Note over u: E1AP_CUUP_task (SCTP Handler)
+  Note over u: ASN1 decoder
+```
+
 
 # 2. Running the E1 Split
 
+The setup is assuming that all modules are running on the same machine. The user can refer to the [F1 design document](./F1-design.md) for local deployment of the DU.
+
 ## 2.1 Configuration File
 
-The gNB is started based on the node type that is specified in the configuration file. To start a gNB instance in CUCP or CUUP, the `tr_s_preference` should be set to "f1" and the config member `E1_INTERFACE` should be present in the config file. The `type` parameter within the `E1_INTERFACE` should be set to `cp`, and executable `nr-softmodem` should be used to run a CU-CP. The type should be `up` and executable `nr-cuup` should be used to run the CU-UP. Further, there are the parameters `ipv4_cucp` and `ipv4_cuup` to specify the IP addresses of the respective network functions.
+The gNB is started based on the node type that is specified in the configuration file. The following parameters must be configured accordingly.
 
-For CUCP, a typical `E1_INTERFACE` config looks like
+On either CUCP and CUUP:
+* The southbound transport preference `gNBs.[0].tr_s_preference` set to `f1`
+* config section `E1_INTERFACE` should be present
+
+On the CU-CP:
+* `type` parameter within the `E1_INTERFACE` should be set to `cp`
+
+On the CU-UP:
+* `type` parameter within the `E1_INTERFACE` should be set to `up`
+
+Executables:
+* executable `nr-softmodem` to run a CU-CP
+* executable `nr-cuup` to run the CU-UP
+
+In the `E1_INTERFACE` configuration section, the parameters `ipv4_cucp` and `ipv4_cuup` must be configured to specify the IP addresses of the respective network functions.
+
+For CUCP, a typical `E1_INTERFACE` config looks like:
 ```
 E1_INTERFACE =
 (
@@ -64,7 +113,7 @@ E1_INTERFACE =
 )
 ```
 
-For CUUP, it is
+For CUUP, it is:
 ```
 E1_INTERFACE =
 (
@@ -77,7 +126,7 @@ E1_INTERFACE =
 ```
 One could take an existing CU configuration file and add the above parameters to run the gNB as CUCP or CUUP.
 
-The CUUP uses the IP address specified in `local_s_address` for F1-U and `GNB_IPV4_ADDRESS_FOR_NGU` for N3 links. Note that `local_s_address` is under `gNBs` and `GNB_IPV4_ADDRESS_FOR_NGU` is part of the `NETWORK_INTERFACES` config member.  
+The CUUP uses the IP address specified in `gNBs.[0].local_s_address` for F1-U and `GNB_IPV4_ADDRESS_FOR_NGU` for N3 links. Note that `local_s_address` is under `gNBs` and `GNB_IPV4_ADDRESS_FOR_NGU` is part of the `NETWORK_INTERFACES` config member.
 
 Alternatively, you can use the config files `ci-scripts/conf_files/gnb-cucp.sa.f1.conf` and `ci-scripts/conf_files/gnb-cuup.sa.f1.conf`.
 

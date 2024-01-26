@@ -63,6 +63,8 @@ Calling the `build_oai` script with the `-h` option gives the list of all availa
 - `--ninja` is to use the `ninja` build tool, which speeds up compilation.
 - `-c` is to clean the workspace and force a complete rebuild.
 
+`build_oai` also provides various options to enable runtime error checkers, i.e. sanitizers in order to find various types of bugs in the codebase and eventually enhance the stability of the OAI softmodems. Refer to [sanitizers.md](./dev_tools/sanitizers.md) for more details.
+
 ## Installing dependencies
 
 Install all dependencies by issuing the `-I` option. To install furthermore libraries for optional libraries, use the `--install-optional-packages` option. The `-I` option will also install dependencies for an SDR when paired with `-w`. For instance, in order to install all dependencies and the ones for USRP, run:
