@@ -568,14 +568,14 @@ static void set_ldpc_enc_op(struct rte_bbdev_enc_op **ops,
 {
   // struct rte_bbdev_op_ldpc_enc *ldpc_enc = &ref_op->ldpc_enc;
   for (int i = 0; i < n; ++i) {
-    ops[i]->ldpc_enc.cb_params.e = 3 * p_offloadParams->E; // Fix mee: what is the correct size for "e" ???
+    ops[i]->ldpc_enc.cb_params.e = p_offloadParams->E;
     ops[i]->ldpc_enc.basegraph = p_offloadParams->BG;
     ops[i]->ldpc_enc.z_c = p_offloadParams->Z;
     ops[i]->ldpc_enc.q_m = p_offloadParams->Qm;
     ops[i]->ldpc_enc.n_filler = p_offloadParams->F;
     ops[i]->ldpc_enc.n_cb = p_offloadParams->n_cb;
     ops[i]->ldpc_enc.rv_index = p_offloadParams->rv;
-    ops[i]->ldpc_enc.op_flags = RTE_BBDEV_LDPC_INTERLEAVER_BYPASS; // RTE_BBDEV_LDPC_RATE_MATCH;
+    ops[i]->ldpc_enc.op_flags = RTE_BBDEV_LDPC_RATE_MATCH;
     ops[i]->ldpc_enc.code_block_mode = 1;
     ops[i]->ldpc_enc.output = outputs[start_idx + i];
     ops[i]->ldpc_enc.input = inputs[start_idx + i];
@@ -613,7 +613,7 @@ static int retrieve_ldpc_enc_op(struct rte_bbdev_enc_op **ops, const uint16_t n,
   for (i = 0; i < n; ++i) {
     output = &ops[i]->ldpc_enc.output;
     m = output->data;
-    uint16_t data_len = min((384 * 68) / 8, rte_pktmbuf_data_len(m)); // fix me
+    uint16_t data_len = min((LDPC_MAX_CB_SIZE) / 8, rte_pktmbuf_data_len(m)); // fix me
     data = m->buf_addr;
     for (int byte = 0; byte < data_len; byte++)
       for (int bit = 0; bit < 8; bit++)
@@ -1103,10 +1103,10 @@ int32_t LDPCencoder(unsigned char **input, unsigned char **output, encoder_imple
                                           .n_cb = (BG == 1) ? (66 * Zc) : (50 * Zc),
                                           .BG = BG,
                                           .Z = Zc,
-                                          .rv = 0, //impp->rv,
-                                          .F = 0, //impp->F,
+                                          .rv = impp->rv,
+                                          .F = impp->F,
                                           .Qm = impp->Qm,
-                                          .Kr = impp->Kr};
+                                          .Kr = (impp->K - impp->F + 7) / 8};
   struct rte_bbdev_info info;
   rte_bbdev_info_get(ad->dev_id, &info);
   int socket_id = GET_SOCKET(info.socket_id);
@@ -1126,7 +1126,7 @@ int32_t LDPCencoder(unsigned char **input, unsigned char **output, encoder_imple
   for (enum op_data_type type = DATA_INPUT; type < 3; type += 2) {
     int ret = init_op_data_objs(*queue_ops[type],
                                 *input,
-                                (offloadParams.Kr + 7) / 8,
+                                offloadParams.Kr,
                                 m_head[type],
                                 mbuf_pools[type],
                                 1,
