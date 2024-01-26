@@ -1268,6 +1268,9 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
                                            curr_pucch->csi_bits + curr_pucch->dai_c + 2,
                                            curr_pucch->resource_indicator))
         continue;
+      // TODO temporarily limit ack/nak to 3 bits because of performances of polar for PUCCH (required for > 11 bits)
+      if (curr_pucch->csi_bits > 0 && curr_pucch->dai_c >= 3)
+        continue;
 
       // otherwise we can schedule in this active PUCCH
       // no need to check VRB occupation because already done when PUCCH has been activated
