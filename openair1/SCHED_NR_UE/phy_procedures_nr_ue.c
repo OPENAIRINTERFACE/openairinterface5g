@@ -1025,7 +1025,6 @@ void pdsch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_
   time_stats_t meas = {0};
   start_meas(&meas);
   // do procedures for C-RNTI
-  int ret_pdsch = 0;
 
   const uint32_t rxdataF_sz = ue->frame_parms.samples_per_slot_wCP;
   __attribute__ ((aligned(32))) c16_t rxdataF[ue->frame_parms.nb_antennas_rx][rxdataF_sz];
@@ -1081,11 +1080,8 @@ void pdsch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_
       llr[i] = (int16_t *)malloc16_clear(rx_llr_buf_sz * sizeof(int16_t));
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_IN);
-    ret_pdsch = nr_ue_pdsch_procedures(ue,
-                                       proc,
-                                       dlsch,
-                                       llr,
-                                       rxdataF);
+    // it returns -1 in case of internal failure, or 0 in case of normal result
+    int ret_pdsch = nr_ue_pdsch_procedures(ue, proc, dlsch, llr, rxdataF);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_OUT);
 
@@ -1103,6 +1099,7 @@ void pdsch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_
       send_dl_done_to_tx_thread(
           ue->tx_resume_ind_fifo + (proc->nr_slot_rx + dlsch_config->k1_feedback) % ue->frame_parms.slots_per_frame,
           proc->nr_slot_rx);
+      LOG_W(NR_PHY, "nr_ue_pdsch_procedures failed in slot %d\n", proc->nr_slot_rx);
     }
 
     stop_meas(&ue->dlsch_procedures_stat);

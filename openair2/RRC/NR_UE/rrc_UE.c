@@ -566,7 +566,7 @@ static int nr_decode_SI(NR_UE_RRC_SI_INFO *SI_info, NR_SystemInformation_t *si)
   return 0;
 }
 
-void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, int rnti)
+static void nr_rrc_ue_generate_ra_msg(NR_UE_RRC_INST_t *rrc, RA_trigger_t trigger, rnti_t rnti)
 {
   switch (trigger) {
     case INITIAL_ACCESS_FROM_RRC_IDLE:
