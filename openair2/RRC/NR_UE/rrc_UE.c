@@ -216,8 +216,10 @@ static void nr_rrc_ue_process_rrcReconfiguration(NR_UE_RRC_INST_t *rrc,
 
         nr_rrc_cellgroup_configuration(rrcNB, rrc, cellGroupConfig);
 
-        if (!get_softmodem_params()->sa)
-          nr_rrc_mac_config_req_cg(0, 0, cellGroupConfig);
+        AssertFatal(!get_softmodem_params()->sa, "secondaryCellGroup only used in NSA for now\n");
+        nr_rrc_mac_config_req_cg(rrc->ue_id, 0, cellGroupConfig);
+
+        asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, cellGroupConfig);
       }
       if (ie->measConfig != NULL) {
         LOG_I(NR_RRC, "Measurement Configuration is present\n");
@@ -275,14 +277,12 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
           SEQUENCE_free( &asn_DEF_NR_RadioBearerConfig, RadioBearerConfig, 1 );
           return;
         }
-        if (get_softmodem_params()->nsa) {
-          LOG_D(NR_RRC, "Calling nr_rrc_ue_process_RadioBearerConfig() at %d with: e_rab_id = %ld, drbID = %ld, cipher_algo = %ld, key = %ld \n",
-                          __LINE__, RadioBearerConfig->drb_ToAddModList->list.array[0]->cnAssociation->choice.eps_BearerIdentity,
-                          RadioBearerConfig->drb_ToAddModList->list.array[0]->drb_Identity,
-                          RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
-                          *RadioBearerConfig->securityConfig->keyToUse);
-          nr_rrc_ue_process_RadioBearerConfig(rrc, rrc->perNB + 0, RadioBearerConfig);
-        }
+        LOG_D(NR_RRC, "Calling nr_rrc_ue_process_RadioBearerConfig()with: e_rab_id = %ld, drbID = %ld, cipher_algo = %ld, key = %ld \n",
+                     RadioBearerConfig->drb_ToAddModList->list.array[0]->cnAssociation->choice.eps_BearerIdentity,
+                     RadioBearerConfig->drb_ToAddModList->list.array[0]->drb_Identity,
+                     RadioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm,
+                     *RadioBearerConfig->securityConfig->keyToUse);
+        nr_rrc_ue_process_RadioBearerConfig(rrc, rrc->perNB + 0, RadioBearerConfig);
         if (LOG_DEBUGFLAG(DEBUG_ASN1))
           xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *)RadioBearerConfig);
         ASN_STRUCT_FREE(asn_DEF_NR_RadioBearerConfig, RadioBearerConfig);
@@ -747,9 +747,6 @@ static void nr_rrc_manage_rlc_bearers(const NR_UE_RRC_INST_t *rrc,
       }
     }
   }
-  nr_rrc_mac_config_req_ue_logicalChannelBearer(rrc->ue_id,
-                                                cellGroupConfig->rlc_BearerToAddModList,
-                                                cellGroupConfig->rlc_BearerToReleaseList);
 }
 
 void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB, NR_UE_RRC_INST_t *rrc, NR_CellGroupConfig_t *cellGroupConfig)
@@ -795,9 +792,7 @@ void nr_rrc_cellgroup_configuration(rrcPerNB_t *rrcNB, NR_UE_RRC_INST_t *rrc, NR
     }
   }
 
-  // TODO verify why we need this limitation
-  if (get_softmodem_params()->sa || get_softmodem_params()->nsa)
-    nr_rrc_manage_rlc_bearers(rrc, cellGroupConfig, rrcNB);
+  nr_rrc_manage_rlc_bearers(rrc, cellGroupConfig, rrcNB);
 
   AssertFatal(cellGroupConfig->sCellToReleaseList == NULL,
               "Secondary serving cell release not implemented\n");
@@ -828,6 +823,8 @@ static void nr_rrc_ue_process_masterCellGroup(NR_UE_RRC_INST_t *rrc,
 
   LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
   nr_rrc_mac_config_req_cg(rrc->ue_id, 0, cellGroupConfig);
+
+  asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, cellGroupConfig);
 }
 
 static void rrc_ue_generate_RRCSetupComplete(const NR_UE_RRC_INST_t *rrc, const uint8_t Transaction_id)

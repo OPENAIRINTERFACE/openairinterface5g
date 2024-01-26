@@ -984,29 +984,8 @@ void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconf
     NR_UE_MAC_INST_t *mac = get_mac_inst(i);
     AssertFatal((mac->if_module = nr_ue_if_module_init(i)) != NULL, "can not initialize IF module\n");
     if (!get_softmodem_params()->sa) {
-      init_nsa_message(&rrc_inst[i], reconfig_file, rbconfig_file);
-      // TODO why do we need noS1 configuration?
-      // temporarily moved here to understand why not using the one provided by gNB
-      nr_rlc_activate_srb0(i, NULL, send_srb0_rrc);
-      if (IS_SOFTMODEM_NOS1) {
-        // get default noS1 configuration
-        NR_RadioBearerConfig_t *rbconfig = NULL;
-        NR_RLC_BearerConfig_t *rlc_rbconfig = NULL;
-        fill_nr_noS1_bearer_config(&rbconfig, &rlc_rbconfig);
-
-        // set up PDCP, RLC, MAC
-        nr_pdcp_layer_init(false);
-        nr_pdcp_add_drbs(ENB_FLAG_NO, i, rbconfig->drb_ToAddModList, 0, NULL, NULL);
-        nr_rlc_add_drb(i, rbconfig->drb_ToAddModList->list.array[0]->drb_Identity, rlc_rbconfig);
-        struct NR_CellGroupConfig__rlc_BearerToAddModList rlc_toadd_list;
-        rlc_toadd_list.list.count = 1;
-        rlc_toadd_list.list.array = calloc(1, sizeof(NR_RLC_BearerConfig_t));
-        rlc_toadd_list.list.array[0] = rlc_rbconfig;
-        nr_rrc_mac_config_req_ue_logicalChannelBearer(0, &rlc_toadd_list, NULL);
-
-        // free memory
-        free_nr_noS1_bearer_config(&rbconfig, NULL);
-      }
+      init_nsa_message(rrc_inst, reconfig_file, rbconfig_file);
+      nr_rlc_activate_srb0(mac_inst->crnti, NULL, send_srb0_rrc);
     }
   }
 }

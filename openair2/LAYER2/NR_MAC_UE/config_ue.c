@@ -669,29 +669,29 @@ void nr_release_mac_config_logicalChannelBearer(NR_UE_MAC_INST_t *mac, long chan
   }
 }
 
-static uint16_t nr_get_ms_bucketsizeduration(uint8_t bucketsizeduration)
+static int nr_get_ms_bucketsizeduration(long bucketsizeduration)
 {
   switch (bucketsizeduration) {
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms5:
+      return 5;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms10:
+      return 10;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms20:
+      return 20;
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50:
       return 50;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100:
       return 100;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms150:
       return 150;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms300:
       return 300;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms500:
       return 500;
-
     case NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000:
       return 1000;
-
     default:
-      return 0;
+      AssertFatal(false, "Invalid bucketSizeDuration %ld\n", bucketsizeduration);
   }
 }
 
@@ -724,9 +724,9 @@ void nr_configure_mac_config_logicalChannelBearer(module_id_t module_id,
     mac->scheduling_info.lc_sched_info[channel_identity - 1].LCGID = 0;
 }
 
-void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
-                                                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
-                                                   struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list)
+static void configure_logicalChannelBearer(module_id_t module_id,
+                                           struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
+                                           struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   if (rlc_torelease_list) {
@@ -1956,6 +1956,10 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
     }
   }
 
+  configure_logicalChannelBearer(module_id,
+                                 cell_group_config->rlc_BearerToAddModList,
+                                 cell_group_config->rlc_BearerToReleaseList);
+
   // Setup the SSB to Rach Occasions mapping according to the config
   // Only if RACH is configured for current BWP
   if (mac->current_UL_BWP->rach_ConfigCommon)
@@ -1963,6 +1967,4 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
 
   if (!mac->dl_config_request || !mac->ul_config_request)
     ue_init_config_request(mac, mac->current_DL_BWP->scs);
-
-  asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, cell_group_config);
 }
