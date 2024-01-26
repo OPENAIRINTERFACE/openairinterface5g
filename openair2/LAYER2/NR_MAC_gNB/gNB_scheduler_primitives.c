@@ -131,19 +131,19 @@ uint8_t get_dl_nrOfLayers(const NR_UE_sched_ctrl_t *sched_ctrl,
 
 uint16_t get_pm_index(const gNB_MAC_INST *nrmac,
                       const NR_UE_info_t *UE,
+                      nr_dci_format_t dci_format,
                       int layers,
                       int xp_pdsch_antenna_ports)
 {
+  if (dci_format == NR_DL_DCI_FORMAT_1_0 || nrmac->identity_pm || xp_pdsch_antenna_ports == 1)
+    return 0; //identity matrix (basic 5G configuration handled by PMI report is with XP antennas)
+
   const NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   const int report_id = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id;
   const nr_csi_report_t *csi_report = &UE->csi_report_template[report_id];
   const int N1 = csi_report->N1;
   const int N2 = csi_report->N2;
   const int antenna_ports = (N1 * N2) << 1;
-
-  if (xp_pdsch_antenna_ports == 1)
-    return 0; //identity matrix (basic 5G configuration handled by PMI report is with XP antennas)
-
   const int x1 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1;
   const int x2 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2;
   LOG_D(NR_MAC,"PMI report: x1 %d x2 %d layers: %d\n", x1, x2, layers);

@@ -379,6 +379,7 @@ NR_pdsch_dmrs_t get_dl_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
 
 uint16_t get_pm_index(const gNB_MAC_INST *nrmac,
                       const NR_UE_info_t *UE,
+                      nr_dci_format_t dci_format,
                       int layers,
                       int xp_pdsch_antenna_ports);
 
