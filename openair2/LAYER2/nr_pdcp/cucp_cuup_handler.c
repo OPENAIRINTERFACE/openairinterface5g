@@ -240,6 +240,7 @@ void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req)
   instance_t f1inst = get_f1_gtp_instance();
 
   for (int i=0; i < req->numPDUSessionsMod; i++) {
+    DevAssert(req->pduSessionMod[i].sessionId > 0);
     LOG_I(E1AP,
           "UE %d: updating PDU session ID %ld (%ld bearers)\n",
           req->gNB_cu_up_ue_id,

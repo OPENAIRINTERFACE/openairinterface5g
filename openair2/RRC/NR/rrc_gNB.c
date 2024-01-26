@@ -1671,6 +1671,67 @@ void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC
   rrc_remove_nsa_user(rrc, m->rnti);
 }
 
+/* \brief fill E1 bearer modification's DRB from F1 DRB
+ * \param drb_e1 pointer to a DRB inside an E1 bearer modification message
+ * \param drb_f1 pointer to a DRB inside an F1 UE Ctxt modification Response */
+static void fill_e1_bearer_modif(DRB_nGRAN_to_setup_t *drb_e1, const f1ap_drb_to_be_setup_t *drb_f1)
+{
+  drb_e1->id = drb_f1->drb_id;
+  drb_e1->numDlUpParam = drb_f1->up_dl_tnl_length;
+  drb_e1->DlUpParamList[0].tlAddress = drb_f1->up_dl_tnl[0].tl_address;
+  drb_e1->DlUpParamList[0].teId = drb_f1->up_dl_tnl[0].teid;
+}
+
+/* \brief find existing PDU session inside E1AP Bearer Modif message, or
+ * point to new one.
+ * \param bearer_modif E1AP Bearer Modification Message
+ * \param pdu_id PDU session ID
+ * \return pointer to existing PDU session, or to new/unused one. */
+static pdu_session_to_setup_t *find_or_next_pdu_session(e1ap_bearer_setup_req_t *bearer_modif, int pdu_id)
+{
+  for (int i = 0; i < bearer_modif->numPDUSessionsMod; ++i) {
+    if (bearer_modif->pduSessionMod[i].sessionId == pdu_id)
+      return &bearer_modif->pduSessionMod[i];
+  }
+  /* E1AP Bearer Modification has no PDU session to modify with that ID, create
+   * new entry */
+  DevAssert(bearer_modif->numPDUSessionsMod < E1AP_MAX_NUM_PDU_SESSIONS - 1);
+  bearer_modif->numPDUSessionsMod += 1;
+  return &bearer_modif->pduSessionMod[bearer_modif->numPDUSessionsMod - 1];
+}
+
+/* \brief use list of DRBs and send the corresponding bearer update message via
+ * E1 to the CU of this UE */
+static void e1_send_bearer_updates(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, int n, f1ap_drb_to_be_setup_t *drbs)
+{
+  // we assume the same UE ID in CU-UP and CU-CP
+  e1ap_bearer_setup_req_t req = {
+    .gNB_cu_cp_ue_id = UE->rrc_ue_id,
+    .gNB_cu_up_ue_id = UE->rrc_ue_id,
+  };
+
+  for (int i = 0; i < n; i++) {
+    const f1ap_drb_to_be_setup_t *drb_f1 = &drbs[i];
+    rrc_pdu_session_param_t *pdu_ue = find_pduSession_from_drbId(UE, drb_f1->drb_id);
+    if (pdu_ue == NULL) {
+      LOG_E(RRC, "UE %d: UE Context Modif Response: no PDU session for DRB ID %ld\n", UE->rrc_ue_id, drb_f1->drb_id);
+      continue;
+    }
+    pdu_session_to_setup_t *pdu_e1 = find_or_next_pdu_session(&req, pdu_ue->param.pdusession_id);
+    DevAssert(pdu_e1 != NULL);
+    pdu_e1->sessionId = pdu_ue->param.pdusession_id;
+    DRB_nGRAN_to_setup_t *drb_e1 = &pdu_e1->DRBnGRanModList[pdu_e1->numDRB2Modify];
+    fill_e1_bearer_modif(drb_e1, drb_f1);
+    pdu_e1->numDRB2Modify += 1;
+  }
+  DevAssert(req.numPDUSessionsMod > 0);
+  DevAssert(req.numPDUSessions == 0);
+
+  // send the E1 bearer modification request message to update F1-U tunnel info
+  sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, UE);
+  rrc->cucp_cuup.bearer_context_mod(assoc_id, &req);
+}
+
 static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance_t instance)
 {
   f1ap_ue_context_setup_t *resp = &F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
@@ -1764,30 +1825,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   if (resp->drbs_to_be_setup_length > 0) {
-    e1ap_bearer_setup_req_t req = {0};
-    // TODO: bug: we receive the DRBs, but we don't associate to a PDU session
-    // -> we are not sure which PDU session this is, and fill "all"
-    req.numPDUSessionsMod = UE->nb_of_pdusessions;
-    req.gNB_cu_cp_ue_id = UE->rrc_ue_id;
-    req.gNB_cu_up_ue_id = UE->rrc_ue_id;
-    for (int i = 0; i < req.numPDUSessionsMod; i++) {
-      req.pduSessionMod[i].sessionId = UE->pduSession[i].param.pdusession_id;
-      req.pduSessionMod[i].numDRB2Modify = resp->drbs_to_be_setup_length;
-      for (int j = 0; j < resp->drbs_to_be_setup_length; j++) {
-        f1ap_drb_to_be_setup_t *drb_f1 = resp->drbs_to_be_setup + j;
-        DRB_nGRAN_to_setup_t *drb_e1 = req.pduSessionMod[i].DRBnGRanModList + j;
-
-        drb_e1->id = drb_f1->drb_id;
-        drb_e1->numDlUpParam = drb_f1->up_dl_tnl_length;
-        drb_e1->DlUpParamList[0].tlAddress = drb_f1->up_dl_tnl[0].tl_address;
-        drb_e1->DlUpParamList[0].teId = drb_f1->up_dl_tnl[0].teid;
-      }
-    }
-
-    // send the F1 response message up to update F1-U tunnel info
-    // it seems the rrc transaction id (xid) is not needed here
-    sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, UE);
-    rrc->cucp_cuup.bearer_context_mod(assoc_id, &req);
+    e1_send_bearer_updates(rrc, UE, resp->drbs_to_be_setup_length, resp->drbs_to_be_setup);
   }
 
   if (resp->du_to_cu_rrc_information != NULL && resp->du_to_cu_rrc_information->cellGroupConfig != NULL) {

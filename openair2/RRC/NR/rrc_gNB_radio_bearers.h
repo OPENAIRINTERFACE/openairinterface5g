@@ -68,4 +68,7 @@ bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id);
 /// create is true
 rrc_pdu_session_param_t *find_pduSession(gNB_RRC_UE_t *ue, int id, bool create);
 
+/// @brief get PDU session of UE ue through the DRB drb_id
+rrc_pdu_session_param_t *find_pduSession_from_drbId(gNB_RRC_UE_t *ue, int drb_id);
+
 #endif
