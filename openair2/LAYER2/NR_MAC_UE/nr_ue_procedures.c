@@ -4139,7 +4139,7 @@ static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
       if (!ra->cfra) {
         ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
         rnti = ra->t_crnti;
-        send_msg3_rrc_request(mod_id, rnti);
+        nr_mac_rrc_msg3_ind(mod_id, rnti);
       }
       fapi_nr_ul_config_request_pdu_t *pdu = lockGet_ul_config(mac, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);
       if (!pdu)

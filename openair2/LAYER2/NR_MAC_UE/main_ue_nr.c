@@ -53,12 +53,6 @@ void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data
   itti_send_msg_to_task(TASK_RRC_NRUE, ue_id, message_p);
 }
 
-void send_msg3_rrc_request(module_id_t mod_id, int rnti)
-{
-  nr_rlc_activate_srb0(mod_id, NULL, send_srb0_rrc);
-  nr_mac_rrc_msg3_ind(mod_id, rnti);
-}
-
 void nr_ue_init_mac(module_id_t module_idP)
 {
   LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
@@ -128,6 +122,10 @@ NR_UE_MAC_INST_t *nr_l2_init_ue(int nb_inst)
 
   int rc = rlc_module_init(0);
   AssertFatal(rc == 0, "Could not initialize RLC layer\n");
+
+  for (int j = 0; j < nb_inst; j++) {
+    nr_rlc_activate_srb0(j, NULL, send_srb0_rrc);
+  }
 
   return (nr_ue_mac_inst);
 }
