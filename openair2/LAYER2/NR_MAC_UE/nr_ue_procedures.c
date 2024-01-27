@@ -1649,55 +1649,38 @@ int get_deltatf(uint16_t nb_of_prbs,
   return DELTA_TF;
 }
 
-/*******************************************************************
-*
-* NAME :         find_pucch_resource_set
-*
-* PARAMETERS :   ue context
-*                gNB_id identifier
-*
-*
-* RETURN :       harq process identifier
-*
-* DESCRIPTION :  return tx harq process identifier for given transmission slot
-*                YS 38.213 9.2.2  PUCCH Formats for UCI transmission
-*
-*********************************************************************/
-
-int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int size)
+static int find_pucch_resource_set(NR_PUCCH_Config_t *pucch_Config, int size)
 {
-  int pucch_resource_set_id = 0;
-  NR_PUCCH_Config_t *pucch_Config = mac->current_UL_BWP->pucch_Config;
+  // Procedure described in 38.213 Section 9.2.1
 
-  //long *pucch_max_pl_bits = NULL;
+  AssertFatal(pucch_Config && pucch_Config->resourceSetToAddModList, "pucch-Config NULL, this function shouldn't have been called\n");
+  AssertFatal(size <= 1706, "O_UCI cannot be larger that 1706 bits\n");
 
-  /* from TS 38.331 field maxPayloadMinus1
-    -- Maximum number of payload bits minus 1 that the UE may transmit using this PUCCH resource set. In a PUCCH occurrence, the UE
-    -- chooses the first of its PUCCH-ResourceSet which supports the number of bits that the UE wants to transmit.
-    -- The field is not present in the first set (Set0) since the maximum Size of Set0 is specified to be 3 bit.
-    -- The field is not present in the last configured set since the UE derives its maximum payload size as specified in 38.213.
-    -- This field can take integer values that are multiples of 4. Corresponds to L1 parameter 'N_2' or 'N_3' (see 38.213, section 9.2)
-  */
-  /* look for the first resource set which supports size number of bits for payload */
-  while (pucch_resource_set_id < MAX_NB_OF_PUCCH_RESOURCE_SETS) {
-    if (pucch_Config && pucch_Config->resourceSetToAddModList && pucch_Config->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) {
-      // PUCCH with format0 can be up to 3 bits (2 ack/nacks + 1 sr is 3 max bits)
-      if (size <= 3) {
-        pucch_resource_set_id = 0;
-        return (pucch_resource_set_id);
-        break;
-      } else {
-        pucch_resource_set_id = 1;
-        return (pucch_resource_set_id);
-        break;
-      }
-    }
-    pucch_resource_set_id++;
+  // a first set of PUCCH resources with pucch-ResourceSetId = 0 if O UCI ≤ 2 including 1 or 2 HARQ-ACK information bits
+  if (size <= 2)
+    return 0;
+
+  const int n_set = pucch_Config->resourceSetToAddModList->list.count;
+
+  int N2 = 1706;
+  int N3 = 1706;
+  for (int i = 0; i < n_set; i++) {
+    NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[i];
+    NR_PUCCH_ResourceId_t id = pucchresset->pucch_ResourceSetId;
+    if (id == 1)
+      N2 = pucchresset->maxPayloadSize ? *pucchresset->maxPayloadSize : 1706;
+    if (id == 2)
+      N3 = pucchresset->maxPayloadSize ? *pucchresset->maxPayloadSize : 1706;
   }
 
-  pucch_resource_set_id = MAX_NB_OF_PUCCH_RESOURCE_SETS;
-
-  return (pucch_resource_set_id);
+  // a second set of PUCCH resources with pucch-ResourceSetId = 1, if provided by higher layers, if 2 < O UCI ≤ N 2
+  if (size <= N2)
+    return 1;
+  // a third set of PUCCH resources with pucch-ResourceSetId = 2, if provided by higher layers, if N 2 < O UCI ≤ N 3
+  if (size <= N3)
+    return 2;
+  // a fourth set of PUCCH resources with pucch-ResourceSetId = 3, if provided by higher layers, if N 3 < O UCI ≤ 1706
+  return 3;
 }
 
 NR_PUCCH_Resource_t *find_pucch_resource_from_list(struct NR_PUCCH_Config__resourceToAddModList *resourceToAddModList,
@@ -2365,7 +2348,7 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
       || pucch_Config->resourceSetToAddModList->list.array[0] == NULL)
     configure_initial_pucch(pucch, res_ind);
   else {
-    int resource_set_id = find_pucch_resource_set(mac, O_ACK);
+    int resource_set_id = find_pucch_resource_set(pucch_Config, O_ACK);
     int n_list = pucch_Config->resourceSetToAddModList->list.count;
     AssertFatal(resource_set_id < n_list, "Invalid PUCCH resource set id %d\n", resource_set_id);
     n_list = pucch_Config->resourceSetToAddModList->list.array[resource_set_id]->resourceList.list.count;
