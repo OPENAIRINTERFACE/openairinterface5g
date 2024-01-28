@@ -474,6 +474,9 @@ typedef struct NR_UE_MAC_INST_s {
   bool harq_ACK_SpatialBundlingPUCCH;
   bool harq_ACK_SpatialBundlingPUSCH;
 
+  uint32_t uecap_maxMIMO_PDSCH_layers;
+  uint32_t uecap_maxMIMO_PUSCH_layers;
+
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon;
 

@@ -1928,9 +1928,39 @@ static void configure_BWPs(NR_UE_MAC_INST_t *mac, NR_ServingCellConfig_t *scd)
   }
 }
 
+static void handle_mac_uecap_info(NR_UE_MAC_INST_t *mac, NR_UE_NR_Capability_t *ue_Capability)
+{
+  if (ue_Capability->featureSets) {
+    if (ue_Capability->featureSets->featureSetsDownlinkPerCC) {
+      struct NR_FeatureSets__featureSetsDownlinkPerCC *fs_dlcc_list= ue_Capability->featureSets->featureSetsDownlinkPerCC;
+      for (int i = 0; i < fs_dlcc_list->list.count; i++) {
+        NR_FeatureSetDownlinkPerCC_t *fs_dl_cc = fs_dlcc_list->list.array[i];
+        if (mac->current_DL_BWP->scs != fs_dl_cc->supportedSubcarrierSpacingDL)
+          continue;
+        int uecap_bw_index;
+        if (fs_dl_cc->supportedBandwidthDL.present == NR_SupportedBandwidth_PR_fr1) {
+          uecap_bw_index = fs_dl_cc->supportedBandwidthDL.choice.fr1;
+          // 90 MHz option is indicated by a separate pointer in case indicated supported BW is 100MHz
+          // so we need to increase the index by 1 unit to point to 100 MHz if not 90MHz
+          if (uecap_bw_index == NR_SupportedBandwidth__fr1_mhz100 && !fs_dl_cc->channelBW_90mhz)
+            uecap_bw_index++;
+        }
+        else
+          uecap_bw_index = fs_dl_cc->supportedBandwidthDL.choice.fr2;
+        int dl_bw_mhz = mac->phy_config.config_req.carrier_config.dl_bandwidth;
+        if (dl_bw_mhz != get_supported_bw_mhz(mac->frequency_range, uecap_bw_index))
+          continue;
+        if (fs_dl_cc->maxNumberMIMO_LayersPDSCH)
+          mac->uecap_maxMIMO_PDSCH_layers = 2 << *fs_dl_cc->maxNumberMIMO_LayersPDSCH;
+      }
+    }
+  }
+}
+
 void nr_rrc_mac_config_req_cg(module_id_t module_id,
                               int cc_idP,
-                              NR_CellGroupConfig_t *cell_group_config)
+                              NR_CellGroupConfig_t *cell_group_config,
+                              NR_UE_NR_Capability_t *ue_Capability)
 {
   LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
   AssertFatal(cell_group_config, "CellGroupConfig should not be NULL\n");
@@ -1959,6 +1989,9 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
   configure_logicalChannelBearer(module_id,
                                  cell_group_config->rlc_BearerToAddModList,
                                  cell_group_config->rlc_BearerToReleaseList);
+
+  if (ue_Capability)
+    handle_mac_uecap_info(mac, ue_Capability);
 
   // Setup the SSB to Rach Occasions mapping according to the config
   // Only if RACH is configured for current BWP
