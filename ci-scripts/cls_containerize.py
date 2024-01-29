@@ -507,6 +507,9 @@ class Containerize():
 		# Remove all intermediate build images and clean up
 		cmd.run(f"{self.cli} image rm ran-build:{imageTag} ran-build-asan:{imageTag}")
 		cmd.run(f"{self.cli} volume prune --force")
+		# Remove any cached artifacts: we don't use the cache for now, prevent
+		# out of diskspace problem
+		cmd.run(f"{self.cli} buildx prune --force")
 
 		# create a zip with all logs
 		build_log_name = f'build_log_{self.testCase_id}'
