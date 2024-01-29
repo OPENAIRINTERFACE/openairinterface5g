@@ -68,7 +68,8 @@ void nr_ue_init_mac(module_id_t module_idP)
   mac->harq_ACK_SpatialBundlingPUCCH = false;
   mac->harq_ACK_SpatialBundlingPUSCH = false;
   mac->uecap_maxMIMO_PDSCH_layers = 0;
-  mac->uecap_maxMIMO_PUSCH_layers = 0;
+  mac->uecap_maxMIMO_PUSCH_layers_cb = 0;
+  mac->uecap_maxMIMO_PUSCH_layers_nocb = 0;
 
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));

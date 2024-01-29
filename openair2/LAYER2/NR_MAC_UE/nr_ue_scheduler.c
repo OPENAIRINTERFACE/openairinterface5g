@@ -692,16 +692,28 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       N_PRB_oh = 0;
 
     if (sc_info->rateMatching_PUSCH) {
-      long *maxMIMO_Layers = sc_info->maxMIMO_Layers_PUSCH;
-      if (!maxMIMO_Layers)
-        maxMIMO_Layers = pusch_Config ? pusch_Config->maxRank : NULL;
-      AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-      pusch_config_pdu->tbslbrm = nr_compute_tbslbrm(pusch_config_pdu->mcs_table, sc_info->ul_bw_tbslbrm, *maxMIMO_Layers);
+      long maxMIMO_Layers = 0;
+      if (sc_info->maxMIMO_Layers_PUSCH)
+        maxMIMO_Layers = *sc_info->maxMIMO_Layers_PUSCH;
+      else if (pusch_Config && pusch_Config->maxRank)
+        maxMIMO_Layers = *pusch_Config->maxRank;
+      else {
+        if (pusch_Config && pusch_Config->txConfig) {
+          if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook)
+            maxMIMO_Layers = mac->uecap_maxMIMO_PUSCH_layers_cb;
+          else
+            maxMIMO_Layers = mac->uecap_maxMIMO_PUSCH_layers_nocb;
+        } else
+          maxMIMO_Layers = 1; // single antenna port
+      }
+      AssertFatal (maxMIMO_Layers > 0, "Invalid number of max MIMO layers for PUSCH\n");
+      pusch_config_pdu->tbslbrm = nr_compute_tbslbrm(pusch_config_pdu->mcs_table, sc_info->ul_bw_tbslbrm, maxMIMO_Layers);
     } else
       pusch_config_pdu->tbslbrm = 0;
 
     /* PTRS */
-    if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
+    if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB &&
+        pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
       if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
         nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
         pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
@@ -718,7 +730,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
         if(valid_ptrs_setup == true) {
           pusch_config_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
         }
-        LOG_D(NR_MAC, "UL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", pusch_config_pdu->pusch_ptrs.ptrs_time_density, pusch_config_pdu->pusch_ptrs.ptrs_freq_density);
+        LOG_D(NR_MAC, "UL PTRS values: PTRS time den: %d, PTRS freq den: %d\n",
+              pusch_config_pdu->pusch_ptrs.ptrs_time_density, pusch_config_pdu->pusch_ptrs.ptrs_freq_density);
       }
     }
   }
