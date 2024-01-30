@@ -59,6 +59,23 @@ nfs:
     n4:
       interface_name: eth0
       port: 8805
+  upf:
+    host: oai-upf
+    sbi:
+      port: 8080
+      api_version: v1
+      interface_name: eth0
+    n3:
+      interface_name: eth0
+      port: 2152
+    n4:
+      interface_name: eth0
+      port: 8805
+    n6:
+      interface_name: eth0
+    n9:
+      interface_name: eth0
+      port: 2152
   udm:
     host: oai-udm
     sbi:
@@ -94,6 +111,16 @@ database:
   generate_random: true
   connection_timeout: 300 # seconds
 
+## general single_nssai configuration
+## Defines YAML anchors, which are reused in the config file
+snssais:
+  - &embb_slice1
+    sst: 1
+  - &embb_slice2
+    sst: 1
+  - &embb_slice3
+    sst: 1
+
 ############## NF-specific configuration
 amf:
   pid_directory: "/var/run"
@@ -110,7 +137,7 @@ amf:
   served_guami_list:
     - mcc: 001
       mnc: 01
-      amf_region_id: 80
+      amf_region_id: 01
       amf_set_id: 001
       amf_pointer: 01
   plmn_support_list:
@@ -118,7 +145,9 @@ amf:
       mnc: 01
       tac: 0x0001
       nssai:
-        - sst: 1
+        - *embb_slice1
+        - *embb_slice2
+        - *embb_slice3
   supported_integrity_algorithms:
     - "NIA1"
     - "NIA2"
@@ -134,7 +163,7 @@ smf:
     use_local_pcc_rules: yes # Use infos from local_pcc_rules or from PCF
   # we resolve from NRF, this is just to configure usage_reporting
   upfs:
-    - host: oai-spgwu
+    - host: oai-upf
       config:
         enable_usage_reporting: no
   ue_dns:
@@ -145,40 +174,68 @@ smf:
   ims:
     pcscf_ipv4: "192.168.70.139"
     pcscf_ipv6: "fe80::7915:f408:1787:db8b"
- # the DNN you configure here should be configured in "dnns"
+  # the DNN you configure here should be configured in "dnns"
+  # follows the SmfInfo datatype from 3GPP TS 29.510
+  smf_info:
+    sNssaiSmfInfoList:
+      - sNssai: *embb_slice1
+        dnnSmfInfoList:
+          - dnn: "oai"
+      - sNssai: *embb_slice2
+        dnnSmfInfoList:
+          - dnn: "openairinterface"
+      - sNssai: *embb_slice3
+        dnnSmfInfoList:
+          - dnn: "ims"
   local_subscription_infos:
-    - single_nssai:
-        sst: 1
+    - single_nssai: *embb_slice1
       dnn: "oai"
       qos_profile:
         5qi: 9
         session_ambr_ul: "10Gbps"
         session_ambr_dl: "10Gbps"
-    - single_nssai:
-        sst: 1
+    - single_nssai: *embb_slice2
       dnn: "openairinterface"
       qos_profile:
         5qi: 9
         session_ambr_ul: "10Gbps"
         session_ambr_dl: "10Gbps"
-    - single_nssai:
-        sst: 1
+    - single_nssai: *embb_slice3
       dnn: "ims"
       qos_profile:
         5qi: 9
         session_ambr_ul: "10Gbps"
         session_ambr_dl: "10Gbps"
 
+upf:
+  support_features:
+    enable_bpf_datapath: no    # If "on": BPF is used as datapath else simpleswitch is used, DEFAULT= off
+    enable_snat: yes           # If "on": Source natting is done for UE, DEFAULT= off
+  remote_n6_gw: localhost      # Dummy host since simple-switch does not use N6 GW
+  smfs:
+    - host: oai-smf            # To be used for PFCP association in case of no-NRF
+  upf_info:
+    sNssaiUpfInfoList:
+      - sNssai: *embb_slice1
+        dnnUpfInfoList:
+          - dnn: "oai"
+      - sNssai: *embb_slice2
+        dnnUpfInfoList:
+          - dnn: "openairinterface"
+      - sNssai: *embb_slice3
+        dnnUpfInfoList:
+          - dnn: "ims"
+
 ## DNN configuration
 dnns:
   - dnn: "oai"
     pdu_session_type: "IPV4"
-    ipv4_subnet: "12.1.1.2/24"
+    ipv4_subnet: "10.0.0.0/24"
   - dnn: "openairinterface"
     pdu_session_type: "IPV4V6"
-    ipv4_subnet: "12.1.2.2/24"
+    ipv4_subnet: "10.0.1.0/24"
     ipv6_prefix: "2001:1:2::/64"
   - dnn: "ims"
     pdu_session_type: "IPV4V6"
-    ipv4_subnet: "12.1.9.2/24"
+    ipv4_subnet: "10.0.9.0/24"
     ipv6_prefix: "2001:1:2::/64"
