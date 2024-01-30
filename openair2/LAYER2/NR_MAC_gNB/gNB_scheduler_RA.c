@@ -1254,6 +1254,7 @@ static void nr_generate_Msg2(module_id_t module_idP,
 
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI 0x%04x!\n", __func__, ra->rnti);
+      nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
       return;
     }
 
