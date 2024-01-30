@@ -121,6 +121,14 @@ mui_t rrc_gNB_mui = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
+static void clear_nas_pdu(ngap_pdu_t *pdu)
+{
+  DevAssert(pdu != NULL);
+  free(pdu->buffer); // does nothing if NULL
+  pdu->buffer = NULL;
+  pdu->length = 0;
+}
+
 static void freeDRBlist(NR_DRB_ToAddModList_t *list)
 {
   //ASN_STRUCT_FREE(asn_DEF_NR_DRB_ToAddModList, list);
@@ -563,18 +571,13 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
   }
 
-  // suspicious if it is always malloced before ?
-  free(ue_p->nas_pdu.buffer);
+  clear_nas_pdu(&ue_p->nas_pdu);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
   /* Free all NAS PDUs */
-  for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
-    if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
-      free(ue_p->pduSession[i].param.nas_pdu.buffer);
-      ue_p->pduSession[i].param.nas_pdu.buffer = NULL;
-    }
-  }
+  for (int i = 0; i < ue_p->nb_of_pdusessions; i++)
+    clear_nas_pdu(&ue_p->pduSession[i].param.nas_pdu);
 
   LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE id %x)\n",
           ctxt_pP->module_id,
@@ -625,13 +628,8 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
   }
 
   /* Free all NAS PDUs */
-  for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
-    if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
-      /* Free the NAS PDU buffer and invalidate it */
-      free(ue_p->pduSession[i].param.nas_pdu.buffer);
-      ue_p->pduSession[i].param.nas_pdu.buffer = NULL;
-    }
-  }
+  for (int i = 0; i < ue_p->nb_of_pdusessions; i++)
+    clear_nas_pdu(&ue_p->pduSession[i].param.nas_pdu);
 
   NR_CellGroupConfig_t *cellGroupConfig = ue_p->masterCellGroup;
 
@@ -755,8 +753,6 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
       asn1cSequenceAdd(dedicatedNAS_MessageList->list,NR_DedicatedNAS_Message_t, dedicatedNAS_Message);
       OCTET_STRING_fromBuf(dedicatedNAS_Message, (char *)ue_p->pduSession[i].param.nas_pdu.buffer, ue_p->pduSession[i].param.nas_pdu.length);
       LOG_I(NR_RRC, "add NAS info with size %d (pdusession id %d)\n", ue_p->pduSession[i].param.nas_pdu.length, ue_p->pduSession[i].param.pdusession_id);
-    } else {
-      LOG_W(NR_RRC, "no NAS info (pdusession id %d)\n", ue_p->pduSession[i].param.pdusession_id);
     }
   }
 
@@ -783,13 +779,8 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
   freeDRBlist(DRBs);
 
   /* Free all NAS PDUs */
-  for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
-    if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
-      /* Free the NAS PDU buffer and invalidate it */
-      free(ue_p->pduSession[i].param.nas_pdu.buffer);
-      ue_p->pduSession[i].param.nas_pdu.buffer = NULL;
-    }
-  }
+  for (int i = 0; i < ue_p->nb_of_pdusessions; i++)
+    clear_nas_pdu(&ue_p->pduSession[i].param.nas_pdu);
 
   LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCReconfiguration (bytes %d, UE RNTI %x)\n", ctxt_pP->module_id, ctxt_pP->frame, size, ue_p->rnti);
   LOG_D(NR_RRC,
