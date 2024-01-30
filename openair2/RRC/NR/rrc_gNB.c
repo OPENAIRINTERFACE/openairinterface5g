@@ -2542,12 +2542,16 @@ rrc_gNB_generate_RRCRelease(
   deliver_ue_ctxt_release_data_t data = {.rrc = rrc, .release_cmd = &ue_context_release_cmd, .assoc_id = ue_data.du_assoc_id};
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_release_cmd, &data);
 
-  sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, UE);
-  e1ap_bearer_release_cmd_t cmd = {
-    .gNB_cu_cp_ue_id = UE->rrc_ue_id,
-    .gNB_cu_up_ue_id = UE->rrc_ue_id,
-  };
-  rrc->cucp_cuup.bearer_context_release(assoc_id, &cmd);
+  /* a UE might not be associated to a CU-UP if it never requested a PDU
+   * session (intentionally, or because of erros) */
+  if (ue_associated_to_cuup(rrc, UE)) {
+    sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, UE);
+    e1ap_bearer_release_cmd_t cmd = {
+      .gNB_cu_cp_ue_id = UE->rrc_ue_id,
+      .gNB_cu_up_ue_id = UE->rrc_ue_id,
+    };
+    rrc->cucp_cuup.bearer_context_release(assoc_id, &cmd);
+  }
 
   /* UE will be freed after UE context release complete */
 }
