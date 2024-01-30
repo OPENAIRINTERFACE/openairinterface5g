@@ -699,11 +699,11 @@ int ngap_gNB_initial_ctxt_resp(instance_t instance, ngap_initial_context_setup_r
 
         case NGAP_CAUSE_NOTHING:
         default:
-          LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", initial_ctxt_resp_p->pdusessions_failed[i].cause);
+          AssertFatal(false, "Unknown PDU session failure cause %d\n", initial_ctxt_resp_p->pdusessions_failed[i].cause);
           break;
       }
 
-      NGAP_DEBUG("initial context setup response: failed pdusession ID %ld\n", item->pDUSessionID);
+      NGAP_INFO("initial context setup response: failed pdusession ID %ld\n", item->pDUSessionID);
       asn_encode_to_new_buffer_result_t res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, &pdusessionUnTransfer);
       AssertFatal(res.buffer, "ASN1 message encoding failed (%s, %lu)!\n", res.result.failed_type->name, res.result.encoded);
       item->pDUSessionResourceSetupUnsuccessfulTransfer.buf = res.buffer;
@@ -931,7 +931,6 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance, ngap_pdusession_setup_re
     ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_PDUSessionResourceFailedToSetupListSURes;
 
     for (int i = 0; i < pdusession_setup_resp_p->nb_of_pdusessions_failed; i++) {
-      LOG_W(NGAP,"add a failed session\n");
       pdusession_failed_t *pdusession_failed = pdusession_setup_resp_p->pdusessions_failed + i;
       asn1cSequenceAdd(ie->value.choice.PDUSessionResourceFailedToSetupListSURes.list, NGAP_PDUSessionResourceFailedToSetupItemSURes_t, item);
       NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t pdusessionUnTransfer_p = {0};
@@ -968,10 +967,10 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance, ngap_pdusession_setup_re
 
         case NGAP_CAUSE_NOTHING:
         default:
-          LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", pdusession_failed->cause);
+          AssertFatal(false, "Unknown PDU session failure cause %d\n", pdusession_failed->cause);
           break;
       }
-      NGAP_DEBUG("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
+      NGAP_INFO("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
 
       asn_encode_to_new_buffer_result_t res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, &pdusessionUnTransfer_p);
       item->pDUSessionResourceSetupUnsuccessfulTransfer.buf = res.buffer;
@@ -1132,7 +1131,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance, ngap_pdusession_modify_
 
       case NGAP_CAUSE_NOTHING:
       default:
-        LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", pdusession_modify_resp_p->pdusessions_failed[i].cause);
+        AssertFatal(false, "Unknown PDU session failure cause %d\n", pdusession_modify_resp_p->pdusessions_failed[i].cause);
         break;
       }
 
@@ -1144,7 +1143,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance, ngap_pdusession_modify_
 
       ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceModifyUnsuccessfulTransfer, pdusessionTransfer_p);
 
-      NGAP_DEBUG("pdusession_modify_resp: failed pdusession ID %ld\n", item->pDUSessionID);
+      NGAP_INFO("pdusession_modify_resp: failed pdusession ID %ld\n", item->pDUSessionID);
     }
   }
 

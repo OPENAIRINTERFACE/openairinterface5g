@@ -460,12 +460,13 @@ void rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(const protocol_ctxt_t *const c
         resp->pdusessions[pdusession].associated_qos_flows[qos_flow_index].qfi = session->param.qos[qos_flow_index].qfi;
         resp->pdusessions[pdusession].associated_qos_flows[qos_flow_index].qos_flow_mapping_ind = QOSFLOW_MAPPING_INDICATION_DL;
       }
-    } else {
+    } else if (session->status != PDU_SESSION_STATUS_ESTABLISHED) {
+      session->status = PDU_SESSION_STATUS_FAILED;
+      pdusession_failed_t *fail = &resp->pdusessions_failed[pdu_sessions_failed];
+      fail->pdusession_id = session->param.pdusession_id;
+      fail->cause = NGAP_CAUSE_RADIO_NETWORK;
+      fail->cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
       pdu_sessions_failed++;
-      resp->pdusessions_failed[pdusession].pdusession_id = session->param.pdusession_id;
-      // TODO add cause when it will be integrated
-      resp->pdusessions_failed[pdusession].cause = NGAP_CAUSE_RADIO_NETWORK;
-      resp->pdusessions_failed[pdusession].cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
     }
   }
 
@@ -709,9 +710,11 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
       pdu_sessions_done++;
     } else if (session->status != PDU_SESSION_STATUS_ESTABLISHED) {
       session->status = PDU_SESSION_STATUS_FAILED;
-      resp->pdusessions_failed[pdu_sessions_failed].pdusession_id = session->param.pdusession_id;
+      pdusession_failed_t *fail = &resp->pdusessions_failed[pdu_sessions_failed];
+      fail->pdusession_id = session->param.pdusession_id;
+      fail->cause = NGAP_CAUSE_RADIO_NETWORK;
+      fail->cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
       pdu_sessions_failed++;
-      // TODO add cause when it will be integrated
     }
     resp->nb_of_pdusessions = pdu_sessions_done;
     resp->nb_of_pdusessions_failed = pdu_sessions_failed;
