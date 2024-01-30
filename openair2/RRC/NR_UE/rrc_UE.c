@@ -619,7 +619,8 @@ static void nr_rrc_handle_msg3_indication(NR_UE_RRC_INST_t *rrc, rnti_t rnti)
       nr_rlc_reestablish_entity(rrc->ue_id, lc_id);
       // apply the specified configuration defined in 9.2.1 for SRB1
       nr_rlc_reconfigure_entity(rrc->ue_id, lc_id, NULL);
-      // TODO configure lower layers to suspend integrity protection and ciphering for SRB1
+      // suspend integrity protection and ciphering for SRB1
+      nr_pdcp_config_set_security(rrc->ue_id, srb_id, 0, NULL, NULL, NULL);
       // resume SRB1
       rrc->Srb[srb_id] = RB_ESTABLISHED;
       break;
@@ -1331,14 +1332,36 @@ static void nr_rrc_ue_process_rrcReestablishment(NR_UE_RRC_INST_t *rrc,
   // store the nextHopChainingCount value
   NR_RRCReestablishment_IEs_t *ies = rrcReestablishment->criticalExtensions.choice.rrcReestablishment;
   AssertFatal(ies, "Not expecting RRCReestablishment_IEs to be NULL\n");
-  int nh = rrcReestablishment->criticalExtensions.choice.rrcReestablishment->nextHopChainingCount;
-  // TODO update the K gNB key based on the current K gNB key or the NH, using the stored nextHopChainingCount value
-  // TODO derive the K RRCenc and K UPenc keys associated with the previously configured cipheringAlgorithm
-  // TODO derive the K RRCint and K UPint keys associated with the previously configured integrityProtAlgorithm
+  // TODO need to understand how to use nextHopChainingCount
+  // int nh = rrcReestablishment->criticalExtensions.choice.rrcReestablishment->nextHopChainingCount;
+
+  // update the K gNB key based on the current K gNB key or the NH, using the stored nextHopChainingCount value
+  /* TODO: retrieve absoluteFrequencySSB correctly */
+  int absoluteFrequencySSB = 621312;
+  nr_derive_key_ng_ran_star(rrc->phyCellID, absoluteFrequencySSB, rrc->kgnb, rrc->kgnb);
+
+  // derive the K RRCenc and K UPenc keys associated with the previously configured cipheringAlgorithm
+  // derive the K RRCint and K UPint keys associated with the previously configured integrityProtAlgorithm
+  uint8_t kRRCenc[16] = {0};
+  uint8_t kRRCint[16] = {0};
+  uint8_t kUPenc[16] = {0};
+  uint8_t kUPint[16] = {0};
+
+  nr_derive_key(UP_ENC_ALG, rrc->cipheringAlgorithm, rrc->kgnb, kUPenc);
+  nr_derive_key(UP_INT_ALG, rrc->integrityProtAlgorithm, rrc->kgnb, kUPint);
+  nr_derive_key(RRC_ENC_ALG, rrc->cipheringAlgorithm, rrc->kgnb, kRRCenc);
+  nr_derive_key(RRC_INT_ALG, rrc->integrityProtAlgorithm, rrc->kgnb, kRRCint);
+
   // TODO request lower layers to verify the integrity protection of the RRCReestablishment message
   // TODO if the integrity protection check of the RRCReestablishment message fails -> go to IDLE
-  // TODO configure lower layers to resume integrity protection for SRB1
-  // TODO configure lower layers to resume ciphering for SRB1
+
+  // configure lower layers to resume integrity protection for SRB1
+  // configure lower layers to resume ciphering for SRB1
+  int srb_id = 1;
+  int security_mode = (rrc->integrityProtAlgorithm << 4)
+                      | rrc->cipheringAlgorithm;
+  nr_pdcp_config_set_security(rrc->ue_id, srb_id, security_mode, kRRCenc, kRRCint, kUPenc);
+
   // release the measurement gap configuration indicated by the measGapConfig, if configured
   rrcPerNB_t *rrcNB = rrc->perNB + gNB_index;
   asn1cFreeStruc(asn_DEF_NR_MeasGapConfig, rrcNB->measGapConfig);
