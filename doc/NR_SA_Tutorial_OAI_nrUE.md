@@ -136,10 +136,7 @@ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band
 
 # 5. OAI UE
 
-## 5.1  SIM Card
-For this tutorial, there is no need to adjust any of the default OAI nrUE SIM card values. However, they can be checked and changed in [UICC_PARAMS_DESC](https://gitlab.eurecom.fr/oai/openairinterface5g/-/blob/develop/openair3/UICC/usim_interface.c?ref_type=heads#L40)
-
-## 5.2 Run OAI nrUE
+## 5.1 Run OAI nrUE
 ### USRP B210
 Important notes:
 - This should be run in a second Ubuntu 22.04 host, other than gNB
@@ -179,7 +176,7 @@ cd cmake_targets/ran_build/build
 sudo ./nr-uesoftmodem -r 32 --numerology 3 --band 257 -C 27533280000 --sa --uicc0.imsi 001010000000001 --ssb 72 --rfsim
 ```
 
-## 5.3 End-to-end connectivity test
+## 5.2 End-to-end connectivity test
 - Ping test from the UE host to the CN5G
 ```bash
 ping 192.168.70.135 -I oaitun_ue1
