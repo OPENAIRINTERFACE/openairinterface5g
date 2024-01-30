@@ -120,11 +120,14 @@ void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc)
   NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
 
   bool t300_expired = nr_timer_tick(&timers->T300);
-  if(t300_expired)
+  if(t300_expired) {
+    LOG_W(NR_RRC, "Timer T300 expired\n");
     handle_t300_expiry(rrc);
+  }
 
   bool t304_expired = nr_timer_tick(&timers->T304);
   if(t304_expired) {
+    LOG_W(NR_RRC, "Timer T304 expired\n");
     // TODO
     // For T304 of MCG, in case of the handover from NR or intra-NR
     // handover, initiate the RRC re-establishment procedure;
@@ -134,6 +137,7 @@ void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc)
 
   bool t310_expired = nr_timer_tick(&timers->T310);
   if(t310_expired) {
+    LOG_W(NR_RRC, "Timer T310 expired\n");
     // TODO
     // handle detection of radio link failure
     // as described in 5.3.10.3 of 38.331
@@ -142,6 +146,7 @@ void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc)
 
   bool t311_expired = nr_timer_tick(&timers->T311);
   if(t311_expired) {
+    LOG_W(NR_RRC, "Timer T311 expired\n");
     // Upon T311 expiry, the UE shall perform the actions upon going to RRC_IDLE
     // with release cause 'RRC connection failure'
     nr_rrc_going_to_IDLE(rrc, RRC_CONNECTION_FAILURE, NULL);
