@@ -177,10 +177,6 @@ void release_dl_BWP(NR_UE_MAC_INST_t *mac, int index);
 void release_ul_BWP(NR_UE_MAC_INST_t *mac, int index);
 void nr_release_mac_config_logicalChannelBearer(NR_UE_MAC_INST_t *mac, long channel_identity);
 
-void nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
-                                                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
-                                                   struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list);
-
 void nr_rrc_mac_config_req_cg(module_id_t module_id,
                               int cc_idP,
                               NR_CellGroupConfig_t *cell_group_config);
@@ -214,26 +210,6 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac);
    \param ul_info     UL indication*/
 void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info);
 void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info);
-
-/**\brief fill nr_scheduled_response struct instance
-   @param nr_scheduled_response_t *    pointer to scheduled_response instance to fill
-   @param fapi_nr_dl_config_request_t* pointer to dl_config,
-   @param fapi_nr_ul_config_request_t* pointer to ul_config,
-   @param fapi_nr_tx_request_t*        pointer to tx_request;
-   @param module_id_t mod_id           module ID
-   @param int cc_id                    CC ID
-   @param frame_t frame                frame number
-   @param int slot                     reference number
-   @param void *phy_pata               pointer to a PHY specific structure to be filled in the scheduler response (can be null) */
-void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
-                             fapi_nr_dl_config_request_t *dl_config,
-                             fapi_nr_ul_config_request_t *ul_config,
-                             fapi_nr_tx_request_t *tx_request,
-                             module_id_t mod_id,
-                             int cc_id,
-                             frame_t frame,
-                             int slot,
-                             void *phy_data);
 
 /*! \fn int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
    \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and
@@ -379,8 +355,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
 
 bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sched_t *pucch);
 
-int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size);
-
 void multiplex_pucch_resource(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch, int num_res);
 
 int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
@@ -402,7 +376,7 @@ int get_deltatf(uint16_t nb_of_prbs,
                 int N_sc_ctrl_RB,
                 int O_UCI);
 
-void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
+int nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            int slot,
                            uint16_t rnti,
                            PUCCH_sched_t *pucch,
@@ -489,24 +463,28 @@ void nr_Msg1_transmitted(module_id_t mod_id);
 
 void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot_t slotP, uint8_t gNB_id);
 void nr_get_msg3_payload(module_id_t mod_id, uint8_t *buf, int TBS_max);
-void send_msg3_rrc_request(module_id_t mod_id, int rnti);
 
 void nr_ue_msg2_scheduler(module_id_t mod_id, uint16_t rach_frame, uint16_t rach_slot, uint16_t *msg2_frame, uint16_t *msg2_slot);
 
 int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      NR_PDSCH_Config_t *pdsch_Config,
                                                       uint16_t n_RB_ULBWP,
                                                       uint16_t n_RB_DLBWP,
-                                                      uint16_t riv);
+                                                      int start_DLBWP,
+                                                      dci_field_t frequency_domain_assignment);
 
 void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 
 void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs);
 
-fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot, int fb_time);
 fapi_nr_dl_config_request_t *get_dl_config_request(NR_UE_MAC_INST_t *mac, int slot);
 
-void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type);
+fapi_nr_ul_config_request_pdu_t *lockGet_ul_config(NR_UE_MAC_INST_t *mac, frame_t frame_tx, int slot_tx, uint8_t pdu_type);
+void remove_ul_config_last_item(fapi_nr_ul_config_request_pdu_t *pdu);
+fapi_nr_ul_config_request_pdu_t *fapiLockIterator(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx);
+
+void release_ul_config(fapi_nr_ul_config_request_pdu_t *pdu, bool clearIt);
 
 int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm);
 
@@ -516,7 +494,13 @@ int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm);
 // - in which ULSCH should be scheduled. K2 is configured in RRC configuration.  
 // PUSCH Msg3 scheduler:
 // - scheduled by RAR UL grant according to 8.3 of TS 38.213
-int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, long k2);
+int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
+                          const uint8_t is_Msg3,
+                          const frame_t current_frame,
+                          const int current_slot,
+                          frame_t *frame_tx,
+                          int *slot_tx,
+                          const long k2);
 
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
 

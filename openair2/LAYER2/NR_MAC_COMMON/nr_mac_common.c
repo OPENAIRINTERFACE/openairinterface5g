@@ -2607,20 +2607,23 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
 }
 
 // Table 5.1.2.2.1-1 38.214
-uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
-  
-  AssertFatal(bwp_size < 276,"Invalid BWP Size > 275\n");
-  
-  if (bwp_size < 37)  return (rbg_size_config ? 4 : 2);
-  if (bwp_size < 73)  return (rbg_size_config ? 8 : 4);
-  if (bwp_size < 145) return (rbg_size_config ? 16 : 8);
-  else return 16;
+uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config)
+{
+  AssertFatal(bwp_size < 276, "Invalid BWP Size %d\n", bwp_size);
+  if (bwp_size < 37)
+    return (rbg_size_config ? 4 : 2);
+  if (bwp_size < 73)
+    return (rbg_size_config ? 8 : 4);
+  if (bwp_size < 145)
+    return (rbg_size_config ? 16 : 8);
+  else
+    return 16;
 }
 
-uint8_t getNRBG(uint16_t bwp_size, uint16_t bwp_start, long rbg_size_config) {
-
-  uint8_t rbg_size = getRBGSize(bwp_size,rbg_size_config);
-  return (uint8_t)ceil((float)(bwp_size+(bwp_start % rbg_size))/(float)rbg_size);
+uint8_t getNRBG(uint16_t bwp_size, uint16_t bwp_start, long rbg_size_config)
+{
+  uint8_t rbg_size = getRBGSize(bwp_size, rbg_size_config);
+  return (uint8_t)ceil((float)(bwp_size + (bwp_start % rbg_size)) / (float)rbg_size);
 }
 
 uint8_t getAntPortBitWidth(NR_SetupRelease_DMRS_DownlinkConfig_t *typeA, NR_SetupRelease_DMRS_DownlinkConfig_t *typeB) {

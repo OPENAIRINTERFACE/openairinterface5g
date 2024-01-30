@@ -310,16 +310,13 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     int CC_id = 0;
     uint8_t gNB_id = 0;
-    nr_uplink_indication_t ul_info;
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
     int slot_ahead = 2; // TODO: Make this dynamic
-    ul_info.cc_id = CC_id;
-    ul_info.gNB_index = gNB_id;
-    ul_info.module_id = mod_id;
-    ul_info.frame_rx = frame;
-    ul_info.slot_rx = slot;
-    ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
-    ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
+    nr_uplink_indication_t ul_info = {.cc_id = CC_id,
+                                      .gNB_index = gNB_id,
+                                      .module_id = mod_id,
+                                      .slot = (slot + slot_ahead) % slots_per_frame,
+                                      .frame = (slot + slot_ahead >= slots_per_frame) ? (frame + 1) % 1024 : frame};
 
     if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
@@ -330,8 +327,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       free_and_zero(ch_info);
     }
 
-    if (is_nr_DL_slot(mac->tdd_UL_DL_ConfigurationCommon,
-                      ul_info.slot_rx)) {
+    if (is_nr_DL_slot(mac->tdd_UL_DL_ConfigurationCommon, slot)) {
       memset(&mac->dl_info, 0, sizeof(mac->dl_info));
       mac->dl_info.cc_id = CC_id;
       mac->dl_info.gNB_index = gNB_id;
@@ -345,9 +341,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 
-    if (is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon,
-                      ul_info.slot_tx, mac->frame_type)) {
-      LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind()\n", ul_info.slot_tx);
+    if (is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon, ul_info.slot, mac->frame_type)) {
+      LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind()\n", ul_info.slot);
       nr_ue_ul_scheduler(&ul_info);
     }
     process_queued_nr_nfapi_msgs(mac, sfn_slot);
@@ -545,7 +540,12 @@ void processSlotTX(void *arg) {
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   nr_phy_data_tx_t phy_data = {0};
 
-  LOG_D(PHY,"%d.%d => slot type %d\n", proc->frame_tx, proc->nr_slot_tx, proc->tx_slot_type);
+  LOG_D(PHY,
+        "SlotTx %d.%d => slot type %d, wait: %d \n",
+        proc->frame_tx,
+        proc->nr_slot_tx,
+        proc->tx_slot_type,
+        rxtxD->tx_wait_for_dlsch);
   if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT){
     if (rxtxD->tx_wait_for_dlsch)
       LOG_D(PHY, "enter wait for tx, slot %d, nb events to wait %d; ", proc->nr_slot_tx, rxtxD->tx_wait_for_dlsch);
@@ -587,17 +587,12 @@ void processSlotTX(void *arg) {
     // [TODO] mapping right after NR initial sync
     if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
       start_meas(&UE->ue_ul_indication_stats);
-      nr_uplink_indication_t ul_indication;
-      memset((void*)&ul_indication, 0, sizeof(ul_indication));
-
-      ul_indication.module_id = UE->Mod_id;
-      ul_indication.gNB_index = proc->gNB_id;
-      ul_indication.cc_id     = UE->CC_id;
-      ul_indication.frame_rx  = proc->frame_rx;
-      ul_indication.slot_rx   = proc->nr_slot_rx;
-      ul_indication.frame_tx  = proc->frame_tx;
-      ul_indication.slot_tx   = proc->nr_slot_tx;
-      ul_indication.phy_data      = &phy_data;
+      nr_uplink_indication_t ul_indication = {.module_id = UE->Mod_id,
+                                              .gNB_index = proc->gNB_id,
+                                              .cc_id = UE->CC_id,
+                                              .frame = proc->frame_tx,
+                                              .slot = proc->nr_slot_tx,
+                                              .phy_data = &phy_data};
 
       UE->if_inst->ul_indication(&ul_indication);
       stop_meas(&UE->ue_ul_indication_stats);
@@ -989,29 +984,8 @@ void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconf
     NR_UE_MAC_INST_t *mac = get_mac_inst(i);
     AssertFatal((mac->if_module = nr_ue_if_module_init(i)) != NULL, "can not initialize IF module\n");
     if (!get_softmodem_params()->sa) {
-      init_nsa_message(&rrc_inst[i], reconfig_file, rbconfig_file);
-      // TODO why do we need noS1 configuration?
-      // temporarily moved here to understand why not using the one provided by gNB
-      nr_rlc_activate_srb0(i, NULL, send_srb0_rrc);
-      if (IS_SOFTMODEM_NOS1) {
-        // get default noS1 configuration
-        NR_RadioBearerConfig_t *rbconfig = NULL;
-        NR_RLC_BearerConfig_t *rlc_rbconfig = NULL;
-        fill_nr_noS1_bearer_config(&rbconfig, &rlc_rbconfig);
-
-        // set up PDCP, RLC, MAC
-        nr_pdcp_layer_init(false);
-        nr_pdcp_add_drbs(ENB_FLAG_NO, i, rbconfig->drb_ToAddModList, 0, NULL, NULL);
-        nr_rlc_add_drb(i, rbconfig->drb_ToAddModList->list.array[0]->drb_Identity, rlc_rbconfig);
-        struct NR_CellGroupConfig__rlc_BearerToAddModList rlc_toadd_list;
-        rlc_toadd_list.list.count = 1;
-        rlc_toadd_list.list.array = calloc(1, sizeof(NR_RLC_BearerConfig_t));
-        rlc_toadd_list.list.array[0] = rlc_rbconfig;
-        nr_rrc_mac_config_req_ue_logicalChannelBearer(0, &rlc_toadd_list, NULL);
-
-        // free memory
-        free_nr_noS1_bearer_config(&rbconfig, NULL);
-      }
+      init_nsa_message(rrc_inst, reconfig_file, rbconfig_file);
+      nr_rlc_activate_srb0(mac_inst->crnti, NULL, send_srb0_rrc);
     }
   }
 }

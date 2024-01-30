@@ -21,7 +21,6 @@
 
 #include "byte_array.h"
 
-#include "common/utils/assertions.h"
 #include <assert.h>
 #include <string.h>
 
@@ -29,7 +28,7 @@ byte_array_t copy_byte_array(byte_array_t src)
 {
   byte_array_t dst = {0};
   dst.buf = malloc(src.len);
-  AssertFatal(dst.buf != NULL, "Memory exhausted");
+  assert(dst.buf != NULL && "Memory exhausted");
   memcpy(dst.buf, src.buf, src.len);
   dst.len = src.len;
   return dst;

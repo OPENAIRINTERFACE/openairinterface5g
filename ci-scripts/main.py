@@ -65,6 +65,7 @@ import logging
 import datetime
 import signal
 import subprocess
+import traceback
 from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
@@ -102,7 +103,7 @@ def AssignParams(params_dict):
 
 
 def GetParametersFromXML(action):
-	if action == 'Build_eNB' or action == 'Build_Image' or action == 'Build_Proxy' or action == "Build_Cluster_Image":
+	if action == 'Build_eNB' or action == 'Build_Image' or action == 'Build_Proxy' or action == "Build_Cluster_Image" or action == "Build_Run_Tests":
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		CONTAINERS.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
@@ -745,142 +746,157 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					continue
 				CiTestObj.ShowTestID()
 				GetParametersFromXML(action)
-				if action == 'Build_eNB':
-					RAN.BuildeNB(HTML)
-				elif action == 'WaitEndBuild_eNB':
-					RAN.WaitBuildeNBisFinished(HTML)
-				elif action == 'Custom_Command':
-					RAN.CustomCommand(HTML)
-					if RAN.prematureExit:
-						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
-				elif action == 'Initialize_eNB':
-					RAN.InitializeeNB(HTML, EPC)
-					if RAN.prematureExit:
-						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
-				elif action == 'Terminate_eNB':
-					RAN.TerminateeNB(HTML, EPC)
-				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML)
-				elif action == 'Terminate_UE':
-					CiTestObj.TerminateUE(HTML)
-				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML, RAN, EPC, CONTAINERS)
-				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML)
-				elif action == 'DataDisable_UE':
-					CiTestObj.DataDisableUE(HTML)
-				elif action == 'DataEnable_UE':
-					CiTestObj.DataEnableUE(HTML)
-				elif action == 'CheckStatusUE':
-					CiTestObj.CheckStatusUE(HTML)
-				elif action == 'Build_OAI_UE':
-					CiTestObj.BuildOAIUE(HTML)
-				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,CONTAINERS)
-				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,EPC,CONTAINERS)
-				elif action == 'Ping':
-					CiTestObj.Ping(HTML,RAN,EPC,CONTAINERS)
-				elif action == 'Iperf':
-					CiTestObj.Iperf(HTML,RAN,EPC,CONTAINERS)
-				elif action == 'Initialize_HSS':
-					EPC.InitializeHSS(HTML)
-				elif action == 'Terminate_HSS':
-					EPC.TerminateHSS(HTML)
-				elif action == 'Initialize_MME':
-					EPC.InitializeMME(HTML)
-				elif action == 'Terminate_MME':
-					EPC.TerminateMME(HTML)
-				elif action == 'Initialize_SPGW':
-					EPC.InitializeSPGW(HTML)
-				elif action == 'Terminate_SPGW':
-					EPC.TerminateSPGW(HTML)
-				elif action == 'Initialize_5GCN':
-					EPC.Initialize5GCN(HTML)
-				elif action == 'Terminate_5GCN':
-					EPC.Terminate5GCN(HTML)
-				elif action == 'Deploy_EPC':
-					EPC.DeployEpc(HTML)
-				elif action == 'Undeploy_EPC':
-					EPC.UndeployEpc(HTML)
-				elif action == 'IdleSleep':
-					CiTestObj.IdleSleep(HTML)
-				elif action == 'Perform_X2_Handover':
-					CiTestObj.Perform_X2_Handover(HTML,RAN,EPC)
-				elif action == 'Build_PhySim':
-					HTML=ldpc.Build_PhySim(HTML,CONST)
-					if ldpc.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'Run_LDPCTest':
-					HTML=ldpc.Run_LDPCTest(HTML,CONST,id)
-					if ldpc.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'Run_LDPCt1Test':
-					HTML=ldpc.Run_LDPCt1Test(HTML,CONST,id)
-					if ldpc.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'Run_NRulsimTest':
-					HTML=ldpc.Run_NRulsimTest(HTML,CONST,id)
-					if ldpc.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'Pull_Cluster_Image':
-					if not CLUSTER.PullClusterImage(HTML,RAN):
-						RAN.prematureExit = True
-				elif action == 'Build_Cluster_Image':
-					if not CLUSTER.BuildClusterImage(HTML):
-						RAN.prematureExit = True
-				elif action == 'Build_Image':
-					CONTAINERS.BuildImage(HTML)
-				elif action == 'Build_Proxy':
-					CONTAINERS.BuildProxy(HTML)
-				elif action == 'Push_Local_Registry':
-					success = CONTAINERS.Push_Image_to_Local_Registry(HTML)
-					if not success:
-						RAN.prematureExit = True
-				elif action == 'Pull_Local_Registry':
-					success = CONTAINERS.Pull_Image_from_Local_Registry(HTML)
-					if not success:
-						RAN.prematureExit = True
-				elif action == 'Clean_Test_Server_Images':
-					success = CONTAINERS.Clean_Test_Server_Images(HTML)
-					if not success:
-						RAN.prematureExit = True
-				elif action == 'Deploy_Object':
-					CONTAINERS.DeployObject(HTML, EPC)
-					if CONTAINERS.exitStatus==1:
-						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
-						RAN.prematureExit = True
-				elif action == 'Undeploy_Object':
-					CONTAINERS.UndeployObject(HTML, RAN)
-					if CONTAINERS.exitStatus == 1:
-						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
-						RAN.prematureExit = True
-				elif action == 'Cppcheck_Analysis':
-					SCA.CppCheckAnalysis(HTML)
-				elif action == 'LicenceAndFormattingCheck':
-					ret = SCA.LicenceAndFormattingCheck(HTML)
-					if ret != 0:
-						RAN.prematureExit = True
-				elif action == 'Deploy_Run_PhySim':
-					PHYSIM.Deploy_PhySim(HTML, RAN)
-				elif action == 'DeployGenObject':
-					CONTAINERS.DeployGenObject(HTML, RAN, CiTestObj)
-					if CONTAINERS.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'UndeployGenObject':
-					CONTAINERS.UndeployGenObject(HTML, RAN, CiTestObj)
-					if CONTAINERS.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'IperfFromContainer':
-					CONTAINERS.IperfFromContainer(HTML, RAN, CiTestObj)
-					if CONTAINERS.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'StatsFromGenObject':
-					CONTAINERS.StatsFromGenObject(HTML)
-				elif action == 'Push_Images_To_Test_Servers':
-					logging.debug('To be implemented')
-				else:
-					sys.exit('Invalid class (action) from xml')
+				try:
+					if action == 'Build_eNB':
+						RAN.BuildeNB(HTML)
+					elif action == 'WaitEndBuild_eNB':
+						RAN.WaitBuildeNBisFinished(HTML)
+					elif action == 'Custom_Command':
+						RAN.CustomCommand(HTML)
+						if RAN.prematureExit:
+							CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
+					elif action == 'Initialize_eNB':
+						RAN.InitializeeNB(HTML, EPC)
+						if RAN.prematureExit:
+							CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
+					elif action == 'Terminate_eNB':
+						RAN.TerminateeNB(HTML, EPC)
+					elif action == 'Initialize_UE':
+						CiTestObj.InitializeUE(HTML)
+					elif action == 'Terminate_UE':
+						CiTestObj.TerminateUE(HTML)
+					elif action == 'Attach_UE':
+						CiTestObj.AttachUE(HTML, RAN, EPC, CONTAINERS)
+					elif action == 'Detach_UE':
+						CiTestObj.DetachUE(HTML)
+					elif action == 'DataDisable_UE':
+						CiTestObj.DataDisableUE(HTML)
+					elif action == 'DataEnable_UE':
+						CiTestObj.DataEnableUE(HTML)
+					elif action == 'CheckStatusUE':
+						CiTestObj.CheckStatusUE(HTML)
+					elif action == 'Build_OAI_UE':
+						CiTestObj.BuildOAIUE(HTML)
+					elif action == 'Initialize_OAI_UE':
+						CiTestObj.InitializeOAIUE(HTML,RAN,EPC,CONTAINERS)
+					elif action == 'Terminate_OAI_UE':
+						CiTestObj.TerminateOAIUE(HTML,RAN,EPC,CONTAINERS)
+					elif action == 'Ping':
+						CiTestObj.Ping(HTML,RAN,EPC,CONTAINERS)
+					elif action == 'Iperf':
+						CiTestObj.Iperf(HTML,RAN,EPC,CONTAINERS)
+					elif action == 'Initialize_HSS':
+						EPC.InitializeHSS(HTML)
+					elif action == 'Terminate_HSS':
+						EPC.TerminateHSS(HTML)
+					elif action == 'Initialize_MME':
+						EPC.InitializeMME(HTML)
+					elif action == 'Terminate_MME':
+						EPC.TerminateMME(HTML)
+					elif action == 'Initialize_SPGW':
+						EPC.InitializeSPGW(HTML)
+					elif action == 'Terminate_SPGW':
+						EPC.TerminateSPGW(HTML)
+					elif action == 'Initialize_5GCN':
+						EPC.Initialize5GCN(HTML)
+					elif action == 'Terminate_5GCN':
+						EPC.Terminate5GCN(HTML)
+					elif action == 'Deploy_EPC':
+						EPC.DeployEpc(HTML)
+					elif action == 'Undeploy_EPC':
+						EPC.UndeployEpc(HTML)
+					elif action == 'IdleSleep':
+						CiTestObj.IdleSleep(HTML)
+					elif action == 'Perform_X2_Handover':
+						CiTestObj.Perform_X2_Handover(HTML,RAN,EPC)
+					elif action == 'Build_PhySim':
+						HTML=ldpc.Build_PhySim(HTML,CONST)
+						if ldpc.exitStatus==1:
+							RAN.prematureExit = True
+					elif action == 'Run_LDPCTest':
+						HTML=ldpc.Run_LDPCTest(HTML,CONST,id)
+						if ldpc.exitStatus==1:
+							RAN.prematureExit = True
+					elif action == 'Run_LDPCt1Test':
+						HTML=ldpc.Run_LDPCt1Test(HTML,CONST,id)
+						if ldpc.exitStatus==1:
+							RAN.prematureExit = True
+					elif action == 'Run_NRulsimTest':
+						HTML=ldpc.Run_NRulsimTest(HTML,CONST,id)
+						if ldpc.exitStatus==1:
+							RAN.prematureExit = True
+					elif action == 'Pull_Cluster_Image':
+						if not CLUSTER.PullClusterImage(HTML,RAN):
+							RAN.prematureExit = True
+					elif action == 'Build_Cluster_Image':
+						if not CLUSTER.BuildClusterImage(HTML):
+							RAN.prematureExit = True
+					elif action == 'Build_Image':
+						success = CONTAINERS.BuildImage(HTML)
+						if not success:
+							RAN.prematureExit = True
+					elif action == 'Build_Run_Tests':
+						success = CONTAINERS.BuildRunTests(HTML)
+						if not success:
+							RAN.prematureExit = True
+					elif action == 'Build_Proxy':
+						success = CONTAINERS.BuildProxy(HTML)
+						if not success:
+							RAN.prematureExit = True
+					elif action == 'Push_Local_Registry':
+						success = CONTAINERS.Push_Image_to_Local_Registry(HTML)
+						if not success:
+							RAN.prematureExit = True
+					elif action == 'Pull_Local_Registry':
+						success = CONTAINERS.Pull_Image_from_Local_Registry(HTML)
+						if not success:
+							RAN.prematureExit = True
+					elif action == 'Clean_Test_Server_Images':
+						success = CONTAINERS.Clean_Test_Server_Images(HTML)
+						if not success:
+							RAN.prematureExit = True
+					elif action == 'Deploy_Object':
+						CONTAINERS.DeployObject(HTML, EPC)
+						if CONTAINERS.exitStatus==1:
+							CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
+							RAN.prematureExit = True
+					elif action == 'Undeploy_Object':
+						CONTAINERS.UndeployObject(HTML, RAN)
+						if CONTAINERS.exitStatus == 1:
+							CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
+							RAN.prematureExit = True
+					elif action == 'Cppcheck_Analysis':
+						SCA.CppCheckAnalysis(HTML)
+					elif action == 'LicenceAndFormattingCheck':
+						ret = SCA.LicenceAndFormattingCheck(HTML)
+						if ret != 0:
+							RAN.prematureExit = True
+					elif action == 'Deploy_Run_PhySim':
+						PHYSIM.Deploy_PhySim(HTML, RAN)
+					elif action == 'DeployGenObject':
+						CONTAINERS.DeployGenObject(HTML, RAN, CiTestObj)
+						if CONTAINERS.exitStatus==1:
+							RAN.prematureExit = True
+					elif action == 'UndeployGenObject':
+						CONTAINERS.UndeployGenObject(HTML, RAN, CiTestObj)
+						if CONTAINERS.exitStatus==1:
+							RAN.prematureExit = True
+					elif action == 'IperfFromContainer':
+						CONTAINERS.IperfFromContainer(HTML, RAN, CiTestObj)
+						if CONTAINERS.exitStatus==1:
+							RAN.prematureExit = True
+					elif action == 'StatsFromGenObject':
+						CONTAINERS.StatsFromGenObject(HTML)
+					elif action == 'Push_Images_To_Test_Servers':
+						logging.debug('To be implemented')
+					else:
+						sys.exit('Invalid class (action) from xml')
+				except Exception as e:
+					s = traceback.format_exc()
+					logging.error(f'while running CI, an exception occurred:\n{s}')
+					HTML.CreateHtmlTestRowQueue("N/A", 'KO', [f"CI test code encountered an exception:\n{s}"])
+					RAN.prematureExit = True
+
 				if RAN.prematureExit:
 					if CiTestObj.testCase_id == CiTestObj.testMinStableId:
 						logging.warning('Scenario has reached minimal stability point')

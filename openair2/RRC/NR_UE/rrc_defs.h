@@ -114,74 +114,53 @@ typedef enum RA_trigger_e {
 typedef struct UE_RRC_SI_INFO_NR_s {
   uint32_t default_otherSI_map;
   NR_SIB1_t *sib1;
-  int sib1_timer;
+  NR_timer_t sib1_timer;
   NR_SIB2_t *sib2;
-  int sib2_timer;
+  NR_timer_t sib2_timer;
   NR_SIB3_t *sib3;
-  int sib3_timer;
+  NR_timer_t sib3_timer;
   NR_SIB4_t *sib4;
-  int sib4_timer;
+  NR_timer_t sib4_timer;
   NR_SIB5_t *sib5;
-  int sib5_timer;
+  NR_timer_t sib5_timer;
   NR_SIB6_t *sib6;
-  int sib6_timer;
+  NR_timer_t sib6_timer;
   NR_SIB7_t *sib7;
-  int sib7_timer;
+  NR_timer_t sib7_timer;
   NR_SIB8_t *sib8;
-  int sib8_timer;
+  NR_timer_t sib8_timer;
   NR_SIB9_t *sib9;
-  int sib9_timer;
+  NR_timer_t sib9_timer;
   NR_SIB10_r16_t *sib10;
-  int sib10_timer;
+  NR_timer_t sib10_timer;
   NR_SIB11_r16_t *sib11;
-  int sib11_timer;
+  NR_timer_t sib11_timer;
   NR_SIB12_r16_t *sib12;
-  int sib12_timer;
+  NR_timer_t sib12_timer;
   NR_SIB13_r16_t *sib13;
-  int sib13_timer;
+  NR_timer_t sib13_timer;
   NR_SIB14_r16_t *sib14;
-  int sib14_timer;
-} __attribute__ ((__packed__)) NR_UE_RRC_SI_INFO;
+  NR_timer_t sib14_timer;
+} NR_UE_RRC_SI_INFO;
 
 typedef struct NR_UE_Timers_Constants_s {
-  // timers status
-  bool T300_active;
-  bool T301_active;
-  bool T302_active;
-  bool T304_active;
-  bool T310_active;
-  bool T311_active;
-  bool T319_active;
-  bool T320_active;
-  bool T325_active;
-  bool T390_active;
   // timers
-  uint32_t T300_cnt;
-  uint32_t T301_cnt;
-  uint32_t T302_cnt;
-  uint32_t T304_cnt;
-  uint32_t T310_cnt;
-  uint32_t T311_cnt;
-  uint32_t T319_cnt;
-  uint32_t T320_cnt;
-  uint32_t T325_cnt;
-  uint32_t T390_cnt;
+  NR_timer_t T300;
+  NR_timer_t T301;
+  NR_timer_t T302;
+  NR_timer_t T304;
+  NR_timer_t T310;
+  NR_timer_t T311;
+  NR_timer_t T319;
+  NR_timer_t T320;
+  NR_timer_t T325;
+  NR_timer_t T390;
   // counters
   uint32_t N310_cnt;
   uint32_t N311_cnt;
   // constants (limits configured by the network)
   uint32_t N310_k;
   uint32_t N311_k;
-  uint32_t T300_k;
-  uint32_t T301_k;
-  uint32_t T302_k;
-  uint32_t T304_k;
-  uint32_t T310_k;
-  uint32_t T311_k;
-  uint32_t T319_k;
-  uint32_t T320_k;
-  uint32_t T325_k;
-  uint32_t T390_k;
 } NR_UE_Timers_Constants_t;
 
 typedef enum {
@@ -213,9 +192,8 @@ typedef struct NR_UE_RRC_INST_s {
 
   OAI_NR_UECapability_t UECap;
   NR_UE_Timers_Constants_t timers_and_constants;
-  plmn_t                         plmnID;
-
-  // NR_MIB_t *mib;
+  RA_trigger_t ra_trigger;
+  plmn_t plmnID;
 
   NR_BWP_Id_t dl_bwp_id;
   NR_BWP_Id_t ul_bwp_id;

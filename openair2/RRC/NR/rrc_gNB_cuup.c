@@ -122,6 +122,26 @@ sctp_assoc_t get_new_cuup_for_ue(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue
   return ue_data.e1_assoc_id;
 }
 
+/* CU-CP Functions */
+
+/**
+ * @brief Trigger E1AP Setup Failure on CU-CP
+*/
+static void e1ap_setup_failure(sctp_assoc_t assoc_id, uint64_t transac_id)
+{
+  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_GNB, 0, E1AP_SETUP_FAIL);
+  msg_p->ittiMsgHeader.originInstance = assoc_id;
+  e1ap_setup_fail_t *setup_fail = &E1AP_SETUP_FAIL(msg_p);
+  setup_fail->transac_id = transac_id;
+  LOG_I(NR_RRC, "Triggering E1AP Setup Failure for transac_id %ld, assoc_id %ld\n",
+        transac_id,
+        msg_p->ittiMsgHeader.originInstance);
+  itti_send_msg_to_task(TASK_CUCP_E1, 0 /*unused by callee*/, msg_p);
+}
+
+/**
+ * @brief E1AP Setup Request processing on CU-CP
+*/
 int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
 {
   AssertFatal(req->supported_plmns <= PLMN_LIST_MAX_SIZE, "Supported PLMNs is more than PLMN_LIST_MAX_SIZE\n");
@@ -138,6 +158,7 @@ int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
             c->setup_req->gNB_cu_up_id,
             c->setup_req->gNB_cu_up_name,
             c->assoc_id);
+      e1ap_setup_failure(assoc_id, req->transac_id);
       return -1;
     }
   }
@@ -151,11 +172,12 @@ int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
             id->mnc,
             rrc->configuration.mcc[i],
             rrc->configuration.mnc[i]);
+      e1ap_setup_failure(assoc_id, req->transac_id);
       return -1;
     }
   }
 
-  LOG_I(RRC, "Accepting new CU-UP ID %ld name %s (assoc_id %d)\n", req->gNB_cu_up_id, req->gNB_cu_up_name, assoc_id);
+  LOG_I(NR_RRC, "Accepting new CU-UP ID %ld name %s (assoc_id %d)\n", req->gNB_cu_up_id, req->gNB_cu_up_name, assoc_id);
   nr_rrc_cuup_container_t *cuup = malloc(sizeof(*cuup));
   AssertFatal(cuup, "out of memory\n");
   cuup->setup_req = malloc(sizeof(*cuup->setup_req));
@@ -171,4 +193,29 @@ int rrc_gNB_process_e1_setup_req(sctp_assoc_t assoc_id, e1ap_setup_req_t *req)
   itti_send_msg_to_task(TASK_CUCP_E1, 0, msg_p);
 
   return 0;
+}
+
+/**
+ * @brief RRC Processing of the indication of E1 connection loss on CU-CP
+*/
+void rrc_gNB_process_e1_lost_connection(gNB_RRC_INST *rrc, e1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
+{
+  LOG_I(NR_RRC, "Received E1 connection loss indication on RRC\n");
+  AssertFatal(assoc_id != 0, "illegal assoc_id == 0: should be -1 (monolithic) or >0 (split)\n");
+  nr_rrc_cuup_container_t e = {.assoc_id = assoc_id};
+  nr_rrc_cuup_container_t *cuup = RB_FIND(rrc_cuup_tree, &rrc->cuups, &e);
+  if (cuup == NULL) {
+    LOG_W(NR_RRC, "CU-UP for assoc_id %d not found!\n", assoc_id);
+    return;
+  }
+  if (cuup->setup_req != NULL) {
+    e1ap_setup_req_t *req = cuup->setup_req;
+    LOG_I(NR_RRC, "releasing CU-UP %s on assoc_id %d\n", req->gNB_cu_up_name, assoc_id);
+    free(cuup->setup_req);
+  }
+  nr_rrc_cuup_container_t *removed = RB_REMOVE(rrc_cuup_tree, &rrc->cuups, cuup);
+  // Free relevant CU-UP structures
+  free(cuup);
+  DevAssert(removed != NULL);
+  rrc->num_cuups--;
 }

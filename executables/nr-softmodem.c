@@ -400,7 +400,7 @@ static int create_gNB_tasks(ngran_node_t node_type, configmodule_interface_t *cf
       }
     }
 
-    // If CU
+    // E1AP initialisation, whether the node is a CU or has integrated CU
     if (node_type == ngran_gNB_CU || node_type == ngran_gNB) {
       MessageDef *msg = RCconfig_NR_CU_E1(NULL);
       instance_t inst = 0;

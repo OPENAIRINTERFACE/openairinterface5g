@@ -363,7 +363,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   impp.tparity = tparity;
   impp.toutput = toutput;
   impp.harq = harq;
-  if (gNB->ldpc_offload_flag && *rel15->mcsIndex > 2) {
+  if (gNB->ldpc_offload_flag) {
     impp.Qm = rel15->qamModOrder[0];
     impp.rv = rel15->rvIndex[0];
     int nb_re_dmrs =
@@ -375,26 +375,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
                       harq->unav_res,
                       rel15->qamModOrder[0],
                       rel15->nrOfLayers);
-    uint8_t tmp[68 * 384] __attribute__((aligned(32)));
-    uint8_t *d = tmp;
     int r_offset = 0;
     for (int r = 0; r < impp.n_segments; r++) {
       impp.E = nr_get_E(impp.G, impp.n_segments, impp.Qm, rel15->nrOfLayers, r);
-      impp.Kr = impp.K;
-      ldpc_interface_offload.LDPCencoder(&harq->c[r], &d, &impp);
-      uint8_t e[impp.E];
-      bzero(e, impp.E);
-      nr_rate_matching_ldpc(rel15->maintenance_parms_v3.tbSizeLbrmBytes,
-                            impp.BG,
-                            impp.Zc,
-                            tmp,
-                            e,
-                            impp.n_segments,
-                            impp.F,
-                            impp.K - impp.F - 2 * impp.Zc,
-                            impp.rv,
-                            impp.E);
-      nr_interleaving_ldpc(impp.E, impp.Qm, e, impp.output + r_offset);
+      uint8_t *f = impp.output + r_offset;
+      ldpc_interface_offload.LDPCencoder(&harq->c[r], &f, &impp);
       r_offset += impp.E;
     }
   } else {
