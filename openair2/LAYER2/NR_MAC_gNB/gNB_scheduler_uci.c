@@ -96,6 +96,7 @@ static void nr_fill_nfapi_pucch(gNB_MAC_INST *nrmac,
 }
 
 #define MIN_RSRP_VALUE -141
+#define MAX_RSRP_VALUE -43
 #define MAX_NUM_SSB 128
 #define MAX_SSB_SCHED 8
 #define L1_RSRP_HYSTERIS 10 //considering 10 dBm as hysterisis for avoiding frequent SSB Beam Switching. !Fixme provide exact value if any
@@ -109,7 +110,7 @@ int ssb_rsrp_sorted[MAX_NUM_SSB] = {0};
 //stored -1 for invalid values
 static const int L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[128] = {
     -1,   -1,   -1,   -1,   -1,      -1,   -1,      -1,   -1,   -1, // 0 - 9
-    -1,   -1,   -1,   -1,   -1,      -1,   INT_MIN, -140, -139, -138, // 10 - 19
+    -1,   -1,   -1,   -1,   -1, -1, MIN_RSRP_VALUE, -140, -139, -138, // 10 - 19
     -137, -136, -135, -134, -133,    -132, -131,    -130, -129, -128, // 20 - 29
     -127, -126, -125, -124, -123,    -122, -121,    -120, -119, -118, // 30 - 39
     -117, -116, -115, -114, -113,    -112, -111,    -110, -109, -108, // 40 - 49
@@ -119,7 +120,7 @@ static const int L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[128] = {
     -77,  -76,  -75,  -74,  -73,     -72,  -71,     -70,  -69,  -68, // 80 - 89
     -67,  -66,  -65,  -64,  -63,     -62,  -61,     -60,  -59,  -58, // 90 - 99
     -57,  -56,  -55,  -54,  -53,     -52,  -51,     -50,  -49,  -48, // 100 - 109
-    -47,  -46,  -45,  -44,  INT_MAX, -1,   -1,      -1,   -1,   -1, // 110 - 119
+    -47,  -46,  -45,  -44, MAX_RSRP_VALUE, -1, -1,  -1,   -1,   -1, // 110 - 119
     -1,   -1,   -1,   -1,   -1,      -1,   -1,      -1 // 120 - 127
 };
 
