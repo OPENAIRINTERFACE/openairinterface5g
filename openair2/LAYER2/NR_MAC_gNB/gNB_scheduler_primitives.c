@@ -2376,8 +2376,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
 {
   NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[0].ServingCellConfigCommon;
   NR_UEs_t *UE_info = &nr_mac->UE_info;
-  LOG_I(NR_MAC, "Adding UE with rnti 0x%04x\n",
-        rntiP);
+  LOG_I(NR_MAC, "Adding new UE context with RNTI 0x%04x\n", rntiP);
   dump_nr_list(UE_info->list);
 
   // We will attach at the end, to mitigate race conditions
