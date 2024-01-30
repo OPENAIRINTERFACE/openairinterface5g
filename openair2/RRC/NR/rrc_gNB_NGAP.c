@@ -145,11 +145,6 @@ nr_rrc_pdcp_config_security(
   nr_derive_key(RRC_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kRRCenc);
   nr_derive_key(RRC_INT_ALG, UE->integrity_algorithm, UE->kgnb, kRRCint);
 
-  if (!IS_SOFTMODEM_IQPLAYER) {
-    SET_LOG_DUMP(DEBUG_SECURITY) ;
-  }
-
-
   if ( LOG_DUMPFLAG( DEBUG_SECURITY ) ) {
     if (print_keys == 1 ) {
       print_keys =0;
@@ -511,7 +506,7 @@ static NR_CipheringAlgorithm_t rrc_gNB_select_ciphering(
     }
   }
 
-  LOG_I(RRC, "selecting ciphering algorithm %d\n", ret);
+  LOG_D(RRC, "selecting ciphering algorithm %d\n", ret);
 
   return ret;
 }
@@ -547,7 +542,7 @@ static e_NR_IntegrityProtAlgorithm rrc_gNB_select_integrity(
     }
   }
 
-  LOG_I(RRC, "selecting integrity algorithm %d\n", ret);
+  LOG_D(RRC, "selecting integrity algorithm %d\n", ret);
 
   return ret;
 }
@@ -585,13 +580,13 @@ static int rrc_gNB_process_security(const protocol_ctxt_t *const ctxt_pP, rrc_gN
   }
 
   LOG_I(NR_RRC,
-        "[gNB %d][UE %x] Selected security algorithms (%p): %lx, %x, %s\n",
+        "[gNB %d][UE %d] Selected security algorithms (%p): ciphering %lx, integrity %x (algorithms %s)\n",
         ctxt_pP->module_id,
-        UE->rnti,
+        UE->rrc_ue_id,
         security_capabilities_pP,
-        (unsigned long)cipheringAlgorithm,
+        cipheringAlgorithm,
         integrityProtAlgorithm,
-        changed ? "changed" : "same");
+        changed ? "changed" : "are the same");
   return changed;
 }
 
