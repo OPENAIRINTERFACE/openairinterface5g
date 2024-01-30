@@ -775,7 +775,7 @@ static int ngap_gNB_handle_initial_context_request(sctp_assoc_t assoc_id, uint32
 
     AssertFatal(ie, "AllowedNSSAI not present, forging 2 NSSAI\n");
 
-    NGAP_INFO("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
+    NGAP_DEBUG("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
     msg->nb_allowed_nssais = ie->value.choice.AllowedNSSAI.list.count;
     
     for(i = 0; i < ie->value.choice.AllowedNSSAI.list.count; i++) {

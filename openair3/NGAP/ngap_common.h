@@ -102,7 +102,7 @@ extern int asn1_xer_print;
 # define NGAP_WARN(x, args...)  LOG_W(NGAP, x, ##args)
 # define NGAP_TRAF(x, args...)  LOG_I(NGAP, x, ##args)
 # define NGAP_INFO(x, args...) LOG_I(NGAP, x, ##args)
-# define NGAP_DEBUG(x, args...) LOG_I(NGAP, x, ##args)
+# define NGAP_DEBUG(x, args...) LOG_D(NGAP, x, ##args)
 
 #define NGAP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory)                                                            \
   do {                                                                                                                                  \
@@ -118,7 +118,7 @@ extern int asn1_xer_print;
       if (mandatory) {                                                                                                                  \
         AssertFatal(NGAP, "NGAP_FIND_PROTOCOLIE_BY_ID ie is NULL (searching for ie: %ld)\n", IE_ID);                                    \
       } else {                                                                                                                          \
-        NGAP_INFO("NGAP_FIND_PROTOCOLIE_BY_ID ie is NULL (searching for ie: %ld)\n", IE_ID);                                            \
+        NGAP_DEBUG("NGAP_FIND_PROTOCOLIE_BY_ID ie is NULL (searching for ie: %ld)\n", IE_ID);                                            \
       }                                                                                                                                 \
     }                                                                                                                                   \
   } while (0);                                                                                                                          \
