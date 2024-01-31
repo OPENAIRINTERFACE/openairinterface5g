@@ -413,7 +413,7 @@ static void trigger_bearer_setup(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, int n, pdu
       drb->id = rrc_drb->drb_id;
 
       struct sdap_config_s *sdap_config = &rrc_drb->cnAssociation.sdap_config;
-      drb->defaultDRB = sdap_config->defaultDRB ? E1AP_DefaultDRB_true : E1AP_DefaultDRB_false;
+      drb->defaultDRB = sdap_config->defaultDRB;
       drb->sDAP_Header_UL = sdap_config->sdap_HeaderUL;
       drb->sDAP_Header_DL = sdap_config->sdap_HeaderDL;
 
