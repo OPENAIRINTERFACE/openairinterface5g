@@ -125,7 +125,7 @@ typedef struct bearer_context_pdcp_config_s {
   long rLC_Mode;
   long reorderingTimer;
   long discardTimer;
-  long pDCP_Reestablishment;
+  bool pDCP_Reestablishment;
 } bearer_context_pdcp_config_t;
 
 typedef struct drb_to_setup_s {

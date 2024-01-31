@@ -249,6 +249,10 @@ void e1_bearer_context_modif(const e1ap_bearer_mod_req_t *req)
       DRB_nGRAN_modified_t *modified = &modif.pduSessionMod[i].DRBnGRanModList[j];
       modified->id = to_modif->id;
 
+      if (to_modif->pdcp_config.pDCP_Reestablishment) {
+        nr_pdcp_reestablishment(req->gNB_cu_up_ue_id, to_modif->id, false);
+      }
+
       if (f1inst < 0) // no F1-U?
         continue; // nothing to do
 

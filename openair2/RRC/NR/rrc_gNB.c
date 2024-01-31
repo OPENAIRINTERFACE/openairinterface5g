@@ -902,7 +902,60 @@ static pdu_session_to_mod_t *find_or_next_pdu_session(e1ap_bearer_mod_req_t *bea
   return &bearer_modif->pduSessionMod[bearer_modif->numPDUSessionsMod - 1];
 }
 
-//-----------------------------------------------------------------------------
+/**
+ * @brief Notify E1 re-establishment to CU-UP
+ */
+static void cuup_notify_reestablishment(gNB_RRC_INST *rrc, gNB_RRC_UE_t *ue_p)
+{
+  e1ap_bearer_mod_req_t req = {
+      .gNB_cu_cp_ue_id = ue_p->rrc_ue_id,
+      .gNB_cu_up_ue_id = ue_p->rrc_ue_id,
+  };
+  if (!ue_associated_to_cuup(rrc, ue_p))
+    return;
+  /* loop through active DRBs */
+  for (int drb_id = 1; drb_id <= MAX_DRBS_PER_UE; drb_id++) {
+    if (ue_p->established_drbs[drb_id - 1].status == DRB_INACTIVE)
+      continue;
+    /* fetch an existing PDU session for this DRB */
+    rrc_pdu_session_param_t *pdu = find_pduSession_from_drbId(ue_p, drb_id);
+    if (pdu == NULL) {
+      LOG_E(RRC, "UE %d: E1 Bearer Context Modification: no PDU session for DRB ID %d\n", ue_p->rrc_ue_id, drb_id);
+      continue;
+    }
+    /* Get pointer to existing (or new one) PDU session to modify in E1 */
+    pdu_session_to_mod_t *pdu_e1 = find_or_next_pdu_session(&req, pdu->param.pdusession_id);
+    AssertError(pdu != NULL,
+                continue,
+                "UE %d: E1 Bearer Context Modification: PDU session %d to setup is null\n",
+                ue_p->rrc_ue_id,
+                pdu->param.pdusession_id);
+    /* Prepare PDU for E1 Bearear Context Modification Request */
+    pdu_e1->sessionId = pdu->param.pdusession_id;
+    /* Fill DRB to setup with ID, DL TL and DL TEID */
+    DRB_nGRAN_to_mod_t *drb_e1 = &pdu_e1->DRBnGRanModList[pdu_e1->numDRB2Modify];
+    drb_e1->id = drb_id;
+    drb_e1->numDlUpParam = 1;
+    drb_t *drbs = &ue_p->established_drbs[drb_id];
+    memcpy(&drb_e1->DlUpParamList[0].tlAddress, &drbs->f1u_tunnel_config.cuup_addr_f1u.buffer, sizeof(uint8_t) * 4);
+    drb_e1->DlUpParamList[0].teId = drbs->f1u_tunnel_config.cuup_teid_f1u;
+    /* PDCP configuration */
+    bearer_context_pdcp_config_t *pdcp_config = &drb_e1->pdcp_config;
+    drb_t *rrc_drb = get_drb(ue_p, drb_id);
+    set_bearer_context_pdcp_config(pdcp_config, rrc_drb, rrc->configuration.um_on_default_drb);
+    pdcp_config->pDCP_Reestablishment = true;
+    /* increase DRB to modify counter */
+    pdu_e1->numDRB2Modify += 1;
+  }
+  /* Send E1 Bearer Context Modification Request (3GPP TS 38.463) */
+  sctp_assoc_t assoc_id = get_existing_cuup_for_ue(rrc, ue_p);
+  rrc->cucp_cuup.bearer_context_mod(assoc_id, &req);
+}
+
+/**
+ * @brief RRCReestablishment message
+ *        Direction: Network to UE
+ */
 static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context_pP,
                                                 const uint8_t *masterCellGroup_from_DU,
                                                 const rnti_t old_rnti,
@@ -941,17 +994,12 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   for (int srb_id = 1; srb_id < NR_NUM_SRB; srb_id++) {
     if (ue_p->Srb[srb_id].Active) {
       nr_pdcp_config_set_security(ue_p->rrc_ue_id, srb_id, security_mode, kRRCenc, kRRCint, kUPenc);
-      // TODO: should send E1 UE Bearer Modification with PDCP Reestablishment flag
       nr_pdcp_reestablishment(ue_p->rrc_ue_id, srb_id, true);
     }
   }
-
-  // TODO: should send E1 UE Bearer Modification with PDCP Reestablishment flag
-  for (int drb_id = 1; drb_id <= MAX_DRBS_PER_UE; drb_id++) {
-    if (ue_p->established_drbs[drb_id - 1].status != DRB_INACTIVE)
-      nr_pdcp_reestablishment(ue_p->rrc_ue_id, drb_id, false);
-  }
-
+  /* PDCP Reestablishment over E1 */
+  cuup_notify_reestablishment(rrc, ue_p);
+  /* F1AP DL RRC Message Transfer */
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
   RETURN_IF_INVALID_ASSOC_ID(ue_data);
   uint32_t old_gNB_DU_ue_id = old_rnti;
@@ -1788,7 +1836,7 @@ static void e1_send_bearer_updates(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, int n, f
       LOG_E(RRC, "UE %d: UE Context Modif Response: no PDU session for DRB ID %ld\n", UE->rrc_ue_id, drb_f1->drb_id);
       continue;
     }
-    pdu_session_to_mod_t *pdu_e1 = find_or_next_pdu_session(&req, pdu_ue->param.pdusession_id);
+    pdu_session_to_setup_t *pdu_e1 = find_or_next_pdu_session(&req, pdu_ue->param.pdusession_id);
     DevAssert(pdu_e1 != NULL);
     pdu_e1->sessionId = pdu_ue->param.pdusession_id;
     DRB_nGRAN_to_setup_t *drb_e1 = &pdu_e1->DRBnGRanModList[pdu_e1->numDRB2Modify];

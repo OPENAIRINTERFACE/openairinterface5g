@@ -409,6 +409,10 @@ static void free_rx_list(nr_pdcp_entity_t *entity)
   entity->rx_size = 0;
 }
 
+/**
+ * @brief PDCP entity re-establishment according to 5.1.2 of 3GPP TS 38.323
+ * @todo  deal with ciphering/integrity algos and keys for transmitting/receiving entity procedures
+*/
 static void nr_pdcp_entity_reestablish_drb_am(nr_pdcp_entity_t *entity)
 {
   /* transmitting entity procedures */

@@ -1214,7 +1214,10 @@ static int fill_BEARER_CONTEXT_MODIFICATION_REQUEST(e1ap_bearer_setup_req_t *con
       asn1cCalloc(ieC3_1->dRB_To_Modify_List_NG_RAN, drb2Mod_List);
       asn1cSequenceAdd(drb2Mod_List->list, E1AP_DRB_To_Modify_Item_NG_RAN_t, drb2Mod);
       drb2Mod->dRB_ID = j->id;
-
+      asn1cCalloc(drb2Mod->pDCP_Configuration, pDCP_Configuration);
+      if (j->pdcp_config.pDCP_Reestablishment) {
+        asn1cCallocOne(pDCP_Configuration->pDCP_Reestablishment, E1AP_PDCP_Reestablishment_true);
+      }
       if (j->numDlUpParam > 0) {
         asn1cCalloc(drb2Mod->dL_UP_Parameters, DL_UP_Param_List);
         for (up_params_t *k = j->DlUpParamList; k < j->DlUpParamList + j->numDlUpParam; k++) {
@@ -1360,21 +1363,28 @@ static void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *p
             DRB_nGRAN_to_mod_t *drb = pdu_session->DRBnGRanModList + j;
             E1AP_DRB_To_Modify_Item_NG_RAN_t *drb2Mod = drb2ModList->list.array[j];
             drb->id = drb2Mod->dRB_ID;
-
-            E1AP_UP_Parameters_t *dl_up_paramList = drb2Mod->dL_UP_Parameters;
-            drb->numDlUpParam = dl_up_paramList->list.count;
-            for (int k = 0; k < dl_up_paramList->list.count; k++) {
-              up_params_t *dl_up_param = drb->DlUpParamList + k;
-              E1AP_UP_Parameters_Item_t *dl_up_param_in = dl_up_paramList->list.array[k];
-              if (dl_up_param_in->uP_TNL_Information.choice.gTPTunnel) { // Optional IE
-                DevAssert(dl_up_param_in->uP_TNL_Information.present = E1AP_UP_TNL_Information_PR_gTPTunnel);
-                BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&dl_up_param_in->uP_TNL_Information.choice.gTPTunnel->transportLayerAddress,
-                                                           dl_up_param->tlAddress);
-                OCTET_STRING_TO_INT32(&dl_up_param_in->uP_TNL_Information.choice.gTPTunnel->gTP_TEID, dl_up_param->teId);
-              } else {
-                AssertFatal(false, "gTPTunnel IE is missing. It is mandatory at this point\n");
+            if (drb2Mod->pDCP_Configuration != NULL
+                && drb2Mod->pDCP_Configuration->pDCP_Reestablishment != NULL
+                && *drb2Mod->pDCP_Configuration->pDCP_Reestablishment == E1AP_PDCP_Reestablishment_true) {
+              drb->pdcp_config.pDCP_Reestablishment = true;
+            }
+            if (drb2Mod->dL_UP_Parameters) { /* Optional IE in the DRB To Modify Item */
+              E1AP_UP_Parameters_t *dl_up_paramList = drb2Mod->dL_UP_Parameters;
+              drb->numDlUpParam = dl_up_paramList->list.count;
+              for (int k = 0; k < dl_up_paramList->list.count; k++) {
+                up_params_t *dl_up_param = drb->DlUpParamList + k;
+                E1AP_UP_Parameters_Item_t *dl_up_param_in = dl_up_paramList->list.array[k];
+                if (dl_up_param_in->uP_TNL_Information.choice.gTPTunnel) { // Optional IE
+                  DevAssert(dl_up_param_in->uP_TNL_Information.present = E1AP_UP_TNL_Information_PR_gTPTunnel);
+                  BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(
+                      &dl_up_param_in->uP_TNL_Information.choice.gTPTunnel->transportLayerAddress,
+                      dl_up_param->tlAddress);
+                  OCTET_STRING_TO_INT32(&dl_up_param_in->uP_TNL_Information.choice.gTPTunnel->gTP_TEID, dl_up_param->teId);
+                } else {
+                  AssertFatal(false, "gTPTunnel IE is missing. It is mandatory at this point\n");
+                }
+                dl_up_param->cell_group_id = dl_up_param_in->cell_Group_ID;
               }
-              dl_up_param->cell_group_id = dl_up_param_in->cell_Group_ID;
             }
           }
         }
