@@ -57,7 +57,7 @@ Legacy unmaintained files:
 # Designs
 
 - General software architecture notes: [SW_archi.md](./SW_archi.md)
-- [Information on E1](./E1-design.md)
+- [Information on E1](./E1AP/E1-design.md)
 - [Information on F1](./F1-design.md)
 - [Information on how NR nFAPI works](./NR_NFAPI_archi.md)
 - [Flow graph of the L1 in gNB](SW-archi-graph.md)
