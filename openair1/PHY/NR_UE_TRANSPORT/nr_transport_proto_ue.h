@@ -294,7 +294,6 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                struct complex16 dl_ch_estimates[][estimateSz],
                NR_DL_FRAME_PARMS *frame_parms,
                uint8_t i_ssb,
-               MIMO_mode_t mimo_mode,
                fapiPbch_t *result,
                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
