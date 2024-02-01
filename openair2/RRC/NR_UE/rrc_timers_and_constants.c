@@ -582,7 +582,7 @@ void set_default_timers_and_constants(NR_UE_Timers_Constants_t *tac)
 {
   // 38.331 9.2.3 Default values timers and constants
   nr_timer_setup(&tac->T310, 1000, 10); // 10ms step
-  nr_timer_setup(&tac->T310, 30000, 10); // 10ms step
+  nr_timer_setup(&tac->T311, 30000, 10); // 10ms step
   tac->N310_k = 1;
   tac->N311_k = 1;
 }
