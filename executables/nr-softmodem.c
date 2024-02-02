@@ -108,8 +108,6 @@ static int wait_for_sync = 0;
 unsigned int mmapped_dma=0;
 int single_thread_flag=1;
 
-int8_t threequarter_fs=0;
-
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
@@ -145,12 +143,6 @@ int rx_input_level_dBm;
 
 int otg_enabled;
 
-//int number_of_cards = 1;
-
-
-//static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-//static nfapi_nr_config_request_t *config[MAX_NUM_CCs];
-uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
 #include <SIMULATION/ETH_TRANSPORT/proto.h>
@@ -170,8 +162,6 @@ static char *worker_config = NULL;
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
-
-openair0_config_t openair0_cfg[MAX_CARDS];
 
 double cpuf;
 
@@ -633,7 +623,6 @@ int main( int argc, char **argv ) {
   setvbuf(stderr, NULL, _IONBF, 0);
 #endif
   mode = normal_txrx;
-  memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   logInit();
   set_latency_target();
@@ -646,8 +635,6 @@ int main( int argc, char **argv ) {
     fprintf(stderr,"Getting configuration failed\n");
     exit(-1);
   }
-
-  openair0_cfg[0].threequarter_fs = threequarter_fs;
 
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");

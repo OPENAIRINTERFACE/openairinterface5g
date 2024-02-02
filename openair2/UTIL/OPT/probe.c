@@ -542,8 +542,10 @@ void trace_pdu_implementation(int nr, int direction, uint8_t *pdu_buffer, unsign
 int init_opt(void) { 
   paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
   checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
-  config_set_checkfunctions(opt_params, opt_checkParams, sizeofArray(opt_params));
-  config_get(config_get_if(), opt_params, sizeofArray(opt_params), OPT_CONFIGPREFIX);
+  int sz=sizeofArray(opt_params);
+  AssertFatal(sz == sizeofArray(opt_checkParams), "Error in arrays size (%d!=%lu)\n", sz, sizeofArray(opt_checkParams));
+  config_set_checkfunctions(opt_params, opt_checkParams, sz);
+  config_get(config_get_if(), opt_params, sz, OPT_CONFIGPREFIX);
   subframesSinceCaptureStart = 0;
   int tmptype = config_get_processedint(config_get_if(), &(opt_params[OPTTYPE_IDX]));
 

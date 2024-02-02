@@ -90,12 +90,8 @@
 #include <openair1/PHY/NR_TRANSPORT/nr_dlsch.h>
 #include <PHY/NR_ESTIMATION/nr_ul_estimation.h>
 
-//#define USRP_DEBUG 1
-// Fix per CC openair rf/if device update
-// extern openair0_device openair0;
-
-
-//pthread_t                       main_gNB_thread;
+// #define USRP_DEBUG 1
+//  Fix per CC openair rf/if device update
 
 time_stats_t softmodem_stats_mt; // main thread
 time_stats_t softmodem_stats_hw; //  hw acquisition

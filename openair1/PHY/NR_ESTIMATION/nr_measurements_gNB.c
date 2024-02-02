@@ -207,8 +207,8 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB,
   unsigned short rx_power_avg_dB;
   unsigned short rx_power_tot_dB;
 
-  double             rx_gain = openair0_cfg[0].rx_gain[0];
-  double      rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];
+  double             rx_gain = gNB->RU_list[0]->rfdevice.openair0_cfg->rx_gain[0];
+  double      rx_gain_offset = gNB->RU_list[0]->rfdevice.openair0_cfg->rx_gain_offset[0];
   PHY_MEASUREMENTS_gNB *meas = &gNB->measurements;
   NR_DL_FRAME_PARMS      *fp = &gNB->frame_parms;
   int              ch_offset = fp->ofdm_symbol_size * symbol;

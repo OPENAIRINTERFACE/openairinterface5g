@@ -169,7 +169,6 @@ PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
     memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   }
 
-  ue->hw_timing_advance=get_softmodem_params()->hw_timing_advance;
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
 
@@ -1940,16 +1939,15 @@ void *UE_thread(void *arg) {
                                                rxp,
                                                readBlockSize,
                                                UE->frame_parms.nb_antennas_rx),"");
-        AssertFatal( writeBlockSize ==
-                     UE->rfdevice.trx_write_func(&UE->rfdevice,
-                         timestamp+
-                         (2*UE->frame_parms.samples_per_tti) -
-                         UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
-                         openair0_cfg[0].tx_sample_advance,
-                         txp,
-                         writeBlockSize,
-                         UE->frame_parms.nb_antennas_tx,
-                         1),"");
+        AssertFatal(writeBlockSize
+                        == UE->rfdevice.trx_write_func(&UE->rfdevice,
+                                                       timestamp + (2 * UE->frame_parms.samples_per_tti)
+                                                           - UE->frame_parms.ofdm_symbol_size - UE->frame_parms.nb_prefix_samples0,
+                                                       txp,
+                                                       writeBlockSize,
+                                                       UE->frame_parms.nb_antennas_tx,
+                                                       1),
+                    "");
 
         if( sub_frame==9) {
           // read in first symbol of next frame and adjust for timing drift

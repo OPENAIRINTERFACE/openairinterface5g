@@ -73,15 +73,13 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
       \returns 0 on success
 */
 int trx_lms_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int antenna_id, int flags) {
+  timestamp -= device->openair0_cfg->command_line_sample_advance - device->openair0_cfg->tx_sample_advance;
+  lms_stream_meta_t meta;
+  meta.waitForTimestamp = true;
+  meta.flushPartialPacket = false;
+  meta.timestamp = timestamp;
 
-
-    lms_stream_meta_t meta;
-    meta.waitForTimestamp = true;
-    meta.flushPartialPacket = false;
-    meta.timestamp = timestamp;
-
-
-    return LMS_SendStream(&tx_stream,(const void*)buff[0],nsamps,&meta,30);
+  return LMS_SendStream(&tx_stream, (const void *)buff[0], nsamps, &meta, 30);
 }
 
 /*! \brief Receive samples from hardware.

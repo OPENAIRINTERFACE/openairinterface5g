@@ -137,7 +137,7 @@ trx_iris_write(openair0_device *device, openair0_timestamp timestamp, void **buf
     using namespace std::chrono;
 
     int flag = 0;
-
+    timestamp -= device->openair0_cfg->command_line_sample_advance - device->openair0_cfg->tx_sample_advance;
     iris_state_t *s = (iris_state_t *) device->priv;
     int nsamps2; // aligned to upper 32 or 16 byte boundary
     nsamps2 = (nsamps+7)>>3;
@@ -164,8 +164,7 @@ trx_iris_write(openair0_device *device, openair0_timestamp timestamp, void **buf
         flag |= SOAPY_SDR_END_BURST;
     }
 
-
-    long long timeNs = SoapySDR::ticksToTimeNs(timestamp, s->sample_rate / SAMPLE_RATE_DOWN);
+    long long timeNs = SoapySDR::ticksToTimeNs(timestamp - device.command_line_sample_advance, s->sample_rate / SAMPLE_RATE_DOWN);
     uint32_t *samps[2]; //= (uint32_t **)buff;
     int r;
     int m = s->tx_num_channels;

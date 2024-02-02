@@ -637,8 +637,6 @@ typedef struct PHY_VARS_eNB_NB_IoT_s {
   ///
   uint32_t                                  total_system_throughput;
   ///
-  int                                       hw_timing_advance;
-  ///
   time_stats_t                       phy_proc;
   time_stats_t                       phy_proc_tx;
   time_stats_t                       phy_proc_rx;
@@ -873,7 +871,6 @@ typedef struct {
     int              rx_offset; /// Timing offset
     int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
     int              timing_advance; ///timing advance signalled from eNB
-    int              hw_timing_advance;
     int              N_TA_offset; ///timing offset used in TDD
     /// Flag to tell if UE is secondary user (cognitive mode)
     unsigned char    is_secondary_ue;

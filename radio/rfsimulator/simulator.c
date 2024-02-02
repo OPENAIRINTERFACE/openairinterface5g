@@ -755,6 +755,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
 }
 
 static int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
+  timestamp -= device->openair0_cfg->command_line_sample_advance;
   return rfsimulator_write_internal(device->priv, timestamp, samplesVoid, nsamps, nbAnt, flags, false); // false = with lock
   // return rfsimulator_write_internal(device->priv, timestamp, samplesVoid, nsamps, nbAnt, flags, true);
 }
