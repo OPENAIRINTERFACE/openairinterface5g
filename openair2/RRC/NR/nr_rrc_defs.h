@@ -224,6 +224,7 @@ typedef struct drb_s {
 } drb_t;
 
 typedef enum {
+  RRC_ACTION_NONE, /* no transaction ongoing */
   RRC_SETUP,
   RRC_SETUP_FOR_REESTABLISHMENT,
   RRC_REESTABLISH,

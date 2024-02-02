@@ -1434,11 +1434,16 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
     case RRC_DEDICATED_RECONF:
       /* do nothing */
       break;
+    case RRC_ACTION_NONE:
+      LOG_E(RRC, "UE %d: Received RRC Reconfiguration Complete with xid %d while no transaction is ongoing\n", UE->rrc_ue_id, xid);
+      successful_reconfig = false;
+      break;
     default:
-      LOG_E(RRC, "Received unexpected transaction type %d for xid %d\n", UE->xids[xid], xid);
+      LOG_E(RRC, "UE %d: Received unexpected transaction type %d for xid %d\n", UE->rrc_ue_id, UE->xids[xid], xid);
       successful_reconfig = false;
       break;
   }
+  UE->xids[xid] = RRC_ACTION_NONE;
 
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
