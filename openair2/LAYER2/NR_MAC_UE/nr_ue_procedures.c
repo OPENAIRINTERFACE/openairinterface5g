@@ -102,7 +102,7 @@ random-access procedure
 @param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
-static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id);
+static void nr_ue_process_rar(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_info, int pdu_id);
 
 int get_pucch0_mcs(const int O_ACK, const int O_SR, const int ack_payload, const int sr_payload)
 {
@@ -198,14 +198,13 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
     return rnti_type;
 }
 
-void nr_ue_decode_mib(module_id_t module_id, int cc_id)
+void nr_ue_decode_mib(NR_UE_MAC_INST_t *mac, int cc_id)
 {
   LOG_D(MAC,"[L2][MAC] decode mib\n");
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
   if (mac->mib->cellBarred == NR_MIB__cellBarred_barred) {
     LOG_W(MAC, "Cell is barred. Going back to sync mode.\n");
-    mac->synch_request.Mod_id = module_id;
+    mac->synch_request.Mod_id = mac->ue_id;
     mac->synch_request.CC_id = cc_id;
     mac->synch_request.synch_req.target_Nid_cell = -1;
     mac->if_module->synch_request(&mac->synch_request);
@@ -259,17 +258,16 @@ void nr_ue_decode_mib(module_id_t module_id, int cc_id)
     mac->state = UE_SYNC;
 }
 
-int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
+int8_t nr_ue_decode_BCCH_DL_SCH(NR_UE_MAC_INST_t *mac,
                                 int cc_id,
                                 unsigned int gNB_index,
                                 uint8_t ack_nack,
                                 uint8_t *pduP,
                                 uint32_t pdu_len)
 {
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   if(ack_nack) {
     LOG_D(NR_MAC, "Decoding NR-BCCH-DL-SCH-Message (SIB1 or SI)\n");
-    nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
+    nr_mac_rrc_data_ind_ue(mac->ue_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
     mac->get_sib1 = false;
     mac->get_otherSI = false;
   }
@@ -370,9 +368,13 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
   return 0;
 }
 
-int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci) {
-
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+int nr_ue_process_dci_indication_pdu(NR_UE_MAC_INST_t *mac, 
+                                     int cc_id,
+                                     int gNB_index,
+                                     frame_t frame,
+                                     int slot,
+                                     fapi_nr_dci_indication_pdu_t *dci)
+{
   dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][dci->dci_format];
 
   LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
@@ -384,10 +386,10 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
     dci->dci_format = (dci->dci_format == NR_UL_DCI_FORMAT_0_0) ? NR_DL_DCI_FORMAT_1_0 : NR_UL_DCI_FORMAT_0_0;
     def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][dci->dci_format];
   }
-  return nr_ue_process_dci(module_id, cc_id, frame, slot, def_dci_pdu_rel15, dci);
+  return nr_ue_process_dci(mac, cc_id, frame, slot, def_dci_pdu_rel15, dci);
 }
 
-static int nr_ue_process_dci_ul_00(module_id_t module_id,
+static int nr_ue_process_dci_ul_00(NR_UE_MAC_INST_t *mac,
                                    int cc_id,
                                    frame_t frame,
                                    int slot,
@@ -413,7 +415,6 @@ static int nr_ue_process_dci_ul_00(module_id_t module_id,
   // in which ULSCH should be scheduled. K2 is configured in RRC configuration.
   // todo:
   // - SUL_IND_0_0
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
   // Schedule PUSCH
   const int coreset_type = dci_ind->coreset_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG; // 0 for coreset0, 1 otherwise;
@@ -444,7 +445,7 @@ static int nr_ue_process_dci_ul_00(module_id_t module_id,
   return ret;
 }
 
-static int nr_ue_process_dci_ul_01(module_id_t module_id,
+static int nr_ue_process_dci_ul_01(NR_UE_MAC_INST_t *mac,
                                    int cc_id,
                                    frame_t frame,
                                    int slot,
@@ -483,7 +484,6 @@ static int nr_ue_process_dci_ul_01(module_id_t module_id,
   // - FIRST_DAI
   // - SECOND_DAI
   // - SRS_RESOURCE_IND
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
   /* SRS_REQUEST */
   AssertFatal(dci->srs_request.nbits == 2, "If SUL is supported in the cell, there is an additional bit in SRS request field\n");
@@ -518,7 +518,7 @@ static int nr_ue_process_dci_ul_01(module_id_t module_id,
   return ret;
 }
 
-static int nr_ue_process_dci_dl_10(module_id_t module_id,
+static int nr_ue_process_dci_dl_10(NR_UE_MAC_INST_t *mac,
                                    int cc_id,
                                    frame_t frame,
                                    int slot,
@@ -575,7 +575,6 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
      *    28 DAI_: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
      *    33 TPC_PUCCH:
    */
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
   fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
   fapi_nr_dl_config_request_pdu_t *dl_conf_req = &dl_config->dl_config_list[dl_config->number_pdus];
@@ -827,7 +826,7 @@ static inline uint16_t packBits(const uint8_t *toPack, const int nb)
   return res;
 }
 
-static int nr_ue_process_dci_dl_11(module_id_t module_id,
+static int nr_ue_process_dci_dl_11(NR_UE_MAC_INST_t *mac,
                                    int cc_id,
                                    frame_t frame,
                                    int slot,
@@ -863,7 +862,6 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
    *    44 CBGFI:
    *    47 DMRS_SEQ_INI:
    */
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
   if (dci->bwp_indicator.val > NR_MAX_NUM_BWP) {
     LOG_W(NR_MAC,
@@ -1176,7 +1174,7 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   return 0;
 }
 
-int8_t nr_ue_process_dci(module_id_t module_id,
+int8_t nr_ue_process_dci(NR_UE_MAC_INST_t *mac,
                          int cc_id,
                          frame_t frame,
                          int slot,
@@ -1188,19 +1186,19 @@ int8_t nr_ue_process_dci(module_id_t module_id,
 
   switch (dci_ind->dci_format) {
     case NR_UL_DCI_FORMAT_0_0:
-      return nr_ue_process_dci_ul_00(module_id, cc_id, frame, slot, dci, dci_ind);
+      return nr_ue_process_dci_ul_00(mac, cc_id, frame, slot, dci, dci_ind);
       break;
 
     case NR_UL_DCI_FORMAT_0_1:
-      return nr_ue_process_dci_ul_01(module_id, cc_id, frame, slot, dci, dci_ind);
+      return nr_ue_process_dci_ul_01(mac, cc_id, frame, slot, dci, dci_ind);
       break;
 
     case NR_DL_DCI_FORMAT_1_0:
-      return nr_ue_process_dci_dl_10(module_id, cc_id, frame, slot, dci, dci_ind);
+      return nr_ue_process_dci_dl_10(mac, cc_id, frame, slot, dci, dci_ind);
       break;
 
     case NR_DL_DCI_FORMAT_1_1:
-      return nr_ue_process_dci_dl_11(module_id, cc_id, frame, slot, dci, dci_ind);
+      return nr_ue_process_dci_dl_11(mac, cc_id, frame, slot, dci, dci_ind);
       break;
 
     case NR_DL_DCI_FORMAT_2_0:
@@ -1226,12 +1224,11 @@ int8_t nr_ue_process_dci(module_id_t module_id,
   return -1;
 }
 
-int8_t nr_ue_process_csirs_measurements(module_id_t module_id,
+int8_t nr_ue_process_csirs_measurements(NR_UE_MAC_INST_t *mac,
                                         frame_t frame,
                                         int slot,
                                         fapi_nr_csirs_measurements_t *csirs_measurements) {
   LOG_D(NR_MAC,"(%d.%d) Received CSI-RS measurements\n", frame, slot);
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   memcpy(&mac->csirs_measurements, csirs_measurements, sizeof(*csirs_measurements));
   return 0;
 }
@@ -2405,14 +2402,15 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *p
   return sr_count > 0 ? true : false;
 }
 
-int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot)
+int8_t nr_ue_get_SR(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slot)
 {
   // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   NR_UE_SCHEDULING_INFO *si = &mac->scheduling_info;
   int max_sr_transmissions = (1 << (2 + si->sr_TransMax));
   LOG_D(NR_MAC, "[UE %d] Frame %d slot %d send SR indication (SR_COUNTER/sr_TransMax %d/%d), SR_pending %d\n",
-        module_idP, frameP, slot,
+        mac->ue_id,
+        frameP,
+        slot,
         si->SR_COUNTER,
         max_sr_transmissions,
         si->SR_pending); // todo
@@ -2420,7 +2418,9 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot)
   if ((si->SR_pending == 1) &&
       (si->SR_COUNTER < max_sr_transmissions)) {
     LOG_D(NR_MAC, "[UE %d] Frame %d slot %d PHY asks for SR (SR_COUNTER/sr_TransMax %d/%d), SR_pending %d, increment SR_COUNTER\n",
-          module_idP, frameP, slot,
+          mac->ue_id,
+          frameP,
+          slot,
           si->SR_COUNTER,
           max_sr_transmissions,
           si->SR_pending); // todo
@@ -2445,7 +2445,7 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot)
       //mac->ul_active = 0; // todo
       mac->BSR_reporting_active =
         NR_BSR_TRIGGER_NONE;
-      LOG_I(NR_MAC, "[UE %d] Release all SRs \n", module_idP);
+      LOG_I(NR_MAC, "[UE %d] Release all SRs \n", mac->ue_id);
     }
     si->SR_pending = 0;
     si->SR_COUNTER = 0;
@@ -2808,7 +2808,7 @@ uint8_t get_rsrp_diff_index(int best_rsrp,int current_rsrp) {
 
 }
 
-void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, int pdu_id)
+void nr_ue_send_sdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_info, int pdu_id)
 {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 
@@ -2819,10 +2819,10 @@ void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, int pdu_id)
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
   switch (dl_info->rx_ind->rx_indication_body[pdu_id].pdu_type){
     case FAPI_NR_RX_PDU_TYPE_DLSCH:
-    nr_ue_process_mac_pdu(dl_info, pdu_id);
+    nr_ue_process_mac_pdu(mac, dl_info, pdu_id);
     break;
     case FAPI_NR_RX_PDU_TYPE_RAR:
-      nr_ue_process_rar(dl_info, pdu_id);
+      nr_ue_process_rar(mac, dl_info, pdu_id);
     break;
     default:
     break;
@@ -3545,26 +3545,27 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 //  F:    lenght of L is 0:8 or 1:16 bits wide
 //  R:    Reserved bit, set to zero.
 ////////////////////////////////
-void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
-                           int pdu_id)
+void nr_ue_process_mac_pdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_info, int pdu_id)
 {
-
-  module_id_t module_idP = dl_info->module_id;
-  frame_t frameP         = dl_info->frame;
-  int slot               = dl_info->slot;
-  uint8_t *pduP          = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu;
-  int32_t pdu_len        = (int32_t)(dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
-  uint8_t gNB_index      = dl_info->gNB_index;
-  uint8_t CC_id          = dl_info->cc_id;
-  uint8_t done           = 0;
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  frame_t frameP = dl_info->frame;
+  int slot = dl_info->slot;
+  uint8_t *pduP = (dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu;
+  int32_t pdu_len = (int32_t)(dl_info->rx_ind->rx_indication_body + pdu_id)->pdsch_pdu.pdu_length;
+  uint8_t gNB_index = dl_info->gNB_index;
+  uint8_t CC_id = dl_info->cc_id;
+  uint8_t done = 0;
   RA_config_t *ra = &mac->ra;
 
   if (!pduP){
     return;
   }
 
-  LOG_D(MAC, "In %s [%d.%d]: processing PDU %d (with length %d) of %d total number of PDUs...\n", __FUNCTION__, frameP, slot, pdu_id, pdu_len, dl_info->rx_ind->number_pdus);
+  LOG_D(MAC, "[%d.%d]: processing PDU %d (with length %d) of %d total number of PDUs...\n",
+        frameP,
+        slot,
+        pdu_id,
+        pdu_len,
+        dl_info->rx_ind->number_pdus);
 
   while (!done && pdu_len > 0){
     uint16_t mac_len = 0x0000;
@@ -3579,8 +3580,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         //  MSG4 RRC Setup 38.331
         //  variable length
         ret=get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len);
-        AssertFatal(ret, "The mac_len (%d) has an invalid size. PDU len = %d! \n",
-                    mac_len, pdu_len);
+        AssertFatal(ret, "The mac_len (%d) has an invalid size. PDU len = %d! \n", mac_len, pdu_len);
 
         // Check if it is a valid CCCH message, we get all 00's messages very often
         int i = 0;
@@ -3590,7 +3590,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
           }
         }
         if (i == (mac_subheader_len+mac_len)) {
-          LOG_D(NR_MAC, "%s() Invalid CCCH message!, pdu_len: %d\n", __func__, pdu_len);
+          LOG_E(NR_MAC, "Invalid CCCH message!, pdu_len: %d\n", pdu_len);
           done = 1;
           break;
         }
@@ -3604,9 +3604,9 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
             LOG_D(NR_MAC, "%d: 0x%x\n", i, pduP[mac_subheader_len + i]);
           }
 
-          mac_rlc_data_ind(module_idP,
+          mac_rlc_data_ind(mac->ue_id,
                            mac->ue_id,
-                           module_idP,
+                           gNB_index,
                            frameP,
                            ENB_FLAG_NO,
                            MBMS_FLAG_NO,
@@ -3693,9 +3693,21 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         */
 
         if (ta == 31)
-          LOG_D(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n", frameP, slot, ta, tag, CC_id, ul_time_alignment->ta_total);
+          LOG_D(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n",
+                frameP,
+                slot,
+                ta,
+                tag,
+                CC_id,
+                ul_time_alignment->ta_total);
         else
-          LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n", frameP, slot, ta, tag, CC_id, ul_time_alignment->ta_total);
+          LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n",
+                frameP,
+                slot,
+                ta,
+                tag,
+                CC_id,
+                ul_time_alignment->ta_total);
 
         break;
       case DL_SCH_LCID_CON_RES_ID:
@@ -3706,7 +3718,14 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
         if(ra->ra_state == WAIT_CONTENTION_RESOLUTION) {
           LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution identity: 0x%02x%02x%02x%02x%02x%02x Terminating RA procedure\n",
-                module_idP, frameP, pduP[1], pduP[2], pduP[3], pduP[4], pduP[5], pduP[6]);
+                mac->ue_id,
+                frameP,
+                pduP[1],
+                pduP[2],
+                pduP[3],
+                pduP[4],
+                pduP[5],
+                pduP[6]);
 
           bool ra_success = true;
 	  if (!IS_SOFTMODEM_IQPLAYER) { // Control is bypassed when replaying IQs (BMC)
@@ -3719,7 +3738,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 	  }
 
           if ( (ra->RA_active == 1) && ra_success) {
-            nr_ra_succeeded(module_idP, gNB_index, frameP, slot);
+            nr_ra_succeeded(mac, gNB_index, frameP, slot);
           } else if (!ra_success){
             // TODO: Handle failure of RA procedure @ MAC layer
             //  nr_ra_failed(module_idP, CC_id, prach_resources, frameP, slot); // prach_resources is a PHY structure
@@ -3742,7 +3761,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
           return;
         LOG_D(NR_MAC, "%4d.%2d : DLSCH -> LCID %d %d bytes\n", frameP, slot, rx_lcid, mac_len);
 
-        mac_rlc_data_ind(module_idP,
+        mac_rlc_data_ind(mac->ue_id,
                          mac->ue_id,
                          gNB_index,
                          frameP,
@@ -3757,12 +3776,12 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
       default:
         LOG_W(MAC, "unknown lcid %02x\n", rx_lcid);
         break;
-      }
-      pduP += ( mac_subheader_len + mac_len );
-      pdu_len -= ( mac_subheader_len + mac_len );
-      if (pdu_len < 0)
-        LOG_E(MAC, "[UE %d][%d.%d] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", module_idP, frameP, slot, pdu_len);
     }
+    pduP += ( mac_subheader_len + mac_len );
+    pdu_len -= ( mac_subheader_len + mac_len );
+    if (pdu_len < 0)
+      LOG_E(MAC, "[UE %d][%d.%d] nr_ue_process_mac_pdu, residual mac pdu length %d < 0!\n", mac->ue_id, frameP, slot, pdu_len);
+  }
 }
 
 /**
@@ -3968,41 +3987,39 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 // - b buffer
 // - ulsch power offset
 // - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
-static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
+static void nr_ue_process_rar(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_info, int pdu_id)
 {
-  module_id_t mod_id       = dl_info->module_id;
-  frame_t frame            = dl_info->frame;
-  int slot                 = dl_info->slot;
+  frame_t frame  = dl_info->frame;
+  int slot = dl_info->slot;
 
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack == 0) {
-    LOG_W(NR_MAC,"[UE %d][RAPROC][%d.%d] CRC check failed on RAR (NAK)\n", mod_id, frame, slot);
+    LOG_W(NR_MAC,"[UE %d][RAPROC][%d.%d] CRC check failed on RAR (NAK)\n", mac->ue_id, frame, slot);
     return;
   }
 
-  NR_UE_MAC_INST_t *mac    = get_mac_inst(mod_id);
-  RA_config_t *ra          = &mac->ra;
-  uint8_t n_subPDUs        = 0;  // number of RAR payloads
-  uint8_t n_subheaders     = 0;  // number of MAC RAR subheaders
-  uint8_t *dlsch_buffer    = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.pdu;
-  uint8_t is_Msg3          = 1;
-  frame_t frame_tx         = 0;
-  int slot_tx              = 0;
-  int ret                  = 0;
+  RA_config_t *ra = &mac->ra;
+  uint8_t n_subPDUs  = 0;  // number of RAR payloads
+  uint8_t n_subheaders = 0;  // number of MAC RAR subheaders
+  uint8_t *dlsch_buffer = dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.pdu;
+  uint8_t is_Msg3 = 1;
+  frame_t frame_tx = 0;
+  int slot_tx = 0;
+  int ret = 0;
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) dlsch_buffer; // RAR subheader pointer
-  NR_MAC_RAR *rar          = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
-  uint8_t preamble_index   = ra->ra_PreambleIndex;
+  NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 1);   // RAR subPDU pointer
+  uint8_t preamble_index = ra->ra_PreambleIndex;
 
-  LOG_D(NR_MAC, "In %s:[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", __FUNCTION__, frame, slot, mod_id, preamble_index);
+  LOG_D(NR_MAC, "[%d.%d]: [UE %d][RAPROC] invoking MAC for received RAR (current preamble %d)\n", frame, slot, mac->ue_id, preamble_index);
 
   while (1) {
     n_subheaders++;
     if (rarh->T == 1) {
       n_subPDUs++;
-      LOG_I(NR_MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mod_id);
+      LOG_I(NR_MAC, "[UE %d][RAPROC] Got RAPID RAR subPDU\n", mac->ue_id);
     } else {
       ra->RA_backoff_indicator = table_7_2_1[((NR_RA_HEADER_BI *)rarh)->BI];
       ra->RA_BI_found = 1;
-      LOG_I(NR_MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d ms\n", mod_id, ra->RA_backoff_indicator);
+      LOG_I(NR_MAC, "[UE %d][RAPROC] Got BI RAR subPDU %d ms\n", mac->ue_id, ra->RA_backoff_indicator);
       if ( ((NR_RA_HEADER_BI *)rarh)->E == 1) {
         rarh += sizeof(NR_RA_HEADER_BI);
         continue;
@@ -4011,7 +4028,7 @@ static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
       }
     }
     if (rarh->RAPID == preamble_index) {
-      LOG_A(NR_MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
+      LOG_A(NR_MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mac->ue_id, frame, slot, rarh->RAPID);
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
       ra->RA_RAPID_found = 1;
       if (get_softmodem_params()->emulate_l1) {
@@ -4032,7 +4049,12 @@ static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
       break;
     }
     if (rarh->E == 0) {
-      LOG_W(NR_MAC,"[UE %d][RAPROC][%d.%d] Received RAR preamble (%d) doesn't match the intended RAPID (%d)\n", mod_id, frame, slot, rarh->RAPID, preamble_index);
+      LOG_W(NR_MAC,"[UE %d][RAPROC][%d.%d] Received RAR preamble (%d) doesn't match the intended RAPID (%d)\n",
+            mac->ue_id,
+            frame,
+            slot,
+            rarh->RAPID,
+            preamble_index);
       break;
     } else {
       rarh += sizeof(NR_MAC_RAR) + 1;
@@ -4040,8 +4062,21 @@ static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
   }
 
   #ifdef DEBUG_RAR
-  LOG_D(MAC, "[DEBUG_RAR] (%d,%d) number of RAR subheader %d; number of RAR pyloads %d\n", frame, slot, n_subheaders, n_subPDUs);
-  LOG_D(MAC, "[DEBUG_RAR] Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n", *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
+  LOG_D(MAC, "[DEBUG_RAR] (%d,%d) number of RAR subheader %d; number of RAR pyloads %d\n",
+        frame,
+        slot,
+        n_subheaders,
+        n_subPDUs);
+  LOG_D(MAC, "[DEBUG_RAR] Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",
+        *(uint8_t *) rarh,
+        rar[0],
+        rar[1],
+        rar[2],
+        rar[3],
+        rar[4],
+        rar[5],
+        rarh->RAPID,
+        preamble_index);
   #endif
 
   if (ra->RA_RAPID_found) {
@@ -4121,17 +4156,16 @@ static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
     LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
     LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 
-    LOG_I(NR_MAC, "In %s:[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d\n",
-      __FUNCTION__,
-      frame,
-      slot,
-      mod_id,
-      rar_grant.Msg3_t_alloc,
-      rar_grant.Msg3_f_alloc,
-      ta_command,
-      rar_grant.mcs,
-      rar_grant.freq_hopping,
-      tpc_command);
+    LOG_I(NR_MAC, "[%d.%d]: [UE %d] Received RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d\n",
+          frame,
+          slot,
+          mac->ue_id,
+          rar_grant.Msg3_t_alloc,
+          rar_grant.Msg3_f_alloc,
+          ta_command,
+          rar_grant.mcs,
+          rar_grant.freq_hopping,
+          tpc_command);
 #endif
 
     // Schedule Msg3
@@ -4155,7 +4189,7 @@ static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
       if (!ra->cfra) {
         ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
         rnti = ra->t_crnti;
-        nr_mac_rrc_msg3_ind(mod_id, rnti);
+        nr_mac_rrc_msg3_ind(mac->ue_id, rnti);
       }
       fapi_nr_ul_config_request_pdu_t *pdu = lockGet_ul_config(mac, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);
       if (!pdu)
@@ -4170,7 +4204,6 @@ static void nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
   } else {
     ra->t_crnti = 0;
   }
-
   return;
 }
 
