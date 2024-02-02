@@ -1231,6 +1231,10 @@ static int handle_ueCapabilityInformation(const protocol_ctxt_t *const ctxt_pP,
   AssertFatal(ue_context_p != NULL, "Processing %s() for UE %lx, ue_context_p is NULL\n", __func__, ctxt_pP->rntiMaybeUEid);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
+  int xid = ue_cap_info->rrc_TransactionIdentifier;
+  DevAssert(UE->xids[xid] == RRC_UECAPABILITY_ENQUIRY);
+  UE->xids[xid] = RRC_ACTION_NONE;
+
   LOG_I(NR_RRC, "got UE capabilities for UE %lx\n", ctxt_pP->rntiMaybeUEid);
   int eutra_index = -1;
 
@@ -2471,19 +2475,15 @@ rrc_gNB_generate_UECapabilityEnquiry(
   uint8_t                             size;
 
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame), T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rntiMaybeUEid));
-  size = do_NR_SA_UECapabilityEnquiry(
-           ctxt_pP,
-           buffer,
-           rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
-  LOG_I(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
-        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-        size);
+  gNB_RRC_UE_t *ue = &ue_context_pP->ue_context;
+  uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
+  ue->xids[xid] = RRC_UECAPABILITY_ENQUIRY;
+  size = do_NR_SA_UECapabilityEnquiry(ctxt_pP, buffer, xid);
+  LOG_I(NR_RRC, "UE %d: Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n", ue->rrc_ue_id, size);
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
-  const gNB_RRC_UE_t *ue = &ue_context_pP->ue_context;
   nr_rrc_transfer_protected_rrc_message(rrc, ue, DCCH, buffer, size);
 }
 
