@@ -1454,13 +1454,6 @@ int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
                           int *slot_tx,
                           const long k2)
 {
-  AssertFatal(k2 > DURATION_RX_TO_TX,
-              "Slot offset K2 (%ld) needs to be higher than DURATION_RX_TO_TX (%d). Please set min_rxtxtime at least to %d in gNB config file or gNBs.[0].min_rxtxtime=%d via command line.\n",
-              k2,
-              DURATION_RX_TO_TX,
-              DURATION_RX_TO_TX,
-              DURATION_RX_TO_TX);
-
   int delta = 0;
   const NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
 
@@ -1504,6 +1497,13 @@ int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
     }
 
   } else {
+
+    AssertFatal(k2 > DURATION_RX_TO_TX,
+                "Slot offset K2 (%ld) needs to be higher than DURATION_RX_TO_TX (%d). Please set min_rxtxtime at least to %d in gNB config file or gNBs.[0].min_rxtxtime=%d via command line.\n",
+                k2,
+                DURATION_RX_TO_TX,
+                DURATION_RX_TO_TX,
+                DURATION_RX_TO_TX);
 
     if (k2 < 0) { // This can happen when a false DCI is received
       LOG_W(PHY, "%d.%d. Received k2 %ld\n", current_frame, current_slot, k2);
