@@ -2246,9 +2246,10 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case TIMER_HAS_EXPIRED:
-        /* only this one handled for now */
-        DevAssert(TIMER_HAS_EXPIRED(msg_p).timer_id == stats_timer_id);
-        write_rrc_stats(RC.nrrrc[0]);
+        if (TIMER_HAS_EXPIRED(msg_p).timer_id == stats_timer_id)
+          write_rrc_stats(RC.nrrrc[0]);
+        else
+          itti_send_msg_to_task(TASK_RRC_GNB, 0, TIMER_HAS_EXPIRED(msg_p).arg); /* see rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ() */
         break;
 
       case F1AP_INITIAL_UL_RRC_MESSAGE:
