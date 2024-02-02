@@ -3645,14 +3645,7 @@ void nr_ue_process_mac_pdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_i
         }
 
         if (mac_len > 0) {
-          LOG_D(NR_MAC,"DL_SCH_LCID_CCCH (e.g. RRCSetup) with payload len %d\n", mac_len);
-          for (int i = 0; i < mac_subheader_len; i++) {
-            LOG_D(NR_MAC, "MAC header %d: 0x%x\n", i, pduP[i]);
-          }
-          for (int i = 0; i < mac_len; i++) {
-            LOG_D(NR_MAC, "%d: 0x%x\n", i, pduP[mac_subheader_len + i]);
-          }
-
+          LOG_DDUMP(NR_MAC, (void *)pduP, mac_subheader_len + mac_len, LOG_DUMP_CHAR, "DL_SCH_LCID_CCCH (e.g. RRCSetup) payload: ");
           mac_rlc_data_ind(mac->ue_id,
                            mac->ue_id,
                            gNB_index,
