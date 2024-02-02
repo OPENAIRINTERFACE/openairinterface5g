@@ -659,11 +659,7 @@ void nr_get_msg3_payload(module_id_t mod_id, uint8_t *buf, int TBS_max)
  * @gNB_id              gNB ID
  * @nr_slot_tx          current UL TX slot
  */
-uint8_t nr_ue_get_rach(module_id_t mod_id,
-                       int CC_id,
-                       frame_t frame,
-                       uint8_t gNB_id,
-                       int nr_slot_tx)
+void nr_ue_get_rach(module_id_t mod_id, int CC_id, frame_t frame, uint8_t gNB_id, int nr_slot_tx)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
@@ -677,17 +673,11 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
       ra->ra_state = GENERATE_PREAMBLE;
     } else {
       LOG_D(NR_MAC,"PRACH Condition not met: ra state %d, frame %d, sync_frame %d\n", ra->ra_state, frame, mac->first_sync_frame);
-      return 0;
+      return;
     }
   }
 
-  LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: ra_state %d, RA_active %d\n",
-    __FUNCTION__,
-    mod_id,
-    frame,
-    nr_slot_tx,
-    ra->ra_state,
-    ra->RA_active);
+  LOG_D(NR_MAC, "[UE %d][%d.%d]: ra_state %d, RA_active %d\n", mod_id, frame, nr_slot_tx, ra->ra_state, ra->RA_active);
 
   if (ra->ra_state > RA_UE_IDLE && ra->ra_state < RA_SUCCEEDED) {
 
@@ -696,13 +686,9 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
       NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
       init_RA(mod_id, &ra->prach_resources, setup, rach_ConfigGeneric, ra->rach_ConfigDedicated);
 
-      LOG_D(NR_MAC, "In %s: RA not active. Checking for data to transmit from upper layers...\n", __FUNCTION__);
-
-      const uint8_t TBS_max = 8 + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT); // Note: unclear the reason behind the selection of such TBS_max
+      // TODO this piece of code is required to compute MSG3_size that is used by ra_preambles_config function
+      // Not a good implementation, it needs improvements
       int size_sdu = 0;
-      uint8_t mac_ce[16] = {0};
-      uint8_t *pdu = get_softmodem_params()->sa ? mac->CCCH_pdu.payload : mac_ce;
-      const uint8_t *payload = pdu;
 
       // Concerning the C-RNTI MAC CE, it has to be included if the UL transmission (Msg3) is not being made for the CCCH logical channel.
       // Therefore it has been assumed that this event only occurs only when RA is done and it is not SA mode.
@@ -729,35 +715,9 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
         }
 
       } else if (!get_softmodem_params()->sa) {
-
-        size_sdu = nr_write_ce_ulsch_pdu(pdu, mac, 0,  &(mac->crnti), NULL, NULL, NULL);
-        pdu += size_sdu;
+        uint8_t temp_pdu[16] = {0};
+        size_sdu = nr_write_ce_ulsch_pdu(temp_pdu, mac, 0,  &(mac->crnti), NULL, NULL, NULL);
         ra->Msg3_size = size_sdu;
-
-      }
-
-      if (size_sdu > 0 && (ra->ra_state == GENERATE_PREAMBLE || get_softmodem_params()->nsa)) {
-
-        LOG_D(NR_MAC, "[UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", mod_id, frame, nr_slot_tx);
-
-        // Padding: fill remainder with 0
-        if (TBS_max - ra->Msg3_size > 0) {
-          AssertFatal(TBS_max > ra->Msg3_size, "In %s: allocated resources are not enough for Msg3!\n", __FUNCTION__);
-          LOG_D(NR_MAC, "Remaining %d bytes, filling with padding\n",TBS_max - ra->Msg3_size);
-          ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
-          ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
-          pdu += sizeof(NR_MAC_SUBHEADER_FIXED);
-          memset(pdu, 0, TBS_max - ra->Msg3_size - sizeof(NR_MAC_SUBHEADER_FIXED));
-        }
-
-        // Dumping ULSCH payload
-        LOG_D(NR_MAC, "Dumping UL Msg3 MAC PDU with length %d: \n", TBS_max);
-        for(int k = 0; k < TBS_max; k++) {
-          LOG_D(NR_MAC,"(%i): %i\n", k, payload[k]);
-        }
-
-      } else {
-        return 0;
       }
     } else if (ra->RA_window_cnt != -1) { // RACH is active
 
@@ -807,8 +767,6 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
   if (ra->RA_contention_resolution_timer_active) {
     nr_ue_contention_resolution(mod_id, CC_id, frame, nr_slot_tx, prach_resources);
   }
-
-  return ra->ra_state;
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac)

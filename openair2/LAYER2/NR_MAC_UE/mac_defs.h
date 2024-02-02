@@ -480,10 +480,6 @@ typedef struct NR_UE_MAC_INST_s {
   bool phy_config_request_sent;
   frame_type_t frame_type;
 
-  /* PDUs */
-  /// Outgoing CCCH pdu for PHY
-  CCCH_PDU CCCH_pdu;
-
   /* Random Access */
   /// CRNTI
   uint16_t crnti;
