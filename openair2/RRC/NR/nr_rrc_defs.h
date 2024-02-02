@@ -301,14 +301,7 @@ typedef struct gNB_RRC_UE_s {
   uint32_t ue_rrc_inactivity_timer;
   uint32_t                           ue_reestablishment_counter;
   uint32_t                           ue_reconfiguration_counter;
-  NR_CellGroupId_t                                      cellGroupId;
   struct NR_SpCellConfig                                *spCellConfig;
-  struct NR_CellGroupConfig__sCellToAddModList          *sCellconfig;
-  struct NR_CellGroupConfig__sCellToReleaseList         *sCellconfigRelease;
-  struct NR_CellGroupConfig__rlc_BearerToAddModList     *rlc_BearerBonfig;
-  struct NR_CellGroupConfig__rlc_BearerToReleaseList    *rlc_BearerRelease;
-  struct NR_MAC_CellGroupConfig                         *mac_CellGroupConfig;
-  struct NR_PhysicalCellGroupConfig                     *physicalCellGroupConfig;
 
   /* Nas Pdu */
   ngap_pdu_t nas_pdu;
