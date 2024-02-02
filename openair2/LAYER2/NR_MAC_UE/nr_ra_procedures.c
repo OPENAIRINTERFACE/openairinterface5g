@@ -69,7 +69,7 @@ void init_RA(module_id_t mod_id,
   ra->RA_usedGroupA        = 1;
   ra->RA_RAPID_found       = 0;
   ra->preambleTransMax     = 0;
-  ra->first_Msg3           = 1;
+  ra->first_Msg3           = true;
   ra->starting_preamble_nb = 0;
   ra->RA_backoff_cnt       = 0;
   ra->RA_window_cnt = -1;
@@ -555,7 +555,7 @@ void nr_get_prach_resources(module_id_t mod_id,
 
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->current_UL_BWP->rach_ConfigCommon;
 
-  LOG_D(MAC, "In %s: getting PRACH resources frame (first_Msg3 %d)\n", __FUNCTION__, ra->first_Msg3);
+  LOG_D(MAC, "Getting PRACH resources frame (first_Msg3 %d)\n", ra->first_Msg3);
 
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
@@ -612,13 +612,17 @@ void nr_get_msg3_payload(module_id_t mod_id, uint8_t *buf, int TBS_max)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
+
+  // we already stored MSG3 in the buffer, we can use that
+  if (ra->Msg3_buffer) {
+    buf = ra->Msg3_buffer;
+    return;
+  }
+
   uint8_t *pdu = buf;
   *(NR_MAC_SUBHEADER_FIXED *)pdu = (NR_MAC_SUBHEADER_FIXED){.LCID = UL_SCH_LCID_CCCH};
   pdu += sizeof(NR_MAC_SUBHEADER_FIXED);
-  // here a big race condition: nothing ensure RRC thread has already pushed data to rlc
-  // there is no issue inside RLC,
-  // if RRC has called nr_rlc_srb_recv_sdu(),
-  // we are good even if the name is misleading (we send a ssrb msg, not receive if)
+
   tbs_size_t len = mac_rlc_data_req(mod_id,
                                     mac->ue_id,
                                     0,
@@ -644,6 +648,8 @@ void nr_get_msg3_payload(module_id_t mod_id, uint8_t *buf, int TBS_max)
     *(NR_MAC_SUBHEADER_FIXED *)pdu = (NR_MAC_SUBHEADER_FIXED){.LCID = UL_SCH_LCID_PADDING};
     pdu += sizeof(NR_MAC_SUBHEADER_FIXED);
   }
+  ra->Msg3_buffer = calloc(TBS_max, sizeof(uint8_t));
+  memcpy(ra->Msg3_buffer, buf, sizeof(uint8_t) * TBS_max);
 }
 
 /**
@@ -851,13 +857,14 @@ void nr_ra_succeeded(const module_id_t mod_id, const uint8_t gNB_index, const fr
     ra->RA_contention_resolution_timer_active = 0;
     mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
-    LOG_D(MAC, "In %s: [UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", __FUNCTION__, mod_id, frame, slot);
+    LOG_D(MAC, "[UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", mod_id, frame, slot);
   }
 
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
   ra->ra_state = RA_SUCCEEDED;
   mac->state = UE_CONNECTED;
+  free_and_zero(ra->Msg3_buffer);
   nr_mac_rrc_ra_ind(mod_id, frame, true);
 }
 
@@ -880,7 +887,7 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
     seed = (unsigned int) (rdtsc_oai() & ~0);
   }
   
-  ra->first_Msg3 = 1;
+  ra->first_Msg3 = true;
   ra->ra_PreambleIndex = -1;
   ra->ra_state = RA_UE_IDLE;
 

@@ -317,9 +317,11 @@ typedef struct {
   /// Received TPC command (in dB) from RAR
   int8_t Msg3_TPC;
   /// Flag to indicate whether it is the first Msg3 to be transmitted
-  uint8_t first_Msg3;
+  bool first_Msg3;
   /// RA Msg3 size in bytes
   uint8_t Msg3_size;
+  /// Msg3 buffer
+  uint8_t *Msg3_buffer;
 
   /// Random-access Contention Resolution Timer active flag
   uint8_t RA_contention_resolution_timer_active;

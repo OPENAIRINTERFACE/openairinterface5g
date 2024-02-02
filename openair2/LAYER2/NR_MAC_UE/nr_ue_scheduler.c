@@ -1283,8 +1283,8 @@ bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t
   return bsr_regular_triggered;
 }
 
-uint8_t
-nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size, int value) {
+uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size, int value)
+{
   uint8_t ju, jm, jl;
   int ascend;
   //DevAssert(size > 0);
