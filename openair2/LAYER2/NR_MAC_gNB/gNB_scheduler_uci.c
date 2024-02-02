@@ -96,6 +96,7 @@ static void nr_fill_nfapi_pucch(gNB_MAC_INST *nrmac,
 }
 
 #define MIN_RSRP_VALUE -141
+#define MAX_RSRP_VALUE -43
 #define MAX_NUM_SSB 128
 #define MAX_SSB_SCHED 8
 #define L1_RSRP_HYSTERIS 10 //considering 10 dBm as hysterisis for avoiding frequent SSB Beam Switching. !Fixme provide exact value if any
@@ -109,7 +110,7 @@ int ssb_rsrp_sorted[MAX_NUM_SSB] = {0};
 //stored -1 for invalid values
 static const int L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[128] = {
     -1,   -1,   -1,   -1,   -1,      -1,   -1,      -1,   -1,   -1, // 0 - 9
-    -1,   -1,   -1,   -1,   -1,      -1,   INT_MIN, -140, -139, -138, // 10 - 19
+    -1,   -1,   -1,   -1,   -1, -1, MIN_RSRP_VALUE, -140, -139, -138, // 10 - 19
     -137, -136, -135, -134, -133,    -132, -131,    -130, -129, -128, // 20 - 29
     -127, -126, -125, -124, -123,    -122, -121,    -120, -119, -118, // 30 - 39
     -117, -116, -115, -114, -113,    -112, -111,    -110, -109, -108, // 40 - 49
@@ -119,7 +120,7 @@ static const int L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[128] = {
     -77,  -76,  -75,  -74,  -73,     -72,  -71,     -70,  -69,  -68, // 80 - 89
     -67,  -66,  -65,  -64,  -63,     -62,  -61,     -60,  -59,  -58, // 90 - 99
     -57,  -56,  -55,  -54,  -53,     -52,  -51,     -50,  -49,  -48, // 100 - 109
-    -47,  -46,  -45,  -44,  INT_MAX, -1,   -1,      -1,   -1,   -1, // 110 - 119
+    -47,  -46,  -45,  -44, MAX_RSRP_VALUE, -1, -1,  -1,   -1,   -1, // 110 - 119
     -1,   -1,   -1,   -1,   -1,      -1,   -1,      -1 // 120 - 127
 };
 
@@ -455,13 +456,16 @@ static int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, NR_UE_info_t *
 }
 
 //returns the measured RSRP value (upper limit)
-static int get_measured_rsrp(uint8_t index)
+static bool get_measured_rsrp(uint8_t index, int *rsrp)
 {
   //if index is invalid returning minimum rsrp -140
-  if(index <= 15 || index >= 114)
-    return MIN_RSRP_VALUE;
+  if (index <= 15)
+    return false;
+  if (index >= 114)
+    return false;
 
-  return L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
+  *rsrp = L1_SSB_CSI_RSRP_measReport_mapping_38133_10_1_6_1_1[index];
+  return true;
 }
 
 //returns the differential RSRP value (upper limit)
@@ -477,7 +481,6 @@ static int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
 //handles triggering of PDCCH and PDSCH MAC CEs
 static void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot)
 {
-  int strongest_ssb_rsrp = 0;
   int cqi_idx = 0;
   int curr_ssb_beam_index = 0; //ToDo: yet to know how to identify the serving ssb beam index
   uint8_t target_ssb_beam_index = curr_ssb_beam_index;
@@ -520,7 +523,13 @@ static void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot)
   }
 
   //if strongest measured RSRP is configured
-  strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report.ssb_cri_report.RSRP);
+  int strongest_ssb_rsrp;
+  int rsrp_index = sched_ctrl->CSI_report.ssb_cri_report.RSRP;
+  bool valid = get_measured_rsrp(rsrp_index, &strongest_ssb_rsrp);
+  if (!valid) {
+    LOG_E(NR_MAC, "UE %04x: reported RSRP index %d invalid\n", UE->rnti, rsrp_index);
+    return;
+  }
   ssb_rsrp[idx * nb_of_csi_ssb_report] = strongest_ssb_rsrp;
   LOG_D(NR_MAC,"ssb_rsrp = %d\n",strongest_ssb_rsrp);
 
@@ -717,7 +726,13 @@ static void evaluate_rsrp_report(NR_UE_info_t *UE,
     *cumul_bits += 4;
   }
   csi_report->nb_of_csi_ssb_report++;
-  int strongest_ssb_rsrp = get_measured_rsrp(sched_ctrl->CSI_report.ssb_cri_report.RSRP);
+  int strongest_ssb_rsrp;
+  int rsrp_index = sched_ctrl->CSI_report.ssb_cri_report.RSRP;
+  bool valid = get_measured_rsrp(rsrp_index, &strongest_ssb_rsrp);
+  if (!valid) {
+    LOG_E(NR_MAC, "UE %04x: reported RSRP index %d invalid\n", UE->rnti, rsrp_index);
+    return;
+  }
   NR_mac_stats_t *stats = &UE->mac_stats;
   // including ssb rsrp in mac stats
   stats->cumul_rsrp += strongest_ssb_rsrp;
