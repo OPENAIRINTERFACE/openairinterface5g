@@ -939,8 +939,7 @@ static void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *co
 
   int i = 0;
 
-  uint8_t new_xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
-  ue_p->xids[new_xid] = RRC_REESTABLISH_COMPLETE;
+  ue_p->xids[xid] = RRC_ACTION_NONE;
   ue_p->StatusRrc = NR_RRC_CONNECTED;
 
   ue_p->Srb[1].Active = 1;
@@ -972,6 +971,8 @@ static void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *co
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
   NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, true);
 
+  uint8_t new_xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
+  ue_p->xids[new_xid] = RRC_REESTABLISH_COMPLETE;
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   int size = do_RRCReconfiguration(ue_p,
                                    buffer,
@@ -1343,6 +1344,8 @@ static int handle_rrcSetupComplete(const protocol_ctxt_t *const ctxt_pP,
     return -1;
   }
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+  uint8_t xid = setup_complete->rrc_TransactionIdentifier;
+  UE->xids[xid] = RRC_ACTION_NONE;
 
   NR_RRCSetupComplete_IEs_t *setup_complete_ies = setup_complete->criticalExtensions.choice.rrcSetupComplete;
 
@@ -1410,7 +1413,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
 
   uint8_t xid = reconfig_complete->rrc_TransactionIdentifier;
   UE->ue_reconfiguration_counter++;
-  LOG_I(NR_RRC, "UE %d: Receive RRC Reconfiguration Complete message (xid %d\n)", UE->rrc_ue_id, xid);
+  LOG_I(NR_RRC, "UE %d: Receive RRC Reconfiguration Complete message (xid %d)\n", UE->rrc_ue_id, xid);
 
   bool successful_reconfig = true;
   switch (UE->xids[xid]) {
@@ -1444,6 +1447,11 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
       break;
   }
   UE->xids[xid] = RRC_ACTION_NONE;
+  for (int i = 0; i < 3; ++i) {
+    if (UE->xids[i] != RRC_ACTION_NONE) {
+      LOG_I(RRC, "UE %d: transaction %d still ongoing for action %d\n", UE->rrc_ue_id, i, UE->xids[i]);
+    }
+  }
 
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);

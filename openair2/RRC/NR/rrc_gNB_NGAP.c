@@ -456,8 +456,6 @@ static void trigger_bearer_setup(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, int n, pdu
       }
     }
   }
-  int xid = rrc_gNB_get_next_transaction_identifier(0);
-  UE->xids[xid] = RRC_PDUSESSION_ESTABLISH;
   /* Limitation: we assume one fixed CU-UP per UE. We base the selection on
    * NSSAI, but the UE might have multiple PDU sessions with differing slices,
    * in which we might need to select different CU-UPs. In this case, we would
