@@ -99,11 +99,9 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
 
   for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
     LOG_D(NR_MAC, "Applying default logical channel config for LCGID %d\n", i);
-    mac->scheduling_info.lc_sched_info[i].Bj = -1;
-    mac->scheduling_info.lc_sched_info[i].bucket_size = -1;
-    mac->scheduling_info.lc_sched_info[i].LCGID = 0; // defaults to 0 irrespective of SRB or DRB
     mac->scheduling_info.lc_sched_info[i].LCID_status = LCID_EMPTY;
     mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
+    mac->scheduling_info.lc_sched_info[i].Bj = 0;
   }
 }
 
@@ -146,7 +144,8 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   nr_ue_mac_default_configs(nr_mac);
 
   // initialize Bj for each logical channel to zero
-  // Done in default config but to -1 (is that correct?)
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++)
+    nr_mac->scheduling_info.lc_sched_info[i].Bj = 0;
 
   // stop all running timers
   // TODO
@@ -223,7 +222,6 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac)
 
   for (int i = 0; i < mac->lc_ordered_list.count; i++) {
     nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
-    free(lc_info->logicalChannelConfig);
     asn_sequence_del(&mac->lc_ordered_list, i, 0);
     free(lc_info);
   }

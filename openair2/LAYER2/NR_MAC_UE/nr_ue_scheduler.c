@@ -1110,11 +1110,10 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
   // update Bj for all active lcids before LCP procedure
   LOG_D(NR_MAC, "====================[Frame %d][Slot %d]Logical Channel Prioritization===========\n", frame_tx, slot_tx);
   for (int i = 0; i < mac->lc_ordered_list.count; i++) {
-    int lcid = mac->lc_ordered_list.array[i]->lcid;
-    NR_LogicalChannelConfig_t *lcconfig = mac->lc_ordered_list.array[i]->logicalChannelConfig;
-    NR_LC_SCHEDULING_INFO *sched_lc = &mac->scheduling_info.lc_sched_info[lcid - 1];
+    nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
+    int lcid = lc_info->lcid;
     // max amount of data that can be buffered/accumulated in a logical channel buffer
-    int32_t bucketSize_max = sched_lc->bucket_size;
+    int32_t bucketSize_max = lc_info->bucket_size;
     AssertFatal(bucketSize_max >= 0, "negative bucketSize_max %d, will never schedule UE: lcid %d\n",bucketSize_max, lcid);
 
     /*
@@ -1122,15 +1121,13 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
       increment the value of Bj by product PBR  * T
     */
     int T = 1; // time elapsed since Bj was last incremented
-    int32_t bj = sched_lc->Bj;
-    bj += nr_get_pbr(lcconfig->ul_SpecificParameters->prioritisedBitRate) * T;
-    if (lcconfig->ul_SpecificParameters->prioritisedBitRate
-        == NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity) {
-      bj = nr_get_pbr(lcconfig->ul_SpecificParameters->prioritisedBitRate);
-    }
+    int32_t bj = mac->scheduling_info.lc_sched_info[lcid - 1].Bj;
+    bj += nr_get_pbr(lc_info->prioritisedBitRate) * T;
+    if (lc_info->prioritisedBitRate == NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity)
+      bj = nr_get_pbr(lc_info->prioritisedBitRate);
 
     // bj > max bucket size, set bj to max bucket size, as in ts38.321 5.4.3.1 Logical Channel Prioritization
-    sched_lc->Bj = min(bj, bucketSize_max);
+    mac->scheduling_info.lc_sched_info[lcid - 1].Bj = min(bj, bucketSize_max);
   }
 
   // Call BSR procedure as described in Section 5.4.5 in 38.321
@@ -1266,7 +1263,7 @@ bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t
       {
         bsr_regular_triggered = true;
         LOG_D(NR_MAC,
-              "[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%d data become available at frame %d slot %d\n",
+              "[UE %d] PDCCH Tick : MAC BSR Triggered LCID %d LCGID %ld data become available at frame %d slot %d\n",
               module_idP,
               lcid,
               mac->scheduling_info.lc_sched_info[lcid - 1].LCGID,
@@ -2914,8 +2911,7 @@ uint32_t get_count_lcids_same_priority(uint8_t start, uint8_t total_active_lcids
   uint8_t same_priority_count = 0;
   uint8_t curr_lcid = lcid_ordered_array[start].lcid;
   for (uint8_t index = start; index < total_active_lcids; index++) {
-    if (lcid_ordered_array[start].logicalChannelConfig->ul_SpecificParameters->priority ==
-        lcid_ordered_array[index].logicalChannelConfig->ul_SpecificParameters->priority) {
+    if (lcid_ordered_array[start].priority == lcid_ordered_array[index].priority) {
       same_priority_count++;
     }
   }
@@ -2933,15 +2929,15 @@ long get_num_bytes_to_reqlc(NR_UE_MAC_INST_t *mac,
                             long *target)
 {
   /* Calculates the number of bytes the logical channel should request from the correcponding RLC buffer*/
-  NR_LogicalChannelConfig_t *lc_config = NULL;
+  long found_pbr = -1;
   for (int i = 0; i < mac->lc_ordered_list.count; i++) {
     if (mac->lc_ordered_list.array[i]->lcid == lc_num) {
-      lc_config = mac->lc_ordered_list.array[i]->logicalChannelConfig;
+      found_pbr = mac->lc_ordered_list.array[i]->prioritisedBitRate;
       break;
     }
   }
-  AssertFatal(lc_config, "Couldn't find LC config for ID %d\n", lc_num);
-  long pbr = nr_get_pbr(lc_config->ul_SpecificParameters->prioritisedBitRate);
+  AssertFatal(found_pbr >= 0, "Couldn't find LC config for ID %d\n", lc_num);
+  uint32_t pbr = nr_get_pbr(found_pbr);
   int32_t lcid_remain_buffer = mac->scheduling_info.lc_sched_info[lc_num - 1].LCID_buffer_remain;
   *target = (same_priority_count > 1) ? min(buflen_remain_ep, pbr) : pbr;
 
@@ -2987,10 +2983,8 @@ static void select_logical_channels(NR_UE_MAC_INST_t *mac, int *num_active_lcids
   // selection of logical channels with Bj > 0
   for (int i = 0; i < mac->lc_ordered_list.count; i++) {
     int lcid = mac->lc_ordered_list.array[i]->lcid;
-    NR_LogicalChannelConfig_t *logicalChannelConfig = mac->lc_ordered_list.array[i]->logicalChannelConfig;
     if (mac->scheduling_info.lc_sched_info[lcid - 1].Bj > 0) {
-      active_lcids[*num_active_lcids].lcid = lcid;
-      active_lcids[*num_active_lcids].logicalChannelConfig = logicalChannelConfig;
+      active_lcids[*num_active_lcids] = *mac->lc_ordered_list.array[i];
       (*num_active_lcids)++;
       LOG_D(NR_MAC, "The available lcid is %d with total active channels count = %d\n", lcid, *num_active_lcids);
     }
@@ -3064,7 +3058,7 @@ static bool fill_mac_sdu(module_id_t module_idP,
   // currently the Bj is drecremented by size of MAC SDus everytime it is served to logical channel, so by this approach there
   // will be more chance for lower priority logical channels to be served in the next TTI
   // second approach can also be followed where Bj is decremented only in the first round but not in the subsequent rounds
-  sched_info->lc_sched_info[lcid - 1].Bj -= sdu_length;
+  sched_info->lc_sched_info[lcid - 1].Bj -= sdu_length; // TODO avoid Bj to go below 0
   LOG_D(NR_MAC,
         "decrement Bj of the lcid %d by size of sdu length = %d and new Bj for lcid %d is %d\n",
         lcid,
@@ -3118,7 +3112,7 @@ static bool fill_mac_sdu(module_id_t module_idP,
   lc_info->LCID_buffer_remain -= sdu_length;
   (lcg_info + lc_info->LCGID)->BSR_bytes -= sdu_length;
   LOG_D(NR_MAC,
-        "[UE %d] Update BSR [%d.%d] BSR_bytes for LCG%d = %d\n",
+        "[UE %d] Update BSR [%d.%d] BSR_bytes for LCG %ld = %d\n",
         module_idP,
         frameP,
         subframe,
@@ -3365,7 +3359,7 @@ void schedule_ta_command(fapi_nr_dl_config_request_t *dl_config, NR_UL_TIME_ALIG
   ul_time_alignment->ta_apply = false;
 }
 
-uint32_t nr_get_pbr(uint8_t prioritizedbitrate)
+uint32_t nr_get_pbr(long prioritizedbitrate)
 {
   int32_t pbr = -1;
   switch (prioritizedbitrate) {

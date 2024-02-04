@@ -42,32 +42,6 @@
 #include "SCHED_NR/phy_frame_config_nr.h"
 #include "oai_asn1.h"
 
-const long logicalChannelGroup0_NR = 0;
-typedef struct NR_LogicalChannelConfig__ul_SpecificParameters LcConfig_UlParamas_t;
-
-const LcConfig_UlParamas_t NR_LCSRB1 = {
-    .priority = 1,
-    .prioritisedBitRate = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-    .logicalChannelGroup = (long *)&logicalChannelGroup0_NR};
-
-const LcConfig_UlParamas_t NR_LCSRB2 = {
-    .priority = 3,
-    .prioritisedBitRate = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-    .logicalChannelGroup = (long *)&logicalChannelGroup0_NR};
-
-const LcConfig_UlParamas_t NR_LCSRB3 = {
-    .priority = 1,
-    .prioritisedBitRate = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-    .logicalChannelGroup = (long *)&logicalChannelGroup0_NR};
-
-// these are the default values for SRB configurations(SRB1 and SRB2) as mentioned in 36.331 pg 258-259
-const NR_LogicalChannelConfig_t NR_SRB1_logicalChannelConfig_defaultValue = {.ul_SpecificParameters =
-                                                                                 (LcConfig_UlParamas_t *)&NR_LCSRB1};
-const NR_LogicalChannelConfig_t NR_SRB2_logicalChannelConfig_defaultValue = {.ul_SpecificParameters =
-                                                                                 (LcConfig_UlParamas_t *)&NR_LCSRB2};
-const NR_LogicalChannelConfig_t NR_SRB3_logicalChannelConfig_defaultValue = {.ul_SpecificParameters =
-                                                                                 (LcConfig_UlParamas_t *)&NR_LCSRB3};
-
 void set_tdd_config_nr_ue(fapi_nr_tdd_table_t *tdd_table,
                           int mu,
                           NR_TDD_UL_DL_Pattern_t *pattern)
@@ -650,14 +624,11 @@ static void configure_ss_coreset(NR_BWP_PDCCH_t *pdcch, NR_PDCCH_Config_t *pdcch
 
 static int lcid_cmp(const void *a, const void *b)
 {
-  long pa, pb;
-  memcpy(&pa, &((nr_lcordered_info_t*)a)->logicalChannelConfig->ul_SpecificParameters->priority, sizeof(pa));
-  memcpy(&pb, &((nr_lcordered_info_t*)b)->logicalChannelConfig->ul_SpecificParameters->priority, sizeof(pb));
-  if (pa < pb)
-    return -1;
-  else if (pa > pb)
-    return 1;
-  return 0;
+  long priority_a = (*((nr_lcordered_info_t**)a))->priority;
+  AssertFatal(priority_a > 0 && priority_a < 17, "Invalid priority value %ld\n", priority_a);
+  long priority_b = (*((nr_lcordered_info_t**)b))->priority;
+  AssertFatal(priority_b > 0 && priority_b < 17, "Invalid priority value %ld\n", priority_b);
+  return priority_a - priority_b;
 }
 
 static int nr_get_ms_bucketsizeduration(long bucketsizeduration)
@@ -686,28 +657,46 @@ static int nr_get_ms_bucketsizeduration(long bucketsizeduration)
   }
 }
 
-void nr_configure_sched_info(NR_UE_MAC_INST_t *mac, long channel_identity, NR_LogicalChannelConfig_t *lc_config)
+static uint32_t get_lc_bucket_size(long prioritisedBitRate, long bucketSizeDuration)
 {
-  LOG_D(NR_MAC, "Applying RRC Logical Channel Config to lcid %li\n", channel_identity);
-
-  // initialize the variable Bj for every LCID
-  mac->scheduling_info.lc_sched_info[channel_identity - 1].Bj = 0;
-
-  // store the bucket size
-  int pbr = nr_get_pbr(lc_config->ul_SpecificParameters->prioritisedBitRate);
-  int bsd = nr_get_ms_bucketsizeduration(lc_config->ul_SpecificParameters->bucketSizeDuration);
-
+  int pbr = nr_get_pbr(prioritisedBitRate);
   // in infinite pbr, the bucket is saturated by pbr
-  if (lc_config->ul_SpecificParameters->prioritisedBitRate
-      == NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity) {
+  int bsd = 0;
+  if (prioritisedBitRate == NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity)
     bsd = 1;
-  }
-  mac->scheduling_info.lc_sched_info[channel_identity - 1].bucket_size = pbr * bsd;
-
-  if (lc_config->ul_SpecificParameters->logicalChannelGroup != NULL)
-    mac->scheduling_info.lc_sched_info[channel_identity - 1].LCGID = *lc_config->ul_SpecificParameters->logicalChannelGroup;
   else
-    mac->scheduling_info.lc_sched_info[channel_identity - 1].LCGID = 0;
+    bsd = nr_get_ms_bucketsizeduration(bucketSizeDuration);
+
+  return pbr * bsd;
+}
+
+// default configuration as per 38.331 section 9.2.1
+static void set_default_logicalchannelconfig(nr_lcordered_info_t *lc_info, NR_SRB_Identity_t srb_id)
+{
+  lc_info->lcid = srb_id;
+  lc_info->priority = srb_id == 2 ? 3 : 1;
+  lc_info->prioritisedBitRate = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  lc_info->bucket_size = get_lc_bucket_size(lc_info->prioritisedBitRate, 0);
+}
+
+static void nr_configure_lc_config(NR_UE_MAC_INST_t *mac,
+                                   nr_lcordered_info_t *lc_info,
+                                   NR_LogicalChannelConfig_t *mac_lc_config,
+                                   NR_SRB_Identity_t srb_id)
+{
+  if (srb_id > 0 && !mac_lc_config->ul_SpecificParameters) {
+    // release configuration and reset to default
+    set_default_logicalchannelconfig(lc_info, srb_id);
+    mac->scheduling_info.lc_sched_info[lc_info->lcid - 1].LCGID = 0;
+    return;
+  }
+  AssertFatal(mac_lc_config->ul_SpecificParameters, "UL parameters shouldn't be NULL for DRBs\n");
+  struct NR_LogicalChannelConfig__ul_SpecificParameters *ul_parm = mac_lc_config->ul_SpecificParameters;
+  lc_info->priority = ul_parm->priority;
+  lc_info->prioritisedBitRate = ul_parm->prioritisedBitRate;
+  // TODO Verify setting to 0 is ok, 331 just says need R (release if NULL)
+  mac->scheduling_info.lc_sched_info[lc_info->lcid - 1].LCGID = ul_parm->logicalChannelGroup ? *ul_parm->logicalChannelGroup : 0;
+  lc_info->bucket_size = get_lc_bucket_size(ul_parm->prioritisedBitRate, ul_parm->bucketSizeDuration);
 }
 
 static void configure_logicalChannelBearer(module_id_t module_id,
@@ -726,7 +715,6 @@ static void configure_logicalChannelBearer(module_id_t module_id,
       }
       if (j < mac->lc_ordered_list.count) {
         nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[j];
-        free(lc_info->logicalChannelConfig);
         asn_sequence_del(&mac->lc_ordered_list, j, 0);
         free(lc_info);
       }
@@ -748,10 +736,10 @@ static void configure_logicalChannelBearer(module_id_t module_id,
       if (j < mac->lc_ordered_list.count) {
         LOG_D(NR_MAC, "Logical channel %d is already established, Reconfiguring now\n", lc_identity);
         if (mac_lc_config != NULL) {
-          nr_configure_sched_info(mac, lc_identity, mac_lc_config);
-          UPDATE_MAC_IE(mac->lc_ordered_list.array[j]->logicalChannelConfig,
-                        rlc_bearer->mac_LogicalChannelConfig,
-                        NR_LogicalChannelConfig_t);
+          NR_SRB_Identity_t srb_id = 0;
+          if (rlc_bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity)
+            srb_id = rlc_bearer->servedRadioBearer->choice.srb_Identity;
+          nr_configure_lc_config(mac, mac->lc_ordered_list.array[j], mac_lc_config, srb_id);
         }
       }
       else {
@@ -762,29 +750,14 @@ static void configure_logicalChannelBearer(module_id_t module_id,
         AssertFatal(rlc_bearer->servedRadioBearer, "servedRadioBearer should be present for LCID establishment\n");
         if (rlc_bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity) { /* SRB */
           NR_SRB_Identity_t srb_id = rlc_bearer->servedRadioBearer->choice.srb_Identity;
-          if (mac_lc_config != NULL) {
-            UPDATE_MAC_IE(lc_info->logicalChannelConfig, rlc_bearer->mac_LogicalChannelConfig, NR_LogicalChannelConfig_t);
-          } else {
-            LOG_D(NR_RRC, "Applying the default logicalChannelConfig for SRB\n");
-            switch (srb_id) {
-              case 1 :
-                lc_info->logicalChannelConfig = (NR_LogicalChannelConfig_t *)&NR_SRB1_logicalChannelConfig_defaultValue;
-                break;
-              case 2 :
-                lc_info->logicalChannelConfig = (NR_LogicalChannelConfig_t *)&NR_SRB2_logicalChannelConfig_defaultValue;
-                break;
-              case 3 :
-                lc_info->logicalChannelConfig = (NR_LogicalChannelConfig_t *)&NR_SRB3_logicalChannelConfig_defaultValue;
-                break;
-              default :
-                AssertFatal(false, "The logical id %d is not a valid SRB id %li\n", lc_identity, srb_id);
-            }
-          }
+          if (mac_lc_config != NULL)
+            nr_configure_lc_config(mac, lc_info, mac_lc_config, srb_id);
+          else
+            set_default_logicalchannelconfig(lc_info, srb_id);
         } else { /* DRB */
           AssertFatal(mac_lc_config, "When establishing a DRB, LogicalChannelConfig should be mandatorily present\n");
-          UPDATE_MAC_IE(lc_info->logicalChannelConfig, rlc_bearer->mac_LogicalChannelConfig, NR_LogicalChannelConfig_t);
+          nr_configure_lc_config(mac, lc_info, mac_lc_config, 0);
         }
-        nr_configure_sched_info(mac, lc_identity, lc_info->logicalChannelConfig);
         ASN_SEQUENCE_ADD(&mac->lc_ordered_list, lc_info);
       }
     }
