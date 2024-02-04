@@ -1610,9 +1610,9 @@ void *recv_msgs_from_lte_ue(void *args_p)
     return NULL;
 }
 
-static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
+static void nsa_rrc_ue_process_ueCapabilityEnquiry(NR_UE_RRC_INST_t *rrc)
 {
-  NR_UE_NR_Capability_t *UE_Capability_nr = NR_UE_rrc_inst[0].UECap.UE_NR_Capability = CALLOC(1, sizeof(NR_UE_NR_Capability_t));
+  NR_UE_NR_Capability_t *UE_Capability_nr = rrc->UECap.UE_NR_Capability = CALLOC(1, sizeof(NR_UE_NR_Capability_t));
   NR_BandNR_t *nr_bandnr = CALLOC(1, sizeof(NR_BandNR_t));
   nr_bandnr->bandNR = 78;
   asn1cSeqAdd(&UE_Capability_nr->rf_Parameters.supportedBandListNR.list, nr_bandnr);
@@ -1634,8 +1634,8 @@ static void nsa_rrc_ue_process_ueCapabilityEnquiry(void)
   memset(&ue_CapabilityRAT_Container, 0, sizeof(NR_UE_CapabilityRAT_Container_t));
   ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
   OCTET_STRING_fromBuf(&ue_CapabilityRAT_Container.ue_CapabilityRAT_Container,
-                       (const char *)NR_UE_rrc_inst[0].UECap.sdu,
-                       NR_UE_rrc_inst[0].UECap.sdu_size);
+                       (const char *)rrc->UECap.sdu,
+                       rrc->UECap.sdu_size);
 
   nsa_sendmsg_to_lte_ue(ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.buf,
                         ue_CapabilityRAT_Container.ue_CapabilityRAT_Container.size,
@@ -1698,7 +1698,7 @@ static void process_lte_nsa_msg(NR_UE_RRC_INST_t *rrc, nsa_msg_t *msg, int msg_l
               break;
             }
             LOG_I(NR_RRC, "Calling nsa_rrc_ue_process_ueCapabilityEnquiry\n");
-            nsa_rrc_ue_process_ueCapabilityEnquiry();
+            nsa_rrc_ue_process_ueCapabilityEnquiry(rrc);
             break;
         }
 
