@@ -24,13 +24,12 @@
 
 #include "openair2/E2AP/flexric/src/agent/../sm/sm_io.h"
 
-bool read_rc_sm(void *);
-
 void read_rc_setup_sm(void* data);
-
-sm_ag_if_ans_t write_ctrl_rc_sm(void const* data);
 
 sm_ag_if_ans_t write_subs_rc_sm(void const* src);
 
-#endif
+sm_ag_if_ans_t write_ctrl_rc_sm(void const* data);
 
+bool read_rc_sm(void *);
+
+#endif

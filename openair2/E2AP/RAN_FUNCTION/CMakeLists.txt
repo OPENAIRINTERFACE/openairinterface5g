@@ -9,6 +9,7 @@ add_library(e2_ran_func_cuup STATIC
             O-RAN/ran_func_kpm.c    # this file should only contain PDCP-U/GTP; to be done in the future
             ../flexric/test/rnd/fill_rnd_data_kpm.c  # this dependancy will be taken out once RAN Function Definition is implemented
             O-RAN/ran_func_rc.c     # this file should only contain PDCP-U/GTP; to be done in the future
+            O-RAN/ran_func_rc_subs.c
             ../flexric/test/rnd/fill_rnd_data_rc.c   # this dependancy will be taken out once RAN Function Definition is implemented
             )
 
@@ -27,6 +28,7 @@ add_library(e2_ran_func_du_cucp_cuup STATIC
             ../flexric/test/rnd/fill_rnd_data_kpm.c  # this dependancy will be taken out once RAN Function Definition is implemented
             O-RAN/ran_func_rc.c     # this file should only contain RRC/PDCP-C; to be done in the future
                                     # when nr-softmodem is divided in separate executables
+            O-RAN/ran_func_rc_subs.c
             ../flexric/test/rnd/fill_rnd_data_rc.c   # this dependancy will be taken out once RAN Function Definition is implemented
             ../flexric/src/sm/rc_sm/ie/rc_data_ie.c
             CUSTOMIZED/ran_func_mac.c
