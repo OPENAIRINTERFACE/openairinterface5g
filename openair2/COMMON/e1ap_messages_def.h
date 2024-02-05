@@ -39,7 +39,7 @@ MESSAGE_DEF(E1AP_BEARER_CONTEXT_SETUP_REQ , MESSAGE_PRIORITY_MED , e1ap_bearer_s
 /* E1AP Bearer Context Setup Response: gNB-CU-UP -> gNB-CU-CP */
 MESSAGE_DEF(E1AP_BEARER_CONTEXT_SETUP_RESP , MESSAGE_PRIORITY_MED , e1ap_bearer_setup_resp_t , e1ap_bearer_setup_resp)
 /* E1AP Bearer Context Modification Request: gNB-CU-CP -> gNB-CU-UP */
-MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_REQ , MESSAGE_PRIORITY_MED , e1ap_bearer_setup_req_t , e1ap_bearer_mod_req)
+MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_REQ , MESSAGE_PRIORITY_MED , e1ap_bearer_mod_req_t , e1ap_bearer_mod_req)
 /* E1AP Bearer Context Modification Response: gNB-CU-UP -> gNB-CU-CP */
 MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_RESP, MESSAGE_PRIORITY_MED, e1ap_bearer_modif_resp_t, e1ap_bearer_modif_resp)
 /* E1AP Bearer Context Release Request: gNB-CU-CP -> gNB-CU-UP */

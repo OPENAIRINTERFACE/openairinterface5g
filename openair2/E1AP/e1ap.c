@@ -664,18 +664,18 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_bearer_setup_req_t *const bear
     for (DRB_nGRAN_to_setup_t *j = i->DRBnGRanList; j < i->DRBnGRanList + i->numDRB2Setup; j++) {
       asn1cSequenceAdd(ieC6_1->dRB_To_Setup_List_NG_RAN.list, E1AP_DRB_To_Setup_Item_NG_RAN_t, ieC6_1_1);
       ieC6_1_1->dRB_ID = j->id;
-
-      ieC6_1_1->sDAP_Configuration.defaultDRB = j->defaultDRB ? E1AP_DefaultDRB_true : E1AP_DefaultDRB_false;
-      ieC6_1_1->sDAP_Configuration.sDAP_Header_UL = j->sDAP_Header_UL;
-      ieC6_1_1->sDAP_Configuration.sDAP_Header_DL = j->sDAP_Header_DL;
-
-      ieC6_1_1->pDCP_Configuration.pDCP_SN_Size_UL = j->pDCP_SN_Size_UL;
-      ieC6_1_1->pDCP_Configuration.pDCP_SN_Size_DL = j->pDCP_SN_Size_DL;
-      asn1cCallocOne(ieC6_1_1->pDCP_Configuration.discardTimer, j->discardTimer);
+      /* SDAP config */
+      ieC6_1_1->sDAP_Configuration.defaultDRB = j->sdap_config.defaultDRB ? E1AP_DefaultDRB_true : E1AP_DefaultDRB_false;
+      ieC6_1_1->sDAP_Configuration.sDAP_Header_UL = j->sdap_config.sDAP_Header_UL;
+      ieC6_1_1->sDAP_Configuration.sDAP_Header_DL = j->sdap_config.sDAP_Header_DL;
+      /* PDCP Config */
+      ieC6_1_1->pDCP_Configuration.pDCP_SN_Size_UL = j->pdcp_config.pDCP_SN_Size_UL;
+      ieC6_1_1->pDCP_Configuration.pDCP_SN_Size_DL = j->pdcp_config.pDCP_SN_Size_DL;
+      asn1cCallocOne(ieC6_1_1->pDCP_Configuration.discardTimer, j->pdcp_config.discardTimer);
       E1AP_T_ReorderingTimer_t *roTimer = calloc(1, sizeof(E1AP_T_ReorderingTimer_t));
       ieC6_1_1->pDCP_Configuration.t_ReorderingTimer = roTimer;
-      roTimer->t_Reordering = j->reorderingTimer;
-      ieC6_1_1->pDCP_Configuration.rLC_Mode        = j->rLC_Mode;
+      roTimer->t_Reordering = j->pdcp_config.reorderingTimer;
+      ieC6_1_1->pDCP_Configuration.rLC_Mode = j->pdcp_config.rLC_Mode;
 
       for (cell_group_t *k = j->cellGroupList; k < j->cellGroupList + j->numCellGroups; k++) {
         asn1cSequenceAdd(ieC6_1_1->cell_Group_Information.list, E1AP_Cell_Group_Information_Item_t, ieC6_1_1_1);
@@ -871,7 +871,7 @@ int e1apCUUP_send_BEARER_CONTEXT_SETUP_FAILURE(instance_t instance)
   return -1;
 }
 
-void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_setup_req_t *bearerCxt)
+static void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_setup_req_t *bearerCxt)
 {
   const E1AP_BearerContextSetupRequest_t *in = &pdu->choice.initiatingMessage->value.choice.BearerContextSetupRequest;
   E1AP_BearerContextSetupRequestIEs_t *ie;
@@ -970,23 +970,20 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_beare
             E1AP_DRB_To_Setup_Item_NG_RAN_t *drb2Setup = drb2SetupList->list.array[j];
 
             drb->id = drb2Setup->dRB_ID;
-
-            drb->defaultDRB = drb2Setup->sDAP_Configuration.defaultDRB == E1AP_DefaultDRB_true;
-            drb->sDAP_Header_UL = drb2Setup->sDAP_Configuration.sDAP_Header_UL;
-            drb->sDAP_Header_DL = drb2Setup->sDAP_Configuration.sDAP_Header_DL;
-
-            drb->pDCP_SN_Size_UL = drb2Setup->pDCP_Configuration.pDCP_SN_Size_UL;
-            drb->pDCP_SN_Size_DL = drb2Setup->pDCP_Configuration.pDCP_SN_Size_DL;
-
+            /* SDAP */
+            drb->sdap_config.defaultDRB = drb2Setup->sDAP_Configuration.defaultDRB == E1AP_DefaultDRB_true;
+            drb->sdap_config.sDAP_Header_UL = drb2Setup->sDAP_Configuration.sDAP_Header_UL;
+            drb->sdap_config.sDAP_Header_DL = drb2Setup->sDAP_Configuration.sDAP_Header_DL;
+            /* PDCP */
+            drb->pdcp_config.pDCP_SN_Size_UL = drb2Setup->pDCP_Configuration.pDCP_SN_Size_UL;
+            drb->pdcp_config.pDCP_SN_Size_DL = drb2Setup->pDCP_Configuration.pDCP_SN_Size_DL;
             if (drb2Setup->pDCP_Configuration.discardTimer) {
-              drb->discardTimer = *drb2Setup->pDCP_Configuration.discardTimer;
+              drb->pdcp_config.discardTimer = *drb2Setup->pDCP_Configuration.discardTimer;
             }
-
             if (drb2Setup->pDCP_Configuration.t_ReorderingTimer) {
-              drb->reorderingTimer = drb2Setup->pDCP_Configuration.t_ReorderingTimer->t_Reordering;
+              drb->pdcp_config.reorderingTimer = drb2Setup->pDCP_Configuration.t_ReorderingTimer->t_Reordering;
             }
-
-            drb->rLC_Mode = drb2Setup->pDCP_Configuration.rLC_Mode;
+            drb->pdcp_config.rLC_Mode = drb2Setup->pDCP_Configuration.rLC_Mode;
 
             E1AP_Cell_Group_Information_t *cellGroupList = &drb2Setup->cell_Group_Information;
             drb->numCellGroups = cellGroupList->list.count;
@@ -1210,11 +1207,10 @@ static int fill_BEARER_CONTEXT_MODIFICATION_REQUEST(e1ap_bearer_setup_req_t *con
   msgNGRAN->criticality = E1AP_Criticality_reject;
   msgNGRAN->value.present = E1AP_NG_RAN_BearerContextModificationRequest__value_PR_PDU_Session_Resource_To_Modify_List;
   E1AP_PDU_Session_Resource_To_Modify_List_t *pdu2Setup = &msgNGRAN->value.choice.PDU_Session_Resource_To_Modify_List;
-  for (pdu_session_to_setup_t *i = bearerCxt->pduSessionMod; i < bearerCxt->pduSessionMod + bearerCxt->numPDUSessionsMod; i++) {
+  for (pdu_session_to_mod_t *i = bearerCxt->pduSessionMod; i < bearerCxt->pduSessionMod + bearerCxt->numPDUSessionsMod; i++) {
     asn1cSequenceAdd(pdu2Setup->list, E1AP_PDU_Session_Resource_To_Modify_Item_t, ieC3_1);
     ieC3_1->pDU_Session_ID = i->sessionId;
-
-    for (DRB_nGRAN_to_setup_t *j = i->DRBnGRanModList; j < i->DRBnGRanModList + i->numDRB2Modify; j++) {
+    for (DRB_nGRAN_to_mod_t *j = i->DRBnGRanModList; j < i->DRBnGRanModList + i->numDRB2Modify; j++) {
       asn1cCalloc(ieC3_1->dRB_To_Modify_List_NG_RAN, drb2Mod_List);
       asn1cSequenceAdd(drb2Mod_List->list, E1AP_DRB_To_Modify_Item_NG_RAN_t, drb2Mod);
       drb2Mod->dRB_ID = j->id;
@@ -1236,7 +1232,7 @@ static int fill_BEARER_CONTEXT_MODIFICATION_REQUEST(e1ap_bearer_setup_req_t *con
   return 0;
 }
 
-static void e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, e1ap_bearer_setup_req_t *const bearerCxt)
+static void e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, e1ap_bearer_mod_req_t *const bearerCxt)
 {
   E1AP_E1AP_PDU_t pdu = {0};
   fill_BEARER_CONTEXT_MODIFICATION_REQUEST(bearerCxt, &pdu);
@@ -1314,7 +1310,7 @@ int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_FAILURE(instance_t instance)
   return -1;
 }
 
-void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_setup_req_t *bearerCxt)
+static void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_mod_req_t *bearerCxt)
 {
   const E1AP_BearerContextModificationRequest_t *in = &pdu->choice.initiatingMessage->value.choice.BearerContextModificationRequest;
   E1AP_BearerContextModificationRequestIEs_t *ie;
@@ -1350,20 +1346,19 @@ void extract_BEARER_CONTEXT_MODIFICATION_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1a
         DevAssert(msgNGRAN->value.present =
                     E1AP_NG_RAN_BearerContextModificationRequest__value_PR_PDU_Session_Resource_To_Modify_List);
 
+        /* PDU Sessions to modify */
         E1AP_PDU_Session_Resource_To_Modify_List_t *pdu2ModList = &msgNGRAN->value.choice.PDU_Session_Resource_To_Modify_List;
         bearerCxt->numPDUSessionsMod = pdu2ModList->list.count;
         for (int i = 0; i < pdu2ModList->list.count; i++) {
-          pdu_session_to_setup_t *pdu_session = bearerCxt->pduSessionMod + i;
+          pdu_session_to_mod_t *pdu_session = bearerCxt->pduSessionMod + i;
           E1AP_PDU_Session_Resource_To_Modify_Item_t *pdu2Mod = pdu2ModList->list.array[i];
-
           pdu_session->sessionId = pdu2Mod->pDU_Session_ID;
-
           E1AP_DRB_To_Modify_List_NG_RAN_t *drb2ModList = pdu2Mod->dRB_To_Modify_List_NG_RAN;
           pdu_session->numDRB2Modify = drb2ModList->list.count;
+          /* DRBs to modify */
           for (int j = 0; j < drb2ModList->list.count; j++) {
-            DRB_nGRAN_to_setup_t *drb = pdu_session->DRBnGRanModList + j;
+            DRB_nGRAN_to_mod_t *drb = pdu_session->DRBnGRanModList + j;
             E1AP_DRB_To_Modify_Item_NG_RAN_t *drb2Mod = drb2ModList->list.array[j];
-
             drb->id = drb2Mod->dRB_ID;
 
             E1AP_UP_Parameters_t *dl_up_paramList = drb2Mod->dL_UP_Parameters;
@@ -1402,7 +1397,7 @@ int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id,
   DevAssert(pdu->choice.initiatingMessage->criticality == E1AP_Criticality_reject);
   DevAssert(pdu->choice.initiatingMessage->value.present == E1AP_InitiatingMessage__value_PR_BearerContextModificationRequest);
 
-  e1ap_bearer_setup_req_t bearerCxt = {0};
+  e1ap_bearer_mod_req_t bearerCxt = {0};
   extract_BEARER_CONTEXT_MODIFICATION_REQUEST(pdu, &bearerCxt);
 
   e1_bearer_context_modif(&bearerCxt);
@@ -1960,7 +1955,7 @@ void *E1AP_CUCP_task(void *arg)
         break;
 
       case E1AP_BEARER_CONTEXT_MODIFICATION_REQ:
-        e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_REQUEST(assoc_id, &E1AP_BEARER_CONTEXT_SETUP_REQ(msg));
+        e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_REQUEST(assoc_id, &E1AP_BEARER_CONTEXT_MODIFICATION_REQ(msg));
         break;
 
       case E1AP_BEARER_CONTEXT_RELEASE_CMD:

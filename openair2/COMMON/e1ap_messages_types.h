@@ -47,7 +47,7 @@
 #define E1AP_SETUP_FAIL(mSGpTR)                           (mSGpTR)->ittiMsg.e1ap_setup_fail
 #define E1AP_BEARER_CONTEXT_SETUP_REQ(mSGpTR)             (mSGpTR)->ittiMsg.e1ap_bearer_setup_req
 #define E1AP_BEARER_CONTEXT_SETUP_RESP(mSGpTR)            (mSGpTR)->ittiMsg.e1ap_bearer_setup_resp
-#define E1AP_BEARER_CONTEXT_MODIFICATION_REQ(mSGpTR)      (mSGpTR)->ittiMsg.e1ap_bearer_setup_req
+#define E1AP_BEARER_CONTEXT_MODIFICATION_REQ(mSGpTR)      (mSGpTR)->ittiMsg.e1ap_bearer_mod_req
 #define E1AP_BEARER_CONTEXT_MODIFICATION_RESP(mSGpTR)     (mSGpTR)->ittiMsg.e1ap_bearer_modif_resp
 #define E1AP_BEARER_CONTEXT_RELEASE_CMD(mSGpTR)           (mSGpTR)->ittiMsg.e1ap_bearer_release_cmd
 #define E1AP_BEARER_CONTEXT_RELEASE_CPLT(mSGpTR)          (mSGpTR)->ittiMsg.e1ap_bearer_release_cplt
@@ -111,11 +111,26 @@ typedef struct up_params_s {
   int cell_group_id;
 } up_params_t;
 
-typedef struct drb_to_setup_s {
-  long drbId;
+/* IE SDAP Configuration (clause 9.3.1.39 of 3GPP TS 38.463) */
+typedef struct bearer_context_sdap_config_s {
+  long defaultDRB;
+  long sDAP_Header_UL;
+  long sDAP_Header_DL;
+} bearer_context_sdap_config_t;
+
+/* IE PDCP Configuration (clause 9.3.1.38 of 3GPP TS 38.463) */
+typedef struct bearer_context_pdcp_config_s {
   long pDCP_SN_Size_UL;
   long pDCP_SN_Size_DL;
   long rLC_Mode;
+  long reorderingTimer;
+  long discardTimer;
+  long pDCP_Reestablishment;
+} bearer_context_pdcp_config_t;
+
+typedef struct drb_to_setup_s {
+  long drbId;
+  bearer_context_pdcp_config_t pdcp_config;
   long qci;
   long qosPriorityLevel;
   long pre_emptionCapability;
@@ -161,26 +176,38 @@ typedef struct qos_flow_setup_e {
   qos_flow_level_qos_parameters_t qos_params;
 } qos_flow_to_setup_t;
 
+/* DRB To Setup List according to 3GPP TS 38.463 */
 typedef struct DRB_nGRAN_to_setup_s {
+  /* DRB ID (clause 9.3.1.16) */
   long id;
-  long defaultDRB;
-  long sDAP_Header_UL;
-  long sDAP_Header_DL;
-  long pDCP_SN_Size_UL;
-  long pDCP_SN_Size_DL;
-  long discardTimer;
-  long reorderingTimer;
-  long rLC_Mode;
+
+  /* SDAP Configuration (clause 9.3.1.39) */
+  bearer_context_sdap_config_t sdap_config;
+  /* PDCP Configuration (clause 9.3.1.38) */
+  bearer_context_pdcp_config_t pdcp_config;
+
+  /* DRB Data Forwarding Information (clause 9.3.2.6) */
+  /* Transport Layer Address (clause 9.3.2.4) */
   in_addr_t tlAddress;
+  /* GTP-TEID (clause 9.3.2.3) */
   int teId;
+  /* DL UP Transport Layer Information (clause 9.3.2.1) */
   int numDlUpParam;
   up_params_t DlUpParamList[E1AP_MAX_NUM_UP_PARAM];
+
+  /* Cell Group Information (clause 9.3.1.11) */
   int numCellGroups;
   cell_group_t cellGroupList[E1AP_MAX_NUM_CELL_GROUPS];
+
+  /* DRB QoS Flows Parameters (clause 9.3.1.26) */
   int numQosFlow2Setup;
   qos_flow_to_setup_t qosFlows[E1AP_MAX_NUM_QOS_FLOWS];
-} DRB_nGRAN_to_setup_t;
+} DRB_nGRAN_to_setup_t, DRB_nGRAN_to_mod_t;
 
+/**
+ * PDU Session Resource To Setup List (clause 9.3.3.10)
+ * PDU Session Resource To Modify List (clause 9.3.3.11)
+*/
 typedef struct pdu_session_to_setup_s {
   long sessionId;
   long sessionType;
@@ -196,9 +223,14 @@ typedef struct pdu_session_to_setup_s {
   long numDRB2Setup;
   DRB_nGRAN_to_setup_t DRBnGRanList[E1AP_MAX_NUM_NGRAN_DRB];
   long numDRB2Modify;
-  DRB_nGRAN_to_setup_t DRBnGRanModList[E1AP_MAX_NUM_NGRAN_DRB];
-} pdu_session_to_setup_t;
+  DRB_nGRAN_to_mod_t DRBnGRanModList[E1AP_MAX_NUM_NGRAN_DRB];
+} pdu_session_to_setup_t, pdu_session_to_mod_t;
 
+/**
+ * Bearer Context Setup Request message, clause 9.2.2.1 of 3GPP TS 38.463
+ * out of simplicity, this same struct is used for clause 9.2.2.4
+ * i.e. Bearer Context Modification Request message
+ */
 typedef struct e1ap_bearer_setup_req_s {
   uint32_t gNB_cu_cp_ue_id;
   uint32_t gNB_cu_up_ue_id;
@@ -212,8 +244,8 @@ typedef struct e1ap_bearer_setup_req_s {
   int numPDUSessions;
   pdu_session_to_setup_t pduSession[E1AP_MAX_NUM_PDU_SESSIONS];
   int numPDUSessionsMod;
-  pdu_session_to_setup_t pduSessionMod[E1AP_MAX_NUM_PDU_SESSIONS];
-} e1ap_bearer_setup_req_t;
+  pdu_session_to_mod_t pduSessionMod[E1AP_MAX_NUM_PDU_SESSIONS];
+} e1ap_bearer_setup_req_t, e1ap_bearer_mod_req_t;
 
 typedef struct e1ap_bearer_release_cmd_s {
   uint32_t gNB_cu_cp_ue_id;

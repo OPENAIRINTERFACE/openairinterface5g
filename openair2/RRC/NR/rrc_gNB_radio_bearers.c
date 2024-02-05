@@ -21,6 +21,7 @@
 
 #include "rrc_gNB_radio_bearers.h"
 #include "oai_asn1.h"
+#include "openair2/E1AP/e1ap.h"
 
 rrc_pdu_session_param_t *find_pduSession(gNB_RRC_UE_t *ue, int id, bool create)
 {
@@ -54,6 +55,29 @@ drb_t *get_drb(gNB_RRC_UE_t *ue, uint8_t drb_id)
   DevAssert(ue != NULL);
 
   return &ue->established_drbs[drb_id - 1];
+}
+
+void set_default_drb_pdcp_config(struct pdcp_config_s *pdcp_config, int do_drb_integrity, int do_drb_ciphering)
+{
+  AssertError(pdcp_config != NULL, return, "Failed to set default PDCP configuration for DRB!\n");
+  pdcp_config->discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
+  pdcp_config->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
+  pdcp_config->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
+  pdcp_config->t_Reordering = NR_PDCP_Config__t_Reordering_ms100;
+  pdcp_config->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+  pdcp_config->headerCompression.NotUsed = 0;
+  pdcp_config->integrityProtection = do_drb_integrity ? NR_PDCP_Config__drb__integrityProtection_enabled : 1;
+  pdcp_config->ext1.cipheringDisabled = do_drb_ciphering ? 1 : NR_PDCP_Config__ext1__cipheringDisabled_true;
+}
+
+void set_bearer_context_pdcp_config(bearer_context_pdcp_config_t *pdcp_config, drb_t *rrc_drb, bool um_on_default_drb)
+{
+  AssertError(rrc_drb != NULL && pdcp_config != NULL, return, "Failed to set default bearer context PDCP configuration!\n");
+  pdcp_config->pDCP_SN_Size_UL = rrc_drb->pdcp_config.pdcp_SN_SizeUL;
+  pdcp_config->pDCP_SN_Size_DL = rrc_drb->pdcp_config.pdcp_SN_SizeDL;
+  pdcp_config->discardTimer = rrc_drb->pdcp_config.discardTimer;
+  pdcp_config->reorderingTimer = rrc_drb->pdcp_config.t_Reordering;
+  pdcp_config->rLC_Mode = um_on_default_drb ? E1AP_RLC_Mode_rlc_um_bidirectional : E1AP_RLC_Mode_rlc_am;
 }
 
 drb_t *generateDRB(gNB_RRC_UE_t *ue,
@@ -95,20 +119,7 @@ drb_t *generateDRB(gNB_RRC_UE_t *ue,
       est_drb->status = DRB_ACTIVE;
   }
   /* PDCP Configuration */
-  est_drb->pdcp_config.discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
-  est_drb->pdcp_config.pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-  est_drb->pdcp_config.pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-  est_drb->pdcp_config.t_Reordering = NR_PDCP_Config__t_Reordering_ms100;
-  est_drb->pdcp_config.headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-  est_drb->pdcp_config.headerCompression.NotUsed = 0;
-  if (do_drb_integrity)
-    est_drb->pdcp_config.integrityProtection = NR_PDCP_Config__drb__integrityProtection_enabled;
-  else
-    est_drb->pdcp_config.integrityProtection = 1;
-  if (do_drb_ciphering)
-    est_drb->pdcp_config.ext1.cipheringDisabled = 1;
-  else
-    est_drb->pdcp_config.ext1.cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
+  set_default_drb_pdcp_config(&est_drb->pdcp_config, do_drb_integrity, do_drb_ciphering);
 
   drb_t *rrc_drb = get_drb(ue, drb_id);
   DevAssert(rrc_drb == est_drb); /* to double check that we create the same which we would retrieve */
