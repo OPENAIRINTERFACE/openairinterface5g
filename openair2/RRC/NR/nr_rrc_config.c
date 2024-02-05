@@ -1768,7 +1768,8 @@ NR_BCCH_BCH_Message_t *get_new_MIB_NR(const NR_ServingCellConfigCommon_t *scc)
   int ssb_subcarrier_offset = 31; // default value for NSA
   if (get_softmodem_params()->sa) {
     ssb_subcarrier_offset = get_ssb_subcarrier_offset(*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
-                                                      scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+                                                      scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                                                      *scc->ssbSubcarrierSpacing);
   }
   mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset & 15;
 

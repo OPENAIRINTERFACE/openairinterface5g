@@ -4443,6 +4443,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
   type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
+  AssertFatal(type0_PDCCH_CSS_config->cset_start_rb >= 0, "Invalid CSET0 start PRB %d SSB offset point A %d RB offset %d\n",
+              type0_PDCCH_CSS_config->cset_start_rb, ssb_offset_point_a, type0_PDCCH_CSS_config->rb_offset);
 }
 
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config)
