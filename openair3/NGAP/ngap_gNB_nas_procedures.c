@@ -95,8 +95,8 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
     amf_desc_p = ngap_gNB_nnsf_select_amf_by_guami(instance_p, UEfirstReq->establishment_cause, UEfirstReq->ue_identity.guami);
 
     if (amf_desc_p) {
-      NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through GUAMI MCC %d MNC %d AMFRI %d AMFSI %d AMFPT %d\n",
-                instance,
+      NGAP_INFO("UE %d: Chose AMF '%s' (assoc_id %d) through GUAMI MCC %d MNC %d AMFRI %d AMFSI %d AMFPT %d\n",
+                UEfirstReq->gNB_ue_ngap_id,
                 amf_desc_p->amf_name,
                 amf_desc_p->assoc_id,
                 UEfirstReq->ue_identity.guami.mcc,
@@ -115,8 +115,8 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
 
       if (amf_desc_p) {
         NGAP_INFO(
-            "[gNB %ld] Chose AMF '%s' (assoc_id %d) through S-TMSI AMFSI %d and selected PLMN Identity index %d MCC %d MNC %d\n",
-            instance,
+            "UE %d: Chose AMF '%s' (assoc_id %d) through S-TMSI AMFSI %d and selected PLMN Identity index %d MCC %d MNC %d\n",
+            UEfirstReq->gNB_ue_ngap_id,
             amf_desc_p->amf_name,
             amf_desc_p->assoc_id,
             UEfirstReq->ue_identity.s_tmsi.amf_set_id,
@@ -134,8 +134,8 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
     amf_desc_p = ngap_gNB_nnsf_select_amf_by_plmn_id(instance_p, UEfirstReq->establishment_cause, UEfirstReq->selected_plmn_identity);
 
     if (amf_desc_p) {
-      NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
-                instance,
+      NGAP_INFO("UE %d: Chose AMF '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
+                UEfirstReq->gNB_ue_ngap_id,
                 amf_desc_p->amf_name,
                 amf_desc_p->assoc_id,
                 UEfirstReq->selected_plmn_identity,
@@ -153,7 +153,7 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
     amf_desc_p = ngap_gNB_nnsf_select_amf(instance_p, UEfirstReq->establishment_cause);
 
     if (amf_desc_p) {
-      NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through highest relative capacity\n", instance, amf_desc_p->amf_name, amf_desc_p->assoc_id);
+      NGAP_INFO("UE %d: Chose AMF '%s' (assoc_id %d) through highest relative capacity\n", UEfirstReq->gNB_ue_ngap_id, amf_desc_p->amf_name, amf_desc_p->assoc_id);
     }
   }
 
