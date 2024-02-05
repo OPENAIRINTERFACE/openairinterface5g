@@ -260,7 +260,7 @@ static void set_QoSConfig(const f1ap_ue_context_modif_req_t *req, NR_UE_sched_ct
     f1ap_drb_to_be_setup_t *drb_p = &req->drbs_to_be_setup[i];
     uint8_t nb_qos_flows = drb_p->drb_info.flows_to_be_setup_length;
     long drb_id = drb_p->drb_id;
-    LOG_I(NR_MAC, "In %s: number of QOS flows mapped to DRB_id %d: %ld \n", __func__, drb_count, drb_id);
+    LOG_I(NR_MAC, "number of QOS flows mapped to DRB_id %ld: %d\n", drb_id, nb_qos_flows);
 
     for (int q = 0; q < nb_qos_flows; q++) {
       f1ap_flows_mapped_to_drb_t *qos_flow = &drb_p->drb_info.flows_mapped_to_drb[q];
@@ -338,9 +338,6 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   UE->capability = ue_cap;
   if (ue_cap != NULL) {
     // store the new UE capabilities, and update the cellGroupConfig
-    ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
-    UE->capability = ue_cap;
-    LOG_I(NR_MAC, "UE %04x: received capabilities, updating CellGroupConfig\n", UE->rnti);
     NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
     update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, &mac->radio_config, scc);
   }

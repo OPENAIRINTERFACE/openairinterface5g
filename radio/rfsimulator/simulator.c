@@ -735,10 +735,10 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   }
 
   if ( t->lastWroteTS != 0 && fabs((double)t->lastWroteTS-timestamp) > (double)CirSize)
-    LOG_E(HW, "Discontinuous TX gap too large Tx:%lu, %lu\n", t->lastWroteTS, timestamp);
+    LOG_W(HW, "Discontinuous TX gap too large Tx:%lu, %lu\n", t->lastWroteTS, timestamp);
 
   if (t->lastWroteTS > timestamp+nsamps)
-    LOG_E(HW, "Not supported to send Tx out of order (same in USRP) %lu, %lu\n", t->lastWroteTS, timestamp);
+    LOG_W(HW, "Not supported to send Tx out of order %lu, %lu\n", t->lastWroteTS, timestamp);
 
   t->lastWroteTS=timestamp+nsamps;
 
@@ -872,14 +872,14 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
         } else if (b->lastReceivedTS == b->th.timestamp) {
           // normal case
         } else {
-          LOG_E(HW, "Received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);
+          LOG_W(HW, "Received data in past: current is %lu, new reception: %lu!\n", b->lastReceivedTS, b->th.timestamp);
           b->trashingPacket=true;
         }
 
         pthread_mutex_lock(&Sockmutex);
 
         if (t->lastWroteTS != 0 && (fabs((double)t->lastWroteTS-b->lastReceivedTS) > (double)CirSize))
-          LOG_E(HW, "UEsock(%d) Tx/Rx shift too large Tx:%lu, Rx:%lu\n", fd, t->lastWroteTS, b->lastReceivedTS);
+          LOG_W(HW, "UEsock(%d) Tx/Rx shift too large Tx:%lu, Rx:%lu\n", fd, t->lastWroteTS, b->lastReceivedTS);
 
         pthread_mutex_unlock(&Sockmutex);
         b->transferPtr=(char *)&b->circularBuf[(b->lastReceivedTS*b->th.nbAnt)%CirSize];

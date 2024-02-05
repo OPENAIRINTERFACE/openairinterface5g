@@ -1698,7 +1698,7 @@ static void nr_generate_Msg4(module_id_t module_idP,
       // Need to wait until data for Msg4 is ready
       if (srb_status.bytes_in_buffer == 0)
         return;
-      LOG_I(NR_MAC, "(%4d.%2d) SRB%d has %d bytes\n", frameP, slotP, lcid, srb_status.bytes_in_buffer);
+      LOG_D(NR_MAC, "(%4d.%2d) SRB%d has %d bytes\n", frameP, slotP, lcid, srb_status.bytes_in_buffer);
       mac_sdu_length = srb_status.bytes_in_buffer;
     }
 

@@ -676,9 +676,11 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
       }
 
       if (!get_softmodem_params()->phy_test && UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
-         LOG_W(NR_MAC,"Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
-               UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt);
-         nr_mac_trigger_ul_failure(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
+        LOG_W(NR_MAC,
+              "UE %04x: Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
+              UE->rnti,
+              UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt);
+        nr_mac_trigger_ul_failure(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
       }
     }
   } else if(sduP) {

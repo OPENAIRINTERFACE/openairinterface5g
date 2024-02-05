@@ -39,23 +39,36 @@
 /// @param drb_t drb_asn1
 /// @return Returns the ASN1 DRB-ToAddMod structs.
 NR_DRB_ToAddMod_t *generateDRB_ASN1(const drb_t *drb_asn1);
-/// @brief Creates and stores a DRB in the gNB_RRC_UE_t struct, it doesn't create the actual entity,
-/// to create the actual entity use the generateDRB_ASN1.
+
+/// @brief retrieve the data structure representing DRB with ID drb_id of UE ue
+drb_t *get_drb(gNB_RRC_UE_t *ue, uint8_t drb_id);
+
+/// @brief Creates and stores a DRB in the gNB_RRC_UE_t struct
 /// @param ue The gNB_RRC_UE_t struct that holds information for the UEs
 /// @param drb_id The Data Radio Bearer Identity to be created for the established DRB.
 /// @param pduSession The PDU Session that the DRB is created for.
 /// @param enable_sdap If true the SDAP header will be added to the packet, else it will not add or search for SDAP header.
 /// @param do_drb_integrity
 /// @param do_drb_ciphering
-void generateDRB(gNB_RRC_UE_t *ue,
-                 uint8_t drb_id,
-                 rrc_pdu_session_param_t *pduSession,
-                 bool enable_sdap,
-                 int do_drb_integrity,
-                 int do_drb_ciphering);
-uint8_t next_available_drb(gNB_RRC_UE_t *ue, rrc_pdu_session_param_t *pdusession, bool is_gbr);
+/// @return returns a pointer to the generated DRB structure
+drb_t *generateDRB(gNB_RRC_UE_t *ue,
+                   uint8_t drb_id,
+                   const rrc_pdu_session_param_t *pduSession,
+                   bool enable_sdap,
+                   int do_drb_integrity,
+                   int do_drb_ciphering);
+
+/// @brief return the next available (inactive) DRB ID of UE ue
+uint8_t get_next_available_drb_id(gNB_RRC_UE_t *ue);
+
+/// @brief check if DRB with ID drb_id of UE ue is active
 bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id);
 
+/// @brief retrieve PDU session of UE ue with ID id, optionally creating it if
+/// create is true
 rrc_pdu_session_param_t *find_pduSession(gNB_RRC_UE_t *ue, int id, bool create);
+
+/// @brief get PDU session of UE ue through the DRB drb_id
+rrc_pdu_session_param_t *find_pduSession_from_drbId(gNB_RRC_UE_t *ue, int drb_id);
 
 #endif

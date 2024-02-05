@@ -992,7 +992,7 @@ class RANManagement():
 				NSA_RAPROC_PUSCH_check = 1
 
 			# Collect information on UE DLSCH and ULSCH statistics
-			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
+			keys = {'dlsch_rounds','ulsch_rounds'}
 			for k in keys:
 				result = re.search(k, line)
 				if result is None:
@@ -1161,7 +1161,7 @@ class RANManagement():
 				dlcheckers = [] if 'd_retx_th' not in checkers else checkers['d_retx_th']
 				retx_status[ue]['dl'] = self._analyzeUeRetx(dlulstat['dlsch_rounds'], dlcheckers, r'^.*dlsch_rounds\s+(\d+)\/(\d+)\/(\d+)\/(\d+),\s+dlsch_errors\s+(\d+)')
 				ulcheckers = [] if 'u_retx_th' not in checkers else checkers['u_retx_th']
-				retx_status[ue]['ul'] = self._analyzeUeRetx(dlulstat['ulsch_rounds'], ulcheckers, r'^.*ulsch_rounds\s+(\d+)\/(\d+)\/(\d+)\/(\d+),\s+.*,\s+ulsch_errors\s+(\d+)')
+				retx_status[ue]['ul'] = self._analyzeUeRetx(dlulstat['ulsch_rounds'], ulcheckers, r'^.*ulsch_rounds\s+(\d+)\/(\d+)\/(\d+)\/(\d+),\s+ulsch_errors\s+(\d+)')
 
 
 			#real time statistics

@@ -92,10 +92,10 @@ int get_reestab_count(char *buf, int debug, telnet_printfunc_t prnt)
       ERROR_MSG_RET("could not find UE with RNTI %04x in RRC\n");
   }
 
-  prnt("UE RNTI %04x reestab %d reconf_after_reestab %d\n",
+  prnt("UE RNTI %04x reestab %d reconfig %d\n",
        ue->ue_context.rnti,
        ue->ue_context.ue_reestablishment_counter,
-       ue->ue_context.ue_reconfiguration_after_reestablishment_counter);
+       ue->ue_context.ue_reconfiguration_counter);
   return 0;
 }
 

@@ -1812,10 +1812,6 @@ void init_NR_RU(configmodule_interface_t *cfg, char *rf_config_file)
         LOG_E(PHY,"%s() DJP - ru->gNB_list ru->num_gNB are not initialized - so do it manually\n", __FUNCTION__);
         ru->gNB_list[0] = RC.gNB[0];
         ru->num_gNB=1;
-        //
-        //
-      } else {
-        LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
       }
     }
 
