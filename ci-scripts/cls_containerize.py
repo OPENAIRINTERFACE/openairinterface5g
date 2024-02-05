@@ -357,11 +357,11 @@ class Containerize():
 		if self.host == 'Ubuntu':
 			self.cli = 'docker'
 			self.dockerfileprefix = '.ubuntu20'
-			self.cliBuildOptions = '--no-cache'
+			self.cliBuildOptions = ''
 		elif self.host == 'Red Hat':
 			self.cli = 'sudo podman'
 			self.dockerfileprefix = '.rhel9'
-			self.cliBuildOptions = '--no-cache --disable-compression'
+			self.cliBuildOptions = '--disable-compression'
 
 		# we always build the ran-build image with all targets
 		# Creating a tupple with the imageName, the DockerFile prefix pattern, targetName and sanitized option
@@ -509,7 +509,7 @@ class Containerize():
 		cmd.run(f"{self.cli} volume prune --force")
 		# Remove any cached artifacts: we don't use the cache for now, prevent
 		# out of diskspace problem
-		cmd.run(f"{self.cli} buildx prune --force")
+		cmd.run(f"{self.cli} buildx prune --filter=until=6h --force")
 
 		# create a zip with all logs
 		build_log_name = f'build_log_{self.testCase_id}'
@@ -570,7 +570,7 @@ class Containerize():
 			sys.exit(1)
 
 		self.cli = 'docker'
-		self.cliBuildOptions = '--no-cache'
+		self.cliBuildOptions = ''
 
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
