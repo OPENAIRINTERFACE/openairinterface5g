@@ -377,7 +377,7 @@ static int nr_process_mac_pdu(instance_t module_idP,
           mac_len = 6;
         }
 
-        LOG_W(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", mac_len, UE->rnti);
+        LOG_D(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", mac_len, UE->rnti);
 
         prepare_initial_ul_rrc_message(RC.nrmac[module_idP], UE);
         mac_rlc_data_ind(module_idP,
@@ -509,7 +509,7 @@ void handle_nr_ul_harq(const int CC_idP,
   bool UE_waiting_CFRA_msg3 = get_UE_waiting_CFRA_msg3(nrmac, CC_idP, frame, slot);
 
   if (!UE || UE_waiting_CFRA_msg3 == true) {
-    LOG_W(NR_MAC, "handle harq for rnti %04x, in RA process\n", crc_pdu->rnti);
+    LOG_D(NR_MAC, "handle harq for rnti %04x, in RA process\n", crc_pdu->rnti);
     for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
       NR_RA_t *ra = &nrmac->common_channels[CC_idP].ra[i];
       if (ra->state >= WAIT_Msg3 && ra->rnti == crc_pdu->rnti) {
@@ -518,7 +518,7 @@ void handle_nr_ul_harq(const int CC_idP,
       }
     }
     NR_SCHED_UNLOCK(&nrmac->sched_lock);
-    LOG_E(NR_MAC, "%s(): unknown RNTI 0x%04x in PUSCH\n", __func__, crc_pdu->rnti);
+    LOG_E(NR_MAC, "no RA proc for RNTI 0x%04x in Msg3/PUSCH\n", crc_pdu->rnti);
     return;
   }
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -676,9 +676,11 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
       }
 
       if (!get_softmodem_params()->phy_test && UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
-         LOG_W(NR_MAC,"Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
-               UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt);
-         nr_mac_trigger_ul_failure(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
+        LOG_W(NR_MAC,
+              "UE %04x: Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
+              UE->rnti,
+              UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt);
+        nr_mac_trigger_ul_failure(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
       }
     }
   } else if(sduP) {
@@ -792,7 +794,7 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
                 // Let's abort the current RA, so the UE will trigger a new RA later but using RRCSetupRequest instead. A better solution may be implemented
                 mac_remove_nr_ue(gNB_mac, ra->rnti);
                 nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
-                LOG_W(NR_MAC, "No UE found with C-RNTI %04x, ignoring Msg.3 to have UE come back with new RA attempt\n", ra->rnti);
+                LOG_W(NR_MAC, "No UE found with C-RNTI %04x, ignoring Msg3 to have UE come back with new RA attempt\n", ra->rnti);
                 return;
               } else {
                 // Reset Msg4_ACKed to not schedule ULSCH and DLSCH before RRC Reconfiguration

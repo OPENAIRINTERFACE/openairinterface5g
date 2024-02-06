@@ -311,6 +311,7 @@ NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int nb_inst)
     rrc->uecap_file = uecap_file;
 
     memset(&rrc->timers_and_constants, 0, sizeof(rrc->timers_and_constants));
+    set_default_timers_and_constants(&rrc->timers_and_constants);
 
     for (int i = 0; i < NB_CNX_UE; i++) {
       rrcPerNB_t *ptr = &rrc->perNB[i];

@@ -75,14 +75,16 @@ static const nr_rrc_cuup_container_t *select_cuup_round_robin(size_t n_t, const 
   return NULL;
 }
 
+bool ue_associated_to_cuup(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue)
+{
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(ue->rrc_ue_id);
+  return ue_data.e1_assoc_id != 0;
+}
+
 sctp_assoc_t get_existing_cuup_for_ue(const gNB_RRC_INST *rrc, const gNB_RRC_UE_t *ue)
 {
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue->rrc_ue_id);
-  if (ue_data.e1_assoc_id == 0) {
-    LOG_W(RRC, "UE %d should be associated to CU-UP, but is not\n", ue->rrc_ue_id);
-    /* we could possibly check the SST/SD from the PDU session */
-    return get_new_cuup_for_ue(rrc, ue, 0, 0);
-  }
+  AssertFatal(ue_data.e1_assoc_id != 0, "UE %d should be associated to CU-UP, but is not\n", ue->rrc_ue_id);
   LOG_D(RRC, "UE %d using CU-UP assoc_id %d\n", ue->rrc_ue_id, ue_data.e1_assoc_id);
   return ue_data.e1_assoc_id;
 }

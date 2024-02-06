@@ -145,11 +145,6 @@ nr_rrc_pdcp_config_security(
   nr_derive_key(RRC_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kRRCenc);
   nr_derive_key(RRC_INT_ALG, UE->integrity_algorithm, UE->kgnb, kRRCint);
 
-  if (!IS_SOFTMODEM_IQPLAYER) {
-    SET_LOG_DUMP(DEBUG_SECURITY) ;
-  }
-
-
   if ( LOG_DUMPFLAG( DEBUG_SECURITY ) ) {
     if (print_keys == 1 ) {
       print_keys =0;
@@ -201,10 +196,13 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
 
   /* Fill UE identities with available information */
   req->ue_identity.presenceMask = NGAP_UE_IDENTITIES_NONE;
-  /* Fill s-TMSI */
-  req->ue_identity.s_tmsi.amf_set_id = UE->Initialue_identity_5g_s_TMSI.amf_set_id;
-  req->ue_identity.s_tmsi.amf_pointer = UE->Initialue_identity_5g_s_TMSI.amf_pointer;
-  req->ue_identity.s_tmsi.m_tmsi = UE->Initialue_identity_5g_s_TMSI.fiveg_tmsi;
+  if (UE->Initialue_identity_5g_s_TMSI.presence) {
+    /* Fill s-TMSI */
+    req->ue_identity.presenceMask = NGAP_UE_IDENTITIES_FiveG_s_tmsi;
+    req->ue_identity.s_tmsi.amf_set_id = UE->Initialue_identity_5g_s_TMSI.amf_set_id;
+    req->ue_identity.s_tmsi.amf_pointer = UE->Initialue_identity_5g_s_TMSI.amf_pointer;
+    req->ue_identity.s_tmsi.m_tmsi = UE->Initialue_identity_5g_s_TMSI.fiveg_tmsi;
+  }
 
   /* selected_plmn_identity: IE is 1-based, convert to 0-based (C array) */
   int selected_plmn_identity = rrcSetupComplete->selectedPLMN_Identity - 1;
@@ -359,6 +357,109 @@ static int decodePDUSessionResourceSetup(pdusession_t *session)
   return 0;
 }
 
+static void trigger_bearer_setup(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, int n, pdusession_t *sessions, uint64_t ueAggMaxBitRateDownlink)
+{
+  e1ap_bearer_setup_req_t bearer_req = {0};
+
+  e1ap_nssai_t cuup_nssai = {0};
+  for (int i = 0; i < n; i++) {
+    rrc_pdu_session_param_t *pduSession = find_pduSession(UE, sessions[i].pdusession_id, true);
+    pdusession_t *session = &pduSession->param;
+    session->pdusession_id = sessions[i].pdusession_id;
+    LOG_I(NR_RRC, "Adding pdusession %d, total nb of sessions %d\n", session->pdusession_id, UE->nb_of_pdusessions);
+    session->pdu_session_type = sessions[i].pdu_session_type;
+    session->nas_pdu = sessions[i].nas_pdu;
+    session->pdusessionTransfer = sessions[i].pdusessionTransfer;
+    session->nssai = sessions[i].nssai;
+    decodePDUSessionResourceSetup(session);
+    bearer_req.gNB_cu_cp_ue_id = UE->rrc_ue_id;
+    bearer_req.cipheringAlgorithm = UE->ciphering_algorithm;
+    bearer_req.integrityProtectionAlgorithm = UE->integrity_algorithm;
+    nr_derive_key(UP_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, (uint8_t *)bearer_req.encryptionKey);
+    nr_derive_key(UP_INT_ALG, UE->integrity_algorithm, UE->kgnb, (uint8_t *)bearer_req.integrityProtectionKey);
+    bearer_req.ueDlAggMaxBitRate = ueAggMaxBitRateDownlink;
+    pdu_session_to_setup_t *pdu = bearer_req.pduSession + bearer_req.numPDUSessions;
+    bearer_req.numPDUSessions++;
+    pdu->sessionId = session->pdusession_id;
+    pdu->nssai = sessions[i].nssai;
+    if (cuup_nssai.sst == 0)
+      cuup_nssai = pdu->nssai; /* for CU-UP selection below */
+
+    pdu->integrityProtectionIndication = rrc->security.do_drb_integrity ? E1AP_IntegrityProtectionIndication_required : E1AP_IntegrityProtectionIndication_not_needed;
+
+    pdu->confidentialityProtectionIndication = rrc->security.do_drb_ciphering ? E1AP_ConfidentialityProtectionIndication_required : E1AP_ConfidentialityProtectionIndication_not_needed;
+    pdu->teId = session->gtp_teid;
+    memcpy(&pdu->tlAddress, session->upf_addr.buffer, 4); // Fixme: dirty IPv4 target
+
+    /* we assume for the moment one DRB per PDU session. Activate the bearer,
+     * and configure in RRC. */
+    int drb_id = get_next_available_drb_id(UE);
+    drb_t *rrc_drb = generateDRB(UE,
+                                 drb_id,
+                                 pduSession,
+                                 rrc->configuration.enable_sdap,
+                                 rrc->security.do_drb_integrity,
+                                 rrc->security.do_drb_ciphering);
+
+    pdu->numDRB2Setup = 1; // One DRB per PDU Session. TODO: Remove hardcoding
+    for (int j=0; j < pdu->numDRB2Setup; j++) {
+      DRB_nGRAN_to_setup_t *drb = pdu->DRBnGRanList + j;
+
+      drb->id = rrc_drb->drb_id;
+
+      struct sdap_config_s *sdap_config = &rrc_drb->cnAssociation.sdap_config;
+      drb->defaultDRB = sdap_config->defaultDRB;
+      drb->sDAP_Header_UL = sdap_config->sdap_HeaderUL;
+      drb->sDAP_Header_DL = sdap_config->sdap_HeaderDL;
+
+      struct pdcp_config_s *pdcp_config = &rrc_drb->pdcp_config;
+      drb->pDCP_SN_Size_UL = pdcp_config->pdcp_SN_SizeUL;
+      drb->pDCP_SN_Size_DL = pdcp_config->pdcp_SN_SizeDL;
+      drb->discardTimer = pdcp_config->discardTimer;
+      drb->reorderingTimer = pdcp_config->t_Reordering;
+
+      drb->rLC_Mode = rrc->configuration.um_on_default_drb ? E1AP_RLC_Mode_rlc_um_bidirectional : E1AP_RLC_Mode_rlc_am;
+
+      drb->numCellGroups = 1; // assume one cell group associated with a DRB
+
+      for (int k=0; k < drb->numCellGroups; k++) {
+        cell_group_t *cellGroup = drb->cellGroupList + k;
+        cellGroup->id = 0; // MCG
+      }
+
+      drb->numQosFlow2Setup = session->nb_qos;
+      for (int k=0; k < drb->numQosFlow2Setup; k++) {
+        qos_flow_to_setup_t *qos_flow = drb->qosFlows + k;
+        pdusession_level_qos_parameter_t *qos_session = session->qos + k;
+
+        qos_characteristics_t *qos_char = &qos_flow->qos_params.qos_characteristics;
+        qos_flow->qfi = qos_session->qfi;
+        qos_char->qos_type = qos_session->fiveQI_type;
+        if (qos_char->qos_type == dynamic) {
+          qos_char->dynamic.fiveqi = qos_session->fiveQI;
+          qos_char->dynamic.qos_priority_level = qos_session->qos_priority;
+        } else {
+          qos_char->non_dynamic.fiveqi = qos_session->fiveQI;
+          qos_char->non_dynamic.qos_priority_level = qos_session->qos_priority;
+        }
+
+        ngran_allocation_retention_priority_t *rent_priority = &qos_flow->qos_params.alloc_reten_priority;
+        ngap_allocation_retention_priority_t *rent_priority_in = &qos_session->allocation_retention_priority;
+        rent_priority->priority_level = rent_priority_in->priority_level;
+        rent_priority->preemption_capability = rent_priority_in->pre_emp_capability;
+        rent_priority->preemption_vulnerability = rent_priority_in->pre_emp_vulnerability;
+      }
+    }
+  }
+  /* Limitation: we assume one fixed CU-UP per UE. We base the selection on
+   * NSSAI, but the UE might have multiple PDU sessions with differing slices,
+   * in which we might need to select different CU-UPs. In this case, we would
+   * actually need to group the E1 bearer context setup for the different
+   * CU-UPs, and send them to the different CU-UPs. */
+  sctp_assoc_t assoc_id = get_new_cuup_for_ue(rrc, UE, cuup_nssai.sst, cuup_nssai.sd);
+  rrc->cucp_cuup.bearer_context_setup(assoc_id, &bearer_req);
+}
+
 //------------------------------------------------------------------------------
 int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t instance)
 //------------------------------------------------------------------------------
@@ -381,40 +482,6 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
   }
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, UE->rrc_ue_id, 0, 0);
   UE->amf_ue_ngap_id = req->amf_ue_ngap_id;
-  uint8_t nb_pdusessions_tosetup = req->nb_of_pdusessions;
-  if (nb_pdusessions_tosetup) {
-    AssertFatal(false, "PDU sessions in Initial context setup request not handled by E1 yet\n");
-    /* this code should pass by E1: commenting here for future reference, but
-     * already handled in E1 for the "normal case" of a separate request for
-     * PDU session setup.
-    gtpv1u_gnb_create_tunnel_req_t create_tunnel_req = {0};
-    for (int i = 0; i < nb_pdusessions_tosetup; i++) {
-      UE->nb_of_pdusessions++;
-      if(UE->pduSession[i].status >= PDU_SESSION_STATUS_DONE)
-        continue;
-      UE->pduSession[i].status      = PDU_SESSION_STATUS_NEW;
-      UE->pduSession[i].param = req->pdusession_param[i];
-      create_tunnel_req.num_tunnels++;
-      create_tunnel_req.pdusession_id[i] = req->pdusession_param[i].pdusession_id;
-      create_tunnel_req.outgoing_teid[i] = req->pdusession_param[i].gtp_teid;
-      // To be developped: hardcoded first flow
-      create_tunnel_req.outgoing_qfi[i] = req->pdusession_param[i].qos[0].qfi;
-      create_tunnel_req.dst_addr[i].length = req->pdusession_param[i].upf_addr.length;
-      memcpy(create_tunnel_req.dst_addr[i].buffer, req->pdusession_param[i].upf_addr.buffer, sizeof(create_tunnel_req.dst_addr[i].buffer));
-      LOG_I(NR_RRC, "PDUSESSION SETUP: local index %d teid %u, pdusession id %d \n", i, create_tunnel_req.outgoing_teid[i], create_tunnel_req.pdusession_id[i]);
-    }
-    create_tunnel_req.ue_id = UE->rrc_ue_id;
-    gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp = {0};
-    int ret = gtpv1u_create_ngu_tunnel(instance, &create_tunnel_req, &create_tunnel_resp, nr_pdcp_data_req_drb, sdap_data_req);
-    if (ret != 0) {
-      LOG_E(NR_RRC, "rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ : gtpv1u_create_ngu_tunnel failed,start to release UE %x\n", UE->rnti);
-      AssertFatal(false, "release timer not implemented\n");
-      return (0);
-    }
-
-    nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(&ctxt, &create_tunnel_resp, 0);
-    */
-  }
 
   /* NAS PDU */
   // this is malloced pointers, we pass it for later free()
@@ -427,12 +494,18 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
   /* configure only integrity, ciphering comes after receiving SecurityModeComplete */
   nr_rrc_pdcp_config_security(&ctxt, ue_context_p, 0);
 
-  rrc_gNB_generate_SecurityModeCommand(&ctxt, ue_context_p);
-
-  // in case, send the S1SP initial context response if it is not sent with the attach complete message
-  if (UE->StatusRrc == NR_RRC_RECONFIGURED) {
-    LOG_I(NR_RRC, "Sending rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP, cause %ld\n", UE->reestablishment_cause);
-    rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(&ctxt, ue_context_p);
+  uint8_t nb_pdusessions_tosetup = req->nb_of_pdusessions;
+  /* if there are PDU sessions to setup, first send them to the CU-UP, then
+   * send the UE Context setup with Security commend. Else go to the security
+   * command directly. */
+  if (nb_pdusessions_tosetup > 0) {
+    trigger_bearer_setup(RC.nrrrc[instance],
+                         UE,
+                         req->nb_of_pdusessions,
+                         req->pdusession_param,
+                         /*req->ueAggMaxBitRateDownlink*/ 0);
+  } else {
+    rrc_gNB_generate_SecurityModeCommand(&ctxt, ue_context_p, 0, NULL);
   }
 
   return 0;
@@ -466,12 +539,13 @@ void rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(const protocol_ctxt_t *const c
         resp->pdusessions[pdusession].associated_qos_flows[qos_flow_index].qfi = session->param.qos[qos_flow_index].qfi;
         resp->pdusessions[pdusession].associated_qos_flows[qos_flow_index].qos_flow_mapping_ind = QOSFLOW_MAPPING_INDICATION_DL;
       }
-    } else {
+    } else if (session->status != PDU_SESSION_STATUS_ESTABLISHED) {
+      session->status = PDU_SESSION_STATUS_FAILED;
+      pdusession_failed_t *fail = &resp->pdusessions_failed[pdu_sessions_failed];
+      fail->pdusession_id = session->param.pdusession_id;
+      fail->cause = NGAP_CAUSE_RADIO_NETWORK;
+      fail->cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
       pdu_sessions_failed++;
-      resp->pdusessions_failed[pdusession].pdusession_id = session->param.pdusession_id;
-      // TODO add cause when it will be integrated
-      resp->pdusessions_failed[pdusession].cause = NGAP_CAUSE_RADIO_NETWORK;
-      resp->pdusessions_failed[pdusession].cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
     }
   }
 
@@ -511,7 +585,7 @@ static NR_CipheringAlgorithm_t rrc_gNB_select_ciphering(
     }
   }
 
-  LOG_I(RRC, "selecting ciphering algorithm %d\n", ret);
+  LOG_D(RRC, "selecting ciphering algorithm %d\n", ret);
 
   return ret;
 }
@@ -547,7 +621,7 @@ static e_NR_IntegrityProtAlgorithm rrc_gNB_select_integrity(
     }
   }
 
-  LOG_I(RRC, "selecting integrity algorithm %d\n", ret);
+  LOG_D(RRC, "selecting integrity algorithm %d\n", ret);
 
   return ret;
 }
@@ -585,13 +659,13 @@ static int rrc_gNB_process_security(const protocol_ctxt_t *const ctxt_pP, rrc_gN
   }
 
   LOG_I(NR_RRC,
-        "[gNB %d][UE %x] Selected security algorithms (%p): %lx, %x, %s\n",
+        "[gNB %d][UE %d] Selected security algorithms (%p): ciphering %lx, integrity %x (algorithms %s)\n",
         ctxt_pP->module_id,
-        UE->rnti,
+        UE->rrc_ue_id,
         security_capabilities_pP,
-        (unsigned long)cipheringAlgorithm,
+        cipheringAlgorithm,
         integrityProtAlgorithm,
-        changed ? "changed" : "same");
+        changed ? "changed" : "are the same");
   return changed;
 }
 
@@ -715,9 +789,11 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
       pdu_sessions_done++;
     } else if (session->status != PDU_SESSION_STATUS_ESTABLISHED) {
       session->status = PDU_SESSION_STATUS_FAILED;
-      resp->pdusessions_failed[pdu_sessions_failed].pdusession_id = session->param.pdusession_id;
+      pdusession_failed_t *fail = &resp->pdusessions_failed[pdu_sessions_failed];
+      fail->pdusession_id = session->param.pdusession_id;
+      fail->cause = NGAP_CAUSE_RADIO_NETWORK;
+      fail->cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
       pdu_sessions_failed++;
-      // TODO add cause when it will be integrated
     }
     resp->nb_of_pdusessions = pdu_sessions_done;
     resp->nb_of_pdusessions_failed = pdu_sessions_failed;
@@ -737,6 +813,28 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
   }
 
   return;
+}
+
+/* \brief checks if any transaction is ongoing for any xid of this UE */
+static bool transaction_ongoing(const gNB_RRC_UE_t *UE)
+{
+  for (int xid = 0; xid < 4; ++xid)
+    if (UE->xids[xid] != RRC_ACTION_NONE)
+      return true;
+  return false;
+}
+
+/* \brief delays the ongoing transaction (in msg_p) by setting a timer to wait
+ * 10ms; upon expiry, delivers to RRC, which sends the message to itself */
+static void delay_transaction(MessageDef *msg_p, int wait_us)
+{
+  MessageDef *new = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_PDUSESSION_SETUP_REQ);
+  ngap_pdusession_setup_req_t *n = &NGAP_PDUSESSION_SETUP_REQ(new);
+  *n = NGAP_PDUSESSION_SETUP_REQ(msg_p);
+
+  int instance = msg_p->ittiMsgHeader.originInstance;
+  long timer_id;
+  timer_setup(0, wait_us, TASK_RRC_GNB, instance, TIMER_ONE_SHOT, new, &timer_id);
 }
 
 //------------------------------------------------------------------------------
@@ -762,98 +860,27 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     return ;
   }
 
-  UE->rrc_ue_id = msg->gNB_ue_ngap_id;
+  AssertFatal(UE->rrc_ue_id == msg->gNB_ue_ngap_id, "logic bug\n");
   UE->amf_ue_ngap_id = msg->amf_ue_ngap_id;
-  e1ap_bearer_setup_req_t bearer_req = {0};
 
-
-  e1ap_nssai_t cuup_nssai = {0};
-  for (int i = 0; i < msg->nb_pdusessions_tosetup; i++) {
-    rrc_pdu_session_param_t *pduSession = find_pduSession(UE, msg->pdusession_setup_params[i].pdusession_id, true);
-    pdusession_t *session = &pduSession->param;
-    session->pdusession_id = msg->pdusession_setup_params[i].pdusession_id;
-    LOG_I(NR_RRC, "Adding pdusession %d, total nb of sessions %d\n", session->pdusession_id, UE->nb_of_pdusessions);
-    session->pdu_session_type = msg->pdusession_setup_params[i].pdu_session_type;
-    session->nas_pdu = msg->pdusession_setup_params[i].nas_pdu;
-    session->pdusessionTransfer = msg->pdusession_setup_params[i].pdusessionTransfer;
-    session->nssai = msg->pdusession_setup_params[i].nssai;
-    decodePDUSessionResourceSetup(session);
-    bearer_req.gNB_cu_cp_ue_id = msg->gNB_ue_ngap_id;
-    bearer_req.cipheringAlgorithm = UE->ciphering_algorithm;
-    bearer_req.integrityProtectionAlgorithm = UE->integrity_algorithm;
-    nr_derive_key(UP_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, (uint8_t *)bearer_req.encryptionKey);
-    nr_derive_key(UP_INT_ALG, UE->integrity_algorithm, UE->kgnb, (uint8_t *)bearer_req.integrityProtectionKey);
-    bearer_req.ueDlAggMaxBitRate = msg->ueAggMaxBitRateDownlink;
-    pdu_session_to_setup_t *pdu = bearer_req.pduSession + bearer_req.numPDUSessions;
-    bearer_req.numPDUSessions++;
-    pdu->sessionId = session->pdusession_id;
-    pdu->nssai = msg->pdusession_setup_params[i].nssai;
-    if (cuup_nssai.sst == 0)
-      cuup_nssai = pdu->nssai; /* for CU-UP selection below */
-    pdu->integrityProtectionIndication = rrc->security.do_drb_integrity ? E1AP_IntegrityProtectionIndication_required : E1AP_IntegrityProtectionIndication_not_needed;
-
-    pdu->confidentialityProtectionIndication = rrc->security.do_drb_ciphering ? E1AP_ConfidentialityProtectionIndication_required : E1AP_ConfidentialityProtectionIndication_not_needed;
-    pdu->teId = session->gtp_teid;
-    memcpy(&pdu->tlAddress, session->upf_addr.buffer, 4); // Fixme: dirty IPv4 target
-    pdu->numDRB2Setup = 1; // One DRB per PDU Session. TODO: Remove hardcoding
-    for (int j=0; j < pdu->numDRB2Setup; j++) {
-      DRB_nGRAN_to_setup_t *drb = pdu->DRBnGRanList + j;
-
-      drb->id = i + j + UE->nb_of_pdusessions;
-
-      drb->defaultDRB = true;
-
-      drb->sDAP_Header_UL = !(rrc->configuration.enable_sdap);
-      drb->sDAP_Header_DL = !(rrc->configuration.enable_sdap);
-
-      drb->pDCP_SN_Size_UL = E1AP_PDCP_SN_Size_s_18;
-      drb->pDCP_SN_Size_DL = E1AP_PDCP_SN_Size_s_18;
-
-      drb->discardTimer = E1AP_DiscardTimer_infinity;
-      drb->reorderingTimer = E1AP_T_Reordering_ms100;
-
-      drb->rLC_Mode = E1AP_RLC_Mode_rlc_am;
-
-      drb->numCellGroups = 1; // assume one cell group associated with a DRB
-
-      for (int k=0; k < drb->numCellGroups; k++) {
-        cell_group_t *cellGroup = drb->cellGroupList + k;
-        cellGroup->id = 0; // MCG
-      }
-
-      drb->numQosFlow2Setup = session->nb_qos;
-      for (int k=0; k < drb->numQosFlow2Setup; k++) {
-        qos_flow_to_setup_t *qos_flow = drb->qosFlows + k;
-        pdusession_level_qos_parameter_t *qos_session = session->qos + k;
-
-        qos_characteristics_t *qos_char = &qos_flow->qos_params.qos_characteristics;
-        qos_flow->qfi = qos_session->qfi;
-        qos_char->qos_type = qos_session->fiveQI_type;
-        if (qos_char->qos_type == dynamic) {
-          qos_char->dynamic.fiveqi = qos_session->fiveQI;
-          qos_char->dynamic.qos_priority_level = qos_session->qos_priority;
-        } else {
-          qos_char->non_dynamic.fiveqi = qos_session->fiveQI;
-          qos_char->non_dynamic.qos_priority_level = qos_session->qos_priority;
-        }
-
-        ngran_allocation_retention_priority_t *rent_priority = &qos_flow->qos_params.alloc_reten_priority;
-        ngap_allocation_retention_priority_t *rent_priority_in = &qos_session->allocation_retention_priority;
-        rent_priority->priority_level = rent_priority_in->priority_level;
-        rent_priority->preemption_capability = rent_priority_in->pre_emp_capability;
-        rent_priority->preemption_vulnerability = rent_priority_in->pre_emp_vulnerability;
-      }
-    }
+  /* This is a hack. We observed that with some UEs, PDU session requests might
+   * come in quick succession, faster than the RRC reconfiguration for the PDU
+   * session requests can be carried out (UE is doing reconfig, and second PDU
+   * session request arrives). We don't have currently the means to "queue up"
+   * these transactions, which would probably involve some rework of the RRC.
+   * To still allow these requests to come in and succeed, we below check and delay transactions
+   * for 10ms. However, to not accidentally end up in infinite loops, the
+   * maximum number is capped on a per-UE basis as indicated in variable
+   * max_delays_pdu_session. */
+  if (UE->max_delays_pdu_session > 0 && transaction_ongoing(UE)) {
+    int wait_us = 10000;
+    LOG_D(RRC, "UE %d: delay PDU session setup by %d us, pending %d retries\n", UE->rrc_ue_id, wait_us, UE->max_delays_pdu_session);
+    delay_transaction(msg_p, wait_us);
+    UE->max_delays_pdu_session--;
+    return;
   }
-  int xid = rrc_gNB_get_next_transaction_identifier(instance);
-  UE->xids[xid] = RRC_PDUSESSION_ESTABLISH;
-  /* Limitation: we assume one fixed CU-UP per UE. We base the selection on
-   * NSSAI, but the UE might have multiple PDU sessions with differing slices,
-   * in which we might need to select different CU-UPs. In this case, we would
-   * actually need to group the E1 bearer context setup for the different
-   * CU-UPs, and send them to the different CU-UPs. */
-  sctp_assoc_t assoc_id = get_new_cuup_for_ue(rrc, UE, cuup_nssai.sst, cuup_nssai.sd);
-  rrc->cucp_cuup.bearer_context_setup(assoc_id, &bearer_req);
+
+  trigger_bearer_setup(rrc, UE, msg->nb_pdusessions_tosetup, msg->pdusession_setup_params, msg->ueAggMaxBitRateDownlink);
   return;
 }
 

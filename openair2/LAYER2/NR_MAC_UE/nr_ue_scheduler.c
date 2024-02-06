@@ -656,8 +656,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* NDI */
-    pusch_config_pdu->pusch_data.new_data_indicator = dci->ndi != mac->UL_ndi[dci->harq_pid] ? 1 : 0;
-    mac->UL_ndi[dci->harq_pid] = dci->ndi;
+    NR_UL_HARQ_INFO_t *harq = &mac->ul_harq_info[dci->harq_pid];
+    pusch_config_pdu->pusch_data.new_data_indicator = false;
+    if (dci->ndi != harq->last_ndi) {
+      pusch_config_pdu->pusch_data.new_data_indicator = true;
+      // if new data reset harq structure
+      memset(harq, 0, sizeof(*harq));
+    }
+    harq->last_ndi = dci->ndi;
     /* RV */
     pusch_config_pdu->pusch_data.rv_index = dci->rv;
     /* HARQ_PROCESS_NUMBER */
@@ -768,7 +774,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->target_code_rate = mac->ul_harq_info[pid].R;
     pusch_config_pdu->pusch_data.tb_size = mac->ul_harq_info[pid].TBS;
   }
+
   pusch_config_pdu->ldpcBaseGraph = get_BG(pusch_config_pdu->pusch_data.tb_size << 3, pusch_config_pdu->target_code_rate);
+
+  if (pusch_config_pdu->pusch_data.tb_size == 0) {
+    LOG_E(MAC, "Invalid TBS = 0. Probably caused by missed detection of DCI\n");
+    return -1;
+  }
+
   return 0;
 }
 
@@ -1454,13 +1467,6 @@ int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
                           int *slot_tx,
                           const long k2)
 {
-  AssertFatal(k2 > DURATION_RX_TO_TX,
-              "Slot offset K2 (%ld) needs to be higher than DURATION_RX_TO_TX (%d). Please set min_rxtxtime at least to %d in gNB config file or gNBs.[0].min_rxtxtime=%d via command line.\n",
-              k2,
-              DURATION_RX_TO_TX,
-              DURATION_RX_TO_TX,
-              DURATION_RX_TO_TX);
-
   int delta = 0;
   const NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
 
@@ -1504,6 +1510,13 @@ int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
     }
 
   } else {
+
+    AssertFatal(k2 > DURATION_RX_TO_TX,
+                "Slot offset K2 (%ld) needs to be higher than DURATION_RX_TO_TX (%d). Please set min_rxtxtime at least to %d in gNB config file or gNBs.[0].min_rxtxtime=%d via command line.\n",
+                k2,
+                DURATION_RX_TO_TX,
+                DURATION_RX_TO_TX,
+                DURATION_RX_TO_TX);
 
     if (k2 < 0) { // This can happen when a false DCI is received
       LOG_W(PHY, "%d.%d. Received k2 %ld\n", current_frame, current_slot, k2);

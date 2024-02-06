@@ -132,7 +132,7 @@ class Cluster:
 	def _start_build(self, name):
 		# will return "immediately" but build runs in background
 		# if multiple builds are started at the same time, this can take some time, however
-		ret = self.cmd.run(f'oc start-build {name} --from-file={self.eNBSourceCodePath}')
+		ret = self.cmd.run(f'oc start-build {name} --from-dir={self.eNBSourceCodePath} --exclude=""')
 		regres = re.search(r'build.build.openshift.io/(?P<jobname>[a-zA-Z0-9\-]+) started', ret.stdout)
 		if ret.returncode != 0 or ret.stdout.count('Uploading finished') != 1 or regres is None:
 			logging.error(f"error during oc start-build: {ret.stdout}")

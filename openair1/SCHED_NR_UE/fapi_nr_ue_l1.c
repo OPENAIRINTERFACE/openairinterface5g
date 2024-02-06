@@ -304,7 +304,14 @@ static void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
     if ((dlsch_config_pdu->dmrs_ports>>i)&0x01) Nl += 1;
   }
   dlsch0->Nl = Nl;
-  downlink_harq_process(dlsch0_harq, current_harq_pid, dlsch_config_pdu->ndi, dlsch_config_pdu->rv, dlsch0->rnti_type);
+  if (dlsch_config_pdu->new_data_indicator) {
+    dlsch0_harq->first_rx = true;
+    dlsch0_harq->DLround = 0;
+  } else {
+    dlsch0_harq->first_rx = false;
+    dlsch0_harq->DLround++;
+  }
+  downlink_harq_process(dlsch0_harq, current_harq_pid, dlsch_config_pdu->new_data_indicator, dlsch_config_pdu->rv, dlsch0->rnti_type);
   if (dlsch0_harq->status != ACTIVE) {
     // dlsch0_harq->status not ACTIVE due to false retransmission
     // Reset the following flag to skip PDSCH procedures in that case and retrasmit harq status

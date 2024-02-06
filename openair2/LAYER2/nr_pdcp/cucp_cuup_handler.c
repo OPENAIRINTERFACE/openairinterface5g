@@ -184,8 +184,8 @@ void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req)
                               sdap_data_req,
                               &resp_n3);
     AssertFatal(ret >= 0, "Unable to create GTP Tunnel for NG-U\n");
-    AssertFatal(resp_n3.num_tunnels == req->numPDUSessions, "could not create all tunnels\n");
-    resp_pdu->teId = resp_n3.gnb_NGu_teid[i];
+    AssertFatal(resp_n3.num_tunnels == req_pdu->numDRB2Setup, "could not create all tunnels\n");
+    resp_pdu->teId = resp_n3.gnb_NGu_teid[0];
     memcpy(&resp_pdu->tlAddress, &resp_n3.gnb_addr.buffer, 4);
 
     // create PDCP bearers. This will also create SDAP bearers
@@ -240,6 +240,7 @@ void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req)
   instance_t f1inst = get_f1_gtp_instance();
 
   for (int i=0; i < req->numPDUSessionsMod; i++) {
+    DevAssert(req->pduSessionMod[i].sessionId > 0);
     LOG_I(E1AP,
           "UE %d: updating PDU session ID %ld (%ld bearers)\n",
           req->gNB_cu_up_ue_id,
@@ -278,6 +279,7 @@ void e1_bearer_release_cmd(const e1ap_bearer_release_cmd_t *cmd)
   if (f1inst >= 0)  // is there F1-U?
     newGtpuDeleteAllTunnels(f1inst, cmd->gNB_cu_up_ue_id);
   nr_pdcp_remove_UE(cmd->gNB_cu_up_ue_id);
+  nr_sdap_delete_ue_entities(cmd->gNB_cu_up_ue_id);
   if (need_ue_id_mgmt) {
     cu_remove_f1_ue_data(cmd->gNB_cu_up_ue_id);
   }

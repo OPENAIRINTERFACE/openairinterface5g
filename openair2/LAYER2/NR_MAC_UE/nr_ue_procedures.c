@@ -681,13 +681,30 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
   /* MCS */
   dlsch_pdu->mcs = dci->mcs;
 
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
+  /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
+  if (dl_conf_req->pdu_type == FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH ||
+      dl_conf_req->pdu_type == FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH ||
+      dci->ndi != current_harq->last_ndi) {
+    // new data
+    dlsch_pdu->new_data_indicator = true;
+    current_harq->R = 0;
+    current_harq->TBS = 0;
+  }
+  else
+    dlsch_pdu->new_data_indicator = false;
+
+  if (dl_conf_req->pdu_type != FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH &&
+      dl_conf_req->pdu_type != FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH) {
+    current_harq->last_ndi = dci->ndi;
+  }
+
   dlsch_pdu->qamModOrder = nr_get_Qm_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
   if (dlsch_pdu->qamModOrder == 0) {
     LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
     return -1;
   }
 
-  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
   int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
   if (R > 0) {
     dlsch_pdu->targetCodeRate = R;
@@ -707,6 +724,11 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
                                     1);
     // storing for possible retransmissions
     current_harq->R = dlsch_pdu->targetCodeRate;
+    if (!dlsch_pdu->new_data_indicator && current_harq->TBS != dlsch_pdu->TBS) {
+      LOG_W(NR_MAC, "NDI indicates re-transmission but computed TBS %d doesn't match with what previously stored %d\n",
+            dlsch_pdu->TBS, current_harq->TBS);
+      dlsch_pdu->new_data_indicator = true; // treated as new data
+    }
     current_harq->TBS = dlsch_pdu->TBS;
   }
   else {
@@ -716,11 +738,14 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
 
   dlsch_pdu->ldpcBaseGraph = get_BG(dlsch_pdu->TBS, dlsch_pdu->targetCodeRate);
 
+  if (dlsch_pdu->TBS == 0) {
+    LOG_E(MAC, "Invalid TBS = 0. Probably caused by missed detection of DCI\n");
+    return -1;
+  }
+
   int bw_tbslbrm = current_DL_BWP ? mac->sc_info.dl_bw_tbslbrm : dlsch_pdu->BWPSize;
   dlsch_pdu->tbslbrm = nr_compute_tbslbrm(dlsch_pdu->mcs_table, bw_tbslbrm, 1);
 
-  /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
-  dlsch_pdu->ndi = dci->ndi;
   /* RV (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
   dlsch_pdu->rv = dci->rv;
   /* HARQ_PROCESS_NUMBER (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -801,7 +826,7 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
         "scaling_factor_S=%f\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
         dlsch_pdu->vrb_to_prb_mapping,
         dlsch_pdu->mcs,
-        dlsch_pdu->ndi,
+        dlsch_pdu->new_data_indicator,
         dlsch_pdu->rv,
         dlsch_pdu->harq_process_nbr,
         dci->dai[0].val,
@@ -961,13 +986,23 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   /* MCS (for transport block 1)*/
   dlsch_pdu->mcs = dci->mcs;
   /* NDI (for transport block 1)*/
-  dlsch_pdu->ndi = dci->ndi;
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
+  if (dci->ndi != current_harq->last_ndi) {
+    // new data
+    dlsch_pdu->new_data_indicator = true;
+    current_harq->R = 0;
+    current_harq->TBS = 0;
+  }
+  else {
+    dlsch_pdu->new_data_indicator = false;
+  }
+  current_harq->last_ndi = dci->ndi;
   /* RV (for transport block 1)*/
   dlsch_pdu->rv = dci->rv;
   /* MCS (for transport block 2)*/
   dlsch_pdu->tb2_mcs = dci->mcs2.val;
   /* NDI (for transport block 2)*/
-  dlsch_pdu->tb2_ndi = dci->ndi2.val;
+  dlsch_pdu->tb2_new_data_indicator = dci->ndi2.val;
   /* RV (for transport block 2)*/
   dlsch_pdu->tb2_rv = dci->rv2.val;
   /* HARQ_PROCESS_NUMBER */
@@ -1124,7 +1159,6 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
     nb_rb_oh = 0;
   int nb_re_dmrs = ((dmrs_type == NULL) ? 6 : 4) * dlsch_pdu->n_dmrs_cdm_groups;
 
-  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[dci->harq_pid];
   int R = nr_get_code_rate_dl(dlsch_pdu->mcs, dlsch_pdu->mcs_table);
   if (R > 0) {
     dlsch_pdu->targetCodeRate = R;
@@ -1137,6 +1171,11 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
                                     0,
                                     Nl);
     // storing for possible retransmissions
+    if (!dlsch_pdu->new_data_indicator && current_harq->TBS != dlsch_pdu->TBS) {
+      LOG_W(NR_MAC, "NDI indicates re-transmission but computed TBS %d doesn't match with what previously stored %d\n",
+            dlsch_pdu->TBS, current_harq->TBS);
+      dlsch_pdu->new_data_indicator = true; // treated as new data
+    }
     current_harq->R = dlsch_pdu->targetCodeRate;
     current_harq->TBS = dlsch_pdu->TBS;
   }
@@ -1146,6 +1185,11 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   }
 
   dlsch_pdu->ldpcBaseGraph = get_BG(dlsch_pdu->TBS, dlsch_pdu->targetCodeRate);
+
+  if (dlsch_pdu->TBS == 0) {
+    LOG_E(MAC, "Invalid TBS = 0. Probably caused by missed detection of DCI\n");
+    return -1;
+  }
 
   // TBS_LBRM according to section 5.4.2.1 of 38.212
   AssertFatal(sc_info->maxMIMO_Layers_PDSCH != NULL, "Option with max MIMO layers not configured is not supported\n");
@@ -3733,11 +3777,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         //  end of MAC PDU, can ignore the rest.
         break;
         //  MAC SDU
-      case DL_SCH_LCID_DCCH:
-        //  check if LCID is valid at current time.
-      case DL_SCH_LCID_DCCH1:
-        //  check if LCID is valid at current time.
-      case DL_SCH_LCID_DTCH ... (DL_SCH_LCID_DTCH + 28):
+      // From values 1 to 32 it equals to the identity of the logical channel
+      case 1 ... 32:
         if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
           return;
         LOG_D(NR_MAC, "%4d.%2d : DLSCH -> LCID %d %d bytes\n", frameP, slot, rx_lcid, mac_len);

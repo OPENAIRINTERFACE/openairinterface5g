@@ -239,9 +239,9 @@ typedef struct {
 
 typedef struct
 {
-  uint8_t  rv_index;
-  uint8_t  harq_process_id;
-  uint8_t  new_data_indicator;
+  uint8_t rv_index;
+  uint8_t harq_process_id;
+  bool new_data_indicator;
   uint32_t tb_size;
   uint16_t num_cb;
   uint8_t cb_present_and_position[(NFAPI_UE_MAX_NUM_CB+7) / 8];
@@ -455,13 +455,13 @@ typedef struct {
   uint8_t rate_matching_ind;
   uint8_t zp_csi_rs_trigger;
   uint8_t mcs;
-  uint8_t ndi;
+  bool new_data_indicator;
   uint8_t rv;
   uint16_t targetCodeRate;
   uint8_t qamModOrder;
   uint32_t TBS;
   uint8_t tb2_mcs;
-  uint8_t tb2_ndi;
+  bool tb2_new_data_indicator;
   uint8_t tb2_rv;
   uint8_t harq_process_nbr;
   vrb_to_prb_mapping_t vrb_to_prb_mapping;

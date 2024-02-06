@@ -40,12 +40,12 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         libsctp1 \
         libconfig9 \
+        iproute2 \
+        net-tools \
         openssl && \
 # if the --sanitize option was used to build, additional packages are required
     /bin/bash -c 'if [[ "$BUILD_OPTION" = "--sanitize" ]]; then DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         libasan5 \
-        iproute2 \
-        net-tools \
         libubsan1 \
         liblapacke; fi' && \
     rm -rf /var/lib/apt/lists/*

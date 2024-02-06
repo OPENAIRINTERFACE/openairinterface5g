@@ -556,7 +556,7 @@ bool nr_sdap_delete_ue_entities(ue_id_t ue_id)
       entityPrev->next_entity = entityPtr->next_entity;
       free(entityPtr);
       entityPtr = entityPrev->next_entity;
-      LOG_D(SDAP, "Successfully deleted Entity.\n");
+      LOG_I(SDAP, "Successfully deleted SDAP entity for UE %ld\n", ue_id);
       ret = true;
     }
   }

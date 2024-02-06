@@ -56,7 +56,7 @@ int get_single_rnti(char *buf, int debug, telnet_printfunc_t prnt)
   return 0;
 }
 
-void rrc_gNB_trigger_new_bearer(int rnti);
+//void rrc_gNB_trigger_new_bearer(int rnti);
 int add_bearer(char *buf, int debug, telnet_printfunc_t prnt)
 {
   int rnti = -1;
@@ -75,12 +75,13 @@ int add_bearer(char *buf, int debug, telnet_printfunc_t prnt)
   if (!rrcue)
     ERROR_MSG_RET("could not find UE with RNTI %04x\n", rnti);
 
-  rrc_gNB_trigger_new_bearer(rnti);
+  AssertFatal(false, "not implemented\n");
+  //rrc_gNB_trigger_new_bearer(rnti);
   prnt("called rrc_gNB_trigger_new_bearer(%04x)\n", rnti);
   return 0;
 }
 
-void rrc_gNB_trigger_release_bearer(int rnti);
+//void rrc_gNB_trigger_release_bearer(int rnti);
 int release_bearer(char *buf, int debug, telnet_printfunc_t prnt)
 {
   int rnti = -1;
@@ -99,7 +100,8 @@ int release_bearer(char *buf, int debug, telnet_printfunc_t prnt)
   if (!rrcue)
     ERROR_MSG_RET("could not find UE with RNTI %04x\n", rnti);
 
-  rrc_gNB_trigger_release_bearer(rnti);
+  AssertFatal(false, "not implemented\n");
+  //rrc_gNB_trigger_release_bearer(rnti);
   prnt("called rrc_gNB_trigger_release_bearer(%04x)\n", rnti);
   return 0;
 }

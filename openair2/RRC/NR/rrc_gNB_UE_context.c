@@ -72,7 +72,7 @@ rrc_gNB_ue_context_t *rrc_gNB_allocate_new_ue_context(gNB_RRC_INST *rrc_instance
   for(int i = 0; i < NB_RB_MAX; i++)
     new_p->ue_context.pduSession[i].xid = -1;
 
-  LOG_I(NR_RRC, "Returning new RRC UE context RRC ue id: %d\n", new_p->ue_context.rrc_ue_id);
+  LOG_D(NR_RRC, "Returning new RRC UE context RRC ue id: %d\n", new_p->ue_context.rrc_ue_id);
   return(new_p);
 }
 
@@ -188,6 +188,7 @@ rrc_gNB_ue_context_t *rrc_gNB_create_ue_context(sctp_assoc_t assoc_id,
               "UE F1 Context for ID %d already exists, logic bug\n",
               ue->rrc_ue_id);
   cu_add_f1_ue_data(ue->rrc_ue_id, &ue_data);
+  ue->max_delays_pdu_session = 20; /* see rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ() */
 
   RB_INSERT(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_p);
   LOG_I(NR_RRC,

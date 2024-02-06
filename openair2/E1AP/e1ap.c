@@ -665,7 +665,7 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_bearer_setup_req_t *const bear
       asn1cSequenceAdd(ieC6_1->dRB_To_Setup_List_NG_RAN.list, E1AP_DRB_To_Setup_Item_NG_RAN_t, ieC6_1_1);
       ieC6_1_1->dRB_ID = j->id;
 
-      ieC6_1_1->sDAP_Configuration.defaultDRB = j->defaultDRB;
+      ieC6_1_1->sDAP_Configuration.defaultDRB = j->defaultDRB ? E1AP_DefaultDRB_true : E1AP_DefaultDRB_false;
       ieC6_1_1->sDAP_Configuration.sDAP_Header_UL = j->sDAP_Header_UL;
       ieC6_1_1->sDAP_Configuration.sDAP_Header_DL = j->sDAP_Header_DL;
 
@@ -971,7 +971,7 @@ void extract_BEARER_CONTEXT_SETUP_REQUEST(const E1AP_E1AP_PDU_t *pdu, e1ap_beare
 
             drb->id = drb2Setup->dRB_ID;
 
-            drb->defaultDRB = drb2Setup->sDAP_Configuration.defaultDRB;
+            drb->defaultDRB = drb2Setup->sDAP_Configuration.defaultDRB == E1AP_DefaultDRB_true;
             drb->sDAP_Header_UL = drb2Setup->sDAP_Configuration.sDAP_Header_UL;
             drb->sDAP_Header_DL = drb2Setup->sDAP_Configuration.sDAP_Header_DL;
 

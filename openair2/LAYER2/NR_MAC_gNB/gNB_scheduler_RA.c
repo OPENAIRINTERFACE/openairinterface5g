@@ -688,7 +688,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   }
 
   NR_SCHED_UNLOCK(&nr_mac->sched_lock);
-  LOG_E(NR_MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
+  LOG_E(NR_MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d %4d.%2d initiating RA procedure for preamble index %d: no free RA process\n", module_idP, CC_id, frameP, slotP, preamble_index);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
 }
@@ -768,8 +768,14 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
       return;
     }
 
-    LOG_I(NR_MAC, "[gNB %d][RAPROC] Frame %d, Slot %d : CC_id %d Scheduling retransmission of Msg3 in (%d,%d)\n",
-          module_idP, frame, slot, CC_id, sched_frame, sched_slot);
+    LOG_I(NR_MAC,
+          "%4d%2d: RA RNTI %04x CC_id %d Scheduling retransmission of Msg3 in (%d,%d)\n",
+          frame,
+          slot,
+          ra->rnti,
+          CC_id,
+          sched_frame,
+          sched_slot);
 
     buffer_index = ul_buffer_index(sched_frame, sched_slot, mu, nr_mac->UL_tti_req_ahead_size);
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &nr_mac->UL_tti_req_ahead[CC_id][buffer_index];
@@ -1253,7 +1259,8 @@ static void nr_generate_Msg2(module_id_t module_idP,
                                  true);
 
     if (CCEIndex < 0) {
-      LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI 0x%04x!\n", __func__, ra->rnti);
+      LOG_E(NR_MAC, "cannot find free CCE for Msg2 of RA RNTI 0x%04x!\n", ra->rnti);
+      nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
       return;
     }
 
@@ -1455,7 +1462,7 @@ static void nr_generate_Msg2(module_id_t module_idP,
     }
 
     ra->state = WAIT_Msg3;
-    LOG_W(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: rnti %04x RA state %d\n", module_idP, frameP, slotP, ra->rnti, ra->state);
+    LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: rnti %04x RA state %d\n", module_idP, frameP, slotP, ra->rnti, ra->state);
   }
 }
 
@@ -1698,7 +1705,6 @@ static void nr_generate_Msg4(module_id_t module_idP,
       // Need to wait until data for Msg4 is ready
       if (srb_status.bytes_in_buffer == 0)
         return;
-      LOG_I(NR_MAC, "(%4d.%2d) SRB%d has %d bytes\n", frameP, slotP, lcid, srb_status.bytes_in_buffer);
       mac_sdu_length = srb_status.bytes_in_buffer;
     }
 

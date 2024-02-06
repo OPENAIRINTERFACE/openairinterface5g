@@ -95,8 +95,8 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
     amf_desc_p = ngap_gNB_nnsf_select_amf_by_guami(instance_p, UEfirstReq->establishment_cause, UEfirstReq->ue_identity.guami);
 
     if (amf_desc_p) {
-      NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through GUAMI MCC %d MNC %d AMFRI %d AMFSI %d AMFPT %d\n",
-                instance,
+      NGAP_INFO("UE %d: Chose AMF '%s' (assoc_id %d) through GUAMI MCC %d MNC %d AMFRI %d AMFSI %d AMFPT %d\n",
+                UEfirstReq->gNB_ue_ngap_id,
                 amf_desc_p->amf_name,
                 amf_desc_p->assoc_id,
                 UEfirstReq->ue_identity.guami.mcc,
@@ -115,8 +115,8 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
 
       if (amf_desc_p) {
         NGAP_INFO(
-            "[gNB %ld] Chose AMF '%s' (assoc_id %d) through S-TMSI AMFSI %d and selected PLMN Identity index %d MCC %d MNC %d\n",
-            instance,
+            "UE %d: Chose AMF '%s' (assoc_id %d) through S-TMSI AMFSI %d and selected PLMN Identity index %d MCC %d MNC %d\n",
+            UEfirstReq->gNB_ue_ngap_id,
             amf_desc_p->amf_name,
             amf_desc_p->assoc_id,
             UEfirstReq->ue_identity.s_tmsi.amf_set_id,
@@ -134,8 +134,8 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
     amf_desc_p = ngap_gNB_nnsf_select_amf_by_plmn_id(instance_p, UEfirstReq->establishment_cause, UEfirstReq->selected_plmn_identity);
 
     if (amf_desc_p) {
-      NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
-                instance,
+      NGAP_INFO("UE %d: Chose AMF '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
+                UEfirstReq->gNB_ue_ngap_id,
                 amf_desc_p->amf_name,
                 amf_desc_p->assoc_id,
                 UEfirstReq->selected_plmn_identity,
@@ -153,7 +153,7 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
     amf_desc_p = ngap_gNB_nnsf_select_amf(instance_p, UEfirstReq->establishment_cause);
 
     if (amf_desc_p) {
-      NGAP_INFO("[gNB %ld] Chose AMF '%s' (assoc_id %d) through highest relative capacity\n", instance, amf_desc_p->amf_name, amf_desc_p->assoc_id);
+      NGAP_INFO("UE %d: Chose AMF '%s' (assoc_id %d) through highest relative capacity\n", UEfirstReq->gNB_ue_ngap_id, amf_desc_p->amf_name, amf_desc_p->assoc_id);
     }
   }
 
@@ -246,7 +246,7 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
     ie->criticality = NGAP_Criticality_reject;
     ie->value.present = NGAP_InitialUEMessage_IEs__value_PR_FiveG_S_TMSI;
     AMF_SETID_TO_BIT_STRING(UEfirstReq->ue_identity.s_tmsi.amf_set_id, &ie->value.choice.FiveG_S_TMSI.aMFSetID);
-    AMF_SETID_TO_BIT_STRING(UEfirstReq->ue_identity.s_tmsi.amf_pointer, &ie->value.choice.FiveG_S_TMSI.aMFPointer);
+    AMF_POINTER_TO_BIT_STRING(UEfirstReq->ue_identity.s_tmsi.amf_pointer, &ie->value.choice.FiveG_S_TMSI.aMFPointer);
     M_TMSI_TO_OCTET_STRING(UEfirstReq->ue_identity.s_tmsi.m_tmsi, &ie->value.choice.FiveG_S_TMSI.fiveG_TMSI);
   }
 
@@ -631,7 +631,14 @@ int ngap_gNB_initial_ctxt_resp(instance_t instance, ngap_initial_context_setup_r
       GTP_TEID_TO_ASN1(initial_ctxt_resp_p->pdusessions[i].gtp_teid, &tmp->gTP_TEID);
       allocAddrCopy(&tmp->transportLayerAddress, initial_ctxt_resp_p->pdusessions[i].gNB_addr);
 
-      NGAP_DEBUG("initial_ctxt_resp_p: pdusession ID %ld\n", item->pDUSessionID);
+      NGAP_DEBUG("initial_ctxt_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld, TEID %u\n",
+                 item->pDUSessionID,
+                 tmp->transportLayerAddress.buf[0],
+                 tmp->transportLayerAddress.buf[1],
+                 tmp->transportLayerAddress.buf[2],
+                 tmp->transportLayerAddress.buf[3],
+                 tmp->transportLayerAddress.size,
+                 initial_ctxt_resp_p->pdusessions[i].gtp_teid);
 
       /* associatedQosFlowList. number of 1? */
       for(int j=0; j < initial_ctxt_resp_p->pdusessions[i].nb_of_qos_flow; j++) {
@@ -692,11 +699,11 @@ int ngap_gNB_initial_ctxt_resp(instance_t instance, ngap_initial_context_setup_r
 
         case NGAP_CAUSE_NOTHING:
         default:
-          LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", initial_ctxt_resp_p->pdusessions_failed[i].cause);
+          AssertFatal(false, "Unknown PDU session failure cause %d\n", initial_ctxt_resp_p->pdusessions_failed[i].cause);
           break;
       }
 
-      NGAP_DEBUG("initial context setup response: failed pdusession ID %ld\n", item->pDUSessionID);
+      NGAP_INFO("initial context setup response: failed pdusession ID %ld\n", item->pDUSessionID);
       asn_encode_to_new_buffer_result_t res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, &pdusessionUnTransfer);
       AssertFatal(res.buffer, "ASN1 message encoding failed (%s, %lu)!\n", res.result.failed_type->name, res.result.encoded);
       item->pDUSessionResourceSetupUnsuccessfulTransfer.buf = res.buffer;
@@ -885,13 +892,14 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance, ngap_pdusession_setup_re
       asn1cCalloc(pdusessionTransfer.dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel, tmp);
       GTP_TEID_TO_ASN1(pdusession->gtp_teid, &tmp->gTP_TEID);
       allocAddrCopy(&tmp->transportLayerAddress, pdusession->gNB_addr);
-      NGAP_DEBUG("pdusession_setup_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld \n",
+      NGAP_DEBUG("pdusession_setup_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld, TEID %u\n",
                  item->pDUSessionID,
                  tmp->transportLayerAddress.buf[0],
                  tmp->transportLayerAddress.buf[1],
                  tmp->transportLayerAddress.buf[2],
                  tmp->transportLayerAddress.buf[3],
-                 tmp->transportLayerAddress.size);
+                 tmp->transportLayerAddress.size,
+                 pdusession->gtp_teid);
       /* associatedQosFlowList. number of 1? */
       for(int j=0; j < pdusession_setup_resp_p->pdusessions[i].nb_of_qos_flow; j++) {
         asn1cSequenceAdd(pdusessionTransfer.dLQosFlowPerTNLInformation.associatedQosFlowList.list, NGAP_AssociatedQosFlowItem_t, ass_qos_item_p);
@@ -923,7 +931,6 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance, ngap_pdusession_setup_re
     ie->value.present = NGAP_PDUSessionResourceSetupResponseIEs__value_PR_PDUSessionResourceFailedToSetupListSURes;
 
     for (int i = 0; i < pdusession_setup_resp_p->nb_of_pdusessions_failed; i++) {
-      LOG_W(NGAP,"add a failed session\n");
       pdusession_failed_t *pdusession_failed = pdusession_setup_resp_p->pdusessions_failed + i;
       asn1cSequenceAdd(ie->value.choice.PDUSessionResourceFailedToSetupListSURes.list, NGAP_PDUSessionResourceFailedToSetupItemSURes_t, item);
       NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t pdusessionUnTransfer_p = {0};
@@ -960,10 +967,10 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance, ngap_pdusession_setup_re
 
         case NGAP_CAUSE_NOTHING:
         default:
-          LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", pdusession_failed->cause);
+          AssertFatal(false, "Unknown PDU session failure cause %d\n", pdusession_failed->cause);
           break;
       }
-      NGAP_DEBUG("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
+      NGAP_INFO("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
 
       asn_encode_to_new_buffer_result_t res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, &pdusessionUnTransfer_p);
       item->pDUSessionResourceSetupUnsuccessfulTransfer.buf = res.buffer;
@@ -1124,7 +1131,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance, ngap_pdusession_modify_
 
       case NGAP_CAUSE_NOTHING:
       default:
-        LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", pdusession_modify_resp_p->pdusessions_failed[i].cause);
+        AssertFatal(false, "Unknown PDU session failure cause %d\n", pdusession_modify_resp_p->pdusessions_failed[i].cause);
         break;
       }
 
@@ -1136,7 +1143,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance, ngap_pdusession_modify_
 
       ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceModifyUnsuccessfulTransfer, pdusessionTransfer_p);
 
-      NGAP_DEBUG("pdusession_modify_resp: failed pdusession ID %ld\n", item->pDUSessionID);
+      NGAP_INFO("pdusession_modify_resp: failed pdusession ID %ld\n", item->pDUSessionID);
     }
   }
 
