@@ -486,21 +486,6 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   if (get_softmodem_params()->emulate_l1) {
     free_unqueued_nfapi_indications(rach_ind, uci_ind, rx_ind, crc_ind);
   }
-
-  if (NFAPI_MODE != NFAPI_MODE_PNF) {
-    gNB_MAC_INST *mac = RC.nrmac[module_id];
-
-    NR_IF_Module_t *ifi = nr_if_inst[module_id];
-    ifi->current_frame = UL_info->frame;
-    ifi->current_slot = UL_info->slot;
-
-    nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
-    int spf = get_spf(cfg);
-    int CC_id = 0;
-    int frame_tx = UL_info->frame + ((UL_info->slot > (spf - 1 - ifi->sl_ahead)) ? 1 : 0);
-    int slot_tx = (UL_info->slot + ifi->sl_ahead) % spf;
-    ifi->NR_slot_indication(module_id, CC_id, frame_tx, slot_tx);
-  }
 }
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id) {

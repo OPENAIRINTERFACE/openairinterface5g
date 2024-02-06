@@ -156,21 +156,9 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
   uint8_t number_tx_data_pdu        = (TX_req == NULL) ? 0 : TX_req->Number_of_PDUs;
 
   if (NFAPI_MODE == NFAPI_MONOLITHIC){
-
     if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) {
-      notifiedFIFO_elt_t *res=NULL;
       processingData_L1tx_t *msgTx=NULL;
-      if (!gNB->reorder_thread_disable) {
-        res = pullNotifiedFIFO(&gNB->L1_tx_free);
-        if (res == NULL)
-          return; // Tpool has been stopped, nothing to process
-        msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-      } else {
-        msgTx = gNB->msgDataTx; //newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0, &gNB->L1_tx_out,NULL);
-      }
-      /*const time_stats_t ts = exec_time_stats_NotifiedFIFO(res);
-      merge_meas(&gNB->phy_proc_tx, &ts);
-*/
+      msgTx = gNB->msgDataTx;
       msgTx->num_pdsch_slot = 0;
       msgTx->num_dl_pdcch = 0;
       msgTx->num_ul_pdcch = number_ul_dci_pdu;
@@ -222,8 +210,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
        * released only when both threads are done with it.
        */
       inc_ref_sched_response(Sched_INFO->sched_response_id);
-      if (!gNB->reorder_thread_disable)
-	pushNotifiedFIFO(&gNB->L1_tx_filled,res);
     }
 
     for (int i = 0; i < number_ul_tti_pdu; i++) {
@@ -267,7 +253,9 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
   }
 
   /* this thread is done with the sched_info, decrease the reference counter */
-  deref_sched_response(Sched_INFO->sched_response_id);
-
+  if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) {
+    LOG_D(NR_PHY, "Calling dref_sched_response for id %d in %d.%d (sched_response)\n", Sched_INFO->sched_response_id, frame, slot);
+    deref_sched_response(Sched_INFO->sched_response_id);
+  }
   stop_meas(&gNB->schedule_response_stats);
 }

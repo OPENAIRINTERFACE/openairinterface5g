@@ -111,42 +111,63 @@ time_stats_t softmodem_stats_rx_sf; // total rx time
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 #define L1STATSSTRLEN 16384
 
-
-void tx_func(void *param) 
+static void tx_func(void *param)
 {
   processingData_L1tx_t *info = (processingData_L1tx_t *) param;
-  PHY_VARS_gNB *gNB = info->gNB;
+
   int frame_tx = info->frame;
   int slot_tx = info->slot;
-  int cumul_samples = gNB->frame_parms.get_samples_per_slot(0, &gNB->frame_parms);
-  int i = 1;
-  for (; i < gNB->frame_parms.slots_per_subframe / 2; i++)
-    cumul_samples += gNB->frame_parms.get_samples_per_slot(i, &gNB->frame_parms);
-  int samples = cumul_samples / i;
-  int absslot_tx = info->timestamp_tx / samples;
-  int absslot_rx = absslot_tx - gNB->RU_list[0]->sl_ahead;
-  int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
-  start_meas(&gNB->phy_proc_tx);
+  int frame_rx = info->frame_rx;
+  int slot_rx = info->slot_rx;
+  int absslot_tx = info->timestamp_tx / info->gNB->frame_parms.get_samples_per_slot(slot_tx, &info->gNB->frame_parms);
+  int absslot_rx = absslot_tx - info->gNB->RU_list[0]->sl_ahead;
 
-  clock_gettime(CLOCK_MONOTONIC, &gNB->rt_L1_profiling.start_L1_TX[rt_prof_idx]);
-  phy_procedures_gNB_TX(info,
-                        frame_tx,
-                        slot_tx,
-                        1);
-  clock_gettime(CLOCK_MONOTONIC, &gNB->rt_L1_profiling.return_L1_TX[rt_prof_idx]);
+  LOG_D(NR_PHY, "%d.%d running tx_func\n", frame_tx, slot_tx);
+  PHY_VARS_gNB *gNB = info->gNB;
+  module_id_t module_id = gNB->Mod_id;
+  uint8_t CC_id = gNB->CC_id;
+  NR_IF_Module_t *ifi = gNB->if_inst;
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
 
-  if (get_softmodem_params()->reorder_thread_disable) {
+  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
+
+  ifi->NR_slot_indication(module_id, CC_id, frame_tx, slot_tx);
+  gNB->msgDataTx->timestamp_tx = info->timestamp_tx;
+  info = gNB->msgDataTx;
+  info->gNB = gNB;
+
+  // At this point, MAC scheduler just ran, including scheduling
+  // PRACH/PUCCH/PUSCH, so trigger RX chain processing
+  LOG_D(NR_PHY, "%s() trigger RX for %d.%d\n", __func__, frame_rx, slot_rx);
+  notifiedFIFO_elt_t *res = newNotifiedFIFO_elt(sizeof(processingData_L1_t), 0, &gNB->resp_L1, NULL);
+  processingData_L1_t *syncMsg = NotifiedFifoData(res);
+  syncMsg->gNB = gNB;
+  syncMsg->frame_rx = frame_rx;
+  syncMsg->slot_rx = slot_rx;
+  syncMsg->timestamp_tx = info->timestamp_tx;
+  res->key = slot_rx;
+  pushNotifiedFIFO(&gNB->resp_L1, res);
+
+  int tx_slot_type = nr_slot_select(cfg, frame_tx, slot_tx);
+  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT || get_softmodem_params()->continuous_tx) {
+    start_meas(&info->gNB->phy_proc_tx);
+    phy_procedures_gNB_TX(info, frame_tx, slot_tx, 1);
+    const int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
+    clock_gettime(CLOCK_MONOTONIC, &info->gNB->rt_L1_profiling.return_L1_TX[rt_prof_idx]);
+
+    PHY_VARS_gNB *gNB = info->gNB;
     processingData_RU_t syncMsgRU;
     syncMsgRU.frame_tx = frame_tx;
     syncMsgRU.slot_tx = slot_tx;
     syncMsgRU.ru = gNB->RU_list[0];
     syncMsgRU.timestamp_tx = info->timestamp_tx;
-    LOG_D(PHY,"gNB: %d.%d : calling RU TX function\n",syncMsgRU.frame_tx,syncMsgRU.slot_tx);
-    ru_tx_func((void*)&syncMsgRU);
+    LOG_D(PHY, "gNB: %d.%d : calling RU TX function\n", syncMsgRU.frame_tx, syncMsgRU.slot_tx);
+    ru_tx_func((void *)&syncMsgRU);
+    stop_meas(&info->gNB->phy_proc_tx);
   }
   /* this thread is done with the sched_info, decrease the reference counter */
+  LOG_D(NR_PHY, "Calling deref_sched_response for id %d (tx_func) in %d.%d\n", info->sched_response_id, frame_tx, slot_tx);
   deref_sched_response(info->sched_response_id);
-  stop_meas(&gNB->phy_proc_tx);
 }
 
 
@@ -164,27 +185,27 @@ void *L1_rx_thread(void *arg)
   }
   return NULL;
 }
-/* to be added for URLLC, requires MAC scheduling to be split from UL indication 
+// Added for URLLC, requires MAC scheduling to be split from UL indication
 void *L1_tx_thread(void *arg) {
   PHY_VARS_gNB *gNB = (PHY_VARS_gNB*)arg;
 
   while (oai_exit == 0) {
      notifiedFIFO_elt_t *res = pullNotifiedFIFO(&gNB->L1_tx_out);
+     if (res == NULL) // stopping condition, happens only when queue is freed
+       break;
      processingData_L1tx_t *info = (processingData_L1tx_t *)NotifiedFifoData(res);
      tx_func(info);
      delNotifiedFIFO_elt(res);
   }
   return NULL;
 }
-*/
+
 void rx_func(void *param)
 {
   processingData_L1_t *info = (processingData_L1_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
   int frame_rx = info->frame_rx;
   int slot_rx = info->slot_rx;
-  int frame_tx = info->frame_tx;
-  int slot_tx = info->slot_tx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int cumul_samples = gNB->frame_parms.get_samples_per_slot(0, &gNB->frame_parms);
   int i = 1;
@@ -209,14 +230,11 @@ void rx_func(void *param)
   }
   // ****************************************
 
-  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
-
-  reset_active_stats(gNB, frame_tx);
-  reset_active_ulsch(gNB, frame_tx);
-
   // RX processing
   int rx_slot_type = nr_slot_select(cfg, frame_rx, slot_rx);
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
+    LOG_D(NR_PHY, "%d.%d Starting RX processing\n", frame_rx, slot_rx);
+
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
 
@@ -239,57 +257,30 @@ void rx_func(void *param)
       }
     }
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
-  }
 
-  stop_meas( &softmodem_stats_rxtx_sf );
-  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
-  clock_gettime(CLOCK_MONOTONIC,&info->gNB->rt_L1_profiling.return_L1_RX[rt_prof_idx]);
+    // Call the scheduler
+    start_meas(&gNB->ul_indication_stats);
+    gNB->UL_INFO.frame = frame_rx;
+    gNB->UL_INFO.slot = slot_rx;
+    gNB->UL_INFO.module_id = gNB->Mod_id;
+    gNB->UL_INFO.CC_id = gNB->CC_id;
+    gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+    stop_meas(&gNB->ul_indication_stats);
 
-  // Call the scheduler
-  start_meas(&gNB->ul_indication_stats);
-  gNB->UL_INFO.frame     = frame_rx;
-  gNB->UL_INFO.slot      = slot_rx;
-  gNB->UL_INFO.module_id = gNB->Mod_id;
-  gNB->UL_INFO.CC_id     = gNB->CC_id;
-  gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
-  stop_meas(&gNB->ul_indication_stats);
-
-  int tx_slot_type = nr_slot_select(cfg,frame_tx,slot_tx);
-  if ((tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) && NFAPI_MODE != NFAPI_MODE_PNF) {
-    notifiedFIFO_elt_t *res;
-    processingData_L1tx_t *syncMsg;
-    // Its a FIFO so it maitains the order in which the MAC fills the messages
-    // so no need for checking for right slot
-    if (get_softmodem_params()->reorder_thread_disable) {
-      // call the TX function directly from this thread
-      syncMsg = gNB->msgDataTx;
-      syncMsg->gNB = gNB; 
-      syncMsg->timestamp_tx = info->timestamp_tx;
-      tx_func(syncMsg);
-    } else {
-      res = pullTpool(&gNB->L1_tx_filled, &gNB->threadPool);
-      if (res == NULL)
-        return; // Tpool has been stopped
-      syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
-      syncMsg->gNB = gNB;
-      syncMsg->timestamp_tx = info->timestamp_tx;
-      res->key = slot_tx;
-      pushTpool(&gNB->threadPool, res);
-    }
-  } else if (get_softmodem_params()->continuous_tx) {
-    notifiedFIFO_elt_t *res = pullNotifiedFIFO(&gNB->L1_tx_free);
-    if (res == NULL)
-      return; // Tpool has been stopped
-    processingData_L1tx_t *syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
+    notifiedFIFO_elt_t *res = newNotifiedFIFO_elt(sizeof(processingData_L1_t), 0, &gNB->L1_rx_out, NULL);
+    processingData_L1_t *syncMsg = NotifiedFifoData(res);
     syncMsg->gNB = gNB;
-    syncMsg->timestamp_tx = info->timestamp_tx;
-    syncMsg->frame = frame_tx;
-    syncMsg->slot = slot_tx;
-    res->key = slot_tx;
-    pushNotifiedFIFO(&gNB->L1_tx_out, res);
+    syncMsg->frame_rx = frame_rx;
+    syncMsg->slot_rx = slot_rx;
+    res->key = slot_rx;
+    LOG_D(NR_PHY, "Signaling completion for %d.%d (mod_slot %d) on L1_rx_out\n", frame_rx, slot_rx, slot_rx % RU_RX_SLOT_DEPTH);
+    pushNotifiedFIFO(&gNB->L1_rx_out, res);
   }
 
+  stop_meas(&softmodem_stats_rxtx_sf);
+  clock_gettime(CLOCK_MONOTONIC, &info->gNB->rt_L1_profiling.return_L1_RX[rt_prof_idx]);
 }
+
 static size_t dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output, size_t outputlen) {
   const char *begin = output;
   const char *end = output + outputlen;
@@ -367,60 +358,6 @@ void *nrL1_stats_thread(void *param) {
   return(NULL);
 }
 
-// This thread reads the finished L1 tx jobs from threaPool
-// and pushes RU tx thread in the right order. It works only
-// two parallel L1 tx threads.
-void *tx_reorder_thread(void* param) {
-  PHY_VARS_gNB *gNB = (PHY_VARS_gNB *)param;
-  
-  notifiedFIFO_elt_t *resL1Reserve = pullNotifiedFIFO(&gNB->L1_tx_out);
-  AssertFatal(resL1Reserve != NULL, "pullTpool() did not return start message in %s\n", __func__);
-  int next_tx_slot=((processingData_L1tx_t *)NotifiedFifoData(resL1Reserve))->slot;
-  
-  LOG_I(PHY,"tx_reorder_thread started\n");
-  
-  while (!oai_exit) {
-    notifiedFIFO_elt_t *resL1;
-    if (resL1Reserve) {
-       resL1=resL1Reserve;
-       if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
-         LOG_E(PHY,"order mistake\n");
-         resL1Reserve = NULL;
-         resL1 = pullNotifiedFIFO(&gNB->L1_tx_out);
-       }
-     } else {
-       resL1 = pullNotifiedFIFO(&gNB->L1_tx_out);
-       if (resL1 != NULL && ((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
-          if (resL1Reserve)
-              LOG_E(PHY,"error, have a stored packet, then a second one\n");
-          resL1Reserve = resL1;
-          resL1 = pullNotifiedFIFO(&gNB->L1_tx_out);
-          if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot)
-            LOG_E(PHY,"error, pull two msg, none is good\n");
-       }
-    }
-    if (resL1 == NULL)
-      break; // Tpool has been stopped
-    processingData_L1tx_t *syncMsgL1= (processingData_L1tx_t *)NotifiedFifoData(resL1);
-    processingData_RU_t syncMsgRU;
-    syncMsgRU.frame_tx = syncMsgL1->frame;
-    syncMsgRU.slot_tx = syncMsgL1->slot;
-    syncMsgRU.timestamp_tx = syncMsgL1->timestamp_tx;
-    syncMsgRU.ru = gNB->RU_list[0];
-    if (get_softmodem_params()->continuous_tx) {
-      int slots_per_frame = gNB->frame_parms.slots_per_frame;
-      next_tx_slot = (syncMsgRU.slot_tx + 1) % slots_per_frame;
-    } else
-      next_tx_slot = get_next_downlink_slot(gNB, &gNB->gNB_config, syncMsgRU.frame_tx, syncMsgRU.slot_tx);
-    pushNotifiedFIFO(&gNB->L1_tx_free, resL1);
-    if (resL1==resL1Reserve)
-       resL1Reserve=NULL;
-    LOG_D(PHY,"gNB: %d.%d : calling RU TX function\n",syncMsgL1->frame,syncMsgL1->slot);
-    ru_tx_func((void*)&syncMsgRU);
-  }
-  return(NULL);
-}
-
 void init_gNB_Tpool(int inst) {
   PHY_VARS_gNB *gNB;
   gNB = RC.gNB[inst];
@@ -433,47 +370,26 @@ void init_gNB_Tpool(int inst) {
   initNotifiedFIFO(&gNB->respPuschSymb);
   initNotifiedFIFO(&gNB->respDecode);
 
-  // L1 RX result FIFO 
+  // L1 RX result FIFO
   initNotifiedFIFO(&gNB->resp_L1);
-  if (!get_softmodem_params()->reorder_thread_disable) {
-    notifiedFIFO_elt_t *msg = newNotifiedFIFO_elt(sizeof(processingData_L1_t), 0, &gNB->resp_L1, rx_func);
-    pushNotifiedFIFO(&gNB->resp_L1, msg); // to unblock the process in the beginning
-  }
   // L1 TX result FIFO 
   initNotifiedFIFO(&gNB->L1_tx_free);
   initNotifiedFIFO(&gNB->L1_tx_filled);
   initNotifiedFIFO(&gNB->L1_tx_out);
- 
-  if (get_softmodem_params()->reorder_thread_disable) {
-    // create the RX thread responsible for triggering RX processing and then TX processing if a single thread is used	  
-    threadCreate(&gNB->L1_rx_thread, L1_rx_thread, (void *)gNB, "L1_rx_thread",
-                 gNB->L1_rx_thread_core, OAI_PRIORITY_RT_MAX);
-    // if separate threads are used for RX and TX, create the TX thread
- // threadCreate(&gNB->L1_tx_thread, L1_tx_thread, (void *)gNB, "L1_tx_thread",
- //              gNB->L1_tx_thread_core, OAI_PRIORITY_RT_MAX);
+  initNotifiedFIFO(&gNB->L1_rx_out);
 
-    notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t), 0, &gNB->L1_tx_out, tx_func);
-    processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-    memset(msgDataTx, 0, sizeof(processingData_L1tx_t));
-    init_DLSCH_struct(gNB, msgDataTx);
-    memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-    // this will be removed when the msgDataTx is not necessary anymore
-    gNB->msgDataTx = msgDataTx;
-  } else {
-    // we create 2 threads for L1 tx processing
-    for (int i=0; i < 2; i++) {
-      notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t), 0, &gNB->L1_tx_out, tx_func);
-      processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-      memset(msgDataTx, 0, sizeof(processingData_L1tx_t));
-      init_DLSCH_struct(gNB, msgDataTx);
-      memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-      pushNotifiedFIFO(&gNB->L1_tx_free, msgL1Tx); // to unblock the process in the beginning
-    }
-  
-    LOG_I(PHY,"Creating thread for TX reordering and dispatching to RU\n");
-    threadCreate(&proc->pthread_tx_reorder, tx_reorder_thread, (void *)gNB, "thread_tx_reorder",
-                  gNB->RU_list[0] ? gNB->RU_list[0]->tpcores[1] : -1, OAI_PRIORITY_RT_MAX);
-  }
+  // create the RX thread responsible for RX processing start event (resp_L1 msg queue), then launch rx_func()
+  threadCreate(&gNB->L1_rx_thread, L1_rx_thread, (void *)gNB, "L1_rx_thread", gNB->L1_rx_thread_core, OAI_PRIORITY_RT_MAX);
+  // create the TX thread responsible for TX processing start event (L1_tx_out msg queue), then launch tx_func()
+  threadCreate(&gNB->L1_tx_thread, L1_tx_thread, (void *)gNB, "L1_tx_thread", gNB->L1_tx_thread_core, OAI_PRIORITY_RT_MAX);
+
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t), 0, &gNB->L1_tx_out, tx_func);
+  processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
+  memset(msgDataTx, 0, sizeof(processingData_L1tx_t));
+  init_DLSCH_struct(gNB, msgDataTx);
+  memset(msgDataTx->ssb, 0, 64 * sizeof(NR_gNB_SSB_t));
+  // this will be removed when the msgDataTx is not necessary anymore
+  gNB->msgDataTx = msgDataTx;
 
   if ((!get_softmodem_params()->emulate_l1) && (!IS_SOFTMODEM_NOSTATS_BIT) && (NFAPI_MODE!=NFAPI_MODE_VNF))
      threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
@@ -489,12 +405,11 @@ void term_gNB_Tpool(int inst) {
   abortNotifiedFIFO(&gNB->L1_tx_free);
   abortNotifiedFIFO(&gNB->L1_tx_filled);
   abortNotifiedFIFO(&gNB->L1_tx_out);
+  abortNotifiedFIFO(&gNB->L1_rx_out);
 
   gNB_L1_proc_t *proc = &gNB->proc;
   if (!get_softmodem_params()->emulate_l1)
     pthread_join(proc->L1_stats_thread, NULL);
-  if (!get_softmodem_params()->reorder_thread_disable)
-    pthread_join(proc->pthread_tx_reorder, NULL);
 }
 
 void reset_opp_meas(void) {
@@ -534,7 +449,6 @@ void init_eNB_afterRU(void) {
 
     gNB = RC.gNB[inst];
     gNB->ldpc_offload_flag = get_softmodem_params()->ldpc_offload_flag;
-    gNB->reorder_thread_disable = get_softmodem_params()->reorder_thread_disable;
 
     phy_init_nr_gNB(gNB);
 

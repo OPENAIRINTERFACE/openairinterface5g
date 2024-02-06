@@ -76,8 +76,7 @@ void nr_fill_prach(PHY_VARS_gNB *gNB,
 		   nfapi_nr_prach_pdu_t *prach_pdu) {
 
   int prach_id = find_nr_prach(gNB,SFN,Slot,SEARCH_EXIST_OR_FREE);
-  AssertFatal( ((prach_id>=0) && (prach_id<NUMBER_OF_NR_PRACH_MAX)) || (prach_id < 0),
-              "illegal or no prach_id found!!! prach_id %d\n",prach_id);
+  AssertFatal(((prach_id >= 0) && (prach_id < NUMBER_OF_NR_PRACH_MAX)), "illegal or no prach_id found!!! prach_id %d\n", prach_id);
 
   gNB->prach_vars.list[prach_id].frame=SFN;
   gNB->prach_vars.list[prach_id].slot=Slot;

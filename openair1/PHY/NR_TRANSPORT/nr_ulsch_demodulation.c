@@ -1409,7 +1409,7 @@ static void nr_pusch_symbol_processing(void *arg)
 
     if (gNB->pusch_vars[ulsch_id].ul_valid_re_per_slot[symbol] == 0) 
       continue;
-    int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
+    int soffset = (slot % RU_RX_SLOT_DEPTH) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
     inner_rx(gNB,
              ulsch_id,
              slot,
@@ -1591,7 +1591,7 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
 
   // extract the first dmrs for the channel level computation
   // extract the data in the OFDM frame, to the start of the array
-  int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
+  int soffset = (slot % RU_RX_SLOT_DEPTH) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
 
   nb_re_pusch = (nb_re_pusch + 15) & ~15;
 
