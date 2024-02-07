@@ -401,7 +401,6 @@ static int nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int
   //--------------------- ULSCH decoding ---------------------
   //----------------------------------------------------------
 
-  start_meas(&gNB->ulsch_decoding_stats);
   int nbDecode =
       nr_ulsch_decoding(gNB, ULSCH_id, gNB->pusch_vars[ULSCH_id].llr, frame_parms, pusch_pdu, frame_rx, slot_rx, harq_pid, G);
 
@@ -949,7 +948,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
       delNotifiedFIFO_elt(req);
       totalDecode--;
     }
-  stop_meas(&gNB->ulsch_decoding_stats);
   for (int i = 0; i < gNB->max_nb_srs; i++) {
     NR_gNB_SRS_t *srs = &gNB->srs[i];
     if (srs) {

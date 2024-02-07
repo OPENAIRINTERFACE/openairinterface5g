@@ -24,7 +24,6 @@ gnb :
     DLSCH encoding:
     L1 Rx processing:
     PUSCH inner-receiver:
-    PUSCH decoding:
     DL & UL scheduling timing:
     UL Indication:
     Slot Indication:
@@ -45,7 +44,6 @@ gnb :
       rt.L1 Rx processing:
     page4:
       rt.PUSCH inner-receiver:
-      rt.PUSCH decoding:
       rt.DL & UL scheduling timing:
       rt.UL Indication:
       rt.Slot Indication:
