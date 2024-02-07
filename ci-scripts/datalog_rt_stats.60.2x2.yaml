@@ -18,7 +18,8 @@ Ref :
   PUSCH decoding : 2200.0
   Schedule Response : 111.0
   DL & UL scheduling timing : 20.0
-  UL Indication : 127.0
+  UL Indication : 5.0
+  Slot Indication : 127.0
 Threshold :
   feprx : 1.25
   feptx_prec : 1.25
@@ -32,3 +33,4 @@ Threshold :
   Schedule Response : 48.0
   DL & UL scheduling timing : 1.25
   UL Indication : 1.25
+  Slot Indication : 1.25

@@ -17,7 +17,8 @@ Ref :
   PUSCH inner-receiver : 100.0
   PUSCH decoding : 180.0 
   DL & UL scheduling timing : 37.0
-  UL Indication : 38.0
+  UL Indication : 3.0
+  Slot Indication : 38.0
 Threshold :
   feprx : 1.25
   feptx_prec : 1.25
@@ -30,3 +31,4 @@ Threshold :
   PUSCH decoding : 1.25
   DL & UL scheduling timing : 1.25
   UL Indication : 1.25
+  Slot Indication : 1.25

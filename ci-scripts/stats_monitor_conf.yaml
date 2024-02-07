@@ -27,6 +27,7 @@ gnb :
     PUSCH decoding:
     DL & UL scheduling timing:
     UL Indication:
+    Slot Indication:
   graph : 
     page1:
       dlsch_err:
@@ -47,3 +48,4 @@ gnb :
       rt.PUSCH decoding:
       rt.DL & UL scheduling timing:
       rt.UL Indication:
+      rt.Slot Indication:
