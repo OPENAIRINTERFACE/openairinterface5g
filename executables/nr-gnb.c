@@ -131,7 +131,9 @@ static void tx_func(void *param)
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
 
+  start_meas(&gNB->slot_indication_stats);
   ifi->NR_slot_indication(module_id, CC_id, frame_tx, slot_tx);
+  stop_meas(&gNB->slot_indication_stats);
   gNB->msgDataTx->timestamp_tx = info->timestamp_tx;
   info = gNB->msgDataTx;
   info->gNB = gNB;
@@ -293,6 +295,7 @@ static size_t dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output, size
   output += print_meas_log(&gNB->dlsch_precoding_stats, "DLSCH precoding", NULL, NULL, output,end-output);
   output += print_meas_log(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL, output, end - output);
   output += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output, end - output);
+  output += print_meas_log(&gNB->slot_indication_stats, "Slot Indication", NULL, NULL, output, end - output);
   output += print_meas_log(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL, output, end - output);
   output += print_meas_log(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL, output, end - output);
   output += print_meas_log(&gNB->schedule_response_stats, "Schedule Response", NULL, NULL, output, end - output);
@@ -336,6 +339,7 @@ void *nrL1_stats_thread(void *param) {
   reset_meas(&gNB->dlsch_encoding_stats);
   reset_meas(&gNB->phy_proc_rx);
   reset_meas(&gNB->ul_indication_stats);
+  reset_meas(&gNB->slot_indication_stats);
   reset_meas(&gNB->rx_pusch_stats);
   reset_meas(&gNB->ulsch_decoding_stats);
   reset_meas(&gNB->schedule_response_stats);
