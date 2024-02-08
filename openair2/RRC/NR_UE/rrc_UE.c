@@ -149,7 +149,7 @@ static void nr_rrc_ue_process_masterCellGroup(NR_UE_RRC_INST_t *rrc,
                                               OCTET_STRING_t *masterCellGroup,
                                               long *fullConfig);
 
-void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const measConfig);
+static void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const measConfig);
 
 static void nr_rrc_ue_process_rrcReconfiguration(NR_UE_RRC_INST_t *rrc,
                                                  int gNB_index,
@@ -1045,43 +1045,123 @@ static void nr_rrc_ue_process_securityModeCommand(NR_UE_RRC_INST_t *ue_rrc,
           securityModeCommand->criticalExtensions.present);
 }
 
- //-----------------------------------------------------------------------------
-void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const measConfig)
-//-----------------------------------------------------------------------------
+static void handle_measobj_remove(rrcPerNB_t *rrc, struct NR_MeasObjectToRemoveList *remove_list)
 {
-  int i;
-  long ind;
-  NR_MeasObjectToAddMod_t *measObj = NULL;
-  NR_ReportConfigToAddMod_t *reportConfig = NULL;
-
-  if (measConfig->measObjectToRemoveList != NULL) {
-    for (i = 0; i < measConfig->measObjectToRemoveList->list.count; i++) {
-      ind = *measConfig->measObjectToRemoveList->list.array[i];
-      free(rrc->MeasObj[ind - 1]);
-    }
-  }
-
-  if (measConfig->measObjectToAddModList != NULL) {
-    LOG_I(NR_RRC, "Measurement Object List is present\n");
-    for (i = 0; i < measConfig->measObjectToAddModList->list.count; i++) {
-      measObj = measConfig->measObjectToAddModList->list.array[i];
-      ind = measConfig->measObjectToAddModList->list.array[i]->measObjectId;
-
-      if (rrc->MeasObj[ind - 1]) {
-        LOG_D(NR_RRC, "Modifying measurement object %ld\n", ind);
-        memcpy(rrc->MeasObj[ind - 1], (char *)measObj, sizeof(NR_MeasObjectToAddMod_t));
-      } else {
-        LOG_I(NR_RRC, "Adding measurement object %ld\n", ind);
-
-        if (measObj->measObject.present == NR_MeasObjectToAddMod__measObject_PR_measObjectNR) {
-          rrc->MeasObj[ind - 1] = measObj;
+  // section 5.5.2.4 in 38.331
+  for (int i = 0; i < remove_list->list.count; i++) {
+    // for each measObjectId included in the received measObjectToRemoveList
+    // that is part of measObjectList in the configuration
+    NR_MeasObjectId_t id = *remove_list->list.array[i];
+    if (rrc->MeasObj[id - 1]) {
+      // remove the entry with the matching measObjectId from the measObjectList
+      asn1cFreeStruc(asn_DEF_NR_MeasObjectToAddMod, rrc->MeasObj[id - 1]);
+      // remove all measId associated with this measObjectId from the measIdList
+      for (int j = 0; j < MAX_MEAS_ID; j++) {
+        if (rrc->MeasId[j] && rrc->MeasId[j]->measObjectId == id) {
+          NR_ReportConfigId_t report_id = rrc->MeasId[j]->reportConfigId;
+          asn1cFreeStruc(asn_DEF_NR_MeasIdToAddMod, rrc->MeasId[j]);
+          // remove the measurement reporting entry for this measId if included
+          // TODO verify this is correct
+          asn1cFreeStruc(asn_DEF_NR_ReportConfigToAddMod, rrc->ReportConfig[report_id]);
+          // TODO stop the periodical reporting timer or timer T321, whichever is running,
+          // and reset the associated information (e.g. timeToTrigger) for this measId
         }
       }
     }
-
-    LOG_I(NR_RRC, "call rrc_mac_config_req \n");
-    // rrc_mac_config_req_ue
   }
+}
+
+static void update_ssb_configmob(NR_SSB_ConfigMobility_t *source, NR_SSB_ConfigMobility_t *target)
+{
+  if (source->ssb_ToMeasure)
+    HANDLE_SETUPRELEASE_IE(target->ssb_ToMeasure, source->ssb_ToMeasure, NR_SSB_ToMeasure_t, asn_DEF_NR_SSB_ToMeasure);
+  target->deriveSSB_IndexFromCell = source->deriveSSB_IndexFromCell;
+  if (source->ss_RSSI_Measurement)
+    UPDATE_IE(target->ss_RSSI_Measurement, source->ss_RSSI_Measurement, NR_SS_RSSI_Measurement_t);
+}
+
+static void update_nr_measobj(NR_MeasObjectNR_t *source, NR_MeasObjectNR_t *target)
+{
+  UPDATE_IE(target->ssbFrequency, source->ssbFrequency, NR_ARFCN_ValueNR_t);
+  UPDATE_IE(target->ssbSubcarrierSpacing, source->ssbSubcarrierSpacing, NR_SubcarrierSpacing_t);
+  UPDATE_IE(target->smtc1, source->smtc1, NR_SSB_MTC_t);
+  if (source->smtc2) {
+    target->smtc2->periodicity = source->smtc2->periodicity;
+    if (source->smtc2->pci_List)
+      UPDATE_IE(target->smtc2->pci_List, source->smtc2->pci_List, struct NR_SSB_MTC2__pci_List);
+  }
+  else
+    asn1cFreeStruc(asn_DEF_NR_SSB_MTC2, target->smtc2);
+  UPDATE_IE(target->refFreqCSI_RS, source->refFreqCSI_RS, NR_ARFCN_ValueNR_t);
+  if (source->referenceSignalConfig.ssb_ConfigMobility)
+    update_ssb_configmob(source->referenceSignalConfig.ssb_ConfigMobility, target->referenceSignalConfig.ssb_ConfigMobility);
+  UPDATE_IE(target->absThreshSS_BlocksConsolidation, source->absThreshSS_BlocksConsolidation, NR_ThresholdNR_t);
+  UPDATE_IE(target->absThreshCSI_RS_Consolidation, source->absThreshCSI_RS_Consolidation, NR_ThresholdNR_t);
+  UPDATE_IE(target->nrofSS_BlocksToAverage, source->nrofSS_BlocksToAverage, long);
+  UPDATE_IE(target->nrofCSI_RS_ResourcesToAverage, source->nrofCSI_RS_ResourcesToAverage, long);
+  target->quantityConfigIndex = source->quantityConfigIndex;
+  target->offsetMO = source->offsetMO;
+  if (source->cellsToRemoveList) {
+    RELEASE_IE_FROMLIST(source->cellsToRemoveList, target->cellsToAddModList, physCellId);
+  }
+  if (source->cellsToAddModList) {
+    if (!target->cellsToAddModList)
+      target->cellsToAddModList = calloc(1, sizeof(*target->cellsToAddModList));
+    ADDMOD_IE_FROMLIST(source->cellsToAddModList, target->cellsToAddModList, physCellId, NR_CellsToAddMod_t);
+  }
+  if (source->excludedCellsToRemoveList) {
+    RELEASE_IE_FROMLIST(source->excludedCellsToRemoveList, target->excludedCellsToAddModList, pci_RangeIndex);
+  }
+  if (source->excludedCellsToAddModList) {
+    if (!target->excludedCellsToAddModList)
+      target->excludedCellsToAddModList = calloc(1, sizeof(*target->excludedCellsToAddModList));
+    ADDMOD_IE_FROMLIST(source->excludedCellsToAddModList, target->excludedCellsToAddModList, pci_RangeIndex, NR_PCI_RangeElement_t);
+  }
+  if (source->allowedCellsToRemoveList) {
+    RELEASE_IE_FROMLIST(source->allowedCellsToRemoveList, target->allowedCellsToAddModList, pci_RangeIndex);
+  }
+  if (source->allowedCellsToAddModList) {
+    if (!target->allowedCellsToAddModList)
+      target->allowedCellsToAddModList = calloc(1, sizeof(*target->allowedCellsToAddModList));
+    ADDMOD_IE_FROMLIST(source->allowedCellsToAddModList, target->allowedCellsToAddModList, pci_RangeIndex, NR_PCI_RangeElement_t);
+  }
+  if (source->ext1) {
+    UPDATE_IE(target->ext1->freqBandIndicatorNR, source->ext1->freqBandIndicatorNR, NR_FreqBandIndicatorNR_t);
+    UPDATE_IE(target->ext1->measCycleSCell, source->ext1->measCycleSCell, long);
+  }
+}
+
+static void handle_measobj_addmod(rrcPerNB_t *rrc, struct NR_MeasObjectToAddModList *addmod_list)
+{
+  // section 5.5.2.5 in 38.331
+  for (int i = 0; i < addmod_list->list.count; i++) {
+    NR_MeasObjectToAddMod_t *measObj = addmod_list->list.array[i];
+    if (measObj->measObject.present != NR_MeasObjectToAddMod__measObject_PR_measObjectNR) {
+      LOG_E(NR_RRC, "Cannot handle MeasObjt other than NR\n");
+      continue;
+    }
+    NR_MeasObjectId_t id = measObj->measObjectId;
+    if (rrc->MeasObj[id]) {
+      update_nr_measobj(measObj->measObject.choice.measObjectNR, rrc->MeasObj[id]->measObject.choice.measObjectNR);
+    }
+    else {
+      // add a new entry for the received measObject to the measObjectList
+      UPDATE_IE(rrc->MeasObj[id], addmod_list->list.array[i], NR_MeasObjectToAddMod_t);
+    }
+  }
+}
+
+static void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const measConfig)
+{
+  int i;
+  long ind;
+  NR_ReportConfigToAddMod_t *reportConfig = NULL;
+
+  if (measConfig->measObjectToRemoveList)
+    handle_measobj_remove(rrc, measConfig->measObjectToRemoveList);
+
+  if (measConfig->measObjectToAddModList)
+    handle_measobj_addmod(rrc, measConfig->measObjectToAddModList);
 
   if (measConfig->reportConfigToRemoveList != NULL) {
     for (i = 0; i < measConfig->reportConfigToRemoveList->list.count; i++) {
