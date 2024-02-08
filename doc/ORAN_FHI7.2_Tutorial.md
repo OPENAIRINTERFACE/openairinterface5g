@@ -74,8 +74,8 @@ Tested libxran releases:
 
 Your server could be:
 
-* One NUMA Node (See [one NUMA node example](#111-one-numa-node)): all the processors are sharing a single memory system.
-* Two NUMA Node (see [two NUMA node example](#112-two-numa-node)): processors are grouped in 2 memory systems.
+* One NUMA node (See [one NUMA node example](#111-one-numa-node)): all the processors are sharing a single memory system.
+* Two NUMA nodes (see [two NUMA nodes example](#112-two-numa-node)): processors are grouped in 2 memory systems.
   - Usually the even (ie `0,2,4,...`) CPUs are on the 1st socket
   - And the odd (ie (`1,3,5,...`) CPUs are on the 2nd socket
 
@@ -95,13 +95,13 @@ Let summarize for example on a `32-CPU` single NUMA node system, regardless of t
 |OAI `nr-softmodem` |1,3,5,7,9,11,13,15|
 |kernel             |16-31             |
 
-In below example we have shown the output of `/proc/cmdline` for two different servers, each of them have different number of numa nodes. Be careful in isolating the CPUs in your environment. Apart from CPU allocation there are additional parameters which are important to be present in your boot command.
+In below example we have shown the output of `/proc/cmdline` for two different servers, each of them have different number of NUMA nodes. Be careful in isolating the CPUs in your environment. Apart from CPU allocation there are additional parameters which are important to be present in your boot command.
 
 Modifying the `linux` command line usually requires to edit the `/etc/default/grub`, run a `grub` command and reboot the server.
 
-### One NUMA NODE
+### One NUMA Node
 
-Below is the output of `/proc/cmdline` of a single numa node server,
+Below is the output of `/proc/cmdline` of a single NUMA node server,
 
 ```bash
 NUMA:
@@ -115,9 +115,9 @@ isolcpus=0-15 nohz_full=0-15 rcu_nocbs=0-15 kthread_cpus=16-31 rcu_nocb_poll nos
 
 Example taken for AMD EPYC 9374F 32-Core Processor
 
-### Two numa nodes
+### Two NUMA Nodes
 
-Below is the output of `/proc/cmdline` of a two numa node server,
+Below is the output of `/proc/cmdline` of a two NUMA node server,
 
 ```
 NUMA:
