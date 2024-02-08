@@ -325,76 +325,70 @@ int xran_fh_rx_read_slot(ru_info_t *ru, int *frame, int *slot)
           pData = p_sec_desc->pData;
         ptr = pData;
         pos = (int32_t *)(start_ptr + (4 * sym_idx * 4096));
+        if (ptr == NULL || pos == NULL)
+          continue;
 
-        uint8_t *u8dptr;
         struct xran_prb_map *pRbMap = pPrbMap;
-        AssertFatal(ptr != NULL, "ptr NULL\n");
-        AssertFatal(pos != NULL, "pos NULL\n");
-        if (1) {
-          uint32_t idxElm = 0;
-          u8dptr = (uint8_t *)ptr;
-          int16_t payload_len = 0;
 
-          uint8_t *src = (uint8_t *)u8dptr;
+        uint32_t idxElm = 0;
+        uint8_t *src = (uint8_t *)ptr;
+        int16_t payload_len = 0;
 
-          LOG_D(PHY, "pRbMap->nPrbElm %d\n", pRbMap->nPrbElm);
-          for (idxElm = 0; idxElm < pRbMap->nPrbElm; idxElm++) {
-            LOG_D(PHY,
-                  "prbMap[%d] : PRBstart %d nPRBs %d\n",
-                  idxElm,
-                  pRbMap->prbMap[idxElm].nRBStart,
-                  pRbMap->prbMap[idxElm].nRBSize);
-            pRbElm = &pRbMap->prbMap[idxElm];
-            int pos_len = 0;
-            int neg_len = 0;
 
-            if (pRbElm->nRBStart < (nPRBs >> 1)) // there are PRBs left of DC
-              neg_len = min((nPRBs * 6) - (pRbElm->nRBStart * 12), pRbElm->nRBSize * N_SC_PER_PRB);
-            pos_len = (pRbElm->nRBSize * N_SC_PER_PRB) - neg_len;
+        LOG_D(PHY, "pRbMap->nPrbElm %d\n", pRbMap->nPrbElm);
+        for (idxElm = 0; idxElm < pRbMap->nPrbElm; idxElm++) {
+          LOG_D(PHY,
+                "prbMap[%d] : PRBstart %d nPRBs %d\n",
+                idxElm,
+                pRbMap->prbMap[idxElm].nRBStart,
+                pRbMap->prbMap[idxElm].nRBSize);
+          pRbElm = &pRbMap->prbMap[idxElm];
+          int pos_len = 0;
+          int neg_len = 0;
 
-            src = pData;
-            // Calculation of the pointer for the section in the buffer.
-            // positive half
-            uint8_t *dst1 = (uint8_t *)(pos + (neg_len == 0 ? ((pRbElm->nRBStart * N_SC_PER_PRB) - (nPRBs * 6)) : 0));
-            // negative half
-            uint8_t *dst2 = (uint8_t *)(pos + (pRbElm->nRBStart * N_SC_PER_PRB) + fftsize - (nPRBs * 6));
-            int32_t local_dst[pRbElm->nRBSize * N_SC_PER_PRB] __attribute__((aligned(64)));
-            if (pRbElm->compMethod == XRAN_COMPMETHOD_NONE) {
-              // NOTE: gcc 11 knows how to generate AVX2 for this!
-              for (idx = 0; idx < pRbElm->nRBSize * N_SC_PER_PRB * 2; idx++)
-                ((int16_t *)local_dst)[idx] = ((int16_t)ntohs(((uint16_t *)src)[idx])) >> 2;
-              memcpy((void *)dst2, (void *)local_dst, neg_len * 4);
-              memcpy((void *)dst1, (void *)&local_dst[neg_len], pos_len * 4);
-            } else if (pRbElm->compMethod == XRAN_COMPMETHOD_BLKFLOAT) {
-              struct xranlib_decompress_request bfp_decom_req;
-              struct xranlib_decompress_response bfp_decom_rsp;
+          if (pRbElm->nRBStart < (nPRBs >> 1)) // there are PRBs left of DC
+            neg_len = min((nPRBs * 6) - (pRbElm->nRBStart * 12), pRbElm->nRBSize * N_SC_PER_PRB);
+          pos_len = (pRbElm->nRBSize * N_SC_PER_PRB) - neg_len;
 
-              payload_len = (3 * pRbElm->iqWidth + 1) * pRbElm->nRBSize;
+          src = pData;
+          // Calculation of the pointer for the section in the buffer.
+          // positive half
+          uint8_t *dst1 = (uint8_t *)(pos + (neg_len == 0 ? ((pRbElm->nRBStart * N_SC_PER_PRB) - (nPRBs * 6)) : 0));
+          // negative half
+          uint8_t *dst2 = (uint8_t *)(pos + (pRbElm->nRBStart * N_SC_PER_PRB) + fftsize - (nPRBs * 6));
+          int32_t local_dst[pRbElm->nRBSize * N_SC_PER_PRB] __attribute__((aligned(64)));
+          if (pRbElm->compMethod == XRAN_COMPMETHOD_NONE) {
+            // NOTE: gcc 11 knows how to generate AVX2 for this!
+            for (idx = 0; idx < pRbElm->nRBSize * N_SC_PER_PRB * 2; idx++)
+              ((int16_t *)local_dst)[idx] = ((int16_t)ntohs(((uint16_t *)src)[idx])) >> 2;
+            memcpy((void *)dst2, (void *)local_dst, neg_len * 4);
+            memcpy((void *)dst1, (void *)&local_dst[neg_len], pos_len * 4);
+          } else if (pRbElm->compMethod == XRAN_COMPMETHOD_BLKFLOAT) {
+            struct xranlib_decompress_request bfp_decom_req;
+            struct xranlib_decompress_response bfp_decom_rsp;
 
-              memset(&bfp_decom_req, 0, sizeof(struct xranlib_decompress_request));
-              memset(&bfp_decom_rsp, 0, sizeof(struct xranlib_decompress_response));
+            payload_len = (3 * pRbElm->iqWidth + 1) * pRbElm->nRBSize;
 
-              bfp_decom_req.data_in = (int8_t *)src;
-              bfp_decom_req.numRBs = pRbElm->nRBSize;
-              bfp_decom_req.len = payload_len;
-              bfp_decom_req.compMethod = pRbElm->compMethod;
-              bfp_decom_req.iqWidth = pRbElm->iqWidth;
+            memset(&bfp_decom_req, 0, sizeof(struct xranlib_decompress_request));
+            memset(&bfp_decom_rsp, 0, sizeof(struct xranlib_decompress_response));
 
-              bfp_decom_rsp.data_out = (int16_t *)local_dst;
-              bfp_decom_rsp.len = 0;
+            bfp_decom_req.data_in = (int8_t *)src;
+            bfp_decom_req.numRBs = pRbElm->nRBSize;
+            bfp_decom_req.len = payload_len;
+            bfp_decom_req.compMethod = pRbElm->compMethod;
+            bfp_decom_req.iqWidth = pRbElm->iqWidth;
 
-              xranlib_decompress_avx512(&bfp_decom_req, &bfp_decom_rsp);
-              memcpy((void *)dst2, (void *)local_dst, neg_len * 4);
-              memcpy((void *)dst1, (void *)&local_dst[neg_len], pos_len * 4);
-              outcnt++;
-            } else {
-              printf("pRbElm->compMethod == %d is not supported\n", pRbElm->compMethod);
-              exit(-1);
-            }
+            bfp_decom_rsp.data_out = (int16_t *)local_dst;
+            bfp_decom_rsp.len = 0;
+
+            xranlib_decompress_avx512(&bfp_decom_req, &bfp_decom_rsp);
+            memcpy((void *)dst2, (void *)local_dst, neg_len * 4);
+            memcpy((void *)dst1, (void *)&local_dst[neg_len], pos_len * 4);
+            outcnt++;
+          } else {
+            printf("pRbElm->compMethod == %d is not supported\n", pRbElm->compMethod);
+            exit(-1);
           }
-
-        } else {
-          return 0;
         }
       } // sym_ind
     } // ant_ind
