@@ -12,7 +12,7 @@ index 7508117..a93c085 100644
  #define APP_O_DU  0
  #define APP_O_RU  1
 diff --git a/fhi_lib/lib/Makefile b/fhi_lib/lib/Makefile
-index de141bf..5bcde3d 100644
+index de141bf..c12b912 100644
 --- a/fhi_lib/lib/Makefile
 +++ b/fhi_lib/lib/Makefile
 @@ -23,11 +23,11 @@ MYCUSTOMSPACE1='------------------------------------------------------------'
@@ -30,6 +30,15 @@ index de141bf..5bcde3d 100644
  OBJDUMP := objdump
  
  ifeq ($(SHELL),cmd.exe)
+@@ -57,7 +57,7 @@ endif
+ 
+ RTE_TARGET ?= x86_64-native-linux-icc
+ 
+-RTE_INC := $(shell PKG_CONFIG_PATH=/usr/lib64/pkgconfig:$(RTE_SDK)/build/meson-uninstalled pkgconf --cflags-only-I libdpdk)
++RTE_INC := $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH):/usr/lib64/pkgconfig:$(RTE_SDK)/build/meson-uninstalled pkgconf --cflags-only-I libdpdk)
+ API_DIR := $(PROJECT_DIR)/api
+ SRC_DIR := $(PROJECT_DIR)/src
+ ETH_DIR := $(PROJECT_DIR)/ethernet
 @@ -95,8 +95,7 @@ CPP_SRC = $(SRC_DIR)/xran_compression.cpp \
  	$(SRC_DIR)/xran_bfp_cplane32.cpp \
  	$(SRC_DIR)/xran_bfp_cplane64.cpp \
