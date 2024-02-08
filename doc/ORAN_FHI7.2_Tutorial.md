@@ -624,7 +624,7 @@ sudo /usr/local/bin/dpdk-devbind.py --bind vfio-pci 31:06.1
 ```
 </details>
 
-# Start OAI gNB
+# Start and Operation of OAI gNB
 
 ```bash
 cd ran_build/build
@@ -632,5 +632,48 @@ cd ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/oran.fh.band78.fr1.273PRB.conf --sa --reorder-thread-disable 1 --thread-pool <list of non isolated cpus>
 ```
 
-For example if you have two numa nodes (for example 18 CPU per socket) in your system and odd cores are non isolated then you can put the thread-pool on `1,3,5,7,9,11,13,15`. Else if you have 1 numa node either you can use isolated cores or non isolated. Just make sure that isolated cores are not the ones defined earlier.
+For example if you have two NUMA nodes in your system (for example 18 CPUs per
+socket) and odd cores are non-isolated, then you can put the thread-pool on
+`1,3,5,7,9,11,13,15`. On the other hand, if you have one NUMA node, you can use
+either isolated cores or non isolated cores, but make sure that isolated cores
+are not the ones defined earlier for DPDK/xran.
 
+<details>
+<summary>Once the gNB runs, you should see counters for PDSCH/PUSCH/PRACH per
+antenna port, as follows (4x2 configuration):</summary>
+
+```
+[NR_PHY]   [o-du 0][rx   24604 pps   24520 kbps  455611][tx  126652 pps  126092 kbps 2250645][Total Msgs_Rcvd 24604]
+[NR_PHY]   [o_du0][pusch0   10766 prach0    1536]
+[NR_PHY]   [o_du0][pusch1   10766 prach1    1536]
+```
+
+</details>
+
+The first line show RX/TX packet counters, i.e., packets received from the RU
+(RX), and sent to the RU (TX). In the second and third line, it shows the
+counters for the PUSCH and PRACH ports (2 receive antennas, so two counters
+each). These numbers should be equal, otherwise it indicates that you don't
+receive enough packets on either port.
+
+<details>
+<summary>If you see many zeroes, then it means that OAI does not receive
+packets on the fronthaul from the RU (RX is almost 0, all PUSCH/PRACH counters
+are 0).</summary>
+
+```
+[NR_PHY]   [o-du 0][rx       2 pps       0 kbps       0][tx 1020100 pps  127488 kbps 4717971][Total Msgs_Rcvd 2]
+[NR_PHY]   [o_du0][pusch0       0 prach0       0]
+[NR_PHY]   [o_du0][pusch1       0 prach1       0]
+[NR_PHY]   [o_du0][pusch2       0 prach2       0]
+[NR_PHY]   [o_du0][pusch3       0 prach3       0]
+```
+
+</details>
+
+In this case, please make sure that the O-RU has been configured with the right
+ethernet address of the gNB, and has been activated. You might enable port
+mirroring at your switch to capture the fronthaul packets: check that you see
+(1) packets at all (2) they have the right ethernet address (3) the right VLAN
+tag. Although we did not test this, you might make use of the [DPDK packet
+capture feature](https://doc.dpdk.org/guides/howto/packet_capture_framework.html)
