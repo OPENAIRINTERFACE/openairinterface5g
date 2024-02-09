@@ -1058,11 +1058,9 @@ static void handle_measobj_remove(rrcPerNB_t *rrc, struct NR_MeasObjectToRemoveL
       // remove all measId associated with this measObjectId from the measIdList
       for (int j = 0; j < MAX_MEAS_ID; j++) {
         if (rrc->MeasId[j] && rrc->MeasId[j]->measObjectId == id) {
-          NR_ReportConfigId_t report_id = rrc->MeasId[j]->reportConfigId;
           asn1cFreeStruc(asn_DEF_NR_MeasIdToAddMod, rrc->MeasId[j]);
           // remove the measurement reporting entry for this measId if included
-          // TODO verify this is correct
-          asn1cFreeStruc(asn_DEF_NR_ReportConfigToAddMod, rrc->ReportConfig[report_id]);
+          asn1cFreeStruc(asn_DEF_NR_VarMeasReport, rrc->MeasReport[j]);
           // TODO stop the periodical reporting timer or timer T321, whichever is running,
           // and reset the associated information (e.g. timeToTrigger) for this measId
         }
@@ -1151,11 +1149,53 @@ static void handle_measobj_addmod(rrcPerNB_t *rrc, struct NR_MeasObjectToAddModL
   }
 }
 
+static void handle_reportconfig_remove(rrcPerNB_t *rrc, struct NR_ReportConfigToRemoveList *remove_list)
+{
+  for (int i = 0; i < remove_list->list.count; i++) {
+    NR_ReportConfigId_t id = *remove_list->list.array[i];
+    // remove the entry with the matching reportConfigId from the reportConfigList
+    asn1cFreeStruc(asn_DEF_NR_ReportConfigToAddMod, rrc->ReportConfig[id]);
+    for (int j = 0; j < MAX_MEAS_ID; j++) {
+      if (rrc->MeasId[j] && rrc->MeasId[j]->reportConfigId == id) {
+        // remove all measId associated with the reportConfigId from the measIdList
+        asn1cFreeStruc(asn_DEF_NR_MeasIdToAddMod, rrc->MeasId[j]);
+        // remove the measurement reporting entry for this measId if included
+        asn1cFreeStruc(asn_DEF_NR_VarMeasReport, rrc->MeasReport[j]);
+        // TODO stop the periodical reporting timer or timer T321, whichever one is running
+        // and reset the associated information (e.g. timeToTrigger) for this measId
+      }
+    }
+  }
+}
+
+static void handle_reportconfig_addmod(rrcPerNB_t *rrc, struct NR_ReportConfigToAddModList *addmod_list)
+{
+  for (int i = 0; i < addmod_list->list.count; i++) {
+    NR_ReportConfigToAddMod_t *rep = addmod_list->list.array[i];
+    if (rep->reportConfig.present != NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR) {
+      LOG_E(NR_RRC, "Cannot handle reportConfig type other than NR\n");
+      continue;
+    }
+    NR_ReportConfigId_t id = rep->reportConfigId;
+    if (rrc->ReportConfig[id]) {
+      for (int j = 0; j < MAX_MEAS_ID; j++) {
+        // for each measId associated with this reportConfigId included in the measIdList
+        if (rrc->MeasId[j] && rrc->MeasId[j]->reportConfigId == id) {
+          // remove the measurement reporting entry for this measId if included
+          asn1cFreeStruc(asn_DEF_NR_VarMeasReport, rrc->MeasReport[j]);
+          // TODO stop the periodical reporting timer or timer T321, whichever one is running
+          // and reset the associated information (e.g. timeToTrigger) for this measId
+        }
+      }
+    }
+    UPDATE_IE(rrc->ReportConfig[id], addmod_list->list.array[i], NR_ReportConfigToAddMod_t);
+  }
+}
+
 static void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const measConfig)
 {
   int i;
   long ind;
-  NR_ReportConfigToAddMod_t *reportConfig = NULL;
 
   if (measConfig->measObjectToRemoveList)
     handle_measobj_remove(rrc, measConfig->measObjectToRemoveList);
@@ -1163,32 +1203,11 @@ static void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const
   if (measConfig->measObjectToAddModList)
     handle_measobj_addmod(rrc, measConfig->measObjectToAddModList);
 
-  if (measConfig->reportConfigToRemoveList != NULL) {
-    for (i = 0; i < measConfig->reportConfigToRemoveList->list.count; i++) {
-      ind = *measConfig->reportConfigToRemoveList->list.array[i];
-      free(rrc->ReportConfig[ind - 1]);
-    }
-  }
+  if (measConfig->reportConfigToRemoveList)
+    handle_reportconfig_remove(rrc, measConfig->reportConfigToRemoveList);
 
-  if (measConfig->reportConfigToAddModList != NULL) {
-    LOG_I(NR_RRC, "Report Configuration List is present\n");
-    for (i = 0; i < measConfig->reportConfigToAddModList->list.count; i++) {
-      ind = measConfig->reportConfigToAddModList->list.array[i]->reportConfigId;
-      reportConfig = measConfig->reportConfigToAddModList->list.array[i];
-
-      if (rrc->ReportConfig[ind - 1]) {
-        LOG_I(NR_RRC, "Modifying Report Configuration %ld\n", ind - 1);
-        memcpy(rrc->ReportConfig[ind - 1],
-               (char *)measConfig->reportConfigToAddModList->list.array[i],
-               sizeof(NR_ReportConfigToAddMod_t));
-      } else {
-        LOG_D(NR_RRC, "Adding Report Configuration %ld %p \n", ind - 1, measConfig->reportConfigToAddModList->list.array[i]);
-        if (reportConfig->reportConfig.present == NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR) {
-          rrc->ReportConfig[ind - 1] = measConfig->reportConfigToAddModList->list.array[i];
-        }
-      }
-    }
-  }
+  if (measConfig->reportConfigToAddModList)
+    handle_reportconfig_addmod(rrc, measConfig->reportConfigToAddModList);
 
   if (measConfig->measIdToRemoveList != NULL) {
     for (i = 0; i < measConfig->measIdToRemoveList->list.count; i++) {

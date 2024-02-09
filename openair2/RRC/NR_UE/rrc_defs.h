@@ -56,6 +56,8 @@
 #include "NR_UE-NR-Capability.h"
 #include "NR_SL-PreconfigurationNR-r16.h"
 #include "NR_MasterInformationBlockSidelink.h"
+#include "NR_MeasurementReport.h"
+#include "NR_VarMeasReport.h"
 
 #include "RRC/NR/nr_rrc_common.h"
 #include "as_message.h"
@@ -177,6 +179,7 @@ typedef struct rrcPerNB {
   NR_ReportConfigToAddMod_t *ReportConfig[MAX_MEAS_CONFIG];
   NR_QuantityConfig_t *QuantityConfig;
   NR_MeasIdToAddMod_t *MeasId[MAX_MEAS_ID];
+  NR_VarMeasReport_t *MeasReport[MAX_MEAS_ID];
   NR_MeasGapConfig_t *measGapConfig;
   NR_UE_RRC_SI_INFO SInfo;
   NR_RSRP_Range_t s_measure;
