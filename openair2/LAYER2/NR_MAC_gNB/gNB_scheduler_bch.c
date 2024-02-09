@@ -358,8 +358,20 @@ static uint32_t schedule_control_sib1(module_id_t module_id,
                          rbSize, tda_info->nrOfSymbols, N_PRB_DMRS * dmrs_length,0, 0,1) >> 3;
   } while (TBS < gNB_mac->sched_ctrlCommon->num_total_bytes);
 
-  AssertFatal(TBS>=gNB_mac->sched_ctrlCommon->num_total_bytes,"Couldn't allocate enough resources for %d bytes in SIB1 PDSCH\n",
-              gNB_mac->sched_ctrlCommon->num_total_bytes);
+  if (TBS < gNB_mac->sched_ctrlCommon->num_total_bytes) {
+    for (int rb = 0; rb < bwpSize; rb++)
+      LOG_I(NR_MAC, "vrb_map[%d] %x\n", rbStart + rb, vrb_map[rbStart + rb]);
+  }
+  AssertFatal(
+      TBS >= gNB_mac->sched_ctrlCommon->num_total_bytes,
+      "Couldn't allocate enough resources for %d bytes in SIB1 PDSCH (rbStart %d, rbSize %d, bwpSize %d SLmask %x - [%d,%d])\n",
+      gNB_mac->sched_ctrlCommon->num_total_bytes,
+      rbStart,
+      rbSize,
+      bwpSize,
+      SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols),
+      tda_info->startSymbolIndex,
+      tda_info->nrOfSymbols);
 
   pdsch->rbSize = rbSize;
   pdsch->rbStart = 0;
