@@ -3820,8 +3820,8 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
                           uint16_t *crnti,
                           NR_BSR_SHORT *truncated_bsr,
                           NR_BSR_SHORT *short_bsr,
-                          NR_BSR_LONG  *long_bsr) {
-
+                          NR_BSR_LONG  *long_bsr)
+{
   int      mac_ce_len = 0;
   uint8_t mac_ce_size = 0;
   uint8_t *pdu = mac_ce;

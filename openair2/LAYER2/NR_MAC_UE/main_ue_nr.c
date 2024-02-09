@@ -165,7 +165,7 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   // TODO not sure what needs to be done here
 
   // flush Msg3 buffer
-  // TODO we don't have a Msg3 buffer
+  free_and_zero(nr_mac->ra.Msg3_buffer);
 
   // cancel any triggered Scheduling Request procedure
   // Done in default config
