@@ -602,7 +602,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
               rb2 = rb + pucch_pdu->bwp_start +
                     ((symbol < pucch_pdu->start_symbol_index+(pucch_pdu->nr_of_symbols>>1)) || (pucch_pdu->freq_hop_flag == 0) ?
                      pucch_pdu->prb_start : pucch_pdu->second_hop_prb);
-              gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
+              gNB->rb_mask_ul[symbol][rb2>>5] |= (((uint32_t)1)<<(rb2&31));
             }
           }
         }
