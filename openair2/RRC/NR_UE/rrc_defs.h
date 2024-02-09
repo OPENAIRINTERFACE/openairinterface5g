@@ -67,6 +67,7 @@
 #define MAX_MEAS_OBJ 7
 #define MAX_MEAS_CONFIG 7
 #define MAX_MEAS_ID 7
+#define MAX_QUANTITY_CONFIG 2
 
 typedef uint32_t channel_t;
 
@@ -177,7 +178,7 @@ typedef enum { RB_NOT_PRESENT, RB_ESTABLISHED, RB_SUSPENDED } NR_RB_status_t;
 typedef struct rrcPerNB {
   NR_MeasObjectToAddMod_t *MeasObj[MAX_MEAS_OBJ];
   NR_ReportConfigToAddMod_t *ReportConfig[MAX_MEAS_CONFIG];
-  NR_QuantityConfig_t *QuantityConfig;
+  NR_QuantityConfigNR_t *QuantityConfig[MAX_QUANTITY_CONFIG];
   NR_MeasIdToAddMod_t *MeasId[MAX_MEAS_ID];
   NR_VarMeasReport_t *MeasReport[MAX_MEAS_ID];
   NR_MeasGapConfig_t *measGapConfig;

@@ -1192,6 +1192,29 @@ static void handle_reportconfig_addmod(rrcPerNB_t *rrc, struct NR_ReportConfigTo
   }
 }
 
+static void handle_quantityconfig(rrcPerNB_t *rrc, NR_QuantityConfig_t *quantityConfig)
+{
+  if (quantityConfig->quantityConfigNR_List) {
+    for (int i = 0; i < quantityConfig->quantityConfigNR_List->list.count; i++) {
+      NR_QuantityConfigNR_t *quantityNR = quantityConfig->quantityConfigNR_List->list.array[i];
+      if (!rrc->QuantityConfig[i])
+        rrc->QuantityConfig[i] = calloc(1, sizeof(*rrc->QuantityConfig[i]));
+      rrc->QuantityConfig[i]->quantityConfigCell = quantityNR->quantityConfigCell;
+      if (quantityNR->quantityConfigRS_Index)
+        UPDATE_IE(rrc->QuantityConfig[i]->quantityConfigRS_Index, quantityNR->quantityConfigRS_Index, struct NR_QuantityConfigRS);
+    }
+  }
+  for (int j = 0; j < MAX_MEAS_ID; j++) {
+    // for each measId included in the measIdList
+    if (rrc->MeasId[j]) {
+      // remove the measurement reporting entry for this measId if included
+      asn1cFreeStruc(asn_DEF_NR_VarMeasReport, rrc->MeasReport[j]);
+      // TODO stop the periodical reporting timer or timer T321, whichever one is running
+      // and reset the associated information (e.g. timeToTrigger) for this measId
+    }
+  }
+}
+
 static void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const measConfig)
 {
   int i;
@@ -1208,6 +1231,9 @@ static void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const
 
   if (measConfig->reportConfigToAddModList)
     handle_reportconfig_addmod(rrc, measConfig->reportConfigToAddModList);
+
+  if (measConfig->quantityConfig)
+    handle_quantityconfig(rrc, measConfig->quantityConfig);
 
   if (measConfig->measIdToRemoveList != NULL) {
     for (i = 0; i < measConfig->measIdToRemoveList->list.count; i++) {
@@ -1227,16 +1253,6 @@ static void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const
         LOG_D(NR_RRC, "Adding Measurement ID %ld %p\n", ind - 1, measConfig->measIdToAddModList->list.array[i]);
         rrc->MeasId[ind - 1] = measConfig->measIdToAddModList->list.array[i];
       }
-    }
-  }
-
-  if (measConfig->quantityConfig != NULL) {
-    if (rrc->QuantityConfig) {
-      LOG_D(NR_RRC, "Modifying Quantity Configuration \n");
-      memcpy(rrc->QuantityConfig, (char *)measConfig->quantityConfig, sizeof(NR_QuantityConfig_t));
-    } else {
-      LOG_D(NR_RRC, "Adding Quantity configuration\n");
-      rrc->QuantityConfig = measConfig->quantityConfig;
     }
   }
 
