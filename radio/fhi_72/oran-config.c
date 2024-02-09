@@ -684,9 +684,6 @@ static bool set_fh_prach_config(const openair0_config_t *oai0,
 {
   const split7_config_t *s7cfg = &oai0->split7;
 
-  // for FR2, need at least to update nPrachFilterIdx
-  AssertFatal(oai0->nr_band < 100, "can only handle FR1!\n");
-
   prach_config->nPrachConfIdx = s7cfg->prach_index;
   prach_config->nPrachSubcSpacing = oai0->nr_scs_for_raster;
   prach_config->nPrachZeroCorrConf = 0;
@@ -694,7 +691,10 @@ static bool set_fh_prach_config(const openair0_config_t *oai0,
   prach_config->nPrachRootSeqIdx = 0;
   prach_config->nPrachFreqStart = s7cfg->prach_freq_start;
   prach_config->nPrachFreqOffset = (s7cfg->prach_freq_start * 12 - oai0->num_rb_dl * 6) * 2;
-  prach_config->nPrachFilterIdx = get_prach_filterindex_fr1(oai0->duplex_mode, s7cfg->prach_index);
+  if (oai0->nr_band < 100)
+    prach_config->nPrachFilterIdx = get_prach_filterindex_fr1(oai0->duplex_mode, s7cfg->prach_index);
+  else
+    prach_config->nPrachFilterIdx = XRAN_FILTERINDEX_PRACH_ABC;
   prach_config->startSymId = 0;
   prach_config->lastSymId = 0;
   prach_config->startPrbc = 0;
