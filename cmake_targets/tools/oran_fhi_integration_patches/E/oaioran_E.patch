@@ -1,5 +1,5 @@
 diff --git a/fhi_lib/app/src/common.h b/fhi_lib/app/src/common.h
-index 7508117..a93c085 100644
+index 7508117..0dbe0bd 100644
 --- a/fhi_lib/app/src/common.h
 +++ b/fhi_lib/app/src/common.h
 @@ -28,7 +28,7 @@
@@ -7,7 +7,7 @@ index 7508117..a93c085 100644
  #include <rte_mbuf.h>
  
 -#define VERSIONX                "oran_e_maintenance_release_v1.0"
-+#define VERSIONX                "oran_e_maintenance_release_v1.1"
++#define VERSIONX                "oran_e_maintenance_release_v1.2"
  
  #define APP_O_DU  0
  #define APP_O_RU  1
@@ -126,10 +126,18 @@ index 7d3afc5..3e00c5a 100644
      uint16_t *num_prbu,
      uint16_t *start_prbu,
 diff --git a/fhi_lib/lib/ethernet/ethdi.c b/fhi_lib/lib/ethernet/ethdi.c
-index b6ba257..74b3c26 100644
+index b6ba257..b53325f 100644
 --- a/fhi_lib/lib/ethernet/ethdi.c
 +++ b/fhi_lib/lib/ethernet/ethdi.c
-@@ -479,11 +479,13 @@ xran_ethdi_init_dpdk_io(char *name, const struct xran_io_cfg *io_cfg,
+@@ -335,6 +335,7 @@ xran_ethdi_init_dpdk_io(char *name, const struct xran_io_cfg *io_cfg,
+     uint16_t count;
+ 
+     char *argv[] = { name, core_mask, "-n2", iova_mode, socket_mem, socket_limit, "--proc-type=auto",
++        "--no-telemetry",
+         "--file-prefix", name, "-a0000:00:00.0", bbdev_wdev, bbdev_vdev};
+ 
+ 
+@@ -479,11 +480,13 @@ xran_ethdi_init_dpdk_io(char *name, const struct xran_io_cfg *io_cfg,
                      ctx->tx_ring[i] = rte_ring_create(ring_name, NUM_MBUFS_RING_TRX,
                      rte_lcore_to_socket_id(*lcore_id), RING_F_SC_DEQ);
                      PANIC_ON(ctx->tx_ring[i] == NULL, "failed to allocate rx ring");
@@ -143,7 +151,7 @@ index b6ba257..74b3c26 100644
                      }
                  }
              } else {
-@@ -553,7 +555,7 @@ xran_ethdi_init_dpdk_io(char *name, const struct xran_io_cfg *io_cfg,
+@@ -553,7 +556,7 @@ xran_ethdi_init_dpdk_io(char *name, const struct xran_io_cfg *io_cfg,
          ctx->up_dl_pkt_gen_ring[i] = rte_ring_create(ring_name, NUM_MBUFS_RING,
          rte_lcore_to_socket_id(*lcore_id), /*RING_F_SC_DEQ*/0);
          PANIC_ON(ctx->up_dl_pkt_gen_ring[i] == NULL, "failed to allocate dl gen ring");
