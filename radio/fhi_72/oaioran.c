@@ -81,7 +81,11 @@ void oai_xran_fh_rx_callback(void *pCallbackTag, xran_status_t status)
   struct xran_device_ctx *xran_ctx = xran_dev_get_ctx();
   const struct xran_fh_init *fh_init = &xran_ctx->fh_init;
   int num_ports = fh_init->xran_ports;
-  static int rx_RU[XRAN_PORTS_NUM][20] = {0};
+
+  const struct xran_fh_config *fh_config = &xran_ctx->fh_cfg;
+  const int slots_per_subframe = 1 << fh_config->frame_conf.nNumerology;
+
+  static int rx_RU[XRAN_PORTS_NUM][160] = {0};
   uint32_t rx_tti = callback_tag->slotiId;
 
   tti = xran_get_slot_idx_from_tti(rx_tti, &frame, &subframe, &slot, &second);
@@ -95,7 +99,7 @@ void oai_xran_fh_rx_callback(void *pCallbackTag, xran_status_t status)
       }
       first_rx_set = 1;
       if (first_read_set == 1) {
-        slot2 = slot + (subframe << 1);
+        slot2 = slot + (subframe * slots_per_subframe);
         rx_RU[ru_id][slot2] = 1;
         if (last_frame > 0 && frame > 0
             && ((slot2 > 0 && last_frame != frame) || (slot2 == 0 && last_frame != ((1024 + frame - 1) & 1023))))
@@ -164,14 +168,17 @@ int oai_physide_ul_full_slot_call_back(void *param)
 int read_prach_data(ru_info_t *ru, int frame, int slot)
 {
   /* calculate tti and subframe_id from frame, slot num */
-  int tti = 20 * (frame) + (slot);
-  uint32_t subframe = XranGetSubFrameNum(tti, 2, 10);
-  uint32_t is_prach_slot = xran_is_prach_slot(0, subframe, (slot % 2));
   int sym_idx = 0;
 
   struct xran_device_ctx *xran_ctx = xran_dev_get_ctx();
   struct xran_prach_cp_config *pPrachCPConfig = &(xran_ctx->PrachCPConfig);
   struct xran_ru_config *ru_conf = &(xran_ctx->fh_cfg.ru_conf);
+  int slots_per_frame = 10 << xran_ctx->fh_cfg.frame_conf.nNumerology;
+  int slots_per_subframe = 1 << xran_ctx->fh_cfg.frame_conf.nNumerology;
+
+  int tti = slots_per_frame * (frame) + (slot);
+  uint32_t subframe = slot / slots_per_subframe;
+  uint32_t is_prach_slot = xran_is_prach_slot(0, subframe, (slot % slots_per_subframe));
 
   int nb_rx_per_ru = ru->nb_rx / xran_ctx->fh_init.xran_ports;
   /* If it is PRACH slot, copy prach IQ from XRAN PRACH buffer to OAI PRACH buffer */
@@ -275,17 +282,19 @@ int xran_fh_rx_read_slot(ru_info_t *ru, int *frame, int *slot)
 #endif
   // return(0);
 
-  int tti = (*frame * 20) + *slot;
+  struct xran_device_ctx *xran_ctx = xran_dev_get_ctx();
+  int slots_per_frame = 10 << xran_ctx->fh_cfg.frame_conf.nNumerology;
+
+  int tti = slots_per_frame * (*frame) + (*slot);
 
   read_prach_data(ru, *frame, *slot);
 
-  struct xran_device_ctx *xran_ctx = xran_dev_get_ctx();
   const struct xran_fh_init *fh_init = &xran_ctx->fh_init;
   int nPRBs = xran_ctx->fh_cfg.nULRBs;
   int fftsize = 1 << xran_ctx->fh_cfg.ru_conf.fftSize;
 
   int slot_offset_rxdata = 3 & (*slot);
-  uint32_t slot_size = 4 * 14 * 4096;
+  uint32_t slot_size = 4 * 14 * fftsize;
   uint8_t *rx_data = (uint8_t *)ru->rxdataF[0];
   uint8_t *start_ptr = NULL;
   int nb_rx_per_ru = ru->nb_rx / fh_init->xran_ports;
@@ -324,7 +333,7 @@ int xran_fh_rx_read_slot(ru_info_t *ru, int *frame, int *slot)
         else
           pData = p_sec_desc->pData;
         ptr = pData;
-        pos = (int32_t *)(start_ptr + (4 * sym_idx * 4096));
+        pos = (int32_t *)(start_ptr + (4 * sym_idx * fftsize));
         if (ptr == NULL || pos == NULL)
           continue;
 
@@ -451,9 +460,7 @@ int xran_fh_tx_send_slot(ru_info_t *ru, int frame, int slot, uint64_t timestamp)
                                    .sBufferList.pBuffers->pData;
         struct xran_prb_map *pPrbMap = (struct xran_prb_map *)pPrbMapData;
         ptr = pData;
-        pos =
-            &ru->txdataF_BF[ant_id][sym_idx * 4096 /*fp->ofdm_symbol_size*/]; // We had to use a different ru structure than benetel
-                                                                              // so the access to the buffer is not the same.
+        pos = &ru->txdataF_BF[ant_id][sym_idx * fftsize];
 
         uint8_t *u8dptr;
         struct xran_prb_map *pRbMap = pPrbMap;
