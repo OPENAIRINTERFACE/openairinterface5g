@@ -102,6 +102,10 @@
 #include "BIT_STRING.h"
 #include "assertions.h"
 
+#ifdef E2_AGENT
+#include "openair2/E2AP/RAN_FUNCTION/O-RAN/ran_func_rc_extern.h"
+#endif
+
 //#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
@@ -500,6 +504,10 @@ static void rrc_gNB_process_RRCSetupComplete(const protocol_ctxt_t *const ctxt_p
   AssertFatal(ctxt_pP->rntiMaybeUEid == ue_context_pP->ue_context.rrc_ue_id, "logic bug: inconsistent IDs, must use CU UE ID!\n");
 
   rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
+
+#ifdef E2_AGENT
+  signal_rrc_state_changed_to(&ue_context_pP->ue_context, RC_SM_RRC_CONNECTED);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2584,6 +2592,10 @@ rrc_gNB_generate_RRCRelease(
     };
     rrc->cucp_cuup.bearer_context_release(assoc_id, &cmd);
   }
+
+#ifdef E2_AGENT
+  signal_rrc_state_changed_to(UE, RC_SM_RRC_IDLE);
+#endif
 
   /* UE will be freed after UE context release complete */
 }

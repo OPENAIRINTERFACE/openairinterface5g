@@ -98,7 +98,7 @@ git submodule update
 ```bash
 git clone https://gitlab.eurecom.fr/mosaic5g/flexric flexric
 cd flexric/
-git checkout 70dd779f5339f4dac3ac176a24b49c45046a59fa
+git checkout 29af8408afad3da36824bd7912562202023ae924
 ```
 
 ### 2.2.2 Build FlexRIC
@@ -124,8 +124,10 @@ At the moment, the following measurements are supported in OAI RAN:
 * "RRU.PrbTotDl"
 * "RRU.PrbTotUl"
 
-2. RC v01.03 (`xapp_kpm_rc`)
-At the moment, OAI RAN supports the RAN control function "QoS flow mapping configuration", i.e. creating a new DRB.
+2. RC v01.03
+Currently available RC xApps:
+* `xapp_kpm_rc` - RAN control function "QoS flow mapping configuration" support, i.e. creating a new DRB.
+* `xapp_rc_moni` - aperiodic subscription support for "UE RRC State Change"
 
 3. MAC + RLC + PDCP + GTP (`xapp_gtp_mac_rlc_pdcp_moni`)
 
@@ -172,13 +174,25 @@ cd flexric
 ./build/examples/ric/nearRT-RIC
 ```
 
-* start the KPM xApp
+* start the KPM monitor xApp
 ```bash
 cd flexric
 ./build/examples/xApp/c/monitor/xapp_kpm_moni
 ```
 
-* start the (MAC + RLC + PDCP + GTP) xApp
+* start the RC monitor xApp
+```bash
+cd flexric
+./build/examples/xApp/c/monitor/xapp_rc_moni
+```
+
+* start the RC control xApp
+```bash
+cd flexric
+./build/examples/xApp/c/kpm_rc/xapp_kpm_rc
+```
+
+* start the (MAC + RLC + PDCP + GTP) monitor xApp
 ```bash
 cd flexric
 ./build/examples/xApp/c/monitor/xapp_gtp_mac_rlc_pdcp_moni
