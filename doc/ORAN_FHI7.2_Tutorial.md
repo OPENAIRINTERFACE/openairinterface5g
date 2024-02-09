@@ -622,17 +622,25 @@ Edit the sample OAI gNB configuration file and check following parameters:
       * `eAxC_offset`:  PRACH antenna offset
       * `kbar`: the PRACH guard interval, provided in RU
 
-xRAN SRS reception is not supported. The eAxC offsets for DL/UL are determined
-from the antenna configuration.
+Layer mapping (eAxC offsets) happens as follows:
+- For PUSCH/PDSCH, the layers are mapped to `[0,1,...,N-1]` where `N` is the
+  respective RX/TX number of antennas.
+- For PRACH, the layers are mapped to `[No,No+1,...No+N-1]` where No is the
+  `fhi_72.fh_config.[0].prach_config.eAxC_offset` and `N` the number of receive
+  antennas.
+
+xRAN SRS reception is not supported.
 
 # Start and Operation of OAI gNB
 
+Run the `nr-softmodem` from the build directory:
 ```bash
-cd ran_build/build
-
+cd ~/openairinterface5g/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/oran.fh.band78.fr1.273PRB.conf --sa --reorder-thread-disable 1 --thread-pool <list of non isolated cpus>
 ```
 
+You have to set the thread pool option to non-isolated CPUs, since the thread
+pool is used for L1 processing which should not interfere with DPDK threads.
 For example if you have two NUMA nodes in your system (for example 18 CPUs per
 socket) and odd cores are non-isolated, then you can put the thread-pool on
 `1,3,5,7,9,11,13,15`. On the other hand, if you have one NUMA node, you can use
