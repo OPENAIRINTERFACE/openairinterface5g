@@ -601,6 +601,8 @@ Edit the sample OAI gNB configuration file and check following parameters:
   that is employed by the xRAN library (`xran_fh_init` and `xran_fh_config`
   structs in the code):
   * `dpdk_devices`: PCI addresses of NIC VFs binded to the DPDK
+  * `system_core`: absolute CPU core ID for DPDK control threads
+    (`rte_mp_handle`, `eal-intr-thread`, `iavf-event-thread`)
   * `io_core`: absolute CPU core ID for XRAN library
   * `worker_cores`: array of absolute CPU core IDs for XRAN library
   * `du_addr`: DU C- and U-plane MAC-addresses (format `UU:VV:WW:XX:YY:ZZ`,

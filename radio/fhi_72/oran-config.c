@@ -500,7 +500,7 @@ static bool set_fh_io_cfg(struct xran_io_cfg *io_cfg, const paramdef_t *fhip, in
   io_cfg->dpdkIoVaMode = 0; /* IOVA mode */
   io_cfg->dpdkMemorySize = 0; /* DPDK memory size */
   io_cfg->core = *gpd(fhip, nump, ORAN_CONFIG_IO_CORE)->iptr;
-  io_cfg->system_core = 0; /* TODO how called in sample app? */
+  io_cfg->system_core = *gpd(fhip, nump, ORAN_CONFIG_SYSTEM_CORE)->iptr;
   io_cfg->pkt_proc_core = get_u64_mask(gpd(fhip, nump, ORAN_CONFIG_WORKER_CORES));
   io_cfg->pkt_proc_core_64_127 = 0x0; // bitmap 0 -> no core
   io_cfg->pkt_aux_core = 0; /* sapmle app says 0 = "do not start" */
