@@ -181,12 +181,10 @@ typedef struct {
   int32_t LCID_buffer_remain;
   // buffer status for each lcid
   uint8_t LCID_status;
-  // Bj bucket usage per  lcid
+  // logical channel group id of this LCID
+  long LCGID;
+  // Bj bucket usage per lcid
   int32_t Bj;
-  // Bucket size per lcid
-  int32_t bucket_size;
-  // logical channel group id for each LCID
-  uint8_t LCGID;
 } NR_LC_SCHEDULING_INFO;
 
 typedef struct {
@@ -434,10 +432,11 @@ typedef struct ssb_list_info {
 
 typedef struct nr_lcordered_info_s {
   // logical channels ids ordered as per priority
-  int lcids_ordered;
-
-  // logical channel configurations reordered as per priority
-  NR_LogicalChannelConfig_t *logicalChannelConfig_ordered;
+  NR_LogicalChannelIdentity_t lcid;
+  long priority;
+  long prioritisedBitRate;
+  // Bucket size per lcid
+  uint32_t bucket_size;
 } nr_lcordered_info_t;
 
 typedef struct {
@@ -513,11 +512,9 @@ typedef struct NR_UE_MAC_INST_s {
   /// BSR report flag management
   uint8_t BSR_reporting_active;
 
-  // Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-  NR_LogicalChannelConfig_t *logicalChannelConfig[NR_MAX_NUM_LCID];
-
   // order lc info
-  nr_lcordered_info_t lc_ordered_info[NR_MAX_NUM_LCID];
+  A_SEQUENCE_OF(nr_lcordered_info_t) lc_ordered_list;
+
   NR_UE_SCHEDULING_INFO scheduling_info;
 
   /// PHR
