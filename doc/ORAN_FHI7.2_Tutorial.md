@@ -431,68 +431,15 @@ cmake .. -GNinja -DOAI_FHI72=ON -Dxran_LOCATION=$HOME/phy/fhi_lib/lib
 ninja nr-softmodem oran_fhlib_5g params_libconfig
 ```
 
-# Configure the RU
+# Configuration
+
+## Configure the RU
 
 Contact the RU vendor to get the configuration manual, and configure the RU
 appropriately. You can orient on the OAI configuration files mentioned further
 below.
 
 We are evaluating if we can share RU configuration steps.
-
-# Configure OAI gNB
-
-Sample configuration files for OAI gNB, specific to the manufacturer of the radio unit, are available at:
-1. LITE-ON RU: [`gnb.sa.band78.273prb.fhi72.4x4-liteon.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon.conf) (band n78, 273 PRBs, 3.5GHz center freq, 4x4 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
-2. Benetel 650 RU: [`gnb.sa.band78.273prb.fhi72.4x2-benetel650.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x2-benetel650.conf) (band n78, 273 PRBs, 3.5GHz center freq, 4x2 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
-3. VVDN RU: [`gnb.sa.band77.273prb.fhi72.4x4-vvdn.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.273prb.fhi72.4x4-vvdn.conf) (band n77, 273 PRBs, 4.0GHz center freq, 4x4 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
-
-## Adapt the OAI-gNB configuration file to your system/workspace
-
-Edit the sample OAI gNB configuration file and check following parameters:
-
-* `gNBs` section
-  * The PLMN section shall match the one defined in the AMF
-  * `amf_ip_address` shall be the correct AMF IP address in your system
-  * `GNB_INTERFACE_NAME_FOR_NG_AMF` and `GNB_IPV4_ADDRESS_FOR_NG_AMF` shall match your DU N2 interface name and IP address
-  * `GNB_INTERFACE_NAME_FOR_NGU` and `GNB_IPV4_ADDRESS_FOR_NGU` shall match your DU N3 interface name and IP address
-  * `prach_ConfigurationIndex`
-  * `prach_msg1_FrequencyStart`
-  * Adjust the frequency, bandwidth and SSB position
-
-* `L1s` section
-  * Set an isolated core for L1 thread `L1_rx_thread_core`, in our environment we are using CPU 8
-  * `phase_compensation` should be set to 0 to disable when it is performed in the RU and set to 1 when it should be performed on the DU side
-
-* `RUs` section
-  * Set an isolated core for RU thread `ru_thread_core`, in our environment we are using CPU 6
-
-* `fhi_72` (FrontHaul Interface) section: this config follows the structure
-  that is employed by the xRAN library (`xran_fh_init` and `xran_fh_config`
-  structs in the code):
-  * `dpdk_devices`: PCI addresses of NIC VFs binded to the DPDK
-  * `io_core`: absolute CPU core ID for XRAN library
-  * `worker_cores`: array of absolute CPU core IDs for XRAN library
-  * `du_addr`: DU C- and U-plane MAC-addresses (format `UU:VV:WW:XX:YY:ZZ`,
-    hexadecimal numbers)
-  * `ru_addr`: RU C- and U-plane MAC-addresses (format `UU:VV:WW:XX:YY:ZZ`,
-    hexadecimal numbers)
-  * `mtu`: Maximum Transmission Unit for the RU, specified by RU vendor
-  * `fh_config`: parameters that need to match RU parameters
-    * timing parameters (starting with `T`) depend on the RU: `Tadv_cp_dl` is a
-      single number, the rest pairs of numbers `(x, y)` specifying minimum and
-      maximum delays
-    * `ru_config`: RU-specific configuration:
-      * `iq_width`: Width of DL/UL IQ samples: if 16, no compression, if <16, applies
-        compression
-      * `iq_width_prach`: Width of PRACH IQ samples: if 16, no compression, if <16, applies
-        compression
-      * `fft_size`: size of FFT performed by RU, set to 12 by default
-    * `prach_config`: PRACH-specific configuration
-      * `eAxC_offset`:  PRACH antenna offset
-      * `kbar`: the PRACH guard interval, provided in RU
-
-xRAN SRS reception is not supported. The eAxC offsets for DL/UL are determined
-from the antenna configuration.
 
 ## Configure Network Interfaces and DPDK VFs
 
@@ -623,6 +570,60 @@ sudo /usr/local/bin/dpdk-devbind.py --bind vfio-pci 31:06.0
 sudo /usr/local/bin/dpdk-devbind.py --bind vfio-pci 31:06.1
 ```
 </details>
+
+
+## Configure OAI gNB
+
+Sample configuration files for OAI gNB, specific to the manufacturer of the radio unit, are available at:
+1. LITE-ON RU: [`gnb.sa.band78.273prb.fhi72.4x4-liteon.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x4-liteon.conf) (band n78, 273 PRBs, 3.5GHz center freq, 4x4 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
+2. Benetel 650 RU: [`gnb.sa.band78.273prb.fhi72.4x2-benetel650.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.273prb.fhi72.4x2-benetel650.conf) (band n78, 273 PRBs, 3.5GHz center freq, 4x2 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
+3. VVDN RU: [`gnb.sa.band77.273prb.fhi72.4x4-vvdn.conf`](../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.273prb.fhi72.4x4-vvdn.conf) (band n77, 273 PRBs, 4.0GHz center freq, 4x4 antenna configuration with 9 bit I/Q samples (compressed) for PUSCH/PDSCH/PRACH, 2-layer DL MIMO, UL SISO)
+
+Edit the sample OAI gNB configuration file and check following parameters:
+
+* `gNBs` section
+  * The PLMN section shall match the one defined in the AMF
+  * `amf_ip_address` shall be the correct AMF IP address in your system
+  * `GNB_INTERFACE_NAME_FOR_NG_AMF` and `GNB_IPV4_ADDRESS_FOR_NG_AMF` shall match your DU N2 interface name and IP address
+  * `GNB_INTERFACE_NAME_FOR_NGU` and `GNB_IPV4_ADDRESS_FOR_NGU` shall match your DU N3 interface name and IP address
+  * `prach_ConfigurationIndex`
+  * `prach_msg1_FrequencyStart`
+  * Adjust the frequency, bandwidth and SSB position
+
+* `L1s` section
+  * Set an isolated core for L1 thread `L1_rx_thread_core`, in our environment we are using CPU 8
+  * `phase_compensation` should be set to 0 to disable when it is performed in the RU and set to 1 when it should be performed on the DU side
+
+* `RUs` section
+  * Set an isolated core for RU thread `ru_thread_core`, in our environment we are using CPU 6
+
+* `fhi_72` (FrontHaul Interface) section: this config follows the structure
+  that is employed by the xRAN library (`xran_fh_init` and `xran_fh_config`
+  structs in the code):
+  * `dpdk_devices`: PCI addresses of NIC VFs binded to the DPDK
+  * `io_core`: absolute CPU core ID for XRAN library
+  * `worker_cores`: array of absolute CPU core IDs for XRAN library
+  * `du_addr`: DU C- and U-plane MAC-addresses (format `UU:VV:WW:XX:YY:ZZ`,
+    hexadecimal numbers)
+  * `ru_addr`: RU C- and U-plane MAC-addresses (format `UU:VV:WW:XX:YY:ZZ`,
+    hexadecimal numbers)
+  * `mtu`: Maximum Transmission Unit for the RU, specified by RU vendor
+  * `fh_config`: parameters that need to match RU parameters
+    * timing parameters (starting with `T`) depend on the RU: `Tadv_cp_dl` is a
+      single number, the rest pairs of numbers `(x, y)` specifying minimum and
+      maximum delays
+    * `ru_config`: RU-specific configuration:
+      * `iq_width`: Width of DL/UL IQ samples: if 16, no compression, if <16, applies
+        compression
+      * `iq_width_prach`: Width of PRACH IQ samples: if 16, no compression, if <16, applies
+        compression
+      * `fft_size`: size of FFT performed by RU, set to 12 by default
+    * `prach_config`: PRACH-specific configuration
+      * `eAxC_offset`:  PRACH antenna offset
+      * `kbar`: the PRACH guard interval, provided in RU
+
+xRAN SRS reception is not supported. The eAxC offsets for DL/UL are determined
+from the antenna configuration.
 
 # Start and Operation of OAI gNB
 
