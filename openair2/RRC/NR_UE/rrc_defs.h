@@ -158,6 +158,7 @@ typedef struct NR_UE_Timers_Constants_s {
   NR_timer_t T311;
   NR_timer_t T319;
   NR_timer_t T320;
+  NR_timer_t T321;
   NR_timer_t T325;
   NR_timer_t T390;
   // counters
