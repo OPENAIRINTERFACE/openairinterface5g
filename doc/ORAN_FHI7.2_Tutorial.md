@@ -700,3 +700,28 @@ mirroring at your switch to capture the fronthaul packets: check that you see
 (1) packets at all (2) they have the right ethernet address (3) the right VLAN
 tag. Although we did not test this, you might make use of the [DPDK packet
 capture feature](https://doc.dpdk.org/guides/howto/packet_capture_framework.html)
+
+<details>
+<summary>If you see messages about `Received time doesn't correspond to the
+time we think it is` or `Jump in frame counter`, the S-plane is not working.</summary>
+
+```
+[PHY]   Received Time doesn't correspond to the time we think it is (slot mismatch, received 480.5, expected 475.8)
+[PHY]   Received Time doesn't correspond to the time we think it is (frame mismatch, 480.5 , expected 475.5)
+[PHY]   Jump in frame counter last_frame 480 => 519, slot 19
+[PHY]   Received Time doesn't correspond to the time we think it is (slot mismatch, received 519.19, expected 480.12)
+[PHY]   Received Time doesn't correspond to the time we think it is (frame mismatch, 519.19 , expected 480.19)
+[PHY]   Received Time doesn't correspond to the time we think it is (slot mismatch, received 520.1, expected 520.0)
+```
+
+You can see that the frame numbers jump around, by 5-40 frames (corresponding
+to 50-400ms!). This indicates the gNB receives packets on the fronthaul that
+don't match its internal time, and the synchronization between gNB and RU is
+not working!
+
+</details>
+
+In this case, you should reverify that `ptp4l` and `phc2sys` are working, e.g.,
+do not do any jumps (during the last hour). While an occasional jump is not
+necessarily problematic for the gNB, many such messages mean that the system is
+not working, and UEs might not be able to attach or reach good performance.
