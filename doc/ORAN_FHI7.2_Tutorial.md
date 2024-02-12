@@ -30,11 +30,12 @@ The hardware on which we have tried this tutorial:
 
 NICs we have tested so far:
 
-|Vendor      |Firmware Version        |
-|------------|------------------------|
-|Intel X710  |9.20 0x8000d95e 22.0.9  |
-|Intel E810  |4.00 0x8001184e 1.3236.0|
-|Intel XXV710|6.02 0x80003888         |
+|Vendor         |Firmware Version        |
+|---------------|------------------------|
+|Intel X710     |9.20 0x8000d95e 22.0.9  |
+|Intel E810-XXV |4.00 0x8001184e 1.3236.0|
+|E810-C         |4.20 0x8001784e 22.0.9  |
+|Intel XXV710   |6.02 0x80003888         |
 
 PTP enabled switches and grandmaster clock we have in are lab:
 
