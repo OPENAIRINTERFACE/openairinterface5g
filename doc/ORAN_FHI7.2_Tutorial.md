@@ -45,8 +45,17 @@ PTP enabled switches and grandmaster clock we have in are lab:
 |Fibrolan Falcon-RX/812/G|8.0.25.4        |
 |Qulsar Qg2 (Grandmaster)|12.1.27         |
 
+**S-Plane synchronization is mandatory.** S-plane support is done via `ptp4l`
+and `phc2sys`.
 
-Radio units we are testing/integrating:
+| Software  | Software Version |
+|-----------|------------------|
+| `ptp4l`   | 3.1.1            |
+| `phc2sys` | 3.1.1            |
+
+We have only verified LLS-C3 configuration in our lab, i.e.  using an external
+grandmaster, a switch as a boundary clock, and the gNB/DU and RU.  We haven't
+tested any RU without S-plane. Radio units we are testing/integrating:
 
 |Vendor     |Software Version |
 |-----------|-----------------|
