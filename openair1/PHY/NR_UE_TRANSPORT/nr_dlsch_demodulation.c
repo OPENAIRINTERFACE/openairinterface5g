@@ -156,7 +156,12 @@ static void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
                                  uint16_t dlDmrsSymbPos,
                                  int chest_time_type);
 
-static void nr_dlsch_channel_level_median(uint32_t rx_size_symbol, int32_t dl_ch_estimates_ext[][rx_size_symbol], int32_t *median, int n_tx, int n_rx, int length);
+static void nr_dlsch_channel_level_median(uint32_t rx_size_symbol,
+                                          int32_t dl_ch_estimates_ext[][rx_size_symbol],
+                                          int32_t median[MAX_ANT][MAX_ANT],
+                                          int n_tx,
+                                          int n_rx,
+                                          int length);
 
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for
    16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
@@ -205,7 +210,7 @@ static void nr_dlsch_channel_level(uint32_t rx_size_symbol,
                                    int32_t dl_ch_estimates_ext[][rx_size_symbol],
                                    NR_DL_FRAME_PARMS *frame_parms,
                                    uint8_t n_tx,
-                                   int32_t *avg,
+                                   int32_t avg[MAX_ANT][MAX_ANT],
                                    uint8_t symbol,
                                    uint32_t len,
                                    unsigned short nb_rb);
@@ -271,7 +276,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   const int nr_slot_rx = proc->nr_slot_rx;
   const int gNB_id = proc->gNB_id;
 
-  int avg[16];
   uint8_t slot = 0;
 
   int32_t codeword_TB0 = -1;
@@ -431,27 +435,28 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     if (meas_enabled)
       start_meas(&meas);
     if (first_symbol_flag == 1) {
+      int32_t avg[MAX_ANT][MAX_ANT];
       nr_dlsch_channel_level(rx_size_symbol, dl_ch_estimates_ext, frame_parms, nl, avg, symbol, nb_re_pdsch, nb_rb_pdsch);
       int avgs = 0;
-      int32_t median[16];
+      int32_t median[MAX_ANT][MAX_ANT];
       for (int aatx = 0; aatx < nl; aatx++)
         for (int aarx = 0; aarx < n_rx; aarx++) {
           // LOG_I(PHY, "nb_rb %d len %d avg_%d_%d Power per SC is %d\n",nb_rb, len,aarx, aatx,avg[aatx*n_rx+aarx]);
-          avgs = cmax(avgs, avg[(aatx * n_rx) + aarx]);
+          avgs = cmax(avgs, avg[aatx][aarx]);
           // LOG_I(PHY, "avgs Power per SC is %d\n", avgs);
-          median[(aatx * n_rx) + aarx] = avg[(aatx * n_rx) + aarx];
+          median[aatx][aarx] = avg[aatx][aarx];
         }
-    if (nl > 1) {
-      nr_dlsch_channel_level_median(rx_size_symbol, dl_ch_estimates_ext, median, nl, n_rx, nb_re_pdsch);
-      for (int aatx = 0; aatx < nl; aatx++) {
-        for (int aarx = 0; aarx < n_rx; aarx++) {
-          avgs = cmax(avgs, median[aatx*n_rx + aarx]);
+      if (nl > 1) {
+        nr_dlsch_channel_level_median(rx_size_symbol, dl_ch_estimates_ext, median, nl, n_rx, nb_re_pdsch);
+        for (int aatx = 0; aatx < nl; aatx++) {
+          for (int aarx = 0; aarx < n_rx; aarx++) {
+            avgs = cmax(avgs, median[aatx][aarx]);
+          }
         }
       }
-    }
-    *log2_maxh = (log2_approx(avgs)/2) + 1;
-    //LOG_I(PHY, "avgs Power per SC is %d lg2_maxh %d\n", avgs,  log2_maxh);
-      LOG_D(PHY, "[DLSCH] AbsSubframe %d.%d log2_maxh = %d (%d,%d)\n", frame % 1024, nr_slot_rx, *log2_maxh, avg[0], avgs);
+      *log2_maxh = (log2_approx(avgs) / 2) + 1;
+      // LOG_I(PHY, "avgs Power per SC is %d lg2_maxh %d\n", avgs,  log2_maxh);
+      LOG_D(PHY, "[DLSCH] AbsSubframe %d.%d log2_maxh = %d (%d)\n", frame % 1024, nr_slot_rx, *log2_maxh, avgs);
     }
     if (meas_enabled) {
       stop_meas(&meas);
@@ -465,15 +470,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
             meas.p_time / (cpuf * 1000.0));
     }
 #if T_TRACER
-    T(T_UE_PHY_PDSCH_ENERGY,
-      T_INT(gNB_id),
-      T_INT(0),
-      T_INT(frame % 1024),
-      T_INT(nr_slot_rx),
-      T_INT(avg[0]),
-      T_INT(avg[1]),
-      T_INT(avg[2]),
-      T_INT(avg[3]));
+    T(T_UE_PHY_PDSCH_ENERGY, T_INT(gNB_id), T_INT(0), T_INT(frame % 1024), T_INT(nr_slot_rx));
 #endif
 
     //----------------------------------------------------------
@@ -1108,7 +1105,7 @@ void nr_dlsch_channel_level(uint32_t rx_size_symbol,
                             int32_t dl_ch_estimates_ext[][rx_size_symbol],
                             NR_DL_FRAME_PARMS *frame_parms,
                             uint8_t n_tx,
-                            int32_t *avg,
+                            int32_t avg[MAX_ANT][MAX_ANT],
                             uint8_t symbol,
                             uint32_t len,
                             unsigned short nb_rb)
@@ -1137,62 +1134,45 @@ void nr_dlsch_channel_level(uint32_t rx_size_symbol,
         avg128D = simde_mm_add_epi32(avg128D,simde_mm_srai_epi32(simde_mm_madd_epi16(dl_ch128[2],dl_ch128[2]),x));
         dl_ch128+=3;
       }
-
-      avg[(aatx*frame_parms->nb_antennas_rx)+aarx] =(((int32_t*)&avg128D)[0] +
-                            ((int32_t*)&avg128D)[1] +
-                            ((int32_t*)&avg128D)[2] +
-                            ((int32_t*)&avg128D)[3])/y;
+      int32_t *tmp = (int32_t *)&avg128D;
+      avg[aatx][aarx] = ((int64_t)tmp[0] + tmp[1] + tmp[2] + tmp[3]) / y;
       //  printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
   }
-  simde_mm_empty();
-  simde_m_empty();
 }
 
-static void nr_dlsch_channel_level_median(uint32_t rx_size_symbol, int32_t dl_ch_estimates_ext[][rx_size_symbol], int32_t *median, int n_tx, int n_rx, int length)
+static void nr_dlsch_channel_level_median(uint32_t rx_size_symbol,
+                                          int32_t dl_ch_estimates_ext[][rx_size_symbol],
+                                          int32_t median[MAX_ANT][MAX_ANT],
+                                          int n_tx,
+                                          int n_rx,
+                                          int length)
 {
+  for (int aatx = 0; aatx < n_tx; aatx++) {
+    for (int aarx = 0; aarx < n_rx; aarx++) {
+      int64_t max = median[aatx][aarx]; // initialize the med point for max
+      int64_t min = median[aatx][aarx]; // initialize the med point for min
+      simde__m128i *dl_ch128 = (simde__m128i *)dl_ch_estimates_ext[aatx * n_rx + aarx];
 
+      const int length2 = length >> 2; // length = number of REs, hence length2=nb_REs*(32/128) in SIMD loop
 
-  short ii;
-  int aatx,aarx;
-  int length2;
-  int max = 0, min=0;
-  int norm_pack;
-  simde__m128i *dl_ch128, norm128D;
-
-  for (aatx=0; aatx<n_tx; aatx++) {
-    for (aarx=0; aarx<n_rx; aarx++) {
-      max = median[aatx*n_rx + aarx];//initialize the med point for max
-      min = median[aatx*n_rx + aarx];//initialize the med point for min
-      norm128D = simde_mm_setzero_si128();
-
-      dl_ch128=(simde__m128i *)dl_ch_estimates_ext[aatx*n_rx + aarx];
-
-      length2 = length>>2;//length = number of REs, hence length2=nb_REs*(32/128) in SIMD loop
-
-      for (ii=0;ii<length2;ii++) {
-        norm128D = simde_mm_srai_epi32(simde_mm_madd_epi16(dl_ch128[0],dl_ch128[0]), 2);//[|H_0|²/4 |H_1|²/4 |H_2|²/4 |H_3|²/4]
-        //print_ints("norm128D",&norm128D[0]);
-
-        norm_pack = ((int32_t*)&norm128D)[0] +
-            ((int32_t*)&norm128D)[1] +
-            ((int32_t*)&norm128D)[2] +
-            ((int32_t*)&norm128D)[3];// compute the sum
+      for (int ii = 0; ii < length2; ii++) {
+        simde__m128i norm128D =
+            simde_mm_srai_epi32(simde_mm_madd_epi16(*dl_ch128, *dl_ch128), 2); //[|H_0|²/4 |H_1|²/4 |H_2|²/4 |H_3|²/4]
+        int32_t *tmp = (int32_t *)&norm128D;
+        int64_t norm_pack = (int64_t)tmp[0] + tmp[1] + tmp[2] + tmp[3];
 
         if (norm_pack > max)
-          max = norm_pack;//store values more than max
+          max = norm_pack;
         if (norm_pack < min)
-          min = norm_pack;//store values less than min
+          min = norm_pack;
         dl_ch128+=1;
       }
 
-      median[aatx*n_rx + aarx]  = (max+min)>>1;
+      median[aatx][aarx] = (max + min) >> 1;
       //printf("Channel level  median [%d]: %d max = %d min = %d\n",aatx*n_rx + aarx, median[aatx*n_rx + aarx],max,min);
-      }
+    }
   }
-
-  simde_mm_empty();
-  simde_m_empty();
 }
 
 //==============================================================================================
