@@ -131,6 +131,11 @@ static void tx_func(void *param)
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
 
+  if (slot_rx == 0) {
+    reset_active_stats(gNB, frame_rx);
+    reset_active_ulsch(gNB, frame_rx);
+  }
+
   start_meas(&gNB->slot_indication_stats);
   ifi->NR_slot_indication(module_id, CC_id, frame_tx, slot_tx);
   stop_meas(&gNB->slot_indication_stats);
