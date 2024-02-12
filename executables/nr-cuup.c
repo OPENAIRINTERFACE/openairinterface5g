@@ -155,6 +155,10 @@ int main(int argc, char **argv)
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
   logInit();
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#endif
+  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
   set_softmodem_sighandler();
   itti_init(TASK_MAX, tasks_info);
   int rc;
