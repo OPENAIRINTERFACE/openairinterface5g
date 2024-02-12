@@ -91,7 +91,7 @@ Your server could be:
 
 DPDK, OAI and kernel threads require to be properly allocated to extract maximum real-time performance for your use case.
 
-1. **NOTE**: Currently the default OAI 7.2 configuration file requires isolated **CPUs 0,2,4** for DPDK/libXRAN, **CPU 6** for `ru_thread` and **CPU 8** for `L1_rx_thread`. It is preferrable to have all these threads on the same socket.
+1. **NOTE**: Currently the default OAI 7.2 configuration file requires isolated **CPUs 0,2,4** for DPDK/libXRAN, **CPU 6** for `ru_thread`, **CPU 8** for `L1_rx_thread` and **CPU 10** for `L1_tx_thread`. It is preferrable to have all these threads on the same socket.
 2. Allocating CPUs to the OAI nr-softmodem is done using the `--thread-pool` option. Allocating 4 CPUs is the minimal configuration but we recommend to allocate at least **8** CPUs. And they can be on a different socket as the DPDK threads.
 3. And to avoid kernel preempting these allocated CPUs, it is better to force the kernel to use un-allocated CPUs.
 
@@ -102,6 +102,7 @@ Let summarize for example on a `32-CPU` single NUMA node system, regardless of t
 |XRAN DPDK usage    |0,2,4             |
 |OAI `ru_thread`    |6                 |
 |OAI `L1_rx_thread` |8                 |
+|OAI `L1_tx_thread` |10                |
 |OAI `nr-softmodem` |1,3,5,7,9,11,13,15|
 |kernel             |16-31             |
 
@@ -602,6 +603,7 @@ Edit the sample OAI gNB configuration file and check following parameters:
 
 * `L1s` section
   * Set an isolated core for L1 thread `L1_rx_thread_core`, in our environment we are using CPU 8
+  * Set an isolated core for L1 thread `L1_tx_thread_core`, in our environment we are using CPU 10
   * `phase_compensation` should be set to 0 to disable when it is performed in the RU and set to 1 when it should be performed on the DU side
 
 * `RUs` section
