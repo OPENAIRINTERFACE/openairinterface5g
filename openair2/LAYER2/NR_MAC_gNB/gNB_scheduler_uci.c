@@ -185,7 +185,16 @@ void nr_schedule_pucch(gNB_MAC_INST *nrmac,
     NR_sched_pucch_t *curr_pucch = &UE->UE_sched_ctrl.sched_pucch[pucch_index];
     if (!curr_pucch->active)
       continue;
-    DevAssert(frameP == curr_pucch->frame && slotP == curr_pucch->ul_slot);
+    if (frameP != curr_pucch->frame || slotP != curr_pucch->ul_slot) {
+      LOG_E(NR_MAC,
+            "PUCCH frame/slot mismatch: current %4d.%2d vs. request %4d.%2d: not scheduling PUCCH\n",
+            curr_pucch->frame,
+            curr_pucch->ul_slot,
+            frameP,
+            slotP);
+      memset(curr_pucch, 0, sizeof(*curr_pucch));;
+      continue;
+    }
 
     const uint16_t O_ack = curr_pucch->dai_c;
     const uint16_t O_csi = curr_pucch->csi_bits;
@@ -1296,8 +1305,13 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
       return pucch_index; // index of current PUCCH structure
     }
     else if (curr_pucch->active) {
-      AssertFatal(1==0, "This shouldn't happen! curr_pucch frame.slot %d.%d not matching with computed frame.slot %d.%d\n",
-                  curr_pucch->frame, curr_pucch->ul_slot, pucch_frame, pucch_slot);
+      LOG_E(NR_MAC,
+            "current PUCCH inactive: curr_pucch frame.slot %d.%d not matching with computed frame.slot %d.%d\n",
+            curr_pucch->frame,
+            curr_pucch->ul_slot,
+            pucch_frame,
+            pucch_slot);
+      memset(curr_pucch, 0, sizeof(*curr_pucch));
     }
     else { // unoccupied occasion
       // checking if in ul_slot the resources potentially to be assigned to this PUCCH are available
@@ -1392,8 +1406,13 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
           curr_pucch->resource_indicator == idx)
         curr_pucch->sr_flag = true;
       else if (curr_pucch->active) {
-        AssertFatal(1==0, "This shouldn't happen! curr_pucch frame.slot %d.%d not matching with SR function frame.slot %d.%d\n",
-                    curr_pucch->frame, curr_pucch->ul_slot, SFN, slot);
+        LOG_E(NR_MAC,
+              "current PUCCH inactive: curr_pucch frame.slot %d.%d not matching with computed frame.slot %d.%d\n",
+              curr_pucch->frame,
+              curr_pucch->ul_slot,
+              SFN,
+              slot);
+        memset(curr_pucch, 0, sizeof(*curr_pucch));
         continue;
       }
       else {

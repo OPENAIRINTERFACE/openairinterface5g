@@ -28,6 +28,7 @@
 #define CONFIG_STRING_ORAN "fhi_72"
 
 #define ORAN_CONFIG_DPDK_DEVICES "dpdk_devices"
+#define ORAN_CONFIG_SYSTEM_CORE "system_core"
 #define ORAN_CONFIG_IO_CORE "io_core"
 #define ORAN_CONFIG_WORKER_CORES "worker_cores"
 #define ORAN_CONFIG_DU_ADDR "du_addr"
@@ -42,6 +43,7 @@
 // TODO: ethernet addr check
 #define ORAN_GLOBALPARAMS_DESC { \
   {ORAN_CONFIG_DPDK_DEVICES,    "PCI addr of devices for DPDK\n",           PARAMFLAG_MANDATORY, .strlistptr=NULL, .defstrlistval=NULL, TYPE_STRINGLIST, 0}, \
+  {ORAN_CONFIG_SYSTEM_CORE,     "DPDK control threads core\n",              PARAMFLAG_MANDATORY, .iptr=NULL,       .defintval=0,        TYPE_INT,        0}, \
   {ORAN_CONFIG_IO_CORE,         "DPDK Core used for IO\n",                  PARAMFLAG_MANDATORY, .iptr=NULL,       .defintval=4,        TYPE_INT,        0}, \
   {ORAN_CONFIG_WORKER_CORES,    "CPU Cores to use for workers\n",           PARAMFLAG_MANDATORY, .uptr=NULL,       .defintarrayval=NULL,TYPE_UINTARRAY,  0}, \
   {ORAN_CONFIG_DU_ADDR,         "Ether addr of DU\n",                       PARAMFLAG_MANDATORY, .strlistptr=NULL, .defstrlistval=NULL, TYPE_STRINGLIST, 0}, \

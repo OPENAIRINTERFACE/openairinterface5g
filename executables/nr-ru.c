@@ -1216,6 +1216,18 @@ void *ru_thread( void *param ) {
         malloc_IF4p5_buffer(ru);
       }
 
+      int cpu = sched_getcpu();
+      if (ru->ru_thread_core > -1 && cpu != ru->ru_thread_core) {
+        /* we start the ru_thread using threadCreate(), which already sets CPU
+         * affinity; let's force it here again as per feature request #732 */
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(ru->ru_thread_core, &cpuset);
+        int ret = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+        AssertFatal(ret == 0, "Error in pthread_getaffinity_np(): ret: %d, errno: %d", ret, errno);
+        LOG_I(PHY, "RU %d: manually set CPU affinity to CPU %d\n", ru->idx, ru->ru_thread_core);
+      }
+
       LOG_I(PHY,"Starting IF interface for RU %d, nb_rx %d\n",ru->idx,ru->nb_rx);
       AssertFatal(ru->nr_start_if(ru,NULL) == 0, "Could not start the IF device\n");
 
