@@ -615,8 +615,8 @@ Edit the sample OAI gNB configuration file and check following parameters:
   * `dpdk_devices`: PCI addresses of NIC VFs binded to the DPDK
   * `system_core`: absolute CPU core ID for DPDK control threads
     (`rte_mp_handle`, `eal-intr-thread`, `iavf-event-thread`)
-  * `io_core`: absolute CPU core ID for XRAN library
-  * `worker_cores`: array of absolute CPU core IDs for XRAN library
+  * `io_core`: absolute CPU core ID for XRAN library, it should be an isolated core, in our environment we are using CPU 4
+  * `worker_cores`: array of absolute CPU core IDs for XRAN library, they should be isolated cores, in our environment we are using CPU 2
   * `du_addr`: DU C- and U-plane MAC-addresses (format `UU:VV:WW:XX:YY:ZZ`,
     hexadecimal numbers)
   * `ru_addr`: RU C- and U-plane MAC-addresses (format `UU:VV:WW:XX:YY:ZZ`,
