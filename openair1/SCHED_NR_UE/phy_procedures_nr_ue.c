@@ -232,15 +232,14 @@ int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL){
 // - If the current tx frame and slot match the TA configuration
 //   then timing advance is processed and set to be applied in the next UL transmission
 // - Application of timing adjustment according to TS 38.213 p4.2
-// todo:
 // - handle RAR TA application as per ch 4.2 TS 38.213
 void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx)
 {
   if (frame_tx == ue->ta_frame && slot_tx == ue->ta_slot) {
-
     uint16_t ofdm_symbol_size = ue->frame_parms.ofdm_symbol_size;
 
-    // convert time factor "16 * 64 * T_c / (2^mu)" in N_TA calculation in TS38.213 section 4.2 to samples by multiplying with samples per second
+    // convert time factor "16 * 64 * T_c / (2^mu)" in N_TA calculation in TS38.213 section 4.2 to samples by multiplying with
+    // samples per second
     //   16 * 64 * T_c            / (2^mu) * samples_per_second
     // = 16 * T_s                 / (2^mu) * samples_per_second
     // = 16 * 1 / (15 kHz * 2048) / (2^mu) * (15 kHz * 2^mu * ofdm_symbol_size)
@@ -250,7 +249,8 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx)
 
     ue->timing_advance += (ue->ta_command - 31) * bw_scaling;
 
-    LOG_D(PHY, "[UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+    LOG_D(PHY,
+          "[UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
           ue->Mod_id,
           frame_tx,
           slot_tx,

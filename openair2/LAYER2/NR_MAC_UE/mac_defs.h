@@ -384,11 +384,16 @@ typedef struct {
   short ssb_rsrp_dBm;
 } NR_SSB_meas_t;
 
+typedef enum ta_type {
+  no_ta = 0,
+  adjustment_ta,
+  rar_ta,
+} ta_type_t;
+
 typedef struct NR_UL_TIME_ALIGNMENT {
   /// TA command and TAGID received from the gNB
-  bool ta_apply;
+  ta_type_t ta_apply;
   int ta_command;
-  int ta_total;
   uint32_t tag_id;
   int frame;
   int slot;

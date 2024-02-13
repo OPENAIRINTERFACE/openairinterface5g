@@ -3722,12 +3722,11 @@ void nr_ue_process_mac_pdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_i
         const int tag = ((NR_MAC_CE_TA *)pduP)[1].TAGID;
 
         NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &mac->ul_time_alignment;
-        ul_time_alignment->ta_total += ta - 31;
         ul_time_alignment->tag_id = tag;
         ul_time_alignment->ta_command = ta;
         ul_time_alignment->frame = frameP;
         ul_time_alignment->slot = slot;
-        ul_time_alignment->ta_apply = true;
+        ul_time_alignment->ta_apply = adjustment_ta;
         /*
         #ifdef DEBUG_HEADER_PARSING
         LOG_D(MAC, "[UE] CE %d : UE Timing Advance : %d\n", i, pduP[1]);
@@ -3735,21 +3734,9 @@ void nr_ue_process_mac_pdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_i
         */
 
         if (ta == 31)
-          LOG_D(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n",
-                frameP,
-                slot,
-                ta,
-                tag,
-                CC_id,
-                ul_time_alignment->ta_total);
+          LOG_D(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d \n", frameP, slot, ta, tag, CC_id);
         else
-          LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n",
-                frameP,
-                slot,
-                ta,
-                tag,
-                CC_id,
-                ul_time_alignment->ta_total);
+          LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d \n", frameP, slot, ta, tag, CC_id);
 
         break;
       case DL_SCH_LCID_CON_RES_ID:
@@ -4129,9 +4116,9 @@ static void nr_ue_process_rar(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *d
     // TA command
     NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &mac->ul_time_alignment;
     const int ta = rar->TA2 + (rar->TA1 << 5);
-    ul_time_alignment->ta_command = 31 + ta;
-    ul_time_alignment->ta_total = ta;
-    ul_time_alignment->ta_apply = true;
+    ul_time_alignment->ta_command = ta;
+    ul_time_alignment->ta_apply = rar_ta;
+
     LOG_W(MAC, "received TA command %d\n", 31 + ta);
 #ifdef DEBUG_RAR
     // CSI
@@ -4221,6 +4208,8 @@ static void nr_ue_process_rar(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *d
       return;
     }
     ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, tda_info.k2);
+    ul_time_alignment->frame = frame_tx;
+    ul_time_alignment->slot = slot_tx;
 
     if (ret != -1) {
       uint16_t rnti = mac->crnti;

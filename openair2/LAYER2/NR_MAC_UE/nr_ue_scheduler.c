@@ -58,6 +58,7 @@
 //#define SRS_DEBUG
 
 static void nr_ue_prach_scheduler(NR_UE_MAC_INST_t *mac, frame_t frameP, sub_frame_t slotP);
+static void schedule_ta_command(fapi_nr_dl_config_request_t *dl_config, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
 
 fapi_nr_ul_config_request_pdu_t *lockGet_ul_config(NR_UE_MAC_INST_t *mac, frame_t frame_tx, int slot_tx, uint8_t pdu_type)
 {
@@ -1018,7 +1019,7 @@ void nr_ue_dl_scheduler(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_info
 
   ue_dci_configuration(mac, dl_config, rx_frame, rx_slot);
 
-  if (mac->ul_time_alignment.ta_apply)
+  if (mac->ul_time_alignment.ta_apply != no_ta)
     schedule_ta_command(dl_config, &mac->ul_time_alignment);
   if (mac->state == UE_CONNECTED) {
     nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
@@ -3354,15 +3355,16 @@ uint8_t nr_ue_get_sdu(NR_UE_MAC_INST_t *mac,
   return num_sdus > 0 ? 1 : 0;
 }
 
-void schedule_ta_command(fapi_nr_dl_config_request_t *dl_config, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment)
+static void schedule_ta_command(fapi_nr_dl_config_request_t *dl_config, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment)
 {
   fapi_nr_ta_command_pdu *ta = &dl_config->dl_config_list[dl_config->number_pdus].ta_command_pdu;
   ta->ta_frame = ul_time_alignment->frame;
   ta->ta_slot = ul_time_alignment->slot;
+  ta->is_rar = ul_time_alignment->ta_apply == rar_ta;
   ta->ta_command = ul_time_alignment->ta_command;
   dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_CONFIG_TA_COMMAND;
   dl_config->number_pdus += 1;
-  ul_time_alignment->ta_apply = false;
+  ul_time_alignment->ta_apply = no_ta;
 }
 
 uint32_t nr_get_pbr(long prioritizedbitrate)
