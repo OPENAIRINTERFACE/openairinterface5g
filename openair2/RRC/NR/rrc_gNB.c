@@ -1203,8 +1203,9 @@ static void rrc_handle_RRCReestablishmentRequest(gNB_RRC_INST *rrc, sctp_assoc_t
 
   // update with new RNTI, and update secondary UE association
   UE->rnti = msg->crnti;
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
+  ue_data.secondary_ue = msg->gNB_DU_ue_id;
   cu_remove_f1_ue_data(UE->rrc_ue_id);
-  f1_ue_data_t ue_data = {.secondary_ue = msg->gNB_DU_ue_id, .du_assoc_id = assoc_id};
   cu_add_f1_ue_data(UE->rrc_ue_id, &ue_data);
 
   LOG_I(NR_RRC, "Accept Reestablishment Request UE physCellId %ld cause %s\n", physCellId, scause);
