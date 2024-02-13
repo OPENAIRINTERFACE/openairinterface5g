@@ -274,6 +274,11 @@ class Cluster:
 				if result is not None:
 					forceBaseImageBuild = True
 					baseTag = 'ci-temp'
+			# if the branch name contains integration_20xx_wyy, let rebuild ran-base
+			result = re.search('integration_20([0-9]{2})_w([0-9]{2})', self.ranBranch)
+			if not forceBaseImageBuild and result is not None:
+				forceBaseImageBuild = True
+				baseTag = 'ci-temp'
 		else:
 			imageTag = f'develop-{self.ranCommitID[0:8]}'
 			forceBaseImageBuild = True
