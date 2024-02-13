@@ -501,7 +501,7 @@ void nr_decode_pucch1(c16_t **rxdataF,
    * Implement TS 38.211 Subclause 6.3.2.4.1 Sequence modulation
    *
    */
-  const int soffset = (nr_tti_tx & 3) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
+  const int soffset = (nr_tti_tx % RU_RX_SLOT_DEPTH) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
   const int lprime = startingSymbolIndex;
   // mcs = 0 except for PUCCH format 0
@@ -1021,14 +1021,10 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   //extract pucch and dmrs first
 
   int l2 = pucch_pdu->start_symbol_index;
-
-  int soffset = (slot & 3) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
-
+  int soffset = (slot % RU_RX_SLOT_DEPTH) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
   int re_offset[2];
   re_offset[0] =
       (12 * (pucch_pdu->prb_start + pucch_pdu->bwp_start) + frame_parms->first_carrier_offset) % frame_parms->ofdm_symbol_size;
-  if (re_offset[0]>= frame_parms->ofdm_symbol_size)
-    re_offset[0]-=frame_parms->ofdm_symbol_size;
   if (pucch_pdu->freq_hop_flag == 0)
     re_offset[1] = re_offset[0];
   else {

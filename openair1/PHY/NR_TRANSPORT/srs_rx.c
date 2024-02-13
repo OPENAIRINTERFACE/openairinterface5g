@@ -34,6 +34,7 @@
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_gNB.h"
+#include "PHY/defs_RU.h"
 #include "PHY/CODING/nrSmallBlock/nr_small_block_defs.h"
 #include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
 #include "common/utils/LOG/log.h"
@@ -75,7 +76,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   c16_t **rxdataF = gNB->common_vars.rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
 
-  const uint16_t n_symbols = (slot&3)*frame_parms->symbols_per_slot;                    // number of symbols until this slot
+  const uint16_t n_symbols = (slot % RU_RX_SLOT_DEPTH) * frame_parms->symbols_per_slot; // number of symbols until this slot
   const uint8_t l0 = frame_parms->symbols_per_slot - 1 - srs_pdu->time_start_position;  // starting symbol in this slot
   const uint64_t symbol_offset = (n_symbols+l0)*frame_parms->ofdm_symbol_size;
   const uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*NR_NB_SC_PER_RB;

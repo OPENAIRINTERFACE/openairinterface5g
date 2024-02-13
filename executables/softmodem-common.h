@@ -44,7 +44,6 @@ extern "C"
   example: -1,3 launches two working threads one floating, the second set on core 3\n\
   default 8 floating threads\n\
   use N for no pool (runs in calling thread) recommended with rfsim.\n"
-#define CONFIG_HLP_REORDER       "Disable reorder thread\n"
 #define CONFIG_HLP_ULMAXE        "set the eNodeB max ULSCH erros\n"
 #define CONFIG_HLP_CALUER        "set UE RX calibration\n"
 #define CONFIG_HLP_CALUERM       ""
@@ -143,7 +142,6 @@ extern "C"
 #define SYNC_REF            softmodem_params.sync_ref
 #define LDPC_OFFLOAD_FLAG   softmodem_params.ldpc_offload_flag
 
-#define REORDER_THREAD_DISABLE    softmodem_params.reorder_thread_disable
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
 extern int usrp_tx_thread;
@@ -151,7 +149,6 @@ extern int usrp_tx_thread;
 #define CMDLINE_PARAMS_DESC {  \
   {"rf-config-file",        CONFIG_HLP_RFCFGF,        0,              .strptr=&RF_CONFIG_FILE,                .defstrval=NULL,          TYPE_STRING, 0},  \
   {"thread-pool",           CONFIG_HLP_TPOOL,         0,              .strptr=&TP_CONFIG,                     .defstrval="-1,-1,-1,-1,-1,-1,-1,-1",  TYPE_STRING, 0},     \
-  {"reorder-thread-disable",CONFIG_HLP_REORDER,     PARAMFLAG_BOOL,   .iptr=&REORDER_THREAD_DISABLE,          .defintval=0,                          TYPE_INT,    0},                     \
   {"phy-test",              CONFIG_HLP_PHYTST,        PARAMFLAG_BOOL, .iptr=&PHY_TEST,                        .defintval=0,             TYPE_INT,    0},  \
   {"do-ra",                 CONFIG_HLP_DORA,          PARAMFLAG_BOOL, .iptr=&DO_RA,                           .defintval=0,             TYPE_INT,    0},  \
   {"sa",                    CONFIG_HLP_SA,            PARAMFLAG_BOOL, .iptr=&SA,                              .defintval=0,             TYPE_INT,    0},  \
@@ -195,7 +192,6 @@ extern int usrp_tx_thread;
 
 // clang-format off
 #define CMDLINE_PARAMS_CHECK_DESC {         \
-    { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
@@ -321,8 +317,7 @@ typedef struct {
   uint64_t       optmask;
   //THREAD_STRUCT  thread_struct;
   char           *rf_config_file;
-  char           *threadPoolConfig;
-  int            reorder_thread_disable;
+  char *threadPoolConfig;
   int            phy_test;
   int            do_ra;
   int            sa;
@@ -368,7 +363,6 @@ extern uint16_t sl_ahead;
 extern uint16_t sf_ahead;
 extern int oai_exit;
 
-void tx_func(void *param);
 void rx_func(void *param);
 void ru_tx_func(void *param);
 extern uint8_t nfapi_mode;
