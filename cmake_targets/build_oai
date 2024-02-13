@@ -504,7 +504,7 @@ function main() {
     # Doxygen Support #
     ###################
     if [ "$BUILD_DOXYGEN" = "1" ] ; then
-	echo_info "Built Doxygen based documentation. The documentation file is located here: $OPENAIR_DIR/$BUILD_DIR/build/html/index.html"
+	echo_info "Built Doxygen based documentation. The documentation file is located here: $DIR/$BUILD_DIR/build/doc/html/index.html"
     fi
 
     # TODO: once we got the CMakeLists.txt file done for the ORAN files, remove the following lines
