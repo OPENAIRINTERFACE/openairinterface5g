@@ -351,7 +351,7 @@ typedef struct
   uint16_t sl_bandwidth;
   //Absolute frequency of SL point A in KHz
   //n38 (2570-2620 Mhz), n47 (5855-5925 Mhz) are defined.
-  uint32_t sl_frequency;
+  uint64_t sl_frequency;
 
   //Only 1 SCS-SpecificCarrier allowed for NR-SL communication
   uint16_t sl_grid_size;// bandwidth for each numerology
@@ -363,7 +363,7 @@ typedef struct
   uint8_t  sl_frequency_shift_7p5khz;
   //Indicates presence of +/-5Khz shift wrt FREF for V2X reference frequencies.
   //Possible values: {-1,0,1}
-  uint8_t  sl_value_N;
+  int8_t  sl_value_N;
 
 } sl_nr_carrier_config_t;
 

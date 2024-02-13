@@ -987,6 +987,8 @@ void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconf
       init_nsa_message(rrc_inst, reconfig_file, rbconfig_file);
       nr_rlc_activate_srb0(mac_inst->crnti, NULL, send_srb0_rrc);
     }
+    //TODO: Move this call to RRC
+    start_sidelink((&rrc_inst[i])->ue_id);
   }
 }
 
