@@ -53,10 +53,9 @@ void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data
   itti_send_msg_to_task(TASK_RRC_NRUE, ue_id, message_p);
 }
 
-void nr_ue_init_mac(module_id_t module_idP)
+void nr_ue_init_mac(NR_UE_MAC_INST_t *mac)
 {
-  LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  LOG_I(NR_MAC, "[UE%d] Initializing MAC\n", mac->ue_id);
   mac->first_sync_frame = -1;
   mac->get_sib1 = false;
   mac->get_otherSI = false;
@@ -112,9 +111,9 @@ NR_UE_MAC_INST_t *nr_l2_init_ue(int nb_inst)
   AssertFatal(nr_ue_mac_inst, "Couldn't allocate %d instances of MAC module\n", nb_inst);
 
   for (int j = 0; j < nb_inst; j++) {
-    nr_ue_init_mac(j);
     NR_UE_MAC_INST_t *mac = get_mac_inst(j);
     mac->ue_id = j;
+    nr_ue_init_mac(mac);
     nr_ue_mac_default_configs(mac);
     if (get_softmodem_params()->sa)
       ue_init_config_request(mac, get_softmodem_params()->numerology);
@@ -134,6 +133,7 @@ NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id)
 {
   NR_UE_MAC_INST_t *mac = &nr_ue_mac_inst[(int)module_id];
   AssertFatal(mac, "Couldn't get MAC inst %d\n", module_id);
+  AssertFatal(mac->ue_id == module_id, "MAC ID %d doesn't match with input %d\n", mac->ue_id, module_id);
   return mac;
 }
 

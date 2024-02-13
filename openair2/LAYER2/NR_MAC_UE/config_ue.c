@@ -106,11 +106,10 @@ void set_tdd_config_nr_ue(fapi_nr_tdd_table_t *tdd_table,
 
 static void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
                                 NR_ServingCellConfigCommonSIB_t *scc,
-                                module_id_t module_id,
                                 int cc_idP)
 {
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
-  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.Mod_id = mac->ue_id;
   mac->phy_config.CC_id = cc_idP;
 
   LOG_D(MAC, "Entering SA UE Config Common\n");
@@ -245,12 +244,11 @@ static void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
 
 static void config_common_ue(NR_UE_MAC_INST_t *mac,
                              NR_ServingCellConfigCommon_t *scc,
-                             module_id_t module_id,
                              int cc_idP)
 {
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
 
-  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.Mod_id = mac->ue_id;
   mac->phy_config.CC_id = cc_idP;
   
   // carrier config
@@ -699,12 +697,10 @@ static void nr_configure_lc_config(NR_UE_MAC_INST_t *mac,
   lc_info->bucket_size = get_lc_bucket_size(ul_parm->prioritisedBitRate, ul_parm->bucketSizeDuration);
 }
 
-static void configure_logicalChannelBearer(module_id_t module_id,
+static void configure_logicalChannelBearer(NR_UE_MAC_INST_t *mac,
                                            struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_toadd_list,
                                            struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_torelease_list)
 {
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-
   if (rlc_torelease_list) {
     for (int i = 0; i < rlc_torelease_list->list.count; i++) {
       long id = *rlc_torelease_list->list.array[i];
@@ -809,7 +805,7 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
     mac->get_sib1 = true;
   else if (sched_sib == 2)
     mac->get_otherSI = true;
-  nr_ue_decode_mib(module_id, cc_idP);
+  nr_ue_decode_mib(mac, cc_idP);
 }
 
 static void setup_puschpowercontrol(NR_PUSCH_PowerControl_t *source, NR_PUSCH_PowerControl_t *target)
@@ -1363,7 +1359,7 @@ void nr_rrc_mac_config_req_reset(module_id_t module_id,
   reset_mac_inst(mac);
   reset_ra(&mac->ra);
   release_mac_configuration(mac);
-  nr_ue_init_mac(module_id);
+  nr_ue_init_mac(mac);
 
   // Sending to PHY a request to resync
   // with no target cell ID
@@ -1386,7 +1382,7 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
   UPDATE_MAC_IE(mac->tdd_UL_DL_ConfigurationCommon, scc->tdd_UL_DL_ConfigurationCommon, NR_TDD_UL_DL_ConfigCommon_t);
   UPDATE_MAC_IE(mac->si_SchedulingInfo, si_SchedulingInfo, NR_SI_SchedulingInfo_t);
 
-  config_common_ue_sa(mac, scc, module_id, cc_idP);
+  config_common_ue_sa(mac, scc, cc_idP);
   configure_common_BWP_dl(mac,
                           0, // bwp-id
                           &scc->downlinkConfigCommon.initialDownlinkBWP);
@@ -1412,7 +1408,6 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
 }
 
 static void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
-                                             module_id_t module_id,
                                              int cc_idP,
                                              const NR_ReconfigurationWithSync_t *reconfigurationWithSync)
 {
@@ -1433,7 +1428,7 @@ static void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
       mac->physCellId = *scc->physCellId;
     mac->dmrs_TypeA_Position = scc->dmrs_TypeA_Position;
     UPDATE_MAC_IE(mac->tdd_UL_DL_ConfigurationCommon, scc->tdd_UL_DL_ConfigurationCommon, NR_TDD_UL_DL_ConfigCommon_t);
-    config_common_ue(mac, scc, module_id, cc_idP);
+    config_common_ue(mac, scc, cc_idP);
     if (scc->downlinkConfigCommon)
       configure_common_BWP_dl(mac,
                               0, // bwp-id
@@ -1449,7 +1444,7 @@ static void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
   nr_ue_mac_default_configs(mac);
 
   if (!get_softmodem_params()->emulate_l1) {
-    mac->synch_request.Mod_id = module_id;
+    mac->synch_request.Mod_id = mac->ue_id;
     mac->synch_request.CC_id = cc_idP;
     mac->synch_request.synch_req.target_Nid_cell = mac->physCellId;
     mac->if_module->synch_request(&mac->synch_request);
@@ -1930,7 +1925,7 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
     mac->servCellIndex = spCellConfig->servCellIndex ? *spCellConfig->servCellIndex : 0;
     if (spCellConfig->reconfigurationWithSync) {
       LOG_A(NR_MAC, "Received reconfigurationWithSync\n");
-      handle_reconfiguration_with_sync(mac, module_id, cc_idP, spCellConfig->reconfigurationWithSync);
+      handle_reconfiguration_with_sync(mac, cc_idP, spCellConfig->reconfigurationWithSync);
     }
     if (scd) {
       configure_servingcell_info(&mac->sc_info, scd);
@@ -1938,7 +1933,7 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
     }
   }
 
-  configure_logicalChannelBearer(module_id,
+  configure_logicalChannelBearer(mac,
                                  cell_group_config->rlc_BearerToAddModList,
                                  cell_group_config->rlc_BearerToReleaseList);
 
