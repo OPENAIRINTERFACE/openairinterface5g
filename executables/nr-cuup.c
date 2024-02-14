@@ -57,7 +57,8 @@ static void initialize_agent(ngran_node_t node_type, e2_agent_args_t oai_args)
 
   // Only 1 instances is supported in one executable
   // Advice: run multiple executables to have multiple instances
-  const e1ap_upcp_inst_t *e1inst = getCxtE1(CUuniqInstance);
+  const instance_t e1_inst = 0;
+  const e1ap_upcp_inst_t *e1inst = getCxtE1(e1_inst);
 
   const int nb_id = e1inst->gnb_id;
   const int cu_up_id = e1inst->cuup.setupReq.gNB_cu_up_id;
