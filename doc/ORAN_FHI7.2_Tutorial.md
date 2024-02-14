@@ -247,7 +247,7 @@ Beware that PTP issues may show up only when running OAI and XRAN. If you are us
 1. Make sure that you have `skew_tick=1` in `/proc/cmdline`
 2. For Intel E-810 cards set `tx_timestamp_timeout` to 50 or 100 if there are errors in ptp4l logs
 3. Other time sources than PTP, such as NTP or chrony timesources, should be disabled. Make sure they are enabled as further below.
-4. If PTP is running in kernel space, make sure you isolated cores for kernel with `kthread_cpus=<cpu_list>` in `/proc/cmdline`
+4. If PTP is running in kernel space, make sure you isolated cores for kernel with `kthread_cpus=<cpu_list>` in `/proc/cmdline`.
 5. If `rms` or `delay` remain high, you can try pinning the PTP process to an isolated CPU.
 
 ```bash
@@ -622,7 +622,7 @@ Edit the sample OAI gNB configuration file and check following parameters:
 * `fhi_72` (FrontHaul Interface) section: this config follows the structure
   that is employed by the xRAN library (`xran_fh_init` and `xran_fh_config`
   structs in the code):
-  * `dpdk_devices`: PCI addresses of NIC VFs (not the physical, use `lspci | grep Virtual`) binded to the DPDK
+  * `dpdk_devices`: PCI addresses of NIC VFs (not the physical NIC, use `lspci | grep Virtual`) binded to the DPDK
   * `system_core`: absolute CPU core ID for DPDK control threads
     (`rte_mp_handle`, `eal-intr-thread`, `iavf-event-thread`)
   * `io_core`: absolute CPU core ID for XRAN library, it should be an isolated core, in our environment we are using CPU 4
