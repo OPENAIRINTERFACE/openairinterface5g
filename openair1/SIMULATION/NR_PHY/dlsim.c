@@ -895,6 +895,7 @@ int main(int argc, char **argv)
   msgDataTx->slot = slot;
   msgDataTx->frame = frame;
   memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
+  gNB->msgDataTx = msgDataTx;
 
   // Buffers to store internal memory of slot process
   int rx_size = (((14 * frame_parms->N_RB_DL * 12 * sizeof(int32_t)) + 15) >> 4) << 4;

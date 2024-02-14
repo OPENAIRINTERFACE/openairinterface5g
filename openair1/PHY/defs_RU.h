@@ -197,7 +197,7 @@ typedef struct {
 
 #define NUMBER_OF_NR_RU_PRACH_MAX 8
 #define NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX 12
-
+#define RU_RX_SLOT_DEPTH 4
 typedef struct RU_proc_t_s {
   /// Pointer to associated RU descriptor
   struct RU_t_s *ru;

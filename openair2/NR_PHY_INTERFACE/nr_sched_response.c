@@ -105,6 +105,7 @@ NR_Sched_Rsp_t *allocate_sched_response(void)
 
 static void release_sched_response(int sched_response_id)
 {
+  LOG_D(NR_MAC,"Releasing sched_response %d\n",sched_response_id);	
   resp_freelist_next[sched_response_id] = resp_freelist_head;
   resp_freelist_head = sched_response_id;
 }
@@ -124,6 +125,7 @@ void deref_sched_response(int sched_response_id)
   AssertFatal(resp_freelist_inited, "sched_response used before init\n");
   AssertFatal(resp_refcount[sched_response_id] > 0, "sched_reponse decreased too much\n");
 
+  LOG_D(NR_MAC,"resp_refcount[%d] %d\n",sched_response_id,resp_refcount[sched_response_id]);
   resp_refcount[sched_response_id]--;
   if (resp_refcount[sched_response_id] == 0)
     release_sched_response(sched_response_id);
@@ -141,6 +143,8 @@ void inc_ref_sched_response(int sched_response_id)
   if (sched_response_id == -1)
     return;
 
+  LOG_D(NR_MAC,"Incrementing sched_resp resp_refounct[%d] = %d\n",
+		  sched_response_id,resp_refcount[sched_response_id]);
   if (pthread_mutex_lock(&resp_mutex))
     AssertFatal(0, "pthread_mutex_lock failed\n");
 

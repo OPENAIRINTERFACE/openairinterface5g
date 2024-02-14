@@ -283,7 +283,7 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
   for (int aid=0;aid<ru->nb_tx;aid++) buffs[aid] = (void*)&ru->common.txdata[aid][offset]; 
   struct timespec txmeas;
   clock_gettime(CLOCK_MONOTONIC, &txmeas);
-  LOG_D(PHY,"IF5 TX %d.%d, TS %llu, buffs[0] %p, buffs[1] %p ener0 %f dB, tx start %d\n",frame,slot,(unsigned long long)timestamp,buffs[0],buffs[1],
+  LOG_D(NR_PHY,"IF5 TX %d.%d, TS %llu, buffs[0] %p, buffs[1] %p ener0 %f dB, tx start %d\n",frame,slot,(unsigned long long)timestamp,buffs[0],buffs[1],
   10*log10((double)signal_energy(buffs[0],ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms))),(int)txmeas.tv_nsec);
   ru->ifdevice.trx_write_func2(&ru->ifdevice,
   		               timestamp,
@@ -624,7 +624,8 @@ void *emulatedRF_thread(void *param) {
   return 0;
 }
 
-void rx_rf(RU_t *ru,int *frame,int *slot) {
+static void rx_rf(RU_t *ru, int *frame, int *slot)
+{
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   openair0_config_t *cfg   = &ru->openair0_cfg;
@@ -662,13 +663,17 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
 
   //AssertFatal(rxs == fp->samples_per_subframe,
   //"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_subframe,rxs);
-  if (rxs != samples_per_slot) LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",samples_per_slot,rxs);
+  if (rxs != samples_per_slot)
+    LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n", samples_per_slot, rxs);
 
   if (proc->first_rx != 1) {
     samples_per_slot_prev = fp->get_samples_per_slot((*slot-1)%fp->slots_per_frame,fp);
 
     if (proc->timestamp_rx - old_ts != samples_per_slot_prev) {
-      LOG_D(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - samples_per_slot_prev,ru->ts_offset);
+      LOG_D(PHY,
+            "rx_rf: rfdevice timing drift of %" PRId64 " samples (ts_off %" PRId64 ")\n",
+            proc->timestamp_rx - old_ts - samples_per_slot_prev,
+            ru->ts_offset);
       ru->ts_offset += (proc->timestamp_rx - old_ts - samples_per_slot_prev);
       proc->timestamp_rx = ts-ru->ts_offset;
     }
@@ -705,8 +710,14 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
     }
 
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, proc->tti_rx %d, slot %d)\n",(long long unsigned int)proc->timestamp_rx,proc->frame_rx,
-            *frame,proc->tti_rx,*slot);
+      LOG_E(PHY,
+            "Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, proc->tti_rx %d, "
+            "slot %d)\n",
+            (long long unsigned int)proc->timestamp_rx,
+            proc->frame_rx,
+            *frame,
+            proc->tti_rx,
+            *slot);
       exit_fun("Exiting");
     }
   } else {
@@ -1169,6 +1180,7 @@ void *ru_thread( void *param ) {
   int                initial_wait=0;
   int                opp_enabled0 = opp_enabled;
 
+  bool rx_tti_busy[RU_RX_SLOT_DEPTH] = {false};
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
   // set default return value
   ru_thread_status = 0;
@@ -1204,6 +1216,18 @@ void *ru_thread( void *param ) {
         malloc_IF4p5_buffer(ru);
       }
 
+      int cpu = sched_getcpu();
+      if (ru->ru_thread_core > -1 && cpu != ru->ru_thread_core) {
+        /* we start the ru_thread using threadCreate(), which already sets CPU
+         * affinity; let's force it here again as per feature request #732 */
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(ru->ru_thread_core, &cpuset);
+        int ret = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+        AssertFatal(ret == 0, "Error in pthread_getaffinity_np(): ret: %d, errno: %d", ret, errno);
+        LOG_I(PHY, "RU %d: manually set CPU affinity to CPU %d\n", ru->idx, ru->ru_thread_core);
+      }
+
       LOG_I(PHY,"Starting IF interface for RU %d, nb_rx %d\n",ru->idx,ru->nb_rx);
       AssertFatal(ru->nr_start_if(ru,NULL) == 0, "Could not start the IF device\n");
 
@@ -1232,9 +1256,6 @@ void *ru_thread( void *param ) {
   pthread_cond_signal(&RC.ru_cond);
   pthread_mutex_unlock(&RC.ru_mutex);
   wait_sync("ru_thread");
-
-  processingData_L1_t *syncMsg;
-  notifiedFIFO_elt_t *res;
 
   if(!emulate_rf) {
     // Start RF device if any
@@ -1299,14 +1320,13 @@ void *ru_thread( void *param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
-
-    if (initial_wait == 1 && proc->frame_rx < 300 && ru->fh_south_in == rx_rf) {
-       if (proc->frame_rx>0 && ((proc->frame_rx % 100) == 0) && proc->tti_rx==0) {
-          LOG_I(PHY,"delay processing to let RX stream settle, frame %d (trials %d)\n",proc->frame_rx,ru->rx_fhaul.trials);
-          print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
-          reset_meas(&ru->rx_fhaul);
-       }
-       continue;
+    if (initial_wait == 1 && proc->frame_rx < 300) {
+      if (proc->frame_rx > 0 && ((proc->frame_rx % 100) == 0) && proc->tti_rx == 0) {
+        LOG_D(PHY, "delay processing to let RX stream settle, frame %d (trials %d)\n", proc->frame_rx, ru->rx_fhaul.trials);
+        print_meas(&ru->rx_fhaul, "rx_fhaul", NULL, NULL);
+        reset_meas(&ru->rx_fhaul);
+      }
+      continue;
     }
     if (proc->frame_rx>=300)  {
       initial_wait=0;
@@ -1314,15 +1334,14 @@ void *ru_thread( void *param ) {
     }
     if (initial_wait == 0 && ru->rx_fhaul.trials > 1000) {
         reset_meas(&ru->rx_fhaul);
-        /*if (ru->if_south == REMOTE_IF5) reset_meas(&ru->ifdevice.tx_fhaul);
-        else*/ reset_meas(&ru->tx_fhaul);
+        reset_meas(&ru->tx_fhaul);
     }
     proc->timestamp_tx = proc->timestamp_rx;
     int sl=proc->tti_tx;
     for (int slidx=0;slidx<ru->sl_ahead;slidx++)
        proc->timestamp_tx += fp->get_samples_per_slot((sl+slidx)%fp->slots_per_frame,fp);
-    proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(ru->sl_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-    proc->tti_tx      = (proc->tti_rx + ru->sl_ahead)%fp->slots_per_frame;
+    proc->frame_tx = (proc->tti_rx > (fp->slots_per_frame - 1 - (ru->sl_ahead))) ? (proc->frame_rx + 1) & 1023 : proc->frame_rx;
+    proc->tti_tx = (proc->tti_rx + ru->sl_ahead) % fp->slots_per_frame;
     int absslot_rx = proc->timestamp_rx/fp->get_samples_per_slot(proc->tti_rx,fp);
     int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
     clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_south_in[rt_prof_idx]);
@@ -1333,14 +1352,62 @@ void *ru_thread( void *param ) {
           RC.gNB[0]->proc.frame_rx,RC.gNB[0]->proc.slot_rx,
           RC.gNB[0]->proc.frame_tx);
 
-    if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
+    if (ru->idx != 0)
+      proc->frame_tx = (proc->frame_tx + proc->frame_offset) & 1023;
 
+    LOG_D(NR_PHY, "In %d.%d: Checking L1 status\n", proc->frame_rx, proc->tti_rx);
+    for (int n = 0; n < RU_RX_SLOT_DEPTH; n++)
+      LOG_D(NR_PHY, "slot n %d => %d\n", n, rx_tti_busy[n]);
+    // handle potential race by blocking if rxdataF is being used by L1
+    // collect all pending msg in L1 return fifo to not down the memory is available (rx_tti_busy[slot] boolean array)
+    notifiedFIFO_elt_t *res = pollNotifiedFIFO(&gNB->L1_rx_out);
+    LOG_D(NR_PHY, "%d.%d Polling L1_rx_out %p\n", proc->frame_rx, proc->tti_rx, res);
+    while (res) {
+      processingData_L1_t *info = (processingData_L1_t *)NotifiedFifoData(res);
+      LOG_D(NR_PHY,
+            "%d.%d res %d.%d completed, clearing %d\n",
+            proc->frame_rx,
+            proc->tti_rx,
+            info->frame_rx,
+            info->slot_rx,
+            info->slot_rx % RU_RX_SLOT_DEPTH);
+
+      rx_tti_busy[info->slot_rx % RU_RX_SLOT_DEPTH] = false;
+      res = pollNotifiedFIFO(&gNB->L1_rx_out);
+    }
+    LOG_D(NR_PHY, "%d.%d Done polling\n", proc->frame_rx, proc->tti_rx);
     // do RX front-end processing (frequency-shift, dft) if needed
-    int slot_type = nr_slot_select(cfg,proc->frame_rx,proc->tti_rx);
-
+    int slot_type = nr_slot_select(cfg, proc->frame_rx, proc->tti_rx);
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
       if (ru->feprx) {
+        if (rx_tti_busy[proc->tti_rx % RU_RX_SLOT_DEPTH]) {
+          bool not_done = true;
+          LOG_D(NR_PHY, "%d.%d Waiting to access RX slot %d\n", proc->frame_rx, proc->tti_rx, proc->tti_rx % RU_RX_SLOT_DEPTH);
+          // now we block and wait our slot memory zone is freed from previous slot processing
+          // as we can get other slots ending, we loop on the queue
+          while (not_done) {
+            res = pullNotifiedFIFO(&gNB->L1_rx_out);
+            if (!res)
+              break;
+            processingData_L1_t *info = (processingData_L1_t *)NotifiedFifoData(res);
+            LOG_D(NR_PHY,
+                  "%d.%d Got access to RX slot %d.%d (%d)\n",
+                  proc->frame_rx,
+                  proc->tti_rx,
+                  info->frame_rx,
+                  info->slot_rx,
+                  proc->tti_rx % RU_RX_SLOT_DEPTH);
+            rx_tti_busy[info->slot_rx % RU_RX_SLOT_DEPTH] = false;
+            if ((info->slot_rx % RU_RX_SLOT_DEPTH) == (proc->tti_rx % RU_RX_SLOT_DEPTH))
+              not_done = false;
+          }
+          if (!res)
+            break;
+        }
         ru->feprx(ru,proc->tti_rx);
+        // set the tti that was generated to busy
+        LOG_D(NR_PHY, "Setting %d.%d (%d) to busy\n", proc->frame_rx, proc->tti_rx, proc->tti_rx % RU_RX_SLOT_DEPTH);
+        rx_tti_busy[proc->tti_rx % RU_RX_SLOT_DEPTH] = true;
         clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_feprx[rt_prof_idx]);
         //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
         LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
@@ -1383,26 +1450,16 @@ void *ru_thread( void *param ) {
       }
     } // end if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
 
-    // At this point, all information for subframe has been received on FH interface
-    if (!get_softmodem_params()->reorder_thread_disable) {
-      res = pullTpool(&gNB->resp_L1, &gNB->threadPool);
-      if (res == NULL)
-        break; // Tpool has been stopped
-    } else  {
-      res=newNotifiedFIFO_elt(sizeof(processingData_L1_t),0, &gNB->resp_L1,NULL);
-    }
-    syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
-    syncMsg->gNB = gNB;
-    syncMsg->frame_rx = proc->frame_rx;
-    syncMsg->slot_rx = proc->tti_rx;
-    syncMsg->frame_tx = proc->frame_tx;
-    syncMsg->slot_tx = proc->tti_tx;
-    syncMsg->timestamp_tx = proc->timestamp_tx;
-    res->key = proc->tti_rx;
-    if (!get_softmodem_params()->reorder_thread_disable) 
-      pushTpool(&gNB->threadPool, res);
-    else 
-      pushNotifiedFIFO(&gNB->resp_L1, res);
+    notifiedFIFO_elt_t *resTx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t), 0, &gNB->L1_tx_out, NULL);
+    processingData_L1tx_t *syncMsgTx = NotifiedFifoData(resTx);
+    syncMsgTx->gNB = gNB;
+    syncMsgTx->frame = proc->frame_tx;
+    syncMsgTx->slot = proc->tti_tx;
+    syncMsgTx->frame_rx = proc->frame_rx;
+    syncMsgTx->slot_rx = proc->tti_rx;
+    syncMsgTx->timestamp_tx = proc->timestamp_tx;
+    resTx->key = proc->tti_tx;
+    pushNotifiedFIFO(&gNB->L1_tx_out, resTx);
   }
 
   printf( "Exiting ru_thread \n");

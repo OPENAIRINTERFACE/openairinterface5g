@@ -19,17 +19,12 @@
  *      contact@openairinterface.org
  */
 
-#ifndef RAN_FUNC_SM_RAN_CTRL_READ_WRITE_AGENT_H
-#define RAN_FUNC_SM_RAN_CTRL_READ_WRITE_AGENT_H
+#ifndef RAN_FUNC_SM_RAN_CTRL_EXTERN_AGENT_H
+#define RAN_FUNC_SM_RAN_CTRL_EXTERN_AGENT_H
 
-#include "openair2/E2AP/flexric/src/agent/../sm/sm_io.h"
+#include "openair2/RRC/NR/nr_rrc_defs.h"
 
-void read_rc_setup_sm(void* data);
-
-sm_ag_if_ans_t write_subs_rc_sm(void const* src);
-
-sm_ag_if_ans_t write_ctrl_rc_sm(void const* data);
-
-bool read_rc_sm(void *);
+typedef enum { RC_SM_RRC_CONNECTED, RC_SM_RRC_INACTIVE, RC_SM_RRC_IDLE, RC_SM_RRC_ANY } rc_sm_rrc_state_e;
+void signal_rrc_state_changed_to(const gNB_RRC_UE_t *rrc_ue_context, const rc_sm_rrc_state_e rrc_state);
 
 #endif

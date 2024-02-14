@@ -74,8 +74,8 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB, int frame, int slot, nfapi_nr_pusch_pdu_t 
   NR_UL_gNB_HARQ_t *harq = ulsch->harq_process;
   if (ulsch_pdu->pusch_data.new_data_indicator)
     harq->harq_to_be_cleared = true;
-  LOG_D(PHY,
-        "%d.%d RNTI %x HARQ PID %d new data indicator %d\n",
+  LOG_D(NR_PHY,
+        "NEW ULSCH %d.%d RNTI %x HARQ PID %d new data indicator %d\n",
         frame,
         slot,
         ulsch_pdu->rnti,
@@ -98,8 +98,17 @@ void reset_active_ulsch(PHY_VARS_gNB *gNB, int frame)
   // assuming UE disconnected or some other error occurred
   for (int i = 0; i < gNB->max_nb_pusch; i++) {
     NR_gNB_ULSCH_t *ulsch = &gNB->ulsch[i];
-    if (ulsch->active && (((frame - ulsch->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
+    int diff = (frame - ulsch->frame + 1024) & 1023;
+    if (ulsch->active && diff > NUMBER_FRAMES_PHY_UE_INACTIVE && diff < 100) {
       ulsch->active = false;
+      LOG_D(NR_PHY,
+            "Frame %d: resetting ulsch %d harq %d (programmed in %d.%d)\n",
+            frame,
+            i,
+            ulsch->harq_pid,
+            ulsch->frame,
+            ulsch->slot);
+    }
   }
 }
 

@@ -809,7 +809,6 @@ void RCconfig_nr_prs(void)
 void RCconfig_NR_L1(void)
 {
   int j = 0;
-
   if (RC.gNB == NULL) {
     RC.gNB = (PHY_VARS_gNB **)malloc((1 + NUMBER_OF_gNB_MAX) * sizeof(PHY_VARS_gNB *));
     LOG_I(NR_PHY, "RC.gNB = %p\n", RC.gNB);

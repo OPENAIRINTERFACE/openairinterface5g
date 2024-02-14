@@ -182,7 +182,6 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		NFAPI_TRACE(NFAPI_TRACE_DEBUG, "This is the slot_ind queue size %ld in %s():%d\n",
 			    gnb_slot_ind_queue.num_items, __FUNCTION__, __LINE__);
 		if (slot_ind) {
-			pthread_mutex_lock(&gNB->UL_INFO_mutex);
 			gNB->UL_INFO.frame     = slot_ind->sfn;
 			gNB->UL_INFO.slot      = slot_ind->slot;
 
@@ -198,7 +197,6 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 				gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
 				prev_slot = gNB->UL_INFO.slot;
 			}
-			pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 			free(slot_ind);
 			slot_ind = NULL;
 		}

@@ -242,7 +242,7 @@ void nr_fep_full(RU_t *ru, int slot) {
 
   // remove_7_5_kHz(ru,proc->tti_rx<<1);
   // remove_7_5_kHz(ru,1+(proc->tti_rx<<1));
-  int offset = (proc->tti_rx&3)*(fp->symbols_per_slot * fp->ofdm_symbol_size);
+  int offset = (proc->tti_rx % RU_RX_SLOT_DEPTH) * (fp->symbols_per_slot * fp->ofdm_symbol_size);
   for (l = 0; l < fp->symbols_per_slot; l++) {
     for (aa = 0; aa < fp->nb_antennas_rx; aa++) {
       nr_slot_fep_ul(fp,
@@ -378,7 +378,7 @@ void nr_fep(void* arg) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+aid, 1);
 
-  int offset = (tti_rx&3) * fp->symbols_per_slot * fp->ofdm_symbol_size;
+  int offset = (tti_rx % RU_RX_SLOT_DEPTH) * fp->symbols_per_slot * fp->ofdm_symbol_size;
   for (int l = startSymbol; l <= endSymbol; l++) 
       nr_slot_fep_ul(fp,
                      ru->common.rxdata[aid],

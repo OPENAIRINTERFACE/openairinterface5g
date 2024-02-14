@@ -343,7 +343,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     if (is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon, ul_info.slot, mac->frame_type)) {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind()\n", ul_info.slot);
-      nr_ue_ul_scheduler(&ul_info);
+      nr_ue_ul_scheduler(mac, &ul_info);
     }
     process_queued_nr_nfapi_msgs(mac, sfn_slot);
   }
@@ -987,6 +987,8 @@ void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconf
       init_nsa_message(rrc_inst, reconfig_file, rbconfig_file);
       nr_rlc_activate_srb0(mac_inst->crnti, NULL, send_srb0_rrc);
     }
+    //TODO: Move this call to RRC
+    start_sidelink((&rrc_inst[i])->ue_id);
   }
 }
 

@@ -437,13 +437,19 @@ class HTMLManagement():
 
 		for k in DataLog['Data']:
 			# TestRow 
+			avg = DataLog['Data'][k][0]
+			maxval = DataLog['Data'][k][1]
+			count = DataLog['Data'][k][2]
+			valnorm = float(DataLog['Data'][k][3])
+			dev = DataLog['DeviationThreshold'][k]
+			ref = DataLog['Ref'][k]
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td colspan="3" bgcolor = "lightcyan" >' + k  + ' </td>\n')				
-			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + DataLog['Data'][k][0] + '; ' + DataLog['Data'][k][1] + '; ' + DataLog['Data'][k][2] + ' </td>\n')
-			if float(DataLog['Data'][k][3])> DataLog['Threshold'][k]:
-				self.htmlFile.write('        <th bgcolor = "red" >' + DataLog['Data'][k][3]  + ' (Ref = ' + str(DataLog['Ref'][k]) + ' ; Thres = '   +str(DataLog['Threshold'][k])+') ' + '</th>\n')
+			self.htmlFile.write(f'        <td colspan="2" bgcolor = "lightcyan" >{avg}; {maxval}; {count}</td>\n')
+			if valnorm > 1.0 + dev or valnorm < 1.0 - dev:
+				self.htmlFile.write(f'        <th bgcolor = "red" >{valnorm} (Avg over Ref = {avg} over {ref}; max allowed deviation = {dev})</th>\n')
 			else:
-				self.htmlFile.write('        <th bgcolor = "green" ><font color="white">' + DataLog['Data'][k][3]  + ' (Ref = ' + str(DataLog['Ref'][k]) + ' ; Thres = '   +str(DataLog['Threshold'][k])+') ' + '</th>\n')
+				self.htmlFile.write(f'        <th bgcolor = "green" ><font color="white">{valnorm} (Avg over Ref = {avg} over {ref}; max allowed deviation = {dev})</font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
 

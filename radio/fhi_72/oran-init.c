@@ -78,32 +78,6 @@ static uint32_t get_nFpgaToSW_FTH_RxBufferLen(int mu)
   }
 }
 
-/* is this necessary?
-int32_t set_main_core(uint32_t main_core)
-{
-  struct sched_param sched_param;
-  cpu_set_t cpuset;
-  int32_t result = 0;
-  memset(&sched_param, 0, sizeof(struct sched_param));
-  // set main thread affinity mask to CPU2
-  sched_param.sched_priority = 99;
-  CPU_ZERO(&cpuset);
-
-  printf("This system has %d processors configured and %d processors available.\n", get_nprocs_conf(), get_nprocs());
-
-  if (main_core < get_nprocs_conf())
-    CPU_SET(main_core, &cpuset);
-  else
-    return -1;
-
-  if ((result = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset))) {
-    printf("pthread_setaffinity_np failed: coreId = 2, result = %d\n", result);
-  }
-  printf("%s [CPU %2d] [PID: %6d]\n", __FUNCTION__, sched_getcpu(), getpid());
-  return result;
-}
-*/
-
 static struct xran_prb_map get_xran_prb_map_dl(const struct xran_fh_config *f)
 {
   struct xran_prb_map prbmap = {
@@ -431,11 +405,6 @@ int *oai_oran_initialize(const openair0_config_t *openair0_cfg)
     }
     print_fh_config(&xran_fh_config[o_xu_id]);
   }
-
-  // if ((xret = set_main_core(init.something)) < 0) {
-  //     printf("set_main_core() failed %d\n", xret);
-  //     exit(-1);
-  // }
 
   xret = xran_init(0, NULL, &init, NULL, &gxran_handle);
   if (xret != XRAN_STATUS_SUCCESS) {

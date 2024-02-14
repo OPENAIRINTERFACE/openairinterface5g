@@ -46,11 +46,12 @@ Please install and configure OAI CN5G as described here:
 
 ### Build UHD from source
 ```bash
-sudo apt install -y libboost-all-dev libusb-1.0-0-dev doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel.yaml python3-setuptools cmake build-essential
+# https://files.ettus.com/manual/page_build_guide.html
+sudo apt install -y autoconf automake build-essential ccache cmake cpufrequtils doxygen ethtool g++ git inetutils-tools libboost-all-dev libncurses5 libncurses5-dev libusb-1.0-0 libusb-1.0-0-dev libusb-dev python3-dev python3-mako python3-numpy python3-requests python3-scipy python3-setuptools python3-ruamel.yaml
 
 git clone https://github.com/EttusResearch/uhd.git ~/uhd
 cd ~/uhd
-git checkout v4.5.0.0
+git checkout v4.6.0.0
 cd host
 mkdir build
 cd build
@@ -78,9 +79,7 @@ cd ~/openairinterface5g/cmake_targets
 sudo apt install -y libforms-dev libforms-bin
 
 # Build OAI gNB
-cd ~/openairinterface5g
-source oaienv
-cd cmake_targets
+cd ~/openairinterface5g/cmake_targets
 ./build_oai -w USRP --ninja --nrUE --gNB --build-lib "nrscope" -C
 ```
 
@@ -97,82 +96,71 @@ docker compose up -d
 
 ### USRP B210
 ```bash
-cd ~/openairinterface5g
-source oaienv
-cd cmake_targets/ran_build/build
+cd ~/openairinterface5g/cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --sa -E --continuous-tx
 ```
 ### USRP N300
 ```bash
-cd ~/openairinterface5g
-source oaienv
-cd cmake_targets/ran_build/build
+cd ~/openairinterface5g/cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf --gNBs.[0].min_rxtxtime 6 --sa --usrp-tx-thread-config 1
 ```
 
 ### USRP X300
 ```bash
-cd ~/openairinterface5g
-source oaienv
-cd cmake_targets/ran_build/build
+cd ~/openairinterface5g/cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf --gNBs.[0].min_rxtxtime 6 --sa --usrp-tx-thread-config 1 -E --continuous-tx
 ```
 
 ### RFsimulator
 ```bash
-cd ~/openairinterface5g
-source oaienv
-cd cmake_targets/ran_build/build
+cd ~/openairinterface5g/cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa
+```
+
+### RFsimulator in FR2
+```bash
+cd ~/openairinterface5g/cmake_targets/ran_build/build
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band257.32prb.usrpx410.conf --rfsim
 ```
 
 # 5. OAI UE
 
-## 5.1  SIM Card
-Edit openair3/UICC/usim_interface.c
-```bash
-#define UICC_PARAMS_DESC {\
-    {"imsi",             "USIM IMSI\n",          0,         strptr:&(uicc->imsiStr),              defstrval:"001010000000001",           TYPE_STRING,    0 },\
-    {"nmc_size"          "number of digits in NMC", 0,      iptr:&(uicc->nmc_size),               defintval:2,         TYPE_INT,       0 },\
-    {"key",              "USIM Ki\n",            0,         strptr:&(uicc->keyStr),               defstrval:"fec86ba6eb707ed08905757b1bb44b8f", TYPE_STRING,    0 },\
-    {"opc",              "USIM OPc\n",           0,         strptr:&(uicc->opcStr),               defstrval:"c42449363bbad02b66d16bc975d77cc1", TYPE_STRING,    0 },\
-    {"amf",              "USIM amf\n",           0,         strptr:&(uicc->amfStr),               defstrval:"8000",    TYPE_STRING,    0 },\
-    {"sqn",              "USIM sqn\n",           0,         strptr:&(uicc->sqnStr),               defstrval:"000000",  TYPE_STRING,    0 },\
-    {"dnn",              "UE dnn (apn)\n",       0,         strptr:&(uicc->dnnStr),               defstrval:"oai",     TYPE_STRING,    0 },\
-    {"nssai_sst",        "UE nssai\n",           0,         iptr:&(uicc->nssai_sst),              defintval:1,    TYPE_INT,    0 }, \
-    {"nssai_sd",         "UE nssai\n",           0,         iptr:&(uicc->nssai_sd),               defintval:0xffffff,    TYPE_INT,    0 }, \
-};
-```
-
-## 5.2 Testing OAI nrUE with USRP B210
-
+## 5.1 Run OAI nrUE
+### USRP B210
 Important notes:
 - This should be run in a second Ubuntu 22.04 host, other than gNB
 - It only applies when running OAI gNB with USRP B210
 
-Run OAI nrUE
+Run OAI nrUE with USRP B210
 ```bash
-cd ~/openairinterface5g
-source oaienv
-cd cmake_targets/ran_build/build
+cd ~/openairinterface5g/cmake_targets/ran_build/build
 sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ue-fo-compensation --sa -E --uicc0.imsi 001010000000001
 ```
 
-## 5.2 Testing OAI nrUE with RFsimulator
+### RFsimulator
 Important notes:
 - This should be run on the same host as the OAI gNB
 - It only applies when running OAI gNB with RFsimulator
 
 Run OAI nrUE with RFsimulator
 ```bash
-cd ~/openairinterface5g
-source oaienv
-cd cmake_targets/ran_build/build
-sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --uicc0.imsi 001010000000001 --rfsimulator.serveraddr 127.0.0.1
+cd ~/openairinterface5g/cmake_targets/ran_build/build
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --sa --uicc0.imsi 001010000000001 --rfsim
 ```
 
-### 5.2.1 Ping test
-- UE host
+### RFsimulator in FR2
+Important notes:
+- This should be run on the same host as the OAI gNB
+- It only applies when running OAI gNB with RFsimulator in FR2
+
+Run OAI nrUE with RFsimulator in FR2
+```bash
+cd ~/openairinterface5g/cmake_targets/ran_build/build
+sudo ./nr-uesoftmodem -r 32 --numerology 3 --band 257 -C 27533280000 --sa --uicc0.imsi 001010000000001 --ssb 72 --rfsim
+```
+
+## 5.2 End-to-end connectivity test
+- Ping test from the UE host to the CN5G
 ```bash
 ping 192.168.70.135 -I oaitun_ue1
 ```

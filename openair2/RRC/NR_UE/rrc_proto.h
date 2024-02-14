@@ -121,7 +121,20 @@ void handle_rlf_sync(NR_UE_Timers_Constants_t *tac, nr_sync_msg_t sync_msg);
 void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
                                                        struct NR_SetupRelease_RLF_TimersAndConstants *rlf_TimersAndConstants);
 
-int configure_NR_SL_Preconfig(int sync_source);
+int configure_NR_SL_Preconfig(NR_UE_RRC_INST_t *rrc,int sync_source);
+
+void init_sidelink(NR_UE_RRC_INST_t *rrc);
+void start_sidelink(int instance);
+
+void rrc_ue_process_sidelink_Preconfiguration(NR_UE_RRC_INST_t *rrc_inst, int sync_ref);
+
+void nr_rrc_ue_decode_NR_SBCCH_SL_BCH_Message(NR_UE_RRC_INST_t *rrc,
+                                              const uint8_t gNB_index,
+                                              const frame_t frame,
+                                              const int slot,
+                                              uint8_t* pduP,
+                                              const sdu_size_t pdu_len,
+                                              const uint16_t rx_slss_id);
 
 /** @}*/
 #endif

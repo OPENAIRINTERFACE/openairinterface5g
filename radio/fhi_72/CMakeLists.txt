@@ -2,7 +2,7 @@
 pkg_check_modules(dpdk REQUIRED libdpdk)
 pkg_check_modules(numa REQUIRED numa)
 
-find_package(xran 5.1.1 EXACT REQUIRED) # E release -> 5
+find_package(xran 5.1.2 EXACT REQUIRED) # E release -> 5
 
 # Ignore xran-specific warning: we don't care/can't change the following warning, so suppress
 # alignment 1 of 'struct XYZ' is less than 2
