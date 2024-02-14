@@ -22,7 +22,7 @@ services:
                 ipv4_address: 192.168.70.131
                 
     ims:
-        container_name: "asterisk-ims"
+        container_name: "ims"
         image: oaisoftwarealliance/ims:latest
         volumes:
             - ./conf/sip.conf:/etc/asterisk/sip.conf
@@ -129,40 +129,16 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.70.133
-    oai-spgwu:
-        container_name: "oai-spgwu"
-        image: oaisoftwarealliance/oai-spgwu-tiny:develop
+    oai-upf:
+        container_name: "oai-upf"
+        image: oaisoftwarealliance/oai-upf:develop
         expose:
             - 2152/udp
             - 8805/udp
-            - 8080/tcp
-        # TODO: oai-spgwu-tiny will not support the new common yaml config file feature
-        #       waiting for the new oai-upf NF
+        volumes:
+            - ./conf/config.yaml:/openair-upf/etc/config.yaml
         environment:
             - TZ=Europe/Paris
-            - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
-            - SGW_INTERFACE_NAME_FOR_SX=eth0
-            - PGW_INTERFACE_NAME_FOR_SGI=eth0
-            - NETWORK_UE_NAT_OPTION=yes
-            - NETWORK_UE_IP=12.1.0.0/16
-            - ENABLE_5G_FEATURES=yes
-            - REGISTER_NRF=yes
-            - USE_FQDN_NRF=yes
-            - UPF_FQDN_5G=oai-spgwu
-            - NRF_IPV4_ADDRESS=192.168.70.130
-            - NRF_FQDN=oai-nrf
-            # Mandatory to set the NRF PORT to 8080 (it is set to default to 80 otherwise)
-            - HTTP_VERSION=2
-            - NRF_PORT=8080
-            # Slice 0 (1, 0xFFFFFF)
-            - NSSAI_SST_0=1
-            - DNN_0=oai
-            # Slice 1 (1, 0xFFFFFF)
-            - NSSAI_SST_1=1
-            - DNN_1=openairinterface
-            # Slice 2 (1, 0xFFFFFF)
-            - NSSAI_SST_2=1
-            - DNN_2=ims
         depends_on:
             - oai-nrf
             - oai-smf
@@ -181,10 +157,10 @@ services:
         container_name: oai-ext-dn
         image: oaisoftwarealliance/trf-gen-cn5g:jammy
         entrypoint: /bin/bash -c \
-              "ip route add 12.1.0.0/16 via 192.168.70.134 dev eth0; ip route; sleep infinity"
+              "ip route add 10.0.0.0/16 via 192.168.70.134 dev eth0; ip route; sleep infinity"
         command: ["/bin/bash", "-c", "trap : SIGTERM SIGINT; sleep infinity & wait"]
         healthcheck:
-            test: /bin/bash -c "ip r | grep 12.1.0"
+            test: /bin/bash -c "ip r | grep 10.0.0"
             interval: 5s
             timeout: 2s
             retries: 10
