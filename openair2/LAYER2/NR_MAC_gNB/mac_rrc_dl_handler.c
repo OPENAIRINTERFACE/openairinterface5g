@@ -23,8 +23,11 @@
 
 #include "mac_proto.h"
 #include "openair2/F1AP/f1ap_ids.h"
+#include "openair2/F1AP/f1ap_common.h"
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "F1AP_CauseRadioNetwork.h"
+#include "openair3/ocp-gtpu/gtp_itf.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
 #include "uper_decoder.h"
 #include "uper_encoder.h"
@@ -33,6 +36,59 @@
 const uint64_t qos_fiveqi[26] = {1, 2, 3, 4, 65, 66, 67, 71, 72, 73, 74, 76, 5, 6, 7, 8, 9, 69, 70, 79, 80, 82, 83, 84, 85, 86};
 const uint64_t qos_priority[26] = {20, 40, 30, 50, 7, 20, 15, 56, 56, 56, 56, 56, 10,
                                    60, 70, 80, 90, 5, 55, 65, 68, 19, 22, 24, 21, 18};
+
+static instance_t get_f1_gtp_instance(void)
+{
+  const f1ap_cudu_inst_t *inst = getCxt(0);
+  if (!inst)
+    return -1; // means no F1
+  return inst->gtpInst;
+}
+
+static int drb_gtpu_create(instance_t instance,
+                           uint32_t ue_id,
+                           int incoming_id,
+                           int outgoing_id,
+                           int qfi,
+                           in_addr_t tlAddress, // only IPv4 now
+                           teid_t outgoing_teid,
+                           gtpCallback callBack,
+                           gtpCallbackSDAP callBackSDAP,
+                           gtpv1u_gnb_create_tunnel_resp_t *create_tunnel_resp)
+{
+  gtpv1u_gnb_create_tunnel_req_t create_tunnel_req = {0};
+  create_tunnel_req.incoming_rb_id[0] = incoming_id;
+  create_tunnel_req.pdusession_id[0] = outgoing_id;
+  memcpy(&create_tunnel_req.dst_addr[0].buffer, &tlAddress, sizeof(uint8_t) * 4);
+  create_tunnel_req.dst_addr[0].length = 32;
+  create_tunnel_req.outgoing_teid[0] = outgoing_teid;
+  create_tunnel_req.outgoing_qfi[0] = qfi;
+  create_tunnel_req.num_tunnels = 1;
+  create_tunnel_req.ue_id = ue_id;
+
+  // we use gtpv1u_create_ngu_tunnel because it returns the interface
+  // address and port of the interface; apart from that, we also might call
+  // newGtpuCreateTunnel() directly
+  return gtpv1u_create_ngu_tunnel(instance, &create_tunnel_req, create_tunnel_resp, callBack, callBackSDAP);
+}
+
+bool DURecvCb(protocol_ctxt_t *ctxt_pP,
+              const srb_flag_t srb_flagP,
+              const rb_id_t rb_idP,
+              const mui_t muiP,
+              const confirm_t confirmP,
+              const sdu_size_t sdu_buffer_sizeP,
+              unsigned char *const sdu_buffer_pP,
+              const pdcp_transmission_mode_t modeP,
+              const uint32_t *sourceL2Id,
+              const uint32_t *destinationL2Id)
+{
+  // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
+  uint8_t *sdu = malloc16(sdu_buffer_sizeP);
+  memcpy(sdu, sdu_buffer_pP, sdu_buffer_sizeP);
+  du_rlc_data_req(ctxt_pP, srb_flagP, false, rb_idP, muiP, confirmP, sdu_buffer_sizeP, sdu);
+  return true;
+}
 
 static long get_lcid_from_drbid(int drb_id)
 {
@@ -133,6 +189,7 @@ static int handle_ue_context_drbs_setup(int rnti,
                                         NR_CellGroupConfig_t *cellGroupConfig)
 {
   DevAssert(req_drbs != NULL && resp_drbs != NULL && cellGroupConfig != NULL);
+  instance_t f1inst = get_f1_gtp_instance();
 
   /* Note: the actual GTP tunnels are created in the F1AP breanch of
    * ue_context_*_response() */
@@ -140,12 +197,32 @@ static int handle_ue_context_drbs_setup(int rnti,
   AssertFatal(*resp_drbs != NULL, "out of memory\n");
   for (int i = 0; i < drbs_len; i++) {
     const f1ap_drb_to_be_setup_t *drb = &req_drbs[i];
+    f1ap_drb_to_be_setup_t *resp_drb = &(*resp_drbs)[i];
     NR_RLC_BearerConfig_t *rlc_BearerConfig = get_bearerconfig_from_drb(drb);
     nr_rlc_add_drb(rnti, drb->drb_id, rlc_BearerConfig);
 
-    (*resp_drbs)[i] = *drb;
+    *resp_drb = *drb;
     // just put same number of tunnels in DL as in UL
-    (*resp_drbs)[i].up_dl_tnl_length = drb->up_ul_tnl_length;
+    DevAssert(drb->up_ul_tnl_length == 1);
+    resp_drb->up_dl_tnl_length = drb->up_ul_tnl_length;
+
+    if (f1inst >= 0) { // we actually use F1-U
+      int qfi = -1; // don't put PDU session marker in GTP
+      gtpv1u_gnb_create_tunnel_resp_t resp_f1 = {0};
+      int ret = drb_gtpu_create(f1inst,
+                                rnti,
+                                drb->drb_id,
+                                drb->drb_id,
+                                qfi,
+                                drb->up_ul_tnl[0].tl_address,
+                                drb->up_ul_tnl[0].teid,
+                                DURecvCb,
+                                NULL,
+                                &resp_f1);
+      AssertFatal(ret >= 0, "Unable to create GTP Tunnel for F1-U\n");
+      memcpy(&resp_drb->up_dl_tnl[0].tl_address, &resp_f1.gnb_addr.buffer, 4);
+      resp_drb->up_dl_tnl[0].teid = resp_f1.gnb_NGu_teid[0];
+    }
 
     int ret = ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
     DevAssert(ret == 0);
@@ -159,6 +236,7 @@ static int handle_ue_context_drbs_release(int rnti,
                                           NR_CellGroupConfig_t *cellGroupConfig)
 {
   DevAssert(req_drbs != NULL && cellGroupConfig != NULL);
+  instance_t f1inst = get_f1_gtp_instance();
 
   cellGroupConfig->rlc_BearerToReleaseList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToReleaseList));
   AssertFatal(cellGroupConfig->rlc_BearerToReleaseList != NULL, "out of memory\n");
@@ -178,6 +256,8 @@ static int handle_ue_context_drbs_release(int rnti,
     }
     if (idx < cellGroupConfig->rlc_BearerToAddModList->list.count) {
       nr_rlc_release_entity(rnti, lcid);
+      if (f1inst >= 0)
+        newGtpuDeleteOneTunnel(f1inst, rnti, drb->rb_id);
       asn_sequence_del(&cellGroupConfig->rlc_BearerToAddModList->list, idx, 1);
       long *plcid = malloc(sizeof(*plcid));
       AssertFatal(plcid != NULL, "out of memory\n");
@@ -556,6 +636,10 @@ void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
     NR_SCHED_UNLOCK(&mac->sched_lock);
     return;
   }
+
+  instance_t f1inst = get_f1_gtp_instance();
+  if (f1inst >= 0)
+    newGtpuDeleteAllTunnels(f1inst, cmd->gNB_DU_ue_id);
 
   if (UE->UE_sched_ctrl.ul_failure || cmd->rrc_container_length == 0) {
     /* The UE is already not connected anymore or we have nothing to forward*/

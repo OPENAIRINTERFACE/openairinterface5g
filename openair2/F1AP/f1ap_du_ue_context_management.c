@@ -40,24 +40,6 @@
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
-bool DURecvCb(protocol_ctxt_t *ctxt_pP,
-              const srb_flag_t srb_flagP,
-              const rb_id_t rb_idP,
-              const mui_t muiP,
-              const confirm_t confirmP,
-              const sdu_size_t sdu_buffer_sizeP,
-              unsigned char *const sdu_buffer_pP,
-              const pdcp_transmission_mode_t modeP,
-              const uint32_t *sourceL2Id,
-              const uint32_t *destinationL2Id)
-{
-  // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
-  uint8_t *sdu = malloc16(sdu_buffer_sizeP);
-  memcpy(sdu, sdu_buffer_pP, sdu_buffer_sizeP);
-  du_rlc_data_req(ctxt_pP, srb_flagP, false, rb_idP, muiP, confirmP, sdu_buffer_sizeP, sdu);
-  return true;
-}
-
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_UEContextSetupRequest_t    *container;
@@ -305,6 +287,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_context_set
     ie7->criticality                    = F1AP_Criticality_ignore;
     ie7->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_DRBs_Setup_List;
     for (int i=0;  i< resp->drbs_to_be_setup_length; i++) {
+      f1ap_drb_to_be_setup_t *drb = &resp->drbs_to_be_setup[i];
       //
       asn1cSequenceAdd(ie7->value.choice.DRBs_Setup_List.list,
           F1AP_DRBs_Setup_ItemIEs_t, drbs_setup_item_ies);
@@ -315,14 +298,17 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_context_set
       /* ADD */
       F1AP_DRBs_Setup_Item_t *drbs_setup_item=&drbs_setup_item_ies->value.choice.DRBs_Setup_Item;
       /* dRBID */
-      drbs_setup_item->dRBID = resp->drbs_to_be_setup[i].drb_id;
+      drbs_setup_item->dRBID = drb->drb_id;
 
       /* OPTIONAL */
       /* lCID */
       //drbs_setup_item.lCID = (F1AP_LCID_t *)calloc(1, sizeof(F1AP_LCID_t));
       //drbs_setup_item.lCID = 1L;
 
-      for (int j=0;  j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++) {
+      for (int j = 0;  j < drb->up_dl_tnl_length; j++) {
+        const f1ap_up_tnl_t *tnl = &drb->up_dl_tnl[j];
+        DevAssert(tnl->teid > 0);
+
         /* ADD */
         asn1cSequenceAdd(drbs_setup_item->dLUPTNLInformation_ToBeSetup_List.list,
                        F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
@@ -330,12 +316,9 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_context_set
         /* gTPTunnel */
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
         /* transportLayerAddress */
-        struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(0)->net_config.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
-        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
-            &gTPTunnel->transportLayerAddress);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(tnl->tl_address, &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
-        INT32_TO_OCTET_STRING(resp->drbs_to_be_setup[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
+        INT32_TO_OCTET_STRING(tnl->teid, &gTPTunnel->gTP_TEID);
       } // for j
     } // for i
 
@@ -1008,7 +991,6 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
       DevAssert(tbrel->id == F1AP_ProtocolIE_ID_id_DRBs_ToBeReleased_Item);
       DevAssert(tbrel->value.present == F1AP_DRBs_ToBeReleased_ItemIEs__value_PR_DRBs_ToBeReleased_Item);
       f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id = tbrel->value.choice.DRBs_ToBeReleased_Item.dRBID;
-      newGtpuDeleteOneTunnel(0, f1ap_ue_context_modification_req->gNB_DU_ue_id, f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id);
     }
   }
 
@@ -1166,20 +1148,8 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_cont
       drbs_setupmod_item->dRBID = resp->drbs_to_be_setup[i].drb_id;
 
       for (int j=0;  j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++) {
-        f1ap_drb_to_be_setup_t *drb = &resp->drbs_to_be_setup[i];
-        transport_layer_addr_t tl_addr = {0};
-        memcpy(tl_addr.buffer, &drb->up_ul_tnl[0].tl_address, sizeof(drb->up_ul_tnl[0].tl_address));
-        tl_addr.length = sizeof(drb->up_ul_tnl[0].tl_address) * 8;
-        drb->up_dl_tnl[j].teid = newGtpuCreateTunnel(getCxt(0)->gtpInst,
-                                                     resp->gNB_DU_ue_id,
-                                                     drb->drb_id,
-                                                     drb->drb_id,
-                                                     drb->up_ul_tnl[j].teid,
-                                                     -1, // no qfi
-                                                     tl_addr,
-                                                     drb->up_ul_tnl[0].port,
-                                                     DURecvCb,
-                                                     NULL);
+        const f1ap_up_tnl_t *tnl = &resp->drbs_to_be_setup[i].up_dl_tnl[j];
+        DevAssert(tnl->teid > 0);
 
         /* ADD */
         asn1cSequenceAdd(drbs_setupmod_item->dLUPTNLInformation_ToBeSetup_List.list,
@@ -1188,12 +1158,9 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_cont
         /* gTPTunnel */
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
         /* transportLayerAddress */
-        struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(0)->net_config.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
-        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
-          &gTPTunnel->transportLayerAddress);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(tnl->tl_address, &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
-        INT32_TO_OCTET_STRING(resp->drbs_to_be_setup[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
+        INT32_TO_OCTET_STRING(tnl->teid, &gTPTunnel->gTP_TEID);
       } // for j
     } // for i
   }
