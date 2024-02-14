@@ -106,9 +106,14 @@ Let summarize for example on a `32-CPU` single NUMA node system, regardless of t
 |OAI `nr-softmodem` |1,3,5,7,9,11,13,15|
 |kernel             |16-31             |
 
-In below example we have shown the output of `/proc/cmdline` for two different servers, each of them have different number of NUMA nodes. Be careful in isolating the CPUs in your environment. Apart from CPU allocation there are additional parameters which are important to be present in your boot command.
+In below example we have shown the output of `/proc/cmdline` for two different servers, each of them have different number of NUMA nodes. **Be careful in isolating the CPUs in your environment.** Apart from CPU allocation there are additional parameters which are important to be present in your boot command.
 
-Modifying the `linux` command line usually requires to edit the `/etc/default/grub`, run a `grub` command and reboot the server.
+Modifying the `linux` command line usually requires to edit string `GRUB_CMDLINE_LINUX` in `/etc/default/grub`, run a `grub` command and reboot the server.
+
+* Set parameters `isolcpus`, `nohz_full` and `rcu_nocbs` with the list of CPUs to isolate for XRAN.
+* Set parameter `kthread_cpus` with the list of CPUs to isolate for kernel.
+
+**Checkout anyway the examples below.**
 
 ### One NUMA Node
 
@@ -237,11 +242,13 @@ WantedBy=multi-user.target
 ### Debugging PTP issues
 
 You can see these steps in case your ptp logs have erorrs or `rms` reported in `ptp4l` logs is more than 100ms.
+Beware that PTP issues may show up only when running OAI and XRAN. If you are using the `ptp4l` service, have a look back in time in the journal: `journalctl -u ptp4l.service -S <hours>:<minutes>:<seconds>`
 
 1. Make sure that you have `skew_tick=1` in `/proc/cmdline`
 2. For Intel E-810 cards set `tx_timestamp_timeout` to 50 or 100 if there are errors in ptp4l logs
 3. Other time sources than PTP, such as NTP or chrony timesources, should be disabled. Make sure they are enabled as further below.
-4. If `rms` or `delay` remain high, you can try pinning the PTP process to an isolated CPU.
+4. If PTP is running in kernel space, make sure you isolated cores for kernel with `kthread_cpus=<cpu_list>` in `/proc/cmdline`
+5. If `rms` or `delay` remain high, you can try pinning the PTP process to an isolated CPU.
 
 ```bash
 #to check there is NTP enabled or not
@@ -444,6 +451,9 @@ ninja nr-softmodem oran_fhlib_5g params_libconfig
 
 # Configuration
 
+**Note**: You may run OAI with O-RAN 7.2 Fronthaul without a RU attached (e.g. for benchmarking).
+In such case, skip RU configuration and go through Network Interfaces, DPDK VFs and OAI configuration by using arbitrary values for RU MAC addresses and VLAN tags.
+
 ## Configure the RU
 
 Contact the RU vendor to get the configuration manual, and configure the RU
@@ -612,7 +622,7 @@ Edit the sample OAI gNB configuration file and check following parameters:
 * `fhi_72` (FrontHaul Interface) section: this config follows the structure
   that is employed by the xRAN library (`xran_fh_init` and `xran_fh_config`
   structs in the code):
-  * `dpdk_devices`: PCI addresses of NIC VFs binded to the DPDK
+  * `dpdk_devices`: PCI addresses of NIC VFs (not the physical, use `lspci | grep Virtual`) binded to the DPDK
   * `system_core`: absolute CPU core ID for DPDK control threads
     (`rte_mp_handle`, `eal-intr-thread`, `iavf-event-thread`)
   * `io_core`: absolute CPU core ID for XRAN library, it should be an isolated core, in our environment we are using CPU 4
