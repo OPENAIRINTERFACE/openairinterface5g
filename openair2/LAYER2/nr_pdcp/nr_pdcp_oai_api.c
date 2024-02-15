@@ -921,8 +921,16 @@ void add_drb(int is_gnb,
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
     LOG_I(PDCP, "added drb %d to UE ID %ld\n", drb_id, UEid);
-
-    new_nr_sdap_entity(is_gnb, has_sdap_rx, has_sdap_tx, UEid, pdusession_id, is_sdap_DefaultDRB, drb_id, mappedQFIs2Add, mappedQFIs2AddCount);
+    /* add new SDAP entity for the PDU session the DRB belongs to */
+    new_nr_sdap_entity(is_gnb,
+                       has_sdap_rx,
+                       has_sdap_tx,
+                       UEid,
+                       pdusession_id,
+                       is_sdap_DefaultDRB,
+                       drb_id,
+                       mappedQFIs2Add,
+                       mappedQFIs2AddCount);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
