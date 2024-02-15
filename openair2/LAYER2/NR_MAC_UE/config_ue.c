@@ -420,9 +420,7 @@ void release_common_ss_cset(NR_BWP_PDCCH_t *pdcch)
   asn1cFreeStruc(asn_DEF_NR_SearchSpace, pdcch->otherSI_SS);
   asn1cFreeStruc(asn_DEF_NR_SearchSpace, pdcch->ra_SS);
   asn1cFreeStruc(asn_DEF_NR_SearchSpace, pdcch->paging_SS);
-  asn1cFreeStruc(asn_DEF_NR_SearchSpace, pdcch->search_space_zero);
   asn1cFreeStruc(asn_DEF_NR_ControlResourceSet, pdcch->commonControlResourceSet);
-  asn1cFreeStruc(asn_DEF_NR_ControlResourceSet, pdcch->coreset0);
 }
 
 static void modlist_ss(NR_SearchSpace_t *source, NR_SearchSpace_t *target)
@@ -443,12 +441,13 @@ static void modlist_ss(NR_SearchSpace_t *source, NR_SearchSpace_t *target)
     UPDATE_MAC_IE(target->searchSpaceType, source->searchSpaceType, struct NR_SearchSpace__searchSpaceType);
 }
 
-static NR_SearchSpace_t *get_common_search_space(const struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList,
+static NR_SearchSpace_t *get_common_search_space(const NR_UE_MAC_INST_t *mac,
+                                                 const struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList,
                                                  const NR_BWP_PDCCH_t *pdcch,
                                                  const NR_SearchSpaceId_t ss_id)
 {
   if (ss_id == 0)
-    return pdcch->search_space_zero;
+    return mac->search_space_zero;
 
   NR_SearchSpace_t *css = NULL;
   for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
@@ -462,12 +461,15 @@ static NR_SearchSpace_t *get_common_search_space(const struct NR_PDCCH_ConfigCom
   return css;
 }
 
-static void configure_common_ss_coreset(NR_BWP_PDCCH_t *pdcch, NR_PDCCH_ConfigCommon_t *pdcch_ConfigCommon)
+static void configure_common_ss_coreset(const NR_UE_MAC_INST_t *mac,
+                                        NR_BWP_PDCCH_t *pdcch,
+                                        NR_PDCCH_ConfigCommon_t *pdcch_ConfigCommon)
 {
   if (pdcch_ConfigCommon) {
     asn1cFreeStruc(asn_DEF_NR_SearchSpace, pdcch->otherSI_SS);
     if (pdcch_ConfigCommon->searchSpaceOtherSystemInformation)
-      pdcch->otherSI_SS = get_common_search_space(pdcch_ConfigCommon->commonSearchSpaceList,
+      pdcch->otherSI_SS = get_common_search_space(mac,
+                                                  pdcch_ConfigCommon->commonSearchSpaceList,
                                                   pdcch,
                                                   *pdcch_ConfigCommon->searchSpaceOtherSystemInformation);
 
@@ -477,7 +479,7 @@ static void configure_common_ss_coreset(NR_BWP_PDCCH_t *pdcch, NR_PDCCH_ConfigCo
         pdcch->ra_SS = pdcch->otherSI_SS;
       else
         pdcch->ra_SS =
-            get_common_search_space(pdcch_ConfigCommon->commonSearchSpaceList, pdcch, *pdcch_ConfigCommon->ra_SearchSpace);
+            get_common_search_space(mac, pdcch_ConfigCommon->commonSearchSpaceList, pdcch, *pdcch_ConfigCommon->ra_SearchSpace);
     }
 
     asn1cFreeStruc(asn_DEF_NR_SearchSpace, pdcch->paging_SS);
@@ -488,7 +490,7 @@ static void configure_common_ss_coreset(NR_BWP_PDCCH_t *pdcch, NR_PDCCH_ConfigCo
         pdcch->paging_SS = pdcch->ra_SS;
       if (!pdcch->paging_SS)
         pdcch->paging_SS =
-            get_common_search_space(pdcch_ConfigCommon->commonSearchSpaceList, pdcch, *pdcch_ConfigCommon->pagingSearchSpace);
+            get_common_search_space(mac, pdcch_ConfigCommon->commonSearchSpaceList, pdcch, *pdcch_ConfigCommon->pagingSearchSpace);
     }
 
     UPDATE_MAC_IE(pdcch->commonControlResourceSet, pdcch_ConfigCommon->commonControlResourceSet, NR_ControlResourceSet_t);
@@ -1304,7 +1306,7 @@ static void configure_common_BWP_dl(NR_UE_MAC_INST_t *mac, int bwp_id, NR_BWP_Do
     NR_BWP_PDCCH_t *pdcch = &mac->config_BWP_PDCCH[bwp_id];
     if (dl_common->pdcch_ConfigCommon) {
       if (dl_common->pdcch_ConfigCommon->present == NR_SetupRelease_PDCCH_ConfigCommon_PR_setup)
-        configure_common_ss_coreset(pdcch, dl_common->pdcch_ConfigCommon->choice.setup);
+        configure_common_ss_coreset(mac, pdcch, dl_common->pdcch_ConfigCommon->choice.setup);
       if (dl_common->pdcch_ConfigCommon->present == NR_SetupRelease_PDCCH_ConfigCommon_PR_release)
         release_common_ss_cset(pdcch);
     }

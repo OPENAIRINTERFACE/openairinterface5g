@@ -220,6 +220,9 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac)
   for (int i = 0; i < mac->ul_BWPs.count; i++)
     release_ul_BWP(mac, i);
 
+  asn1cFreeStruc(asn_DEF_NR_SearchSpace, mac->search_space_zero);
+  asn1cFreeStruc(asn_DEF_NR_ControlResourceSet, mac->coreset0);
+
   for (int i = 0; i < mac->lc_ordered_list.count; i++) {
     nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
     asn_sequence_del(&mac->lc_ordered_list, i, 0);
