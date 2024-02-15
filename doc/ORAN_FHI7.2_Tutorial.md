@@ -668,6 +668,9 @@ cd ~/openairinterface5g/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/oran.fh.band78.fr1.273PRB.conf --sa --reorder-thread-disable 1 --thread-pool <list of non isolated cpus>
 ```
 
+**Note**: You may run OAI with O-RAN 7.2 Fronthaul without a RU attached (e.g. for benchmarking).
+In such case, you would generate artificial traffic by replacing the `--sa` option by the `--phy-test` option.
+
 You have to set the thread pool option to non-isolated CPUs, since the thread
 pool is used for L1 processing which should not interfere with DPDK threads.
 For example if you have two NUMA nodes in your system (for example 18 CPUs per
