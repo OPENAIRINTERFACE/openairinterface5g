@@ -173,6 +173,9 @@ The above information we have gathered either from O-RAN documents or via our ow
 
 ## PTP configuration
 
+**Note**: You may run OAI with O-RAN 7.2 Fronthaul without a RU attached (e.g. for benchmarking).
+In such case, you can skip PTP configuration and go to DPDK section.
+
 1. You can install `linuxptp` rpm or debian package. It will install ptp4l and phc2sys.
 
 ```bash
