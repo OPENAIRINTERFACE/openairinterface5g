@@ -188,4 +188,19 @@ bool nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id);
  * @return                  True, it deleted at least one entity, false otherwise.
  */
 bool nr_sdap_delete_ue_entities(ue_id_t ue_id);
+
+/**
+ * @brief indicates whether it is a receiving SDAP entity
+ *        i.e. for UE, header for DL data is present
+ *             for gNB, header for UL data is present
+ */
+bool is_sdap_rx(bool is_gnb, NR_SDAP_Config_t *sdap_config);
+
+/**
+ * @brief indicates whether it is a transmitting SDAP entity
+ *        i.e. for UE, header for UL data is present
+ *             for gNB, header for DL data is present
+ */
+bool is_sdap_tx(bool is_gnb, NR_SDAP_Config_t *sdap_config);
+
 #endif

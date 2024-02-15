@@ -37,6 +37,34 @@ static nr_sdap_entity_info sdap_info;
 
 instance_t *N3GTPUInst = NULL;
 
+/**
+ * @brief indicates whether it is a receiving SDAP entity
+ *        i.e. for UE, header for DL data is present
+ *             for gNB, header for UL data is present
+ */
+bool is_sdap_rx(bool is_gnb, NR_SDAP_Config_t *sdap_config)
+{
+  if (is_gnb) {
+    return sdap_config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present;
+  } else {
+    return sdap_config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present;
+  }
+}
+
+/**
+ * @brief indicates whether it is a transmitting SDAP entity
+ *        i.e. for UE, header for UL data is present
+ *             for gNB, header for DL data is present
+ */
+bool is_sdap_tx(bool is_gnb, NR_SDAP_Config_t *sdap_config)
+{
+  if (is_gnb) {
+    return sdap_config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present;
+  } else {
+    return sdap_config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present;
+  }
+}
+
 void nr_pdcp_submit_sdap_ctrl_pdu(ue_id_t ue_id, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu)
 {
 

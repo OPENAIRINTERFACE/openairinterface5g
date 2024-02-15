@@ -888,13 +888,8 @@ void add_drb(int is_gnb,
       exit(-1);
     }
     pdusession_id = s->cnAssociation->choice.sdap_Config->pdu_Session;
-    if (is_gnb) {
-      has_sdap_rx = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present;
-      has_sdap_tx = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present;
-    } else {
-      has_sdap_tx = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present;
-      has_sdap_rx = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present;
-    }
+    has_sdap_rx = is_sdap_rx(is_gnb, s->cnAssociation->choice.sdap_Config);
+    has_sdap_tx = is_sdap_tx(is_gnb, s->cnAssociation->choice.sdap_Config);
     is_sdap_DefaultDRB = s->cnAssociation->choice.sdap_Config->defaultDRB == true ? 1 : 0;
     mappedQFIs2Add = (NR_QFI_t*)s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.array[0]; 
     mappedQFIs2AddCount = s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.count;
