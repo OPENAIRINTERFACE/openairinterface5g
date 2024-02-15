@@ -113,6 +113,12 @@ Modifying the `linux` command line usually requires to edit string `GRUB_CMDLINE
 * Set parameters `isolcpus`, `nohz_full` and `rcu_nocbs` with the list of CPUs to isolate for XRAN.
 * Set parameter `kthread_cpus` with the list of CPUs to isolate for kernel.
 
+Set the `tuned` profile to `realtime`. If the `tuned-adm` command is not installed then you have to install it. When choosing this profile you have to mention the isolated cpus in `/etc/tuned/realtime-variables.conf`. By default this profile adds `skew_tick=1 isolcpus=managed_irq,domain,<cpu-you-choose> intel_pstate=disable nosoftlockup tsc=nowatchdog` in the boot command. **Make sure you don't add them while changing `/etc/default/grub`**.
+
+```bash
+tuned-adm profile realtime
+```
+
 **Checkout anyway the examples below.**
 
 ### One NUMA Node
@@ -157,12 +163,6 @@ Configure your servers to maximum performance mode either via OS or in BIOS. If 
 sudo cpupower idle-set -D 0
 #to enable
 sudo cpupower idle-set -E
-```
-
-Set the `tuned` profile to `realtime`. If the `tuned-adm` command is not installed then you have to install it.
-
-```bash
-tuned-adm profile realtime
 ```
 
 The above information we have gathered either from O-RAN documents or via our own experiments. In case you would like to read the O-RAN documents then here are the links:
@@ -250,8 +250,8 @@ Beware that PTP issues may show up only when running OAI and XRAN. If you are us
 1. Make sure that you have `skew_tick=1` in `/proc/cmdline`
 2. For Intel E-810 cards set `tx_timestamp_timeout` to 50 or 100 if there are errors in ptp4l logs
 3. Other time sources than PTP, such as NTP or chrony timesources, should be disabled. Make sure they are enabled as further below.
-4. If PTP is running in kernel space, make sure you isolated cores for kernel with `kthread_cpus=<cpu_list>` in `/proc/cmdline`.
-5. If `rms` or `delay` remain high, you can try pinning the PTP process to an isolated CPU.
+4. Make sure you set `kthread_cpus=<cpu_list>` in `/proc/cmdline`.
+5. If `rms` or `delay` in `ptp4l` or `offset` in `phc2sys` logs remain high then you can try pinning the `ptp4l` and `phc2sys` processes to an isolated CPU.
 
 ```bash
 #to check there is NTP enabled or not
