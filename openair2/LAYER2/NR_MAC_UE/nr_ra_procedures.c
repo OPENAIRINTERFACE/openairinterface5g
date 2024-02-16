@@ -504,26 +504,6 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   }
 }
 
-// RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
-// - this does not apply to contention-free RA Preamble for beam failure recovery request
-// - getting star_symb, SFN_nbr from table 6.3.3.2-3 (TDD and FR1 scenario)
-// - ul_carrier_id: UL carrier used for RA preamble transmission, hardcoded for NUL carrier
-// - f_id: index of the PRACH occasion in the frequency domain
-// - s_id is starting symbol of the PRACH occasion [0...14]
-// - t_id is the first slot of the PRACH occasion in a system frame [0...80]
-void set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu){
-
-  RA_config_t *ra = &mac->ra;
-  uint8_t ul_carrier_id = 0; // NUL
-  uint8_t f_id = prach_pdu->num_ra;
-  uint8_t t_id = prach_pdu->prach_slot;
-  uint8_t s_id = prach_pdu->prach_start_symbol;
-
-  ra->ra_rnti = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
-
-  LOG_D(MAC, "Computed ra_RNTI is %x \n", ra->ra_rnti);
-}
-
 // This routine implements Section 5.1.2 (UE Random Access Resource Selection)
 // and Section 5.1.3 (Random Access Preamble Transmission) from 3GPP TS 38.321
 // - currently the PRACH preamble is set through RRC configuration for 4-step CFRA mode
