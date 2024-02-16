@@ -641,3 +641,43 @@ bool nr_sdap_delete_ue_entities(ue_id_t ue_id)
   }
   return ret;
 }
+
+/**
+ * @brief SDAP Entity reconfiguration at UE according to TS 37.324
+ *        and triggered by RRC reconfiguration events according to clause 5.3.5.6.5 of TS 38.331.
+ *        This function performs:
+ *        - QoS flow to DRB mapping according to clause 5.3.1 of TS 37.324
+ */
+void nr_reconfigure_sdap_entity(NR_SDAP_Config_t *sdap_config, ue_id_t ue_id, int pdusession_id, int drb_id)
+{
+  bool is_gnb = false;
+  /* fetch SDAP entity */
+  nr_sdap_entity_t *sdap_entity = nr_sdap_get_entity(ue_id, pdusession_id);
+  AssertError(sdap_entity != NULL,
+              return,
+              "Could not find SDAP Entity for RNTI/UE ID: %lu and PDU SESSION ID: %d\n",
+              ue_id,
+              pdusession_id);
+  /* QFI to DRB mapping */
+  NR_QFI_t *mappedQFIs2Add = (NR_QFI_t *)sdap_config->mappedQoS_FlowsToAdd->list.array[0];
+  uint8_t mappedQFIs2AddCount = sdap_config->mappedQoS_FlowsToAdd->list.count;
+  bool has_sdap_rx = is_sdap_rx(is_gnb, sdap_config);
+  bool has_sdap_tx = is_sdap_tx(is_gnb, sdap_config);
+  nr_sdap_ue_qfi2drb_config(sdap_entity,
+                            sdap_entity->default_drb,
+                            ue_id,
+                            mappedQFIs2Add,
+                            mappedQFIs2AddCount,
+                            drb_id,
+                            has_sdap_rx,
+                            has_sdap_tx);
+  /* handle QFIs to DRB mapping rule to release */
+  if (sdap_config->mappedQoS_FlowsToRelease) {
+    NR_QFI_t *mappedQFIs2release = (NR_QFI_t *)sdap_config->mappedQoS_FlowsToRelease->list.array[0];
+    uint8_t mappedQFIs2RemoveCount = sdap_config->mappedQoS_FlowsToRelease->list.count;
+    for(int i = 0; i < mappedQFIs2RemoveCount; i++){
+      uint8_t qfi = mappedQFIs2release[i];
+      sdap_entity->qfi2drb_map_delete(sdap_entity, qfi);
+    }
+  }
+}

@@ -205,4 +205,10 @@ bool is_sdap_rx(bool is_gnb, NR_SDAP_Config_t *sdap_config);
  */
 bool is_sdap_tx(bool is_gnb, NR_SDAP_Config_t *sdap_config);
 
+/**
+ * @brief               Run the SDAP reconfiguration for the DRB
+ * @param[in] ue_id     Unique identifier for the User Equipment. ID Range [0, 65536].
+ */
+void nr_reconfigure_sdap_entity(NR_SDAP_Config_t *sdap_config, ue_id_t ue_id, int pdusession_id, int drb_id);
+
 #endif
