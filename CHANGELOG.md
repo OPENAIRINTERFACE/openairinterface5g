@@ -1,5 +1,32 @@
 # RELEASE NOTES: #
 
+## [v2.1.0](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tags/v2.1.0) -> February 2024. ##
+
+This release improves existing 5G support and adds various new features.
+
+* 5G gNB
+  - Add support for O-RAN 7.2 fronthaul interface
+    (tested with 3 O-RUs: Benetel, LITEON, VVDN)
+  - Add support for 2-layer UL MIMO
+  - FDD interoperability with COTS UE
+  - Compiles on ARM (through SIMDE)
+  - Introduce E2 agent and basic support for E2SM-KPM and E2SM-RC
+  - Add support for E1AP
+  - Add support for multiple DUs and CU-UPs at one CU-CP
+  - FR2 SA with OAI UE
+  - Improve computational efficiency
+* 5G UE
+  - Cleanup in MAC and RRC towards support of 3rd-party gNB
+  - FR2 SA with OAI gNB
+  - Improve computational efficiency
+
+Overall the stability is improved for the same resource usage.
+
+There is basic FR2 support between OAI gNB and OAI nrUE. COTS UE
+interoperability is under testing.
+
+This release also includes many fixes and documentation updates.
+
 ## [v2.0.0](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tags/v2.0.0) -> August 2023. ##
 
 This release adds support for 5G and maintains previous features:
