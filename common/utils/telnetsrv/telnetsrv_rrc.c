@@ -44,6 +44,12 @@
  * Implementation notes:
  * We refer to the method call rrc_gNB_generate_RRCRelease at rrc_gNB_NGAP.c 
  * during rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND message generation. 
+ * 
+ * Building the telnetsrv and module:
+ * ./build_oai --build-lib telnetsrv
+ * 
+ * Loading the module:
+ * sudo ./nr-softmodem --sa -E --rfsim --log_config.global_log_options level,nocolor,time -O ~/gnb.sa.band78.106prb.rfsim.conf --telnetsrv --telnetsrv.shrmod rrc
 */
 
 static int get_single_ue_id(void)
