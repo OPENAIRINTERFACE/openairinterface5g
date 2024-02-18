@@ -37,7 +37,7 @@
 /**
  * Module brief:
  * This module is used to add RRCRelease commands to the telnet server in the
- * absence of full support for E2SM RAN Control (RC) function in the RIC.
+ * absence of full support for E2SM RAN Control (RC).
  * This provides similar functionality to the ORAN.WG3.E2SM-RC-R003-v05.00 
  * 8.4.5.4 RRC Connection Release Control which is initiated by the RIC. 
  * 
