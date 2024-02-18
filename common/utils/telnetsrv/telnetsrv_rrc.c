@@ -34,6 +34,18 @@
 
 #define ERROR_MSG_RET(mSG, aRGS...) do { prnt(mSG, ##aRGS); return 1; } while (0)
 
+/**
+ * Module brief:
+ * This module is used to add RRCRelease commands to the telnet server in the
+ * absence of full support for E2SM RAN Control (RC) function in the RIC.
+ * This provides similar functionality to the ORAN.WG3.E2SM-RC-R003-v05.00 
+ * 8.4.5.4 RRC Connection Release Control which is initiated by the RIC. 
+ * 
+ * Implementation notes:
+ * We refer to the method call rrc_gNB_generate_RRCRelease at rrc_gNB_NGAP.c 
+ * during rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND message generation. 
+*/
+
 static int get_single_ue_id(void)
 {
   rrc_gNB_ue_context_t *ue_context_p = NULL;
@@ -43,16 +55,22 @@ static int get_single_ue_id(void)
   return -1;
 }
 
+/**
+ * @brief Trigger RRC Release for a specific UE
+ * @param buf: RRC UE ID
+ * @param debug: Debug flag
+ * @param prnt: Print function
+ * @return 0 on success, -1 on failure
+*/
 int rrc_gNB_trigger_release(char *buf, int debug, telnet_printfunc_t prnt) {
   ue_id_t ue_id = -1;
   protocol_ctxt_t ctxt;
-  gNB_RRC_INST *rrc = RC.nrrrc[0];
 
   if (!buf) {
     ue_id = get_single_ue_id();
     if (ue_id < 1) {
-      prnt("no UE found\n");
-      ERROR_MSG_RET("no UE found\n");
+      prnt("No UE found!\n");
+      ERROR_MSG_RET("No UE found!\n");
     }
   } else {
     ue_id = strtol(buf, NULL, 10);
@@ -63,14 +81,15 @@ int rrc_gNB_trigger_release(char *buf, int debug, telnet_printfunc_t prnt) {
   }
 
   /* get RRC and UE */
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, ue_id);
   if (!ue_context_p) {
     prnt("Could not find UE context associated with UE ID %lu\n", ue_id);
     LOG_E(RRC, "Could not find UE context associated with UE ID %lu\n", ue_id);
     return -1;
   }
+  
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, 0, GNB_FLAG_YES, UE->rrc_ue_id, 0, 0);
   ctxt.eNB_index = 0;
 
@@ -80,17 +99,23 @@ int rrc_gNB_trigger_release(char *buf, int debug, telnet_printfunc_t prnt) {
   return 0;
 }
 
+/**
+ * @brief Trigger RRC Release for all UEs
+*/
 int rrc_gNB_trigger_release_all(char *buf, int debug, telnet_printfunc_t prnt) {
   rrc_gNB_ue_context_t *ue_context_p = NULL;
-  protocol_ctxt_t ctxt;
+  protocol_ctxt_t ctxt; /* Not sure what exactly is this */
+
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[0]->rrc_ue_head)) {
     gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, 0, GNB_FLAG_YES, UE->rrc_ue_id, 0, 0);
     ctxt.eNB_index = 0;
+
     rrc_gNB_generate_RRCRelease(&ctxt, ue_context_p);
     prnt("RRC Release triggered for UE %u\n", UE->rrc_ue_id);
   }
-  return -1;
+
+  return 0;
 }
 
 static telnetshell_cmddef_t rrc_cmds[] = {
