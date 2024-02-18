@@ -65,8 +65,8 @@ int rrc_gNB_trigger_release(char *buf, int debug, telnet_printfunc_t prnt) {
   /* get RRC and UE */
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, ue_id);
   if (!ue_context_p) {
-    prnt("Could not find UE context associated with UE ID %u\n", ue_id);
-    LOG_E(RRC, "Could not find UE context associated with UE ID %u\n", ue_id);
+    prnt("Could not find UE context associated with UE ID %lu\n", ue_id);
+    LOG_E(RRC, "Could not find UE context associated with UE ID %lu\n", ue_id);
     return -1;
   }
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
