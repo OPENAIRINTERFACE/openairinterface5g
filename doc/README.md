@@ -43,6 +43,7 @@ There is some general information in the [OpenAirInterface Gitlab Wiki](https://
 - [How to run a 5G-NSA setup](./TESTING_GNB_W_COTS_UE.md)
 - [How to run a 4G setup using L1 simulator](./L1SIM.md) _Note: we recommend the RFsimulator_
 - [How to use the L2 simulator](./L2NFAPI.md)
+- [How to use the OAI channel simulator](../openair1/SIMULATION/TOOLS/DOC/channel_simulation.md)
 - [How to use multiple BWPs](./RUN_NR_multiple_BWPs.md)
 - [How to run OAI-VNF and OAI-PNF](./RUN_NR_NFAPI.md) _Note: does not work currently_
 - [How to use the positioning reference signal (PRS)](./RUN_NR_PRS.md)

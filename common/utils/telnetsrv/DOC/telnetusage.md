@@ -26,7 +26,7 @@ Below are  examples of telnet sessions:
 *  [measur command](telnetmeasur.md)
 
 # telnet server parameters
-The telnet server is using the [oai configuration module](Config/Rtusage). Telnet parameters must be specified in the `telnetsrv` section. Some parameters can be modified via the telnet telnet server command, as specified in the last column of the following table.
+The telnet server is using the [oai configuration module](../../../../common/config/DOC/config/rtusage.md). Telnet parameters must be specified in the `telnetsrv` section. Some parameters can be modified via the telnet telnet server command, as specified in the last column of the following table.
 
 | name | type | default | description | dynamic |
 |:---:|:---:|:---:|:----|:----:|
