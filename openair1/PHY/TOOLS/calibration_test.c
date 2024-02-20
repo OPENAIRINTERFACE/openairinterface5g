@@ -14,7 +14,6 @@ int8_t threequarter_fs;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 int opp_enabled;
-static double snr_dB=20;
 THREAD_STRUCT thread_struct;
 uint32_t target_ul_mcs = 9;
 uint32_t target_dl_mcs = 9;
