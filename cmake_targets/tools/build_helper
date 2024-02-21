@@ -666,10 +666,7 @@ install_asn1c_from_source(){
     # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
     git clone https://github.com/mouse07410/asn1c /tmp/asn1c
     cd /tmp/asn1c
-    # 2024-02-06: problem compatibility between E2-agent and 4cfcd4f191c3fa41f6ac1b15cb2ad3acc1520af5 from asn1c
-    # Reverting to previous commit that works
-    # TODO : revert to vlm_master once FlexRic and E2-agent are fixed
-    git checkout -f a6bdcd22658d6b7c3ed218d8c1375907ac532b64
+    git checkout vlm_master
     # Showing which version is used
     git log -n1
     autoreconf -iv
