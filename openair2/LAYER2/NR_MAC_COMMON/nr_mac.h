@@ -430,7 +430,7 @@ typedef struct prach_occasion_info {
 // PRACH occasion slot details
 // A PRACH occasion slot is a series of PRACH occasions in time (symbols) and frequency
 typedef struct prach_occasion_slot {
-  prach_occasion_info_t prach_occasion[MAX_TDM][MAX_FDM]; // Starting symbol of each PRACH occasions in a slot
+  prach_occasion_info_t *prach_occasion; // Starting symbol of each PRACH occasions in a slot
   uint8_t nb_of_prach_occasion_in_time;
   uint8_t nb_of_prach_occasion_in_freq;
 } prach_occasion_slot_t;

@@ -72,10 +72,8 @@ void nr_ue_init_mac(NR_UE_MAC_INST_t *mac)
 
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
-  for (int i = 0; i < MAX_NUM_BWP_UE; i++) {
-    memset(&mac->ssb_list[i], 0, sizeof(mac->ssb_list[i]));
-    memset(&mac->prach_assoc_pattern[i], 0, sizeof(mac->prach_assoc_pattern[i]));
-  }
+  memset(mac->ssb_list, 0, sizeof(mac->ssb_list));
+  memset(mac->prach_assoc_pattern, 0, sizeof(mac->prach_assoc_pattern));
   for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++) {
     mac->ul_harq_info[k].last_ndi = -1; // initialize to invalid value
     mac->dl_harq_info[k].last_ndi = -1; // initialize to invalid value
@@ -189,6 +187,14 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
 
   // release, if any, Temporary C-RNTI
   nr_mac->ra.t_crnti = 0;
+  // free RACH structs
+  for (int i = 0; i < MAX_NUM_BWP_UE; i++) {
+    free(nr_mac->ssb_list[i].tx_ssb);
+    for (int j = 0; j < MAX_NB_PRACH_CONF_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD; j++)
+      for (int k = 0; k < MAX_NB_FRAME_IN_PRACH_CONF_PERIOD; k++)
+        for (int l = 0; l < MAX_NB_SLOT_IN_FRAME; l++)
+          free(nr_mac->prach_assoc_pattern[i].prach_conf_period_list[j].prach_occasion_slot_map[k][l].prach_occasion);
+  }
 
   // reset BFI_COUNTER
   // TODO beam failure procedure not implemented
