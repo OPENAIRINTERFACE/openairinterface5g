@@ -104,9 +104,9 @@ nfapi_nr_pm_list_t init_DL_MIMO_codebook(gNB_MAC_INST *gNB, nr_pdsch_AntennaPort
   nfapi_nr_pm_pdu_t *pmi_pdu = malloc16(mat.num_pm_idx * sizeof(*pmi_pdu));
   AssertFatal(pmi_pdu != NULL, "out of memory\n");
   mat.pmi_pdu = pmi_pdu;
-  AssertFatal(num_antenna_ports < 16, "Max number of antenna ports supported is currently 16\n");
 
   // Generation of codebook Type1 with codebookMode 1 (num_antenna_ports < 16)
+  AssertFatal(num_antenna_ports < 16, "Max number of antenna ports supported is currently 16\n");
   // Generate DFT vertical beams
   // ll: index of a vertical beams vector (represented by i1_1 in TS 38.214)
   const int max_l = N1 * O1 + (K1 - 1) * O1;
