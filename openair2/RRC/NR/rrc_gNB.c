@@ -1761,6 +1761,16 @@ static void fill_e1_bearer_modif(DRB_nGRAN_to_setup_t *drb_e1, const f1ap_drb_to
   drb_e1->DlUpParamList[0].teId = drb_f1->up_dl_tnl[0].teid;
 }
 
+/**
+ * @brief Store F1-U DL TL and TEID in RRC
+*/
+static void f1u_gtp_update(f1u_tunnel_t *f1u, const f1ap_drb_to_be_setup_t *drb_f1)
+{
+  f1u->cuup_teid_f1u = drb_f1->up_dl_tnl[0].teid;
+  memcpy(&f1u->cuup_addr_f1u.buffer, &drb_f1->up_dl_tnl[0].tl_address, sizeof(uint8_t) * 4);
+  f1u->cuup_addr_f1u.length = sizeof(in_addr_t);
+}
+
 /* \brief use list of DRBs and send the corresponding bearer update message via
  * E1 to the CU of this UE */
 static void e1_send_bearer_updates(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, int n, f1ap_drb_to_be_setup_t *drbs)
@@ -1782,6 +1792,8 @@ static void e1_send_bearer_updates(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, int n, f
     DevAssert(pdu_e1 != NULL);
     pdu_e1->sessionId = pdu_ue->param.pdusession_id;
     DRB_nGRAN_to_setup_t *drb_e1 = &pdu_e1->DRBnGRanModList[pdu_e1->numDRB2Modify];
+    f1u_gtp_update(&UE->established_drbs[drb_f1->drb_id].f1u_tunnel_config, drb_f1);
+    /* Fill E1 bearer context modification */
     fill_e1_bearer_modif(drb_e1, drb_f1);
     pdu_e1->numDRB2Modify += 1;
   }
