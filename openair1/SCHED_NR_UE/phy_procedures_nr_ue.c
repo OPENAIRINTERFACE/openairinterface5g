@@ -426,7 +426,7 @@ unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb
 int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
                            const UE_nr_rxtx_proc_t *proc,
                            int32_t pdcch_est_size,
-                           int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                           c16_t pdcch_dl_ch_estimates[][pdcch_est_size],
                            nr_phy_data_t *phy_data,
                            int n_ss,
                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
@@ -444,7 +444,7 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
 
   /// PDCCH/DCI e-sequence (input to rate matching).
   int32_t pdcch_e_rx_size = NR_MAX_PDCCH_SIZE;
-  int16_t pdcch_e_rx[pdcch_e_rx_size];
+  c16_t pdcch_e_rx[pdcch_e_rx_size];
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
   nr_rx_pdcch(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, pdcch_e_rx, rel15, rxdataF);
@@ -861,9 +861,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
   const uint32_t rxdataF_sz = ue->frame_parms.samples_per_slot_wCP;
   __attribute__ ((aligned(32))) c16_t rxdataF[ue->frame_parms.nb_antennas_rx][rxdataF_sz];
   // checking if current frame is compatible with SSB periodicity
-  if (cfg->ssb_table.ssb_period == 0 ||
-      !(frame_rx%(1<<(cfg->ssb_table.ssb_period-1)))){
-
+  if (cfg->ssb_table.ssb_period == 0 || !(frame_rx % (1 << (cfg->ssb_table.ssb_period - 1)))) {
     const int estimateSz = fp->symbols_per_slot * fp->ofdm_symbol_size;
     // loop over SSB blocks
     for(int ssb_index=0; ssb_index<fp->Lmax; ssb_index++) {
@@ -874,9 +872,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
         int ssb_slot = ssb_start_symbol/fp->symbols_per_slot;
         int ssb_slot_2 = (cfg->ssb_table.ssb_period == 0) ? ssb_slot+(fp->slots_per_frame>>1) : -1;
 
-        if (ssb_slot == nr_slot_rx ||
-            ssb_slot_2 == nr_slot_rx) {
-
+        if (ssb_slot == nr_slot_rx || ssb_slot_2 == nr_slot_rx) {
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
           LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
 
@@ -990,7 +986,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
 
     // Hold the channel estimates in frequency domain.
   int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
-  __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
+  __attribute__((aligned(16))) c16_t pdcch_dl_ch_estimates[4 * fp->nb_antennas_rx][pdcch_est_size];
 
   uint8_t dci_cnt = 0;
   for(int n_ss = 0; n_ss<phy_pdcch_config->nb_search_space; n_ss++) {

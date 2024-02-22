@@ -266,13 +266,13 @@ void nr_dlsch_unscrambling(int16_t* llr,
 			   uint32_t Nid,
 			   uint32_t n_RNTI);
 
-int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                    const UE_nr_rxtx_proc_t *proc,
-                    int32_t pdcch_est_size,
-                    int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
-                    int16_t *pdcch_e_rx,
-                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-                    c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
+void nr_rx_pdcch(PHY_VARS_NR_UE *ue,
+                 const UE_nr_rxtx_proc_t *proc,
+                 int32_t pdcch_est_size,
+                 c16_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                 c16_t *pdcch_e_rx,
+                 fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
   @param phy_vars_ue Pointer to UE variables
@@ -361,15 +361,9 @@ void nr_sl_rf_card_config_freq(PHY_VARS_NR_UE *ue,
                                openair0_config_t *openair0_cfg,
                                int freq_offset);
 
-void nr_pdcch_unscrambling(int16_t *z,
-                           uint16_t scrambling_RNTI,
-                           uint32_t length,
-                           uint16_t pdcch_DMRS_scrambling_id,
-                           int16_t *z2);
-
 uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   const UE_nr_rxtx_proc_t *proc,
-                                  int16_t *pdcch_e_rx,
+                                  c16_t *pdcch_e_rx,
                                   fapi_nr_dci_indication_t *dci_ind,
                                   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 

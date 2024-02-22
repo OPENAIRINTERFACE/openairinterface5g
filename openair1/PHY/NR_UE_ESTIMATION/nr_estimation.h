@@ -54,7 +54,7 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                  uint16_t first_carrier_offset,
                                  uint16_t BWPStart,
                                  int32_t pdcch_est_size,
-                                 int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                                 c16_t pdcch_dl_ch_estimates[][pdcch_est_size],
                                  c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,

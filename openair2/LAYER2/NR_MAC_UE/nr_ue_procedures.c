@@ -377,8 +377,13 @@ int nr_ue_process_dci_indication_pdu(NR_UE_MAC_INST_t *mac,
 {
   dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][dci->dci_format];
 
-  LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
-	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
+  LOG_D(MAC,
+        "Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
+        dci->rnti,
+        dci->dci_format,
+        dci->n_CCE,
+        dci->payloadSize,
+        *(unsigned long long *)dci->payloadBits);
   const int ret = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, dci->ss_type, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15, slot);
   if ((ret & 1) == 1)
     return -1;
