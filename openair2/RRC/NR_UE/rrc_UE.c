@@ -70,6 +70,7 @@
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
 #include "nr_nas_msg_sim.h"
+#include "openair2/SDAP/nr_sdap/nr_sdap_entity.h"
 
 static NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 /* NAS Attach request with IMSI */
@@ -1234,9 +1235,12 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
         AssertFatal(drb->recoverPDCP == NULL, "recoverPDCP not yet implemented\n");
         /* sdap-Config is included (SA mode) */
         NR_SDAP_Config_t *sdap_Config = drb->cnAssociation ? drb->cnAssociation->choice.sdap_Config : NULL;
-        /* PDCP and SDAP reconfiguration */
-        if (drb->pdcp_Config || sdap_Config)
-          nr_pdcp_reconfigure_drb(ue_rrc->ue_id, DRB_id, drb->pdcp_Config, sdap_Config);
+        /* PDCP reconfiguration */
+        if (drb->pdcp_Config)
+          nr_pdcp_reconfigure_drb(ue_rrc->ue_id, DRB_id, drb->pdcp_Config);
+        /* SDAP entity reconfiguration */
+        if (sdap_Config)
+          nr_reconfigure_sdap_entity(sdap_Config, ue_rrc->ue_id, sdap_Config->pdu_Session, DRB_id);
       } else {
         ue_rrc->status_DRBs[DRB_id] = RB_ESTABLISHED;
         add_drb(false,

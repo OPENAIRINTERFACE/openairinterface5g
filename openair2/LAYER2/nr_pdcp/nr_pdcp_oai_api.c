@@ -1130,7 +1130,7 @@ void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering)
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_config, NR_SDAP_Config_t *sdap_config)
+void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_config)
 {
   // The enabling/disabling of ciphering or integrity protection
   // can be changed only by releasing and adding the DRB
@@ -1166,10 +1166,6 @@ void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_c
       }
     }
   }
-  /* SDAP entity reconfiguration */
-  if (sdap_config)
-    nr_reconfigure_sdap_entity(sdap_config, ue_id, sdap_config->pdu_Session, drb_id);
-
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 

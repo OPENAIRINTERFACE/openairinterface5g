@@ -67,7 +67,7 @@ void nr_pdcp_reestablishment(ue_id_t ue_id, int rb_id, bool srb_flag);
 void nr_pdcp_suspend_srb(ue_id_t ue_id, int srb_id);
 void nr_pdcp_suspend_drb(ue_id_t ue_id, int drb_id);
 void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering);
-void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_config, NR_SDAP_Config_t *sdap_config);
+void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_config);
 void nr_pdcp_release_srb(ue_id_t ue_id, int srb_id);
 void nr_pdcp_release_drb(ue_id_t ue_id, int drb_id);
 
