@@ -178,9 +178,6 @@ typedef struct rrcPerNB {
   NR_QuantityConfig_t *QuantityConfig;
   NR_MeasIdToAddMod_t *MeasId[MAX_MEAS_ID];
   NR_MeasGapConfig_t *measGapConfig;
-  NR_RB_status_t Srb[NR_NUM_SRB];
-  NR_RB_status_t status_DRBs[MAX_DRBS_PER_UE];
-  bool active_RLC_entity[NR_MAX_NUM_LCID];
   NR_UE_RRC_SI_INFO SInfo;
   NR_RSRP_Range_t s_measure;
 } rrcPerNB_t;
@@ -198,6 +195,10 @@ typedef struct NR_UE_RRC_INST_s {
 
   NR_BWP_Id_t dl_bwp_id;
   NR_BWP_Id_t ul_bwp_id;
+
+  NR_RB_status_t Srb[NR_NUM_SRB];
+  NR_RB_status_t status_DRBs[MAX_DRBS_PER_UE];
+  bool active_RLC_entity[NR_MAX_NUM_LCID];
 
   /* KgNB as computed from parameters within USIM card */
   uint8_t kgnb[32];
