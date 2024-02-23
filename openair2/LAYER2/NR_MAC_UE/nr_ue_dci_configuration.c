@@ -121,7 +121,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
     coreset = ue_get_coreset(pdcch_config, coreset_id);
     rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   } else {
-    coreset = pdcch_config->coreset0;
+    coreset = mac->coreset0;
     rel15->coreset.CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
   }
 
@@ -483,22 +483,22 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
                                           mac->mib_ssb,
                                           1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
                                           ssb_offset_point_a);
-    if (pdcch_config->search_space_zero == NULL)
-      pdcch_config->search_space_zero = calloc(1, sizeof(*pdcch_config->search_space_zero));
-    if (pdcch_config->coreset0 == NULL)
-      pdcch_config->coreset0 = calloc(1, sizeof(*pdcch_config->coreset0));
-    fill_coresetZero(pdcch_config->coreset0, &mac->type0_PDCCH_CSS_config);
-    fill_searchSpaceZero(pdcch_config->search_space_zero, slots_per_frame, &mac->type0_PDCCH_CSS_config);
-    if (is_ss_monitor_occasion(frame, slot, slots_per_frame, pdcch_config->search_space_zero)) {
+    if (mac->search_space_zero == NULL)
+      mac->search_space_zero = calloc(1, sizeof(*mac->search_space_zero));
+    if (mac->coreset0 == NULL)
+      mac->coreset0 = calloc(1, sizeof(*mac->coreset0));
+    fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
+    fill_searchSpaceZero(mac->search_space_zero, slots_per_frame, &mac->type0_PDCCH_CSS_config);
+    if (is_ss_monitor_occasion(frame, slot, slots_per_frame, mac->search_space_zero)) {
       LOG_D(NR_MAC, "Monitoring DCI for SIB1 in frame %d slot %d\n", frame, slot);
-      config_dci_pdu(mac, dl_config, TYPE_SI_RNTI_, slot, pdcch_config->search_space_zero);
+      config_dci_pdu(mac, dl_config, TYPE_SI_RNTI_, slot, mac->search_space_zero);
     }
   }
   if (mac->get_otherSI) {
     // If searchSpaceOtherSystemInformation is set to zero,
     // PDCCH monitoring occasions for SI message reception in SI-window
     // are same as PDCCH monitoring occasions for SIB1
-    const NR_SearchSpace_t *ss = pdcch_config->otherSI_SS ? pdcch_config->otherSI_SS : pdcch_config->search_space_zero;
+    const NR_SearchSpace_t *ss = pdcch_config->otherSI_SS ? pdcch_config->otherSI_SS : mac->search_space_zero;
     // TODO configure SI-window
     if (monitior_dci_for_other_SI(mac, ss, slots_per_frame, frame, slot)) {
       LOG_D(NR_MAC, "Monitoring DCI for other SIs in frame %d slot %d\n", frame, slot);

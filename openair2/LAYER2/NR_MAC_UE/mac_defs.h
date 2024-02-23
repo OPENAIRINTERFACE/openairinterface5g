@@ -446,9 +446,7 @@ typedef struct {
   NR_SearchSpace_t *otherSI_SS;
   NR_SearchSpace_t *ra_SS;
   NR_SearchSpace_t *paging_SS;
-  NR_ControlResourceSet_t *coreset0;
   NR_ControlResourceSet_t *commonControlResourceSet;
-  NR_SearchSpace_t *search_space_zero;
   A_SEQUENCE_OF(NR_ControlResourceSet_t) list_Coreset;
   A_SEQUENCE_OF(NR_SearchSpace_t) list_SS;
 } NR_BWP_PDCCH_t;
@@ -472,6 +470,8 @@ typedef struct NR_UE_MAC_INST_s {
   A_SEQUENCE_OF(NR_UE_DL_BWP_t) dl_BWPs;
   A_SEQUENCE_OF(NR_UE_UL_BWP_t) ul_BWPs;
   NR_BWP_PDCCH_t config_BWP_PDCCH[MAX_NUM_BWP_UE];
+  NR_ControlResourceSet_t *coreset0;
+  NR_SearchSpace_t *search_space_zero;
   NR_UE_DL_BWP_t *current_DL_BWP;
   NR_UE_UL_BWP_t *current_UL_BWP;
 
