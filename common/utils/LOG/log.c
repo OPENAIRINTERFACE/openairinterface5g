@@ -497,6 +497,7 @@ int logInit (void)
   register_log_component("GNB_APP","log",GNB_APP);
   register_log_component("NR_RRC","log",NR_RRC);
   register_log_component("NR_MAC","log",NR_MAC);
+  register_log_component("NR_DCI", "log", NR_DCI);
   register_log_component("NR_PHY","log",NR_PHY);
   register_log_component("NGAP","",NGAP);
   register_log_component("ITTI","log",ITTI);

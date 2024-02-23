@@ -58,11 +58,9 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
-//#define DEBUG_MIB
-//#define ENABLE_MAC_PAYLOAD_DEBUG 1
-//#define DEBUG_EXTRACT_DCI
-//#define DEBUG_RAR
-
+// #define DEBUG_MIB
+// #define ENABLE_MAC_PAYLOAD_DEBUG 1
+// #define DEBUG_RAR
 extern uint32_t N_RB_DL;
 
 /* TS 38.213 9.2.5.2 UE procedure for multiplexing HARQ-ACK/SR and CSI in a PUCCH */
@@ -165,33 +163,32 @@ const initial_pucch_resource_t initial_pucch_resource[16] = {
 /* 15  */ {  1,       0,                 14,                   0,            4,       {    0,   3,    6,    9  }   },
 };
 static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-                                   nr_dci_format_t dci_format,
-                                   uint8_t dci_size,
-                                   uint16_t rnti,
-                                   int ss_type,
-                                   uint64_t *dci_pdu,
+                                   const nr_dci_format_t dci_format,
+                                   const uint8_t dci_size,
+                                   const uint16_t rnti,
+                                   const int ss_type,
+                                   const uint8_t *dci_pdu,
                                    dci_pdu_rel15_t *dci_pdu_rel15,
-                                   int slot);
+                                   const int slot);
 
-int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
+int get_rnti_type(const NR_UE_MAC_INST_t *mac, const uint16_t rnti)
 {
+  const RA_config_t *ra = &mac->ra;
+  nr_rnti_type_t rnti_type;
 
-    RA_config_t *ra = &mac->ra;
-    nr_rnti_type_t rnti_type;
-
-    if (rnti == ra->ra_rnti) {
-      rnti_type = TYPE_RA_RNTI_;
-    } else if (rnti == ra->t_crnti && (ra->ra_state == WAIT_RAR || ra->ra_state == WAIT_CONTENTION_RESOLUTION) ) {
-      rnti_type = TYPE_TC_RNTI_;
-    } else if (rnti == mac->crnti) {
-      rnti_type = TYPE_C_RNTI_;
-    } else if (rnti == 0xFFFE) {
-      rnti_type = TYPE_P_RNTI_;
-    } else if (rnti == 0xFFFF) {
-      rnti_type = TYPE_SI_RNTI_;
-    } else {
-      AssertFatal(1 == 0, "Not identified/handled rnti %d \n", rnti);
-    }
+  if (rnti == ra->ra_rnti) {
+    rnti_type = TYPE_RA_RNTI_;
+  } else if (rnti == ra->t_crnti && (ra->ra_state == WAIT_RAR || ra->ra_state == WAIT_CONTENTION_RESOLUTION)) {
+    rnti_type = TYPE_TC_RNTI_;
+  } else if (rnti == mac->crnti) {
+    rnti_type = TYPE_C_RNTI_;
+  } else if (rnti == 0xFFFE) {
+    rnti_type = TYPE_P_RNTI_;
+  } else if (rnti == 0xFFFF) {
+    rnti_type = TYPE_SI_RNTI_;
+  } else {
+    AssertFatal(1 == 0, "Not identified/handled rnti %d \n", rnti);
+  }
 
     LOG_D(MAC, "Returning rnti_type %s \n", rnti_types(rnti_type));
 
@@ -384,7 +381,14 @@ int nr_ue_process_dci_indication_pdu(NR_UE_MAC_INST_t *mac,
         dci->n_CCE,
         dci->payloadSize,
         *(unsigned long long *)dci->payloadBits);
-  const int ret = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, dci->ss_type, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15, slot);
+  const int ret = nr_extract_dci_info(mac,
+                                      dci->dci_format,
+                                      dci->payloadSize,
+                                      dci->rnti,
+                                      dci->ss_type,
+                                      dci->payloadBits,
+                                      def_dci_pdu_rel15,
+                                      slot);
   if ((ret & 1) == 1)
     return -1;
   else if (ret == 2) {
@@ -1364,10 +1368,11 @@ int nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
   // only for ack/nack
   if (pucch->initial_pucch_id > -1 &&
       pucch->pucch_resource == NULL) {
-    int pucch_resourcecommon = *current_UL_BWP->pucch_ConfigCommon->pucch_ResourceCommon;
-    pucch_pdu->format_type = initial_pucch_resource[pucch_resourcecommon].format;
-    pucch_pdu->start_symbol_index = initial_pucch_resource[pucch_resourcecommon].startingSymbolIndex;
-    pucch_pdu->nr_of_symbols = initial_pucch_resource[pucch_resourcecommon].nrofSymbols;
+    const int idx = *current_UL_BWP->pucch_ConfigCommon->pucch_ResourceCommon;
+    const initial_pucch_resource_t pucch_resourcecommon = initial_pucch_resource[idx];
+    pucch_pdu->format_type = pucch_resourcecommon.format;
+    pucch_pdu->start_symbol_index = pucch_resourcecommon.startingSymbolIndex;
+    pucch_pdu->nr_of_symbols = pucch_resourcecommon.nrofSymbols;
 
     pucch_pdu->bwp_size = current_UL_BWP->BWPSize;
     pucch_pdu->bwp_start = current_UL_BWP->BWPStart;
@@ -1377,18 +1382,20 @@ int nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     if (pucch->initial_pucch_id == 15)
       RB_BWP_offset = pucch_pdu->bwp_size >> 2;
     else
-      RB_BWP_offset = initial_pucch_resource[pucch_resourcecommon].PRB_offset;
+      RB_BWP_offset = pucch_resourcecommon.PRB_offset;
 
-    int N_CS = initial_pucch_resource[pucch_resourcecommon].nb_CS_indexes;
+    int N_CS = pucch_resourcecommon.nb_CS_indexes;
 
     if (pucch->initial_pucch_id >> 3 == 0) {
-      pucch_pdu->prb_start = RB_BWP_offset + (pucch->initial_pucch_id / N_CS);
-      pucch_pdu->second_hop_prb = pucch_pdu->bwp_size - 1 - RB_BWP_offset - (pucch->initial_pucch_id / N_CS);
-      pucch_pdu->initial_cyclic_shift = initial_pucch_resource[pucch_resourcecommon].initial_CS_indexes[pucch->initial_pucch_id % N_CS];
+      const int tmp = pucch->initial_pucch_id / N_CS;
+      pucch_pdu->prb_start = RB_BWP_offset + tmp;
+      pucch_pdu->second_hop_prb = pucch_pdu->bwp_size - 1 - RB_BWP_offset - tmp;
+      pucch_pdu->initial_cyclic_shift = pucch_resourcecommon.initial_CS_indexes[pucch->initial_pucch_id % N_CS];
     } else {
-      pucch_pdu->prb_start = pucch_pdu->bwp_size - 1 - RB_BWP_offset - ((pucch->initial_pucch_id - 8) / N_CS);
-      pucch_pdu->second_hop_prb = RB_BWP_offset + ((pucch->initial_pucch_id - 8) / N_CS);
-      pucch_pdu->initial_cyclic_shift = initial_pucch_resource[pucch_resourcecommon].initial_CS_indexes[(pucch->initial_pucch_id - 8) % N_CS];
+      const int tmp = (pucch->initial_pucch_id - 8) / N_CS;
+      pucch_pdu->prb_start = pucch_pdu->bwp_size - 1 - RB_BWP_offset - tmp;
+      pucch_pdu->second_hop_prb = RB_BWP_offset + tmp;
+      pucch_pdu->initial_cyclic_shift = pucch_resourcecommon.initial_CS_indexes[(pucch->initial_pucch_id - 8) % N_CS];
     }
     pucch_pdu->freq_hop_flag = 1;
     pucch_pdu->time_domain_occ_idx = 0;
@@ -1413,12 +1420,14 @@ int nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     NR_PUSCH_Config_t *pusch_Config = current_UL_BWP ? current_UL_BWP->pusch_Config : NULL;
     if (pusch_Config) {
       pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
-      if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL &&
-          pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled != NULL)
-        id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
-      else if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL &&
-               pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled != NULL)
-        id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
+      struct NR_SetupRelease_DMRS_UplinkConfig *tmp = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA;
+      if (tmp && tmp->choice.setup->transformPrecodingDisabled != NULL)
+        id0 = tmp->choice.setup->transformPrecodingDisabled->scramblingID0;
+      else {
+        struct NR_SetupRelease_DMRS_UplinkConfig *tmp = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB;
+        if (tmp && tmp->choice.setup->transformPrecodingDisabled != NULL)
+          id0 = tmp->choice.setup->transformPrecodingDisabled->scramblingID0;
+      }
     }
 
     NR_PUCCH_Config_t *pucch_Config = current_UL_BWP->pucch_Config;
@@ -2886,21 +2895,33 @@ void nr_ue_send_sdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_info, in
 
 }
 
-static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-                                   nr_dci_format_t dci_format,
-                                   uint8_t dci_size,
-                                   uint16_t rnti,
-                                   int ss_type,
-                                   uint64_t *dci_pdu,
-                                   dci_pdu_rel15_t *dci_pdu_rel15,
-                                   int slot)
+// #define EXTRACT_DCI_ITEM(val,size) val= readBits(dci_pdu, &pos, size);
+#define EXTRACT_DCI_ITEM(val, size)           \
+  val = readBits(dci_pdu, &pos, size); \
+  LOG_D(NR_DCI, "     " #val ": %d\n", val);
+
+// Fixme: Intel Endianess only procedure
+static inline int readBits(const uint8_t *dci, int *start, int length)
 {
-  LOG_D(MAC,"nr_extract_dci_info : dci_pdu %lx, size %d, format %d\n", *dci_pdu, dci_size, dci_format);
-  int pos = 0;
-  int fsize = 0;
-  int rnti_type = get_rnti_type(mac, rnti);
-  NR_UE_DL_BWP_t *current_DL_BWP = mac->current_DL_BWP;
-  NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
+  const int mask[] = {0, 1, 3, 7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff, 0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff};
+  uint64_t *tmp = (uint64_t *)dci;
+  *start -= length;
+  return *tmp >> *start & mask[length];
+}
+
+static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+                                   const nr_dci_format_t dci_format,
+                                   const uint8_t dci_size,
+                                   const uint16_t rnti,
+                                   const int ss_type,
+                                   const uint8_t *dci_pdu,
+                                   dci_pdu_rel15_t *dci_pdu_rel15,
+                                   const int slot)
+{
+  LOG_D(NR_MAC, "nr_extract_dci_info : dci_pdu %lx, size %d, format %d\n", *(uint64_t *)dci_pdu, dci_size, dci_format);
+  const int rnti_type = get_rnti_type(mac, rnti);
+  const NR_UE_DL_BWP_t *current_DL_BWP = mac->current_DL_BWP;
+  const NR_UE_UL_BWP_t *current_UL_BWP = mac->current_UL_BWP;
   int N_RB;
   if(current_DL_BWP)
     N_RB = get_rb_bwp_dci(dci_format,
@@ -2917,173 +2938,82 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     LOG_E(MAC, "DCI configuration error! N_RB = 0\n");
     return 1;
   }
-
+  int pos = dci_size;
   switch(dci_format) {
 
   case NR_DL_DCI_FORMAT_1_0:
 
     switch(rnti_type) {
       case TYPE_RA_RNTI_:
+        LOG_D(NR_DCI, "Received dci 1_0 RA rnti\n");
         // Freq domain assignment
-        fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-        pos = fsize;
-        dci_pdu_rel15->frequency_domain_assignment.val = *dci_pdu >> (dci_size - pos) & ((1 << fsize) - 1);
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"frequency-domain assignment %d (%d bits) N_RB_BWP %d=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment.val,fsize,N_RB,dci_size-pos,*dci_pdu);
-#endif
-      // Time domain assignment
-      pos+=4;
-      dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu >> (dci_size-pos))&0xf;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"time-domain assignment %d  (4 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment.val,dci_size-pos,*dci_pdu);
-#endif
-      // VRB to PRB mapping
-	
-      pos++;
-      dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&0x1;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"vrb to prb mapping %d  (1 bits)=> %d (0x%lx)\n",dci_pdu_rel15->vrb_to_prb_mapping.val,dci_size-pos,*dci_pdu);
-#endif
-      // MCS
-      pos+=5;
-      dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"mcs %d  (5 bits)=> %d (0x%lx)\n",dci_pdu_rel15->mcs,dci_size-pos,*dci_pdu);
-#endif
-      // TB scaling
-      pos+=2;
-      dci_pdu_rel15->tb_scaling = (*dci_pdu>>(dci_size-pos))&0x3;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"tb_scaling %d  (2 bits)=> %d (0x%lx)\n",dci_pdu_rel15->tb_scaling,dci_size-pos,*dci_pdu);
-#endif
-      break;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)));
+        // Time domain assignment
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->time_domain_assignment.val, 4);
+        // VRB to PRB mapping
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->vrb_to_prb_mapping.val, 1);
+        // MCS
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs, 5);
+        // TB scaling
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->tb_scaling, 2);
+        break;
 
       case TYPE_C_RNTI_:
-
+        LOG_D(NR_DCI, "Received dci 1_0 C rnti\n");
         // Identifier for DCI formats
-        pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
         // switch to DCI_0_0
         if (dci_pdu_rel15->format_indicator == 0) {
           dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_UL_DCI_FORMAT_0_0];
+          LOG_D(NR_DCI, "received dci 1_0 c_ rnti, switching to dci 0_0\n");
           return 2 + nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
         }
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
-#endif
 
-     // Freq domain assignment (275rb >> fsize = 16)
-      fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-      pos+=fsize;
-      dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
-  	
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment.val,fsize,dci_size-pos,*dci_pdu);
-#endif
-    	
-      uint16_t is_ra = 1;
-      for (int i=0; i<fsize; i++)
-	if (!((dci_pdu_rel15->frequency_domain_assignment.val>>i)&1)) {
-	  is_ra = 0;
-	  break;
-	}
-      if (is_ra) //fsize are all 1  38.212 p86
-	{
-	  // ra_preamble_index 6 bits
-	  pos+=6;
-	  dci_pdu_rel15->ra_preamble_index = (*dci_pdu>>(dci_size-pos))&0x3f;
-	    
-	  // UL/SUL indicator  1 bit
-	  pos++;
-	  dci_pdu_rel15->ul_sul_indicator.val = (*dci_pdu>>(dci_size-pos))&1;
-	    
-	  // SS/PBCH index  6 bits
-	  pos+=6;
-	  dci_pdu_rel15->ss_pbch_index = (*dci_pdu>>(dci_size-pos))&0x3f;
-	    
-	  //  prach_mask_index  4 bits
-	  pos+=4;
-	  dci_pdu_rel15->prach_mask_index = (*dci_pdu>>(dci_size-pos))&0xf;
-	    
-	}  //end if
-      else {
-	  
-	// Time domain assignment 4bit
-		  
-	pos+=4;
-	dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"Time domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment.val,4,dci_size-pos,*dci_pdu);
-#endif
-	  
-	// VRB to PRB mapping  1bit
-	pos++;
-	dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&1;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"VRB to PRB %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->vrb_to_prb_mapping.val,1,dci_size-pos,*dci_pdu);
-#endif
-	
-	// MCS 5bit  //bit over 32, so dci_pdu ++
-	pos+=5;
-	dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"MCS %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->mcs,5,dci_size-pos,*dci_pdu);
-#endif
-	  
-	// New data indicator 1bit
-	pos++;
-	dci_pdu_rel15->ndi = (*dci_pdu>>(dci_size-pos))&1;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"NDI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->ndi,1,dci_size-pos,*dci_pdu);
-#endif      
-	  
-	// Redundancy version  2bit
-	pos+=2;
-	dci_pdu_rel15->rv = (*dci_pdu>>(dci_size-pos))&0x3;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"RV %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->rv,2,dci_size-pos,*dci_pdu);
-#endif
-	  
-	// HARQ process number  4bit
-	pos+=4;
-	dci_pdu_rel15->harq_pid  = (*dci_pdu>>(dci_size-pos))&0xf;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"HARQ_PID %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->harq_pid,4,dci_size-pos,*dci_pdu);
-#endif
-	  
-	// Downlink assignment index  2bit
-	pos+=2;
-	dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&3;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"DAI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->dai[0].val,2,dci_size-pos,*dci_pdu);
-#endif
-	  
-	// TPC command for scheduled PUCCH  2bit
-	pos+=2;
-	dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&3;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"TPC %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->tpc,2,dci_size-pos,*dci_pdu);
-#endif
-	  
-	// PUCCH resource indicator  3bit
-	pos+=3;
-	dci_pdu_rel15->pucch_resource_indicator = (*dci_pdu>>(dci_size-pos))&0x7;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"PUCCH RI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->pucch_resource_indicator,3,dci_size-pos,*dci_pdu);
-#endif
-	  
-	// PDSCH-to-HARQ_feedback timing indicator 3bit
-	pos+=3;
-	dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&0x7;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"PDSCH to HARQ TI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val,3,dci_size-pos,*dci_pdu);
-#endif
-	  
-      } //end else
-      break;
+        // Freq domain assignment (275rb >> fsize = 16)
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)));
+
+        bool is_ra = true;
+        for (int i = 0; i < dci_pdu_rel15->frequency_domain_assignment.val; i++)
+          if (!((dci_pdu_rel15->frequency_domain_assignment.val >> i) & 1)) {
+            is_ra = false;
+            break;
+          }
+        if (is_ra) // fsize are all 1  38.212 p86
+        {
+          // ra_preamble_index 6 bits
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->ra_preamble_index, 6);
+          // UL/SUL indicator  1 bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->ul_sul_indicator.val, 1);
+          // SS/PBCH index  6 bits
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->ss_pbch_index, 6);
+          //  prach_mask_index  4 bits
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->prach_mask_index, 4);
+        } else {
+          // Time domain assignment 4bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->time_domain_assignment.val, 4);
+          // VRB to PRB mapping  1bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->vrb_to_prb_mapping.val, 1);
+          // MCS 5bit  //bit over 32, so dci_pdu ++
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs, 5);
+          // New data indicator 1bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->ndi, 1);
+          // Redundancy version  2bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->rv, 2);
+          // HARQ process number  4bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->harq_pid, 4);
+          // Downlink assignment index  2bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->dai[0].val, 2);
+          // TPC command for scheduled PUCCH  2bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->tpc, 2);
+          // PUCCH resource indicator  3bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->pucch_resource_indicator, 3);
+          // PDSCH-to-HARQ_feedback timing indicator 3bit
+          EXTRACT_DCI_ITEM(dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val, 3);
+        }
+        break;
 
       case TYPE_P_RNTI_:
+        LOG_D(NR_DCI, "Received dci 1_0 P rnti\n");
         /*
         // Short Messages Indicator  E2 bits
         for (int i=0; i<2; i++)
@@ -3112,340 +3042,197 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
 
       case TYPE_SI_RNTI_:
+        LOG_D(NR_DCI, "Received dci 1_0 SI rnti\n");
         // Freq domain assignment 0-16 bit
-        fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-        pos += fsize;
-        dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu >> (dci_size - pos)) & ((1 << fsize) - 1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)));
         // Time domain assignment 4 bit
-        pos += 4;
-        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu >> (dci_size - pos)) & 0xf;
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->time_domain_assignment.val, 4);
         // VRB to PRB mapping 1 bit
-        pos++;
-        dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu >> (dci_size - pos)) & 0x1;
-
-        // MCS 5bit  //bit over 32, so dci_pdu ++
-        pos += 5;
-        dci_pdu_rel15->mcs = (*dci_pdu >> (dci_size - pos)) & 0x1f;
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->vrb_to_prb_mapping.val, 1);
+        // MCS 5bit  //bit over 32
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs, 5);
         // Redundancy version  2 bit
-        pos += 2;
-        dci_pdu_rel15->rv = (*dci_pdu >> (dci_size - pos)) & 3;
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->rv, 2);
         // System information indicator 1 bit
-        pos++;
-        dci_pdu_rel15->system_info_indicator = (*dci_pdu >> (dci_size - pos)) & 0x1;
-
-        LOG_D(MAC, "N_RB = %i\n", N_RB);
-        LOG_D(MAC, "dci_size = %i\n", dci_size);
-        LOG_D(MAC, "fsize = %i\n", fsize);
-        LOG_D(MAC, "dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
-        LOG_D(MAC, "dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
-        LOG_D(MAC, "dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
-        LOG_D(MAC, "dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
-        LOG_D(MAC, "dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
-        LOG_D(MAC, "dci_pdu_rel15->system_info_indicator = %i\n", dci_pdu_rel15->system_info_indicator);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->system_info_indicator, 1);
         break;
 
       case TYPE_TC_RNTI_:
+        LOG_D(NR_DCI, "Received dci 1_0 TC rnti\n");
 
         // indicating a DL DCI format 1bit
-        pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
 
         // switch to DCI_0_0
         if (dci_pdu_rel15->format_indicator == 0) {
           dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_UL_DCI_FORMAT_0_0];
+          LOG_D(NR_DCI, "received dci 1_0 tc_ rnti, switching to dci 0_0\n");
           return 2 + nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
         }
 
         // Freq domain assignment 0-16 bit
-      fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-      pos+=fsize;
-      dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
-
-      // Time domain assignment - 4 bits
-      pos+=4;
-      dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
-
-      // VRB to PRB mapping - 1 bit
-      pos++;
-      dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&1;
-
-      // MCS 5bit  //bit over 32, so dci_pdu ++
-      pos+=5;
-      dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
-
-      // New data indicator - 1 bit
-      pos++;
-      dci_pdu_rel15->ndi = (*dci_pdu>>(dci_size-pos))&1;
-
-      // Redundancy version - 2 bits
-      pos+=2;
-      dci_pdu_rel15->rv = (*dci_pdu>>(dci_size-pos))&3;
-
-      // HARQ process number - 4 bits
-      pos+=4;
-      dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
-
-      // Downlink assignment index - 2 bits
-      pos+=2;
-      dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&3;
-
-      // TPC command for scheduled PUCCH - 2 bits
-      pos+=2;
-      dci_pdu_rel15->tpc  = (*dci_pdu>>(dci_size-pos))&3;
-
-      // PUCCH resource indicator - 3 bits
-      pos+=3;
-      dci_pdu_rel15->pucch_resource_indicator = (*dci_pdu>>(dci_size-pos))&7;
-
-      // PDSCH-to-HARQ_feedback timing indicator - 3 bits
-      pos+=3;
-      dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&7;
-
-      LOG_D(NR_MAC,"N_RB = %i\n", N_RB);
-      LOG_D(NR_MAC,"dci_size = %i\n", dci_size);
-      LOG_D(NR_MAC,"fsize = %i\n", fsize);
-      LOG_D(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
-      LOG_D(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
-      LOG_D(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
-      LOG_D(NR_MAC,"dci_pdu_rel15->vrb_to_prb_mapping.val = %i\n", dci_pdu_rel15->vrb_to_prb_mapping.val);
-      LOG_D(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
-      LOG_D(NR_MAC,"dci_pdu_rel15->rv = %i\n", dci_pdu_rel15->rv);
-      LOG_D(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
-      LOG_D(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
-      LOG_D(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
-      LOG_D(NR_MAC,"dci_pdu_rel15->pucch_resource_indicator = %i\n", dci_pdu_rel15->pucch_resource_indicator);
-      LOG_D(NR_MAC,"dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = %i\n", dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val);
-
-      break;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)));
+        // Time domain assignment - 4 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->time_domain_assignment.val, 4);
+        // VRB to PRB mapping - 1 bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->vrb_to_prb_mapping.val, 1);
+        // MCS 5bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs, 5);
+        // New data indicator - 1 bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ndi, 1);
+        // Redundancy version - 2 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->rv, 2);
+        // HARQ process number - 4 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->harq_pid, 4);
+        // Downlink assignment index - 2 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->dai[0].val, 2);
+        // TPC command for scheduled PUCCH - 2 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->tpc, 2);
+        // PUCCH resource indicator - 3 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->pucch_resource_indicator, 3);
+        // PDSCH-to-HARQ_feedback timing indicator - 3 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val, 3);
+        break;
+      default:
+        LOG_W(NR_DCI, "Received dci 1_0 unknown rnti type: %d\n", rnti_type);
     }
     break;
-  
+
   case NR_UL_DCI_FORMAT_0_0:
     switch(rnti_type)
       {
       case TYPE_C_RNTI_:
+        LOG_D(NR_DCI, "Received dci 0_0 C rnti\n");
         // Identifier for DCI formats
-        pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"Format indicator %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,dci_size-pos,*dci_pdu);
-#endif
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
         if (dci_pdu_rel15->format_indicator == 1)
           return 1; // discard dci, format indicator not corresponding to dci_format
-	fsize = dci_pdu_rel15->frequency_domain_assignment.nbits;
-	pos+=fsize;
-	dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment.val,fsize,dci_size-pos,*dci_pdu);
-#endif
-	// Time domain assignment 4bit
-	pos+=4;
-	dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"time-domain assignment %d  (4 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment.val,dci_size-pos,*dci_pdu);
-#endif
-	// Frequency hopping flag  E1 bit
-	pos++;
-	dci_pdu_rel15->frequency_hopping_flag.val= (*dci_pdu>>(dci_size-pos))&1;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"frequency_hopping %d  (1 bit)=> %d (0x%lx)\n",dci_pdu_rel15->frequency_hopping_flag.val,dci_size-pos,*dci_pdu);
-#endif
-	// MCS  5 bit
-	pos+=5;
-	dci_pdu_rel15->mcs= (*dci_pdu>>(dci_size-pos))&0x1f;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_D(MAC,"mcs %d  (5 bits)=> %d (0x%lx)\n",dci_pdu_rel15->mcs,dci_size-pos,*dci_pdu);
-#endif
-	// New data indicator 1bit
-	pos++;
-	dci_pdu_rel15->ndi= (*dci_pdu>>(dci_size-pos))&1;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"NDI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->ndi,1,dci_size-pos,*dci_pdu);
-#endif
-	// Redundancy version  2bit
-	pos+=2;
-	dci_pdu_rel15->rv= (*dci_pdu>>(dci_size-pos))&3;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"RV %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->rv,2,dci_size-pos,*dci_pdu);
-#endif
-	// HARQ process number  4bit
-	pos+=4;
-	dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"HARQ_PID %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->harq_pid,4,dci_size-pos,*dci_pdu);
-#endif
-	// TPC command for scheduled PUSCH  E2 bits
-	pos+=2;
-	dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&3;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_D(MAC,"TPC %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->tpc,2,dci_size-pos,*dci_pdu);
-#endif
-	// UL/SUL indicator  E1 bit
-	/* commented for now (RK): need to get this from BWP descriptor
-	   if (cfg->pucch_config.pucch_GroupHopping.value)
-	   dci_pdu->= ((uint64_t)*dci_pdu>>(dci_size-pos)ul_sul_indicator&1)<<(dci_size-pos++);
-	*/
-	break;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, dci_pdu_rel15->frequency_domain_assignment.nbits);
+        // Time domain assignment 4bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->time_domain_assignment.val, 4);
+        // Frequency hopping flag  E1 bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_hopping_flag.val, 1);
+        // MCS  5 bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs, 5);
+        // New data indicator 1bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ndi, 1);
+        // Redundancy version  2bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->rv, 2);
+        // HARQ process number  4bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->harq_pid, 4);
+        // TPC command for scheduled PUSCH  E2 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->tpc, 2);
+        // UL/SUL indicator  E1 bit
+        /* commented for now (RK): need to get this from BWP descriptor
+           if (cfg->pucch_config.pucch_GroupHopping.value)
+           dci_pdu->= ((uint64_t)readBits(dci_pdu,>>(dci_size-pos)ul_sul_indicator&1)<<(dci_size-pos++);
+        */
+        break;
 
       case TYPE_TC_RNTI_:
+        LOG_D(NR_DCI, "Received dci 1_0 TC rnti\n");
         // Identifier for DCI formats
-        pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_I(MAC,"Format indicator %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,dci_size-pos,*dci_pdu);
-#endif
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
         //switch to DCI_1_0
         if (dci_pdu_rel15->format_indicator == 1) {
           dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_DL_DCI_FORMAT_1_0];
+          LOG_D(NR_DCI, "received dci 0_0 tc_ rnti, switching to dci 0_0\n");
           return 2 + nr_extract_dci_info(mac, NR_DL_DCI_FORMAT_1_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
         }
 
-	fsize = dci_pdu_rel15->frequency_domain_assignment.nbits;
-	pos+=fsize;
-	dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_I(MAC,"Freq domain assignment %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->frequency_domain_assignment.val,fsize,dci_size-pos,*dci_pdu);
-#endif
-	// Time domain assignment 4bit
-	pos+=4;
-	dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&0xf;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_I(MAC,"time-domain assignment %d  (4 bits)=> %d (0x%lx)\n",dci_pdu_rel15->time_domain_assignment.val,dci_size-pos,*dci_pdu);
-#endif
-	// Frequency hopping flag  E1 bit
-	pos++;
-	dci_pdu_rel15->frequency_hopping_flag.val= (*dci_pdu>>(dci_size-pos))&1;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_I(MAC,"frequency_hopping %d  (1 bit)=> %d (0x%lx)\n",dci_pdu_rel15->frequency_hopping_flag.val,dci_size-pos,*dci_pdu);
-#endif
-	// MCS  5 bit
-	pos+=5;
-	dci_pdu_rel15->mcs= (*dci_pdu>>(dci_size-pos))&0x1f;
-#ifdef DEBUG_EXTRACT_DCI
-      LOG_I(MAC,"mcs %d  (5 bits)=> %d (0x%lx)\n",dci_pdu_rel15->mcs,dci_size-pos,*dci_pdu);
-#endif
-	// New data indicator 1bit
-	pos++;
-	dci_pdu_rel15->ndi= (*dci_pdu>>(dci_size-pos))&1;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_I(MAC,"NDI %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->ndi,1,dci_size-pos,*dci_pdu);
-#endif
-	// Redundancy version  2bit
-	pos+=2;
-	dci_pdu_rel15->rv= (*dci_pdu>>(dci_size-pos))&3;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_I(MAC,"RV %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->rv,2,dci_size-pos,*dci_pdu);
-#endif
-	// HARQ process number  4bit
-	pos+=4;
-	dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_I(MAC,"HARQ_PID %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->harq_pid,4,dci_size-pos,*dci_pdu);
-#endif
-	// TPC command for scheduled PUSCH  E2 bits
-	pos+=2;
-	dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&3;
-#ifdef DEBUG_EXTRACT_DCI
-	LOG_I(MAC,"TPC %d (%d bits)=> %d (0x%lx)\n",dci_pdu_rel15->tpc,2,dci_size-pos,*dci_pdu);
-#endif
-	break;
-	
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, dci_pdu_rel15->frequency_domain_assignment.nbits);
+        // Time domain assignment 4bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->time_domain_assignment.val, 4);
+        // Frequency hopping flag  E1 bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_hopping_flag.val, 1);
+        // MCS  5 bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs, 5);
+        // New data indicator 1bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ndi, 1);
+        // Redundancy version  2bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->rv, 2);
+        // HARQ process number  4bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->harq_pid, 4);
+        // TPC command for scheduled PUSCH  E2 bits
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->tpc, 2);
+        break;
+
+      default:
+        LOG_W(NR_DCI, "Received dci 0_0 unknown rnti type: %d\n", rnti_type);
       }
+
     break;
 
   case NR_DL_DCI_FORMAT_1_1:
     switch(rnti_type)
       {
       case TYPE_C_RNTI_:
+        LOG_D(NR_DCI, "Received dci 1_1 C rnti\n");
+
         // Identifier for DCI formats
-        pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu >> (dci_size - pos)) & 1;
-        if (dci_pdu_rel15->format_indicator == 0)
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
+        if (dci_pdu_rel15->format_indicator == 0) {
+          LOG_W(NR_DCI, "Received dci 1_1 C rnti and format indicator 0, discarding\n");
           return 1; // discard dci, format indicator not corresponding to dci_format
+        }
         // Carrier indicator
-        pos+=dci_pdu_rel15->carrier_indicator.nbits;
-        dci_pdu_rel15->carrier_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->carrier_indicator.nbits)-1);
-        // BWP Indicator
-        pos+=dci_pdu_rel15->bwp_indicator.nbits;
-        dci_pdu_rel15->bwp_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->bwp_indicator.nbits)-1);
+
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->carrier_indicator.val, dci_pdu_rel15->carrier_indicator.nbits);
+        // BWP Indicator&
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->bwp_indicator.val, dci_pdu_rel15->bwp_indicator.nbits);
         // Frequency domain resource assignment
-        pos+=dci_pdu_rel15->frequency_domain_assignment.nbits;
-        dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->frequency_domain_assignment.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, dci_pdu_rel15->frequency_domain_assignment.nbits);
         // Time domain resource assignment
-        pos+=dci_pdu_rel15->time_domain_assignment.nbits;
-        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->time_domain_assignment.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->time_domain_assignment.val, dci_pdu_rel15->time_domain_assignment.nbits);
         // VRB-to-PRB mapping
-        pos+=dci_pdu_rel15->vrb_to_prb_mapping.nbits;
-        dci_pdu_rel15->vrb_to_prb_mapping.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->vrb_to_prb_mapping.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->vrb_to_prb_mapping.val, dci_pdu_rel15->vrb_to_prb_mapping.nbits);
         // PRB bundling size indicator
-        pos+=dci_pdu_rel15->prb_bundling_size_indicator.nbits;
-        dci_pdu_rel15->prb_bundling_size_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->prb_bundling_size_indicator.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->prb_bundling_size_indicator.val, dci_pdu_rel15->prb_bundling_size_indicator.nbits);
         // Rate matching indicator
-        pos+=dci_pdu_rel15->rate_matching_indicator.nbits;
-        dci_pdu_rel15->rate_matching_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->rate_matching_indicator.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->rate_matching_indicator.val, dci_pdu_rel15->rate_matching_indicator.nbits);
         // ZP CSI-RS trigger
-        pos+=dci_pdu_rel15->zp_csi_rs_trigger.nbits;
-        dci_pdu_rel15->zp_csi_rs_trigger.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->zp_csi_rs_trigger.nbits)-1);
-        //TB1
-        // MCS 5bit
-        pos+=5;
-        dci_pdu_rel15->mcs = (*dci_pdu>>(dci_size-pos))&0x1f;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->zp_csi_rs_trigger.val, dci_pdu_rel15->zp_csi_rs_trigger.nbits);
+        // TB1
+        //  MCS 5bit
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs, 5);
         // New data indicator 1bit
-        pos+=1;
-        dci_pdu_rel15->ndi = (*dci_pdu>>(dci_size-pos))&0x1;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ndi, 1);
         // Redundancy version  2bit
-        pos+=2;
-        dci_pdu_rel15->rv = (*dci_pdu>>(dci_size-pos))&0x3;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->rv, 2);
         //TB2
         // MCS 5bit
-        pos+=dci_pdu_rel15->mcs2.nbits;
-        dci_pdu_rel15->mcs2.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->mcs2.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs2.val, dci_pdu_rel15->mcs2.nbits);
         // New data indicator 1bit
-        pos+=dci_pdu_rel15->ndi2.nbits;
-        dci_pdu_rel15->ndi2.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->ndi2.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ndi2.val, dci_pdu_rel15->ndi2.nbits);
         // Redundancy version  2bit
-        pos+=dci_pdu_rel15->rv2.nbits;
-        dci_pdu_rel15->rv2.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->rv2.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->rv2.val, dci_pdu_rel15->rv2.nbits);
         // HARQ process number  4bit
-        pos+=4;
-        dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->harq_pid, 4);
         // Downlink assignment index
-        pos+=dci_pdu_rel15->dai[0].nbits;
-        dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->dai[0].nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->dai[0].val, dci_pdu_rel15->dai[0].nbits);
         // TPC command for scheduled PUCCH  2bit
-        pos+=2;
-        dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&0x3;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->tpc, 2);
         // PUCCH resource indicator  3bit
-        pos+=3;
-        dci_pdu_rel15->pucch_resource_indicator = (*dci_pdu>>(dci_size-pos))&0x3;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->pucch_resource_indicator, 3);
         // PDSCH-to-HARQ_feedback timing indicator
-        pos+=dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.nbits;
-        dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val,
+                  dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.nbits);
         // Antenna ports
-        pos+=dci_pdu_rel15->antenna_ports.nbits;
-        dci_pdu_rel15->antenna_ports.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->antenna_ports.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->antenna_ports.val, dci_pdu_rel15->antenna_ports.nbits);
         // TCI
-        pos+=dci_pdu_rel15->transmission_configuration_indication.nbits;
-        dci_pdu_rel15->transmission_configuration_indication.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->transmission_configuration_indication.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->transmission_configuration_indication.val,
+                  dci_pdu_rel15->transmission_configuration_indication.nbits);
         // SRS request
-        pos+=dci_pdu_rel15->srs_request.nbits;
-        dci_pdu_rel15->srs_request.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->srs_request.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->srs_request.val, dci_pdu_rel15->srs_request.nbits);
         // CBG transmission information
-        pos+=dci_pdu_rel15->cbgti.nbits;
-        dci_pdu_rel15->cbgti.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->cbgti.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->cbgti.val, dci_pdu_rel15->cbgti.nbits);
         // CBG flushing out information
-        pos+=dci_pdu_rel15->cbgfi.nbits;
-        dci_pdu_rel15->cbgfi.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->cbgfi.nbits)-1);
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->cbgfi.val, dci_pdu_rel15->cbgfi.nbits);
         // DMRS sequence init
-        pos+=1;
-        dci_pdu_rel15->dmrs_sequence_initialization.val = (*dci_pdu>>(dci_size-pos))&0x1;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->dmrs_sequence_initialization.val, 1);
         break;
+      default:
+        LOG_W(NR_DCI, "Received dci 1_1 unknown rnti type: %d\n", rnti_type);
       }
       break;
 
@@ -3453,105 +3240,63 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     switch(rnti_type)
       {
       case TYPE_C_RNTI_:
+        LOG_D(NR_DCI, "Received dci 0_1 C rnti\n");
         //Identifier for DCI formats
-        pos++;
-        dci_pdu_rel15->format_indicator = (*dci_pdu>>(dci_size-pos))&1;
-        if (dci_pdu_rel15->format_indicator == 1)
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
+        if (dci_pdu_rel15->format_indicator == 1) {
+          LOG_W(NR_DCI, "Received dci 0_1 C rnti and format indicator 1, discarding\n");
           return 1; // discard dci, format indicator not corresponding to dci_format
+        }
         // Carrier indicator
-        pos+=dci_pdu_rel15->carrier_indicator.nbits;
-        dci_pdu_rel15->carrier_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->carrier_indicator.nbits)-1);
-        
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->carrier_indicator.val, dci_pdu_rel15->carrier_indicator.nbits);
         // UL/SUL Indicator
-        pos+=dci_pdu_rel15->ul_sul_indicator.nbits;
-        dci_pdu_rel15->ul_sul_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->ul_sul_indicator.nbits)-1);
-        
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ul_sul_indicator.val, dci_pdu_rel15->ul_sul_indicator.nbits);
         // BWP Indicator
-        pos+=dci_pdu_rel15->bwp_indicator.nbits;
-        dci_pdu_rel15->bwp_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->bwp_indicator.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->bwp_indicator.val, dci_pdu_rel15->bwp_indicator.nbits);
         // Freq domain assignment  max 16 bit
-        fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-        pos+=fsize;
-        dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
-        
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)));
         // Time domain assignment
-        //pos+=4;
-        pos+=dci_pdu_rel15->time_domain_assignment.nbits;
-        dci_pdu_rel15->time_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->time_domain_assignment.nbits)-1);
-        
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->time_domain_assignment.val, dci_pdu_rel15->time_domain_assignment.nbits);
         // Not supported yet - skip for now
-        // Frequency hopping flag – 1 bit 
-        //pos++;
-        //dci_pdu_rel15->frequency_hopping_flag.val= (*dci_pdu>>(dci_size-pos))&1;
+        // Frequency hopping flag – 1 bit
+        // pos++;
+        // dci_pdu_rel15->frequency_hopping_flag.val= (readBits(dci_pdu,>>(dci_size-pos))&1;
 
         // MCS  5 bit
-        pos+=5;
-        dci_pdu_rel15->mcs= (*dci_pdu>>(dci_size-pos))&0x1f;
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->mcs, 5);
         // New data indicator 1bit
-        pos++;
-        dci_pdu_rel15->ndi= (*dci_pdu>>(dci_size-pos))&1;
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ndi, 1);
         // Redundancy version  2bit
-        pos+=2;
-        dci_pdu_rel15->rv= (*dci_pdu>>(dci_size-pos))&3;
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->rv, 2);
         // HARQ process number  4bit
-        pos+=4;
-        dci_pdu_rel15->harq_pid = (*dci_pdu>>(dci_size-pos))&0xf;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->harq_pid, 4);
 
         // 1st Downlink assignment index
-        pos+=dci_pdu_rel15->dai[0].nbits;
-        dci_pdu_rel15->dai[0].val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->dai[0].nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->dai[0].val, dci_pdu_rel15->dai[0].nbits);
         // 2nd Downlink assignment index
-        pos+=dci_pdu_rel15->dai[1].nbits;
-        dci_pdu_rel15->dai[1].val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->dai[1].nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->dai[1].val, dci_pdu_rel15->dai[1].nbits);
         // TPC command for scheduled PUSCH – 2 bits
-        pos+=2;
-        dci_pdu_rel15->tpc = (*dci_pdu>>(dci_size-pos))&3;
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->tpc, 2);
         // SRS resource indicator
-        pos+=dci_pdu_rel15->srs_resource_indicator.nbits;
-        dci_pdu_rel15->srs_resource_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->srs_resource_indicator.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->srs_resource_indicator.val, dci_pdu_rel15->srs_resource_indicator.nbits);
         // Precoding info and n. of layers
-        pos+=dci_pdu_rel15->precoding_information.nbits;
-        dci_pdu_rel15->precoding_information.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->precoding_information.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->precoding_information.val, dci_pdu_rel15->precoding_information.nbits);
         // Antenna ports
-        pos+=dci_pdu_rel15->antenna_ports.nbits;
-        dci_pdu_rel15->antenna_ports.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->antenna_ports.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->antenna_ports.val, dci_pdu_rel15->antenna_ports.nbits);
         // SRS request
-        pos+=dci_pdu_rel15->srs_request.nbits;
-        dci_pdu_rel15->srs_request.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->srs_request.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->srs_request.val, dci_pdu_rel15->srs_request.nbits);
         // CSI request
-        pos+=dci_pdu_rel15->csi_request.nbits;
-        dci_pdu_rel15->csi_request.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->csi_request.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->csi_request.val, dci_pdu_rel15->csi_request.nbits);
         // CBG transmission information
-        pos+=dci_pdu_rel15->cbgti.nbits;
-        dci_pdu_rel15->cbgti.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->cbgti.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->cbgti.val, dci_pdu_rel15->cbgti.nbits);
         // PTRS DMRS association
-        pos+=dci_pdu_rel15->ptrs_dmrs_association.nbits;
-        dci_pdu_rel15->ptrs_dmrs_association.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->ptrs_dmrs_association.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ptrs_dmrs_association.val, dci_pdu_rel15->ptrs_dmrs_association.nbits);
         // Beta offset indicator
-        pos+=dci_pdu_rel15->beta_offset_indicator.nbits;
-        dci_pdu_rel15->beta_offset_indicator.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->beta_offset_indicator.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->beta_offset_indicator.val, dci_pdu_rel15->beta_offset_indicator.nbits);
         // DMRS sequence initialization
-        pos+=dci_pdu_rel15->dmrs_sequence_initialization.nbits;
-        dci_pdu_rel15->dmrs_sequence_initialization.val = (*dci_pdu>>(dci_size-pos))&((1<<dci_pdu_rel15->dmrs_sequence_initialization.nbits)-1);
-
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->dmrs_sequence_initialization.val, dci_pdu_rel15->dmrs_sequence_initialization.nbits);
         // UL-SCH indicator
-        pos+=1;
-        dci_pdu_rel15->ulsch_indicator = (*dci_pdu>>(dci_size-pos))&0x1;
+        EXTRACT_DCI_ITEM(dci_pdu_rel15->ulsch_indicator, 1);
 
         // UL/SUL indicator – 1 bit
         /* commented for now (RK): need to get this from BWP descriptor
@@ -3559,10 +3304,14 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
           dci_pdu->= ((uint64_t)*dci_pdu>>(dci_size-pos)ul_sul_indicator&1)<<(dci_size-pos++);
         */
         break;
+      default:
+        LOG_W(NR_DCI, "Received dci 0_1 unknown rnti type: %d\n", rnti_type);
       }
     break;
 
   default: // other DCI formats
+    LOG_W(NR_DCI, "Received dci unknown format type: %d\n", dci_format);
+
     break;
   }
 

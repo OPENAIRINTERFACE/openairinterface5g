@@ -361,11 +361,11 @@ void nr_sl_rf_card_config_freq(PHY_VARS_NR_UE *ue,
                                openair0_config_t *openair0_cfg,
                                int freq_offset);
 
-uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
-                                  const UE_nr_rxtx_proc_t *proc,
-                                  c16_t *pdcch_e_rx,
-                                  fapi_nr_dci_indication_t *dci_ind,
-                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
+void nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
+                               const UE_nr_rxtx_proc_t *proc,
+                               c16_t *pdcch_e_rx,
+                               fapi_nr_dci_indication_t *dci_ind,
+                               fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel
    estimation.  It performs

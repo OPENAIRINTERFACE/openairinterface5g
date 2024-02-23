@@ -433,9 +433,6 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
 {
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
-  unsigned int dci_cnt=0;
-  fapi_nr_dci_indication_t dci_ind = {0};
-  nr_downlink_indication_t dl_indication;
   NR_UE_PDCCH_CONFIG *phy_pdcch_config = &phy_data->phy_pdcch_config;
 
   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &phy_pdcch_config->pdcch_config[n_ss];
@@ -446,37 +443,24 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
   int32_t pdcch_e_rx_size = NR_MAX_PDCCH_SIZE;
   c16_t pdcch_e_rx[pdcch_e_rx_size];
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
   nr_rx_pdcch(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, pdcch_e_rx, rel15, rxdataF);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
 
+  fapi_nr_dci_indication_t dci_ind;
+  nr_dci_decoding_procedure(ue, proc, pdcch_e_rx, &dci_ind, rel15);
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_IN);
-
-#ifdef NR_PDCCH_SCHED_DEBUG
-  printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure for search space %d)\n",
-	 n_ss);
-#endif
-
-  dci_cnt = nr_dci_decoding_procedure(ue, proc, pdcch_e_rx, &dci_ind, rel15);
-
-#ifdef NR_PDCCH_SCHED_DEBUG
-  LOG_I(PHY,"<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
-#endif
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_OUT);
-
-  for (int i=0; i<dci_cnt; i++) {
-    LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
-          ue->Mod_id,frame_rx%1024,nr_slot_rx,
+  for (int i = 0; i < dci_ind.number_of_dcis; i++) {
+    LOG_D(PHY,
+          "[UE  %d] AbsSubFrame %d.%d: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
+          ue->Mod_id,
+          frame_rx % 1024,
+          nr_slot_rx,
           i + 1,
-          dci_cnt,
+          dci_ind.number_of_dcis,
           dci_ind.dci_list[i].rnti,
           dci_ind.dci_list[i].dci_format);
   }
 
-  dci_ind.number_of_dcis = dci_cnt;
-
+  nr_downlink_indication_t dl_indication;
   // fill dl_indication message
   nr_fill_dl_indication(&dl_indication, &dci_ind, NULL, proc, ue, phy_data);
   //  send to mac
@@ -485,7 +469,7 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
   stop_meas(&ue->dlsch_rx_pdcch_stats);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
-  return(dci_cnt);
+  return (dci_ind.number_of_dcis);
 }
 
 static int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,

@@ -500,7 +500,7 @@ int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
                           int *slot_tx,
                           const long k2);
 
-int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
+int get_rnti_type(const NR_UE_MAC_INST_t *mac, const uint16_t rnti);
 
 // Configuration of Msg3 PDU according to clauses:
 // - 8.3 of 3GPP TS 38.213 version 16.3.0 Release 16
