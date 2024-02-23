@@ -245,6 +245,7 @@ typedef int (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
  */
 typedef int (nr_ue_ul_indication_f)(nr_uplink_indication_t *ul_info);
 
+typedef void (nr_ue_slot_indication_f)(uint8_t mod_id);
 
 /*
  * Generic type of an application-defined callback to return various
@@ -263,6 +264,7 @@ typedef struct nr_ue_if_module_s {
   nr_ue_dl_indication_f      *dl_indication;
   nr_ue_ul_indication_f      *ul_indication;
   nr_ue_sl_indication_f      *sl_indication;
+  nr_ue_slot_indication_f    *slot_indication;
   uint32_t cc_mask;
   uint32_t current_frame;
   uint32_t current_slot;

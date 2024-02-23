@@ -90,6 +90,11 @@ fapi_nr_ul_config_request_pdu_t *lockGet_ul_config(NR_UE_MAC_INST_t *mac, frame_
   return pdu;
 }
 
+void update_mac_timers(NR_UE_MAC_INST_t *mac)
+{
+  nr_timer_tick(&mac->ra.contention_resolution_timer);
+}
+
 void remove_ul_config_last_item(fapi_nr_ul_config_request_pdu_t *pdu)
 {
   pdu->privateNBpdus--;

@@ -150,6 +150,7 @@
 void nr_ue_init_mac(NR_UE_MAC_INST_t *mac);
 
 void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data);
+void update_mac_timers(NR_UE_MAC_INST_t *mac);
 
 /**\brief apply default configuration values in nr_mac instance
    \param mac           mac instance */
