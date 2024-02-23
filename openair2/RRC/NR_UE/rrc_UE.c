@@ -215,8 +215,7 @@ static void nr_rrc_ue_process_rrcReconfiguration(NR_UE_RRC_INST_t *rrc,
         nr_rrc_cellgroup_configuration(rrcNB, rrc, cellGroupConfig);
 
         AssertFatal(!get_softmodem_params()->sa, "secondaryCellGroup only used in NSA for now\n");
-        nr_rrc_mac_config_req_cg(rrc->ue_id, 0, cellGroupConfig);
-
+        nr_rrc_mac_config_req_cg(0, 0, cellGroupConfig, rrc->UECap.UE_NR_Capability);
         asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, cellGroupConfig);
       }
       if (ie->measConfig != NULL) {
@@ -308,7 +307,22 @@ NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int nb_inst)
     rrc->ul_bwp_id = 0;
     rrc->as_security_activated = false;
     rrc->ra_trigger = RA_NOT_RUNNING;
-    rrc->uecap_file = uecap_file;
+
+    FILE *f = NULL;
+    if (uecap_file)
+      f = fopen(uecap_file, "r");
+    if(f) {
+      char UE_NR_Capability_xer[65536];
+      size_t size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
+      if (size == 0 || size == sizeof UE_NR_Capability_xer) {
+        LOG_E(NR_RRC, "UE Capabilities XER file %s is too large (%ld)\n", uecap_file, size);
+      }
+      else {
+        asn_dec_rval_t dec_rval =
+            xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)&rrc->UECap.UE_NR_Capability, UE_NR_Capability_xer, size);
+        assert(dec_rval.code == RC_OK);
+      }
+    }
 
     memset(&rrc->timers_and_constants, 0, sizeof(rrc->timers_and_constants));
     set_default_timers_and_constants(&rrc->timers_and_constants);
@@ -803,8 +817,7 @@ static void nr_rrc_ue_process_masterCellGroup(NR_UE_RRC_INST_t *rrc,
   nr_rrc_cellgroup_configuration(rrcNB, rrc, cellGroupConfig);
 
   LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
-  nr_rrc_mac_config_req_cg(rrc->ue_id, 0, cellGroupConfig);
-
+  nr_rrc_mac_config_req_cg(rrc->ue_id, 0, cellGroupConfig, rrc->UECap.UE_NR_Capability);
   asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, cellGroupConfig);
 }
 
@@ -1523,23 +1536,7 @@ static void nr_rrc_ue_process_ueCapabilityEnquiry(NR_UE_RRC_INST_t *rrc, NR_UECa
   info->rrc_TransactionIdentifier = UECapabilityEnquiry->rrc_TransactionIdentifier;
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container = {.rat_Type = NR_RAT_Type_nr};
 
-  char *file_path = rrc->uecap_file;
-
-  FILE *f = NULL;
-  if (file_path)
-    f = fopen(file_path, "r");
-  if(f){
-    char UE_NR_Capability_xer[65536];
-    size_t size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
-    if (size == 0 || size == sizeof UE_NR_Capability_xer) {
-      LOG_E(NR_RRC, "UE Capabilities XER file %s is too large (%ld)\n", file_path, size);
-      return;
-    }
-    asn_dec_rval_t dec_rval =
-        xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)&rrc->UECap.UE_NR_Capability, UE_NR_Capability_xer, size);
-    assert(dec_rval.code == RC_OK);
-  }
-  else {
+  if (!rrc->UECap.UE_NR_Capability) {
     rrc->UECap.UE_NR_Capability = CALLOC(1, sizeof(NR_UE_NR_Capability_t));
     asn1cSequenceAdd(rrc->UECap.UE_NR_Capability->rf_Parameters.supportedBandListNR.list, NR_BandNR_t, nr_bandnr);
     nr_bandnr->bandNR = 1;
@@ -1901,6 +1898,9 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
     asn1cFreeStruc(asn_DEF_NR_SIB13_r16, SI_info->sib13);
     asn1cFreeStruc(asn_DEF_NR_SIB14_r16, SI_info->sib14);
   }
+
+  if (rrc->nrRrcState == RRC_STATE_DETACH_NR)
+    asn1cFreeStruc(asn_DEF_NR_UE_NR_Capability, rrc->UECap.UE_NR_Capability);
 
   // reset MAC
   NR_UE_MAC_reset_cause_t cause = (rrc->nrRrcState == RRC_STATE_DETACH_NR) ? DETACH : GO_TO_IDLE;

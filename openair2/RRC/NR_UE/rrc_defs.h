@@ -189,8 +189,7 @@ typedef struct NR_UE_RRC_INST_s {
   instance_t ue_id;
   rrcPerNB_t perNB[NB_CNX_UE];
 
-  char                           *uecap_file;
-  rnti_t                         rnti;
+  rnti_t rnti;
 
   OAI_NR_UECapability_t UECap;
   NR_UE_Timers_Constants_t timers_and_constants;
