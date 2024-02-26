@@ -657,10 +657,70 @@ static int nr_get_ms_bucketsizeduration(long bucketsizeduration)
   }
 }
 
+static uint32_t nr_get_pbr(long prioritizedbitrate)  // returns Bps
+{
+  uint32_t pbr = 0;
+  switch (prioritizedbitrate) {
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps0:
+      pbr = 0;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8:
+      pbr = 8;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps16:
+      pbr = 16;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps32:
+      pbr = 32;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps64:
+      pbr = 64;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps128:
+      pbr = 128;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps256:
+      pbr = 256;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps512:
+      pbr = 512;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps1024:
+      pbr = 1024;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps2048:
+      pbr = 2048;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps4096:
+      pbr = 4096;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8192:
+      pbr = 8192;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps16384:
+      pbr = 16384;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps32768:
+      pbr = 32768;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps65536:
+      pbr = 65536;
+      break;
+    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity:
+      pbr = UINT_MAX;
+      break;
+    default:
+      AssertFatal(false, "The proritized bit rate value is not one of the enum values\n");
+  }
+  uint32_t pbr_bytes =
+      (prioritizedbitrate < NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity) ? pbr * 1000 : pbr;
+  return pbr_bytes;
+}
+
 static uint32_t get_lc_bucket_size(long prioritisedBitRate, long bucketSizeDuration)
 {
-  int pbr = nr_get_pbr(prioritisedBitRate);
-  // in infinite pbr, the bucket is saturated by pbr
+  uint32_t pbr = nr_get_pbr(prioritisedBitRate);
+  // if infinite pbr, the bucket is saturated by pbr
   int bsd = 0;
   if (prioritisedBitRate == NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity)
     bsd = 1;
@@ -675,8 +735,8 @@ static void set_default_logicalchannelconfig(nr_lcordered_info_t *lc_info, NR_SR
 {
   lc_info->lcid = srb_id;
   lc_info->priority = srb_id == 2 ? 3 : 1;
-  lc_info->prioritisedBitRate = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
-  lc_info->bucket_size = get_lc_bucket_size(lc_info->prioritisedBitRate, 0);
+  lc_info->pbr = UINT_MAX;
+  lc_info->bucket_size = UINT_MAX;
 }
 
 static void nr_configure_lc_config(NR_UE_MAC_INST_t *mac,
@@ -693,10 +753,14 @@ static void nr_configure_lc_config(NR_UE_MAC_INST_t *mac,
   AssertFatal(mac_lc_config->ul_SpecificParameters, "UL parameters shouldn't be NULL for DRBs\n");
   struct NR_LogicalChannelConfig__ul_SpecificParameters *ul_parm = mac_lc_config->ul_SpecificParameters;
   lc_info->priority = ul_parm->priority;
-  lc_info->prioritisedBitRate = ul_parm->prioritisedBitRate;
+  lc_info->pbr = nr_get_pbr(ul_parm->prioritisedBitRate);
   // TODO Verify setting to 0 is ok, 331 just says need R (release if NULL)
   mac->scheduling_info.lc_sched_info[lc_info->lcid - 1].LCGID = ul_parm->logicalChannelGroup ? *ul_parm->logicalChannelGroup : 0;
   lc_info->bucket_size = get_lc_bucket_size(ul_parm->prioritisedBitRate, ul_parm->bucketSizeDuration);
+  // setup and start Bj timer for this LC
+  NR_timer_t *bjt = &mac->scheduling_info.lc_sched_info[lc_info->lcid - 1].Bj_timer;
+  nr_timer_setup(bjt, UINT_MAX, 1);  // this timer never expires in principle, counter incremented by number of slots
+  nr_timer_start(bjt);
 }
 
 static void configure_logicalChannelBearer(NR_UE_MAC_INST_t *mac,

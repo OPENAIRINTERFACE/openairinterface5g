@@ -118,6 +118,10 @@ static NR_LC_SCHEDULING_INFO *get_scheduling_info_from_lcid(NR_UE_MAC_INST_t *ma
 void update_mac_timers(NR_UE_MAC_INST_t *mac)
 {
   nr_timer_tick(&mac->ra.contention_resolution_timer);
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++)
+    AssertFatal(!nr_timer_tick(&mac->scheduling_info.lc_sched_info[i].Bj_timer),
+                "Bj timer for LCID %d expired! That should never happen\n",
+                i);
 }
 
 void remove_ul_config_last_item(fapi_nr_ul_config_request_pdu_t *pdu)
@@ -1150,22 +1154,27 @@ void nr_ue_ul_scheduler(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
     nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
     int lcid = lc_info->lcid;
     // max amount of data that can be buffered/accumulated in a logical channel buffer
-    int32_t bucketSize_max = lc_info->bucket_size;
-    AssertFatal(bucketSize_max >= 0, "negative bucketSize_max %d, will never schedule UE: lcid %d\n",bucketSize_max, lcid);
+    uint32_t bucketSize_max = lc_info->bucket_size;
 
     /*
       measure Bj
       increment the value of Bj by product PBR  * T
     */
     NR_LC_SCHEDULING_INFO *sched_info = get_scheduling_info_from_lcid(mac, lcid);
-    int T = 1; // time elapsed since Bj was last incremented
     int32_t bj = sched_info->Bj;
-    bj += nr_get_pbr(lc_info->prioritisedBitRate) * T;
-    if (lc_info->prioritisedBitRate == NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity)
-      bj = nr_get_pbr(lc_info->prioritisedBitRate);
+    if (lc_info->pbr < UINT_MAX) {
+      uint32_t slots_elapsed = nr_timer_elapsed_time(sched_info->Bj_timer); // slots elapsed since Bj was last incremented
+      // it is safe to divide by 1k since pbr in lc_info is computed multiplying by 1000 the RRC value to convert kB/s to B/s
+      uint32_t pbr_ms = lc_info->pbr / 1000;
+      bj += ((pbr_ms * slots_elapsed) >> mac->current_UL_BWP->scs); // each slot length is 1/scs ms
+    }
+    else
+      bj = INT_MAX;
 
     // bj > max bucket size, set bj to max bucket size, as in ts38.321 5.4.3.1 Logical Channel Prioritization
     sched_info->Bj = min(bj, bucketSize_max);
+    // reset bj timer
+    nr_timer_start(&sched_info->Bj_timer);
   }
 
   // Call BSR procedure as described in Section 5.4.5 in 38.321
@@ -2883,7 +2892,7 @@ long get_num_bytes_to_reqlc(NR_UE_MAC_INST_t *mac,
   /* Calculates the number of bytes the logical channel should request from the correcponding RLC buffer*/
   nr_lcordered_info_t *lc_info = get_lc_info_from_lcid(mac, lc_num);
   AssertFatal(lc_info, "Couldn't find logical channel with LCID %d\n", lc_num);
-  uint32_t pbr = nr_get_pbr(lc_info->prioritisedBitRate);
+  uint32_t pbr = lc_info->pbr;
   NR_LC_SCHEDULING_INFO *sched_info = get_scheduling_info_from_lcid(mac, lc_num);
   int32_t lcid_remain_buffer = sched_info->LCID_buffer_remain;
   *target = (same_priority_count > 1) ? min(buflen_remain_ep, pbr) : pbr;
@@ -3132,8 +3141,8 @@ uint8_t nr_ue_get_sdu(NR_UE_MAC_INST_t *mac,
   bool lcids_data_status[NR_MAX_NUM_LCID] = {0};
   memset(lcids_data_status, 1, NR_MAX_NUM_LCID);
 
-  uint32_t lcp_allocation_counter =
-      0; // in the first run all the lc are allocated as per bj and prioritized bit rate but in subsequent runs, no need to consider
+  // in the first run all the lc are allocated as per bj and prioritized bit rate but in subsequent runs, no need to consider
+  uint32_t lcp_allocation_counter = 0;
   // bj and prioritized bit rate but just consider priority
   uint16_t buflen_ep = 0; // this variable holds the length in bytes in mac pdu when multiple equal priority channels are present
   // because as per standard(TS38.321), all equal priority channels should be served equally
@@ -3299,81 +3308,4 @@ static void schedule_ta_command(fapi_nr_dl_config_request_t *dl_config, NR_UL_TI
   dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_CONFIG_TA_COMMAND;
   dl_config->number_pdus += 1;
   ul_time_alignment->ta_apply = no_ta;
-}
-
-uint32_t nr_get_pbr(long prioritizedbitrate)
-{
-  int32_t pbr = -1;
-  switch (prioritizedbitrate) {
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps0:
-      pbr = 0;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8:
-      pbr = 8;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps16:
-      pbr = 16;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps32:
-      pbr = 32;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps64:
-      pbr = 64;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps128:
-      pbr = 128;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps256:
-      pbr = 256;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps512:
-      pbr = 512;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps1024:
-      pbr = 1024;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps2048:
-      pbr = 2048;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps4096:
-      pbr = 4096;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8192:
-      pbr = 8192;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps16384:
-      pbr = 16384;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps32768:
-      pbr = 32768;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps65536:
-      pbr = 65536;
-      break;
-
-    case NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity:
-      pbr = INT32_MAX;
-      break;
-
-    default:
-      pbr = -1;
-  }
-  AssertFatal(pbr >= 0, "The proritized bit rate value is not one of the enum values\n");
-  uint32_t pbr_bytes =
-      (prioritizedbitrate < NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity) ? pbr * 1000 : pbr;
-  return pbr_bytes;
 }

@@ -1011,6 +1011,8 @@ bool nr_timer_tick(NR_timer_t *timer)
   bool expired = false;
   if (timer->active) {
     timer->counter += timer->step;
+    if (timer->target == UINT_MAX) // infinite target, never expires
+      return false;
     expired = nr_timer_expired(*timer);
     if (expired)
       timer->active = false;
@@ -1020,7 +1022,14 @@ bool nr_timer_tick(NR_timer_t *timer)
 
 bool nr_timer_expired(NR_timer_t timer)
 {
+  if (timer.target == UINT_MAX) // infinite target, never expires
+    return false;
   return (timer.counter >= timer.target);
+}
+
+uint32_t nr_timer_elapsed_time(NR_timer_t timer)
+{
+  return timer.counter;
 }
 
 void nr_timer_setup(NR_timer_t *timer, const uint32_t target, const uint32_t step)

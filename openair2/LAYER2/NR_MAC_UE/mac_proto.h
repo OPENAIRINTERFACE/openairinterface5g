@@ -138,13 +138,6 @@ bool nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t 
 uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size,
                                     int value);
 
-/*! \fn  int nr_get_pbr(long prioritizedbitrate)
-   \brief get the rate in kbps from the rate configured by the higher layer
-\param[in]  prioritizedbitrate
-\return the rate in kbps
-*/
-uint32_t nr_get_pbr(long prioritizedbitrate);
-
 /*! \fn  int nr_get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
    \brief get the number of subframe from the periodic BSR timer configured by the higher layers
 \param[in] periodicBSR_Timer timer for periodic BSR
