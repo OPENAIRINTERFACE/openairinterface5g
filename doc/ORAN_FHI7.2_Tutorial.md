@@ -203,6 +203,12 @@ hybrid_e2e              0
 ```
 Probably you need to increase `tx_timestamp_timeout` to 50 or 100 for Intel E-810. You will see that in the logs of ptp.
 
+Create the configuration file for ptp4l (`/etc/sysconfig/ptp4l`)
+
+```
+OPTIONS="-f /etc/ptp4l.conf"
+```
+
 Create the configuration file for phc2sys (`/etc/sysconfig/phc2sys`)
 
 ```
