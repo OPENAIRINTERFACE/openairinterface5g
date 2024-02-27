@@ -698,7 +698,8 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
   N_bundle = nb_rb_pdsch/L;
   C=N_bundle/R;
 
-  uint32_t *bundle_deint = calloc(N_bundle, sizeof(uint32_t));
+  uint32_t bundle_deint[N_bundle];
+  memset(bundle_deint, 0 , sizeof(bundle_deint));
 
   printf("N_bundle %u L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
 
@@ -726,7 +727,6 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 		  //printf("k %d m %d bundle_deint %d llr_deint %d\n", k, m, bundle_deint[k], llr_deint[bundle_deint[k]*nb_re*L+m]);
 	  }
   }
-  free(bundle_deint);
 }
 
 //==============================================================================================

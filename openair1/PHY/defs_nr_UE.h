@@ -86,9 +86,6 @@
 #define openair_sched_exit() exit(-1)
 
 #define bzero(s,n) (memset((s),0,(n)))
-//#define cmax(a,b)  ((a>b) ? (a) : (b))
-//#define cmin(a,b)  ((a<b) ? (a) : (b))
-//#define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
 /// suppress compiler warning for unused arguments
 #define UNUSED(x) (void)x;
 

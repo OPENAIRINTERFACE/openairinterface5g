@@ -370,10 +370,8 @@ bool rx_sss_nr(PHY_VARS_NR_UE *ue,
                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   uint8_t i;
-  c16_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR];
-  memset(pss_ext, 0, NB_ANTENNAS_RX * LENGTH_SSS_NR * sizeof(c16_t));
-  c16_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR];
-  memset(sss_ext, 0, NB_ANTENNAS_RX * LENGTH_SSS_NR * sizeof(c16_t));
+  c16_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR] = {0};
+  c16_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR] = {0};
   uint8_t Nid2 = GET_NID2(ue->common_vars.nid2);
   uint16_t Nid1;
   uint8_t phase;
