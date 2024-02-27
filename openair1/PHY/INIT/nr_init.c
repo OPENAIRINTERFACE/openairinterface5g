@@ -79,8 +79,11 @@ NR_gNB_PHY_STATS_t *get_phy_stats(PHY_VARS_gNB *gNB, uint16_t rnti)
     else if (!stats->active && first_free == -1)
       first_free = i;
   }
+
+  if (first_free < 0)
+    return NULL;
+
   // new stats
-  AssertFatal(first_free >= 0, "PHY statistics list is full\n");
   stats = &gNB->phy_stats[first_free];
   stats->active = true;
   stats->rnti = rnti;
