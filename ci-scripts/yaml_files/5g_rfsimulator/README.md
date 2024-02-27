@@ -65,7 +65,7 @@ $ docker logout
 All the following commands **SHALL** be run from the `ci-scripts/yaml_files/5g_rfsimulator` folder for a deployment with monolithic gNB.
 
 For a deployment with the gNB split in CU and DU components, please refer to the `../5g_f1_rfsimulator` folder.
-For a deployment with the gNB split in CU-CP, CU-UP, and DU components, please refer to the ../5g_rfsimulator_e1` folder.
+For a deployment with the gNB split in CU-CP, CU-UP, and DU components, please refer to the `../5g_rfsimulator_e1` folder.
 
 ## 2.1. Deploy OAI 5G Core Network ##
 

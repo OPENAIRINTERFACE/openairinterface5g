@@ -322,10 +322,8 @@ typedef struct {
   /// Msg3 buffer
   uint8_t *Msg3_buffer;
 
-  /// Random-access Contention Resolution Timer active flag
-  uint8_t RA_contention_resolution_timer_active;
-  int RA_contention_resolution_target_frame;
-  int RA_contention_resolution_target_slot;
+  /// Random-access Contention Resolution Timer
+  NR_timer_t contention_resolution_timer;
   /// Transmitted UE Contention Resolution Identifier
   uint8_t cont_res_id[6];
 
@@ -446,9 +444,7 @@ typedef struct {
   NR_SearchSpace_t *otherSI_SS;
   NR_SearchSpace_t *ra_SS;
   NR_SearchSpace_t *paging_SS;
-  NR_ControlResourceSet_t *coreset0;
   NR_ControlResourceSet_t *commonControlResourceSet;
-  NR_SearchSpace_t *search_space_zero;
   A_SEQUENCE_OF(NR_ControlResourceSet_t) list_Coreset;
   A_SEQUENCE_OF(NR_SearchSpace_t) list_SS;
 } NR_BWP_PDCCH_t;
@@ -472,11 +468,17 @@ typedef struct NR_UE_MAC_INST_s {
   A_SEQUENCE_OF(NR_UE_DL_BWP_t) dl_BWPs;
   A_SEQUENCE_OF(NR_UE_UL_BWP_t) ul_BWPs;
   NR_BWP_PDCCH_t config_BWP_PDCCH[MAX_NUM_BWP_UE];
+  NR_ControlResourceSet_t *coreset0;
+  NR_SearchSpace_t *search_space_zero;
   NR_UE_DL_BWP_t *current_DL_BWP;
   NR_UE_UL_BWP_t *current_UL_BWP;
 
   bool harq_ACK_SpatialBundlingPUCCH;
   bool harq_ACK_SpatialBundlingPUSCH;
+
+  uint32_t uecap_maxMIMO_PDSCH_layers;
+  uint32_t uecap_maxMIMO_PUSCH_layers_cb;
+  uint32_t uecap_maxMIMO_PUSCH_layers_nocb;
 
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon;

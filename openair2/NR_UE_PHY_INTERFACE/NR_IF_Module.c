@@ -1278,6 +1278,14 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
   return ret2;
 }
 
+void nr_ue_slot_indication(uint8_t mod_id)
+{
+  pthread_mutex_lock(&mac_IF_mutex);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  update_mac_timers(mac);
+  pthread_mutex_unlock(&mac_IF_mutex);
+}
+
 nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id)
 {
   if (nr_ue_if_module_inst[module_id] == NULL) {
@@ -1295,6 +1303,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id)
       nr_ue_if_module_inst[module_id]->scheduled_response = nr_ue_scheduled_response;
     nr_ue_if_module_inst[module_id]->dl_indication = nr_ue_dl_indication;
     nr_ue_if_module_inst[module_id]->ul_indication = nr_ue_ul_indication;
+    nr_ue_if_module_inst[module_id]->slot_indication = nr_ue_slot_indication;
   }
   pthread_mutex_init(&mac_IF_mutex, NULL);
 

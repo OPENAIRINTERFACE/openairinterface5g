@@ -150,6 +150,7 @@
 void nr_ue_init_mac(NR_UE_MAC_INST_t *mac);
 
 void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data);
+void update_mac_timers(NR_UE_MAC_INST_t *mac);
 
 /**\brief apply default configuration values in nr_mac instance
    \param mac           mac instance */
@@ -179,7 +180,8 @@ void nr_release_mac_config_logicalChannelBearer(NR_UE_MAC_INST_t *mac, long chan
 
 void nr_rrc_mac_config_req_cg(module_id_t module_id,
                               int cc_idP,
-                              NR_CellGroupConfig_t *cell_group_config);
+                              NR_CellGroupConfig_t *cell_group_config,
+                              NR_UE_NR_Capability_t *ue_Capability);
 
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
                                int cc_idP,

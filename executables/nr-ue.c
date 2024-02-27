@@ -533,12 +533,15 @@ static void RU_write(nr_rxtx_thread_data_t *rxtxD) {
 
 }
 
-void processSlotTX(void *arg) {
-
+void processSlotTX(void *arg)
+{
   nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
   const UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   nr_phy_data_tx_t phy_data = {0};
+
+  if (UE->if_inst)
+    UE->if_inst->slot_indication(UE->Mod_id);
 
   LOG_D(PHY,
         "SlotTx %d.%d => slot type %d, wait: %d \n",
@@ -546,7 +549,7 @@ void processSlotTX(void *arg) {
         proc->nr_slot_tx,
         proc->tx_slot_type,
         rxtxD->tx_wait_for_dlsch);
-  if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT){
+  if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT) {
     if (rxtxD->tx_wait_for_dlsch)
       LOG_D(PHY, "enter wait for tx, slot %d, nb events to wait %d; ", proc->nr_slot_tx, rxtxD->tx_wait_for_dlsch);
     // wait for rx slots to send indication (if any) that DLSCH decoding is finished

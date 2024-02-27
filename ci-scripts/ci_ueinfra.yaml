@@ -9,16 +9,14 @@ idefix:
   MTU: 1500
   Trace: True
   LogStore: /media/usb-drive/ci_qlogs
-nrmodule2_quectel:
-  Host: nrmodule2
-  InitScript: sudo stdbuf -oL /home/nrmodule2/quectel-CM/quectel-CM -4 -s oai.ipv4 &> /tmp/quecel-cm.log &
-  TermScript: sudo -S killall --signal SIGKILL quectel-CM
-  AttachScript: sudo python3 ci_ctl_qtel.py /dev/ttyUSB2 wup
-  DetachScript: sudo python3 ci_ctl_qtel.py /dev/ttyUSB2 detach
+
+up2:
+  Host: up2
+  AttachScript: sudo /opt/mbim/start_quectel_mbim.sh
+  DetachScript: sudo /opt/mbim/stop_quectel_mbim.sh
   NetworkScript: ip a show dev wwan0
   IF: wwan0
   MTU: 1500
-  LogStore: /media/ci_qlogs
 
 adb_ue_1:
   Host: nano
