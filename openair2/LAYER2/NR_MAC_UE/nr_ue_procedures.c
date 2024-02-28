@@ -2896,9 +2896,9 @@ void nr_ue_send_sdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_info, in
 }
 
 // #define EXTRACT_DCI_ITEM(val,size) val= readBits(dci_pdu, &pos, size);
-#define EXTRACT_DCI_ITEM(val, size)           \
+#define EXTRACT_DCI_ITEM(val, size)    \
   val = readBits(dci_pdu, &pos, size); \
-  LOG_D(NR_DCI, "     " #val ": %d\n", val);
+  LOG_D(NR_MAC_DCI, "     " #val ": %d\n", val);
 
 // Fixme: Intel Endianess only procedure
 static inline int readBits(const uint8_t *dci, int *start, int length)
@@ -2945,7 +2945,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 
     switch(rnti_type) {
       case TYPE_RA_RNTI_:
-        LOG_D(NR_DCI, "Received dci 1_0 RA rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 1_0 RA rnti\n");
         // Freq domain assignment
         EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)));
         // Time domain assignment
@@ -2959,13 +2959,13 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
 
       case TYPE_C_RNTI_:
-        LOG_D(NR_DCI, "Received dci 1_0 C rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 1_0 C rnti\n");
         // Identifier for DCI formats
         EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
         // switch to DCI_0_0
         if (dci_pdu_rel15->format_indicator == 0) {
           dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_UL_DCI_FORMAT_0_0];
-          LOG_D(NR_DCI, "received dci 1_0 c_ rnti, switching to dci 0_0\n");
+          LOG_D(NR_MAC_DCI, "received dci 1_0 c_ rnti, switching to dci 0_0\n");
           return 2 + nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
         }
 
@@ -3013,7 +3013,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
 
       case TYPE_P_RNTI_:
-        LOG_D(NR_DCI, "Received dci 1_0 P rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 1_0 P rnti\n");
         /*
         // Short Messages Indicator  E2 bits
         for (int i=0; i<2; i++)
@@ -3042,7 +3042,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
 
       case TYPE_SI_RNTI_:
-        LOG_D(NR_DCI, "Received dci 1_0 SI rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 1_0 SI rnti\n");
         // Freq domain assignment 0-16 bit
         EXTRACT_DCI_ITEM(dci_pdu_rel15->frequency_domain_assignment.val, (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)));
         // Time domain assignment 4 bit
@@ -3058,7 +3058,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
 
       case TYPE_TC_RNTI_:
-        LOG_D(NR_DCI, "Received dci 1_0 TC rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 1_0 TC rnti\n");
 
         // indicating a DL DCI format 1bit
         EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
@@ -3066,7 +3066,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         // switch to DCI_0_0
         if (dci_pdu_rel15->format_indicator == 0) {
           dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_UL_DCI_FORMAT_0_0];
-          LOG_D(NR_DCI, "received dci 1_0 tc_ rnti, switching to dci 0_0\n");
+          LOG_D(NR_MAC_DCI, "received dci 1_0 tc_ rnti, switching to dci 0_0\n");
           return 2 + nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
         }
 
@@ -3094,7 +3094,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         EXTRACT_DCI_ITEM(dci_pdu_rel15->pdsch_to_harq_feedback_timing_indicator.val, 3);
         break;
       default:
-        LOG_W(NR_DCI, "Received dci 1_0 unknown rnti type: %d\n", rnti_type);
+        LOG_W(NR_MAC_DCI, "Received dci 1_0 unknown rnti type: %d\n", rnti_type);
     }
     break;
 
@@ -3102,7 +3102,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     switch(rnti_type)
       {
       case TYPE_C_RNTI_:
-        LOG_D(NR_DCI, "Received dci 0_0 C rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 0_0 C rnti\n");
         // Identifier for DCI formats
         EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
         if (dci_pdu_rel15->format_indicator == 1)
@@ -3130,13 +3130,13 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
 
       case TYPE_TC_RNTI_:
-        LOG_D(NR_DCI, "Received dci 1_0 TC rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 1_0 TC rnti\n");
         // Identifier for DCI formats
         EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
         //switch to DCI_1_0
         if (dci_pdu_rel15->format_indicator == 1) {
           dci_pdu_rel15 = &mac->def_dci_pdu_rel15[slot][NR_DL_DCI_FORMAT_1_0];
-          LOG_D(NR_DCI, "received dci 0_0 tc_ rnti, switching to dci 0_0\n");
+          LOG_D(NR_MAC_DCI, "received dci 0_0 tc_ rnti, switching to dci 0_0\n");
           return 2 + nr_extract_dci_info(mac, NR_DL_DCI_FORMAT_1_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
         }
 
@@ -3158,7 +3158,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
 
       default:
-        LOG_W(NR_DCI, "Received dci 0_0 unknown rnti type: %d\n", rnti_type);
+        LOG_W(NR_MAC_DCI, "Received dci 0_0 unknown rnti type: %d\n", rnti_type);
       }
 
     break;
@@ -3167,12 +3167,12 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     switch(rnti_type)
       {
       case TYPE_C_RNTI_:
-        LOG_D(NR_DCI, "Received dci 1_1 C rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 1_1 C rnti\n");
 
         // Identifier for DCI formats
         EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
         if (dci_pdu_rel15->format_indicator == 0) {
-          LOG_W(NR_DCI, "Received dci 1_1 C rnti and format indicator 0, discarding\n");
+          LOG_W(NR_MAC_DCI, "Received dci 1_1 C rnti and format indicator 0, discarding\n");
           return 1; // discard dci, format indicator not corresponding to dci_format
         }
         // Carrier indicator
@@ -3232,7 +3232,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         EXTRACT_DCI_ITEM(dci_pdu_rel15->dmrs_sequence_initialization.val, 1);
         break;
       default:
-        LOG_W(NR_DCI, "Received dci 1_1 unknown rnti type: %d\n", rnti_type);
+        LOG_W(NR_MAC_DCI, "Received dci 1_1 unknown rnti type: %d\n", rnti_type);
       }
       break;
 
@@ -3240,11 +3240,11 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     switch(rnti_type)
       {
       case TYPE_C_RNTI_:
-        LOG_D(NR_DCI, "Received dci 0_1 C rnti\n");
+        LOG_D(NR_MAC_DCI, "Received dci 0_1 C rnti\n");
         //Identifier for DCI formats
         EXTRACT_DCI_ITEM(dci_pdu_rel15->format_indicator, 1);
         if (dci_pdu_rel15->format_indicator == 1) {
-          LOG_W(NR_DCI, "Received dci 0_1 C rnti and format indicator 1, discarding\n");
+          LOG_W(NR_MAC_DCI, "Received dci 0_1 C rnti and format indicator 1, discarding\n");
           return 1; // discard dci, format indicator not corresponding to dci_format
         }
         // Carrier indicator
@@ -3305,12 +3305,12 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         */
         break;
       default:
-        LOG_W(NR_DCI, "Received dci 0_1 unknown rnti type: %d\n", rnti_type);
+        LOG_W(NR_MAC_DCI, "Received dci 0_1 unknown rnti type: %d\n", rnti_type);
       }
     break;
 
   default: // other DCI formats
-    LOG_W(NR_DCI, "Received dci unknown format type: %d\n", dci_format);
+    LOG_W(NR_MAC_DCI, "Received dci unknown format type: %d\n", dci_format);
 
     break;
   }

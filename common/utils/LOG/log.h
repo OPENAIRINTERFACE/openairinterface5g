@@ -169,8 +169,6 @@ extern "C" {
 #define SET_LOG_DUMP(B)   g_log->dump_mask = (g_log->dump_mask | B)
 #define CLEAR_LOG_DUMP(B) g_log->dump_mask = (g_log->dump_mask & (~B))
 
-
-
 typedef enum {
   MIN_LOG_COMPONENTS = 0,
   PHY = MIN_LOG_COMPONENTS,
@@ -219,7 +217,8 @@ typedef enum {
   GNB_APP,
   NR_RRC,
   NR_MAC,
-  NR_DCI,
+  NR_MAC_DCI,
+  NR_PHY_DCI,
   NR_PHY,
   LOADER,
   ASN1,
@@ -252,7 +251,7 @@ typedef struct  {
   log_vprint_func_t vprint;
   log_print_func_t  print;
   /* SR: make the log buffer component relative */
-  char             log_buffer[MAX_LOG_TOTAL];
+  // char             log_buffer[MAX_LOG_TOTAL];
 } log_component_t;
 
 
