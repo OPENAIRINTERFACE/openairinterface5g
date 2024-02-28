@@ -392,17 +392,17 @@ static void get_start_stop_allocation(gNB_MAC_INST *mac,
   // in which case the size of CORESET 0 shall be used if CORESET 0 is configured for the cell
   // and the size of initial DL bandwidth part shall be used if CORESET 0 is not configured for the cell.
   // TS 38.214 Section 5.1.2.2.2
-  *rbStop = dl_bwp->BWPSize;
+  *rbStop = dl_bwp->BWPSize - 1;
   *rbStart = 0; // start wrt BWPstart
   if (sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common &&
       dl_bwp->dci_format == NR_DL_DCI_FORMAT_1_0) {
     if (mac->cset0_bwp_size != 0) {
       *rbStart = mac->cset0_bwp_start;
-      *rbStop = *rbStart + mac->cset0_bwp_size;
+      *rbStop = *rbStart + mac->cset0_bwp_size - 1;
     }
     else {
       *rbStart = UE->sc_info.initial_dl_BWPStart;
-      *rbStop = *rbStart + UE->sc_info.initial_dl_BWPSize;
+      *rbStop = *rbStart + UE->sc_info.initial_dl_BWPSize - 1;
     }
   }
 }
@@ -476,7 +476,7 @@ static bool allocate_dl_retransmission(module_id_t module_id,
         return false;
       }
 
-      while (rbStart + rbSize < rbStop &&
+      while (rbStart + rbSize <= rbStop &&
              (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap &&
              rbSize < retInfo->rbSize)
         rbSize++;
@@ -493,7 +493,7 @@ static bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart < rbStop && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
 
-    while (rbStart + rbSize < rbStop && (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap)
+    while (rbStart + rbSize <= rbStop && (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap)
       rbSize++;
 
     uint32_t new_tbs;
@@ -785,7 +785,7 @@ static void pf_dl(module_id_t module_id,
 
     uint16_t max_rbSize = 1;
 
-    while (rbStart + max_rbSize < rbStop && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
+    while (rbStart + max_rbSize <= rbStop && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
     sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
@@ -1166,7 +1166,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     get_start_stop_allocation(gNB_mac, UE, &rbStart, &rbStop);
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu->rbSize,
                                                                                     pdsch_pdu->rbStart - rbStart,
-                                                                                    rbStop - rbStart);
+                                                                                    rbStop - rbStart + 1);
     dci_payload.format_indicator = 1;
     dci_payload.time_domain_assignment.val = sched_pdsch->time_domain_allocation;
     dci_payload.mcs = sched_pdsch->mcs;
