@@ -317,7 +317,7 @@ static void rrc_gNB_CU_DU_init(gNB_RRC_INST *rrc)
 void openair_rrc_gNB_configuration(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration)
 {
   AssertFatal(rrc != NULL, "RC.nrrrc not initialized!");
-  AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
+  AssertFatal(MAX_MOBILES_PER_GNB < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");
   rrc->module_id = 0;
   rrc_gNB_CU_DU_init(rrc);
