@@ -152,6 +152,18 @@ static void nr_rrc_ue_process_masterCellGroup(NR_UE_RRC_INST_t *rrc,
 
 void nr_rrc_ue_process_measConfig(rrcPerNB_t *rrc, NR_MeasConfig_t *const measConfig);
 
+static NR_RB_status_t get_DRB_status(const NR_UE_RRC_INST_t *rrc, NR_DRB_Identity_t drb_id)
+{
+  AssertFatal(drb_id > 0 && drb_id < 33, "Invalid DRB ID %ld\n", drb_id);
+  return rrc->status_DRBs[drb_id - 1];
+}
+
+static void set_DRB_status(NR_UE_RRC_INST_t *rrc, NR_DRB_Identity_t drb_id, NR_RB_status_t status)
+{
+  AssertFatal(drb_id > 0 && drb_id < 33, "Invalid DRB ID %ld\n", drb_id);
+  rrc->status_DRBs[drb_id - 1] = status;
+}
+
 static void nr_rrc_ue_process_rrcReconfiguration(NR_UE_RRC_INST_t *rrc,
                                                  int gNB_index,
                                                  NR_RRCReconfiguration_t *rrcReconfiguration)
@@ -323,8 +335,8 @@ NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int nb_inst)
 
     for (int j = 0; j < NR_NUM_SRB; j++)
       rrc->Srb[j] = RB_NOT_PRESENT;
-    for (int j = 0; j < MAX_DRBS_PER_UE; j++)
-      rrc->status_DRBs[j] = RB_NOT_PRESENT;
+    for (int j = 1; j <= MAX_DRBS_PER_UE; j++)
+      set_DRB_status(rrc, j, RB_NOT_PRESENT);
     // SRB0 activated by default
     rrc->Srb[0] = RB_ESTABLISHED;
     for (int j = 0; j < NR_MAX_NUM_LCID; j++)
@@ -767,9 +779,9 @@ void nr_rrc_cellgroup_configuration(NR_UE_RRC_INST_t *rrc, NR_CellGroupConfig_t 
         if (rrc->Srb[i] == RB_SUSPENDED)
           rrc->Srb[i] = RB_ESTABLISHED;
       }
-      for (int i = 0; i < MAX_DRBS_PER_UE; i++) {
-        if (rrc->status_DRBs[i] == RB_SUSPENDED)
-          rrc->status_DRBs[i] = RB_ESTABLISHED;
+      for (int i = 1; i <= MAX_DRBS_PER_UE; i++) {
+        if (get_DRB_status(rrc, i) == RB_SUSPENDED)
+          set_DRB_status(rrc, i, RB_ESTABLISHED);
       }
       // TODO reset MAC
     }
@@ -1230,7 +1242,7 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
       struct NR_DRB_ToAddMod *drb = radioBearerConfig->drb_ToAddModList->list.array[cnt];
       int DRB_id = drb->drb_Identity;
       /* DRB is already established and configured */
-      if (ue_rrc->status_DRBs[DRB_id] == RB_ESTABLISHED) {
+      if (get_DRB_status(ue_rrc, DRB_id) == RB_ESTABLISHED) {
         AssertFatal(drb->reestablishPDCP == NULL, "reestablishPDCP not yet implemented\n");
         AssertFatal(drb->recoverPDCP == NULL, "recoverPDCP not yet implemented\n");
         /* sdap-Config is included (SA mode) */
@@ -1242,7 +1254,7 @@ static void nr_rrc_ue_process_RadioBearerConfig(NR_UE_RRC_INST_t *ue_rrc,
         if (sdap_Config)
           nr_reconfigure_sdap_entity(sdap_Config, ue_rrc->ue_id, sdap_Config->pdu_Session, DRB_id);
       } else {
-        ue_rrc->status_DRBs[DRB_id] = RB_ESTABLISHED;
+        set_DRB_status(ue_rrc ,DRB_id, RB_ESTABLISHED);
         add_drb(false,
                 ue_rrc->ue_id,
                 radioBearerConfig->drb_ToAddModList->list.array[cnt],
@@ -1839,9 +1851,9 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
   // release all radio resources, including release of the RLC entity,
   // the MAC configuration and the associated PDCP entity
   // and SDAP for all established RBs
-  for (int i = 0; i < MAX_DRBS_PER_UE; i++) {
-    if (rrc->status_DRBs[i] != RB_NOT_PRESENT) {
-      rrc->status_DRBs[i] = RB_NOT_PRESENT;
+  for (int i = 1; i <= MAX_DRBS_PER_UE; i++) {
+    if (get_DRB_status(rrc, i) != RB_NOT_PRESENT) {
+      set_DRB_status(rrc, i, RB_NOT_PRESENT);
       nr_pdcp_release_drb(rrc->ue_id, i);
     }
   }
