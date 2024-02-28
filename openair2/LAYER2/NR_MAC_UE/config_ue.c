@@ -1442,7 +1442,7 @@ static void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
   }
 
   mac->state = UE_NOT_SYNC;
-  ra->ra_state = RA_UE_IDLE;
+  ra->ra_state = nrRA_UE_IDLE;
   nr_ue_mac_default_configs(mac);
 
   if (!get_softmodem_params()->emulate_l1) {

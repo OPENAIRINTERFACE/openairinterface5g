@@ -161,8 +161,8 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
     nr_mac->ul_harq_info[k].last_ndi = -1; // initialize to invalid value
 
   // stop any ongoing RACH procedure
-  if (nr_mac->ra.ra_state < RA_SUCCEEDED)
-    nr_mac->ra.ra_state = RA_UE_IDLE;
+  if (nr_mac->ra.ra_state < nrRA_SUCCEEDED)
+    nr_mac->ra.ra_state = nrRA_UE_IDLE;
 
   // discard explicitly signalled contention-free Random Access Resources
   // TODO not sure what needs to be done here

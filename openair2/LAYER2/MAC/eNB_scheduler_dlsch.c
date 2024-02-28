@@ -428,11 +428,11 @@ void check_ra_rnti_mui(module_id_t mod_id, int CC_id, frame_t f, sub_frame_t sf,
   int harq_pid = frame_subframe2_dl_harq_pid(tdd_config, f, sf);
   RA_t *ra = &RC.mac[mod_id]->common_channels[CC_id].ra[0];
   for (uint8_t ra_ii = 0; ra_ii < NB_RA_PROC_MAX; ra_ii++, ra++) {
-    if ((ra->rnti == rnti) && (ra->state == MSGCRNTI)) {
+    if ((ra->rnti == rnti) && (ra->eRA_state == MSGCRNTI)) {
       for (uint16_t mui_num = 0; mui_num < rlc_am_mui.rrc_mui_num; mui_num++) {
         if (ra->crnti_rrc_mui == rlc_am_mui.rrc_mui[mui_num]) {
           ra->crnti_harq_pid = harq_pid;
-          ra->state = MSGCRNTI_ACK;
+          ra->eRA_state = MSGCRNTI_ACK;
           break;
         }
       }

@@ -1075,7 +1075,7 @@ void nr_ue_ul_scheduler(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
             ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator,
             TBS_bytes,
             ra->ra_state);
-      if (ra->ra_state == WAIT_RAR && !ra->cfra) {
+      if (ra->ra_state == nrRA_WAIT_RAR && !ra->cfra) {
         nr_get_msg3_payload(mac, ulsch_input_buffer, TBS_bytes);
         for (int k = 0; k < TBS_bytes; k++) {
           LOG_D(NR_MAC, "(%i): 0x%x\n", k, ulsch_input_buffer[k]);
@@ -1083,7 +1083,7 @@ void nr_ue_ul_scheduler(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
         mac_pdu_exist = 1;
       } else {
         if (ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator
-            && (mac->state == UE_CONNECTED || (ra->ra_state == WAIT_RAR && ra->cfra))) {
+            && (mac->state == UE_CONNECTED || (ra->ra_state == nrRA_WAIT_RAR && ra->cfra))) {
           // Getting IP traffic to be transmitted
           nr_ue_get_sdu(mac, cc_id, frame_tx, slot_tx, gNB_index, ulsch_input_buffer, TBS_bytes);
           mac_pdu_exist = 1;
@@ -1096,13 +1096,13 @@ void nr_ue_ul_scheduler(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
         ulcfg_pdu->pusch_config_pdu.tx_request_body.pdu_length = TBS_bytes;
         number_of_pdus++;
       }
-      if (ra->ra_state == WAIT_CONTENTION_RESOLUTION && !ra->cfra) {
+      if (ra->ra_state == nrRA_WAIT_CONTENTION_RESOLUTION && !ra->cfra) {
         LOG_I(NR_MAC, "[RAPROC][%d.%d] RA-Msg3 retransmitted\n", frame_tx, slot_tx);
         // 38.321 restart the ra-ContentionResolutionTimer at each HARQ retransmission in the first symbol after the end of the Msg3
         // transmission
         nr_Msg3_transmitted(mac, cc_id, frame_tx, slot_tx, gNB_index);
       }
-      if (ra->ra_state == WAIT_RAR && !ra->cfra) {
+      if (ra->ra_state == nrRA_WAIT_RAR && !ra->cfra) {
         LOG_A(NR_MAC, "[RAPROC][%d.%d] RA-Msg3 transmitted\n", frame_tx, slot_tx);
         nr_Msg3_transmitted(mac, cc_id, frame_tx, slot_tx, gNB_index);
       }
@@ -2501,7 +2501,7 @@ static void nr_ue_prach_scheduler(NR_UE_MAC_INST_t *mac, frame_t frameP, sub_fra
 {
   RA_config_t *ra = &mac->ra;
   ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
-  if(ra->ra_state != GENERATE_PREAMBLE)
+  if (ra->ra_state != nrRA_GENERATE_PREAMBLE)
     return;
 
   fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;

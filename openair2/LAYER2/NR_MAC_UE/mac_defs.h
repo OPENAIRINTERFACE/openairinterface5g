@@ -238,13 +238,16 @@ typedef struct {
 } NR_UE_SCHEDULING_INFO;
 
 typedef enum {
-  RA_UE_IDLE = 0,
-  GENERATE_PREAMBLE = 1,
-  WAIT_RAR = 2,
-  WAIT_CONTENTION_RESOLUTION = 3,
-  RA_SUCCEEDED = 4,
-  RA_FAILED = 5
-} RA_state_t;
+  nrRA_UE_IDLE = 0,
+  nrRA_GENERATE_PREAMBLE = 1,
+  nrRA_WAIT_RAR = 2,
+  nrRA_WAIT_CONTENTION_RESOLUTION = 3,
+  nrRA_SUCCEEDED = 4,
+  nrRA_FAILED = 5
+} nrRA_UE_state_t;
+
+static const char *const nrra_ue_text[] =
+    {"UE_IDLE", "GENERATE_PREAMBLE", "WAIT_RAR", "WAIT_CONTENTION_RESOLUTION", "RA_SUCCEEDED", "RA_FAILED"};
 
 typedef struct {
   /// PRACH format retrieved from prach_ConfigIndex
@@ -276,7 +279,7 @@ typedef struct {
   // pointer to RACH config dedicated
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated;
   /// state of RA procedure
-  RA_state_t ra_state;
+  nrRA_UE_state_t ra_state;
   /// RA contention type
   uint8_t cfra;
   /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.

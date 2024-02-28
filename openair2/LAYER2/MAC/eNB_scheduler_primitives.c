@@ -2005,12 +2005,9 @@ find_RA_id(module_id_t mod_idP,
   RA_t *ra = (RA_t *) &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
 
   for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++) {
-    LOG_D(MAC, "Checking RA_id %d for %x : state %d\n",
-          RA_id,
-          rntiP,
-          ra[RA_id].state);
+    LOG_D(MAC, "Checking RA_id %d for %x : state %s\n", RA_id, rntiP, era_text[ra[RA_id].eRA_state]);
 
-    if (ra[RA_id].state != IDLE && ra[RA_id].rnti == rntiP)
+    if (ra[RA_id].eRA_state != IDLE && ra[RA_id].rnti == rntiP)
       return RA_id;
   }
 
@@ -3970,7 +3967,7 @@ extract_harq(module_id_t mod_idP,
 
               if (sched_ctl->round[CC_idP][harq_pid] == 8) {
                 for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-                  if (ra[ra_i].rnti == rnti && ra[ra_i].state == WAITMSG4ACK) {
+                  if (ra[ra_i].rnti == rnti && ra[ra_i].eRA_state == WAITMSG4ACK) {
                     //Msg NACK num to MAC ,remove UE
                     // add UE info to freeList
                     LOG_I(RRC, "put UE %x into freeList\n",
@@ -3985,7 +3982,7 @@ extract_harq(module_id_t mod_idP,
           }
 
           for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-            if (ra[ra_i].rnti == rnti && ra[ra_i].state == MSGCRNTI_ACK && ra[ra_i].crnti_harq_pid == harq_pid) {
+            if (ra[ra_i].rnti == rnti && ra[ra_i].eRA_state == MSGCRNTI_ACK && ra[ra_i].crnti_harq_pid == harq_pid) {
               LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",
                     harq_indication_tdd->harq_data[0].bundling.value_0,
                     rnti,
@@ -4077,7 +4074,7 @@ extract_harq(module_id_t mod_idP,
           RA_t *ra = &eNB->common_channels[CC_idP].ra[0];
 
           for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-            if (ra[ra_i].rnti == rnti && ra[ra_i].state == MSGCRNTI_ACK && ra[ra_i].crnti_harq_pid == harq_pid) {
+            if (ra[ra_i].rnti == rnti && ra[ra_i].eRA_state == MSGCRNTI_ACK && ra[ra_i].crnti_harq_pid == harq_pid) {
               LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",
                     pdu[0],
                     rnti,
@@ -4122,7 +4119,7 @@ extract_harq(module_id_t mod_idP,
 
             if (sched_ctl->round[CC_idP][harq_pid] == 8) {
               for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-                if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)) {
+                if ((ra[ra_i].rnti == rnti) && (ra[ra_i].eRA_state == WAITMSG4ACK)) {
                   // Msg NACK num to MAC ,remove UE
                   // add UE info to freeList
                   LOG_I(RRC, "put UE %x into freeList\n",
