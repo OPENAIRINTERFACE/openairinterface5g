@@ -30,6 +30,9 @@
 * \warning
 */
 
+#ifndef NR_ULSCH_H_
+#define NR_ULSCH_H_
+
 #include "PHY/defs_gNB.h"
 #include "common/utils/threadPool/thread-pool.h"
 
@@ -78,3 +81,5 @@ void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB);
 void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
 NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch);
+
+#endif /* NR_ULSCH_H_ */
