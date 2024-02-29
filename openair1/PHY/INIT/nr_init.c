@@ -135,6 +135,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
 
   load_LDPClib(NULL, &ldpc_interface);
 
+  pthread_mutex_init(&gNB->UL_INFO.crc_rx_mutex, NULL);
+
   if (gNB->ldpc_offload_flag)
     load_LDPClib("_t2", &ldpc_interface_offload);
   gNB->max_nb_pdsch = MAX_MOBILES_PER_GNB;
@@ -330,6 +332,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   const int Prx = gNB->gNB_config.carrier_config.num_rx_ant.value;
   const int max_ul_mimo_layers = 4; // taken from phy_init_nr_gNB()
   const int n_buf = Prx * max_ul_mimo_layers;
+
+  pthread_mutex_destroy(&gNB->UL_INFO.crc_rx_mutex);
 
   PHY_MEASUREMENTS_gNB *meas = &gNB->measurements;
   free_and_zero(meas->n0_subband_power);

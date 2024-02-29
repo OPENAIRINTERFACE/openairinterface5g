@@ -471,6 +471,14 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   else if (SNRtimes10 >  635) cqi=255;
   else                        cqi=(640+SNRtimes10)/5;
 
+  // multiple threads might call this function at the same time, or while the
+  // L2 reads the messages. Hence, if not protected, crc and rx indications
+  // might not appear pairwise (in the same order) in the same slot, or even in
+  // separate slots. The L2 does not support this; hence, use the crc_rx_mutex
+  // to ensure that messages are pairwise.
+  int rc = pthread_mutex_lock(&gNB->UL_INFO.crc_rx_mutex);
+  DevAssert(rc == 0);
+
   // crc indication
   uint16_t num_crc = gNB->UL_INFO.crc_ind.number_crcs;
   gNB->UL_INFO.crc_ind.crc_list = &gNB->crc_pdu_list[0];
@@ -507,8 +515,10 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
     gNB->rx_pdu_list[num_rx].pdu_length = harq_process->TBS;
     gNB->rx_pdu_list[num_rx].pdu = harq_process->b;
   }
-
   gNB->UL_INFO.rx_ind.number_of_pdus++;
+
+  rc = pthread_mutex_unlock(&gNB->UL_INFO.crc_rx_mutex);
+  DevAssert(rc == 0);
 }
 
 // Function to fill UL RB mask to be used for N0 measurements
