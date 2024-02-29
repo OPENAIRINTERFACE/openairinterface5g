@@ -30,6 +30,7 @@
  100001
  000001
  000002
+ 000003
  020001
  020002
  030001
@@ -59,6 +60,12 @@
                 <yaml_path>yaml_files/5g_rfsimulator_u0_25prb</yaml_path>
                 <services>oai-gnb oai-nr-ue</services>
                 <nb_healthy>7</nb_healthy>
+        </testCase>
+
+        <testCase id="000003">
+                <class>Attach_UE</class>
+                <desc>Attach OAI UE (Wait for IP)</desc>
+                <id>rfsim5g_ue</id>
         </testCase>
 
         <testCase id="020001">

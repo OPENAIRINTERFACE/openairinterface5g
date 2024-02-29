@@ -27,6 +27,7 @@
         <TestCaseRequestedList>
  111111
  000020
+ 000021
  020021
  100021
  100022
@@ -46,6 +47,12 @@
                 <yaml_path>yaml_files/5g_rfsimulator_accelleran</yaml_path>
                 <services>oai-du oai-nr-ue</services>
                 <nb_healthy>2</nb_healthy>
+        </testCase>
+
+        <testCase id="000021">
+                <class>Attach_UE</class>
+                <desc>Attach OAI UE (Wait for IP)</desc>
+                <id>rfsim5g_ue</id>
         </testCase>
 
         <testCase id="020021">
