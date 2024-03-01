@@ -109,7 +109,7 @@ static int lcid_buffer_index(NR_LogicalChannelIdentity_t lcid)
   return lcid - 1;
 }
 
-static NR_LC_SCHEDULING_INFO *get_scheduling_info_from_lcid(NR_UE_MAC_INST_t *mac, NR_LogicalChannelIdentity_t lcid)
+NR_LC_SCHEDULING_INFO *get_scheduling_info_from_lcid(NR_UE_MAC_INST_t *mac, NR_LogicalChannelIdentity_t lcid)
 {
   int idx = lcid_buffer_index(lcid);
   return &mac->scheduling_info.lc_sched_info[idx];
@@ -118,6 +118,7 @@ static NR_LC_SCHEDULING_INFO *get_scheduling_info_from_lcid(NR_UE_MAC_INST_t *ma
 void update_mac_timers(NR_UE_MAC_INST_t *mac)
 {
   nr_timer_tick(&mac->ra.contention_resolution_timer);
+  nr_timer_tick(&mac->scheduling_info.sr_DelayTimer);
   for (int i = 0; i < NR_MAX_NUM_LCID; i++)
     AssertFatal(!nr_timer_tick(&mac->scheduling_info.lc_sched_info[i].Bj_timer),
                 "Bj timer for LCID %d expired! That should never happen\n",
@@ -1190,43 +1191,18 @@ void nr_ue_ul_scheduler(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
     mac->scheduling_info.periodicBSR_SF--;
   }
 
-  //Check whether Regular BSR is triggered
-  if (nr_update_bsr(mac, frame_tx, slot_tx, gNB_index) == true) {
-    // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
-    // outlined in Sections 5.4.4 an 5.4.5 of 38.321
-    mac->scheduling_info.SR_pending = 1;
-    // Regular BSR trigger
-    mac->BSR_reporting_active |= NR_BSR_TRIGGER_REGULAR;
-    LOG_D(NR_MAC, "[UE %d][BSR] Regular BSR Triggered Frame %d slot %d SR for PUSCH is pending\n", mac->ue_id, frame_tx, slot_tx);
-  }
+  //Check whether BSR is triggered
+  nr_update_bsr(mac, frame_tx, slot_tx, gNB_index);
 
   if(mac->state >= UE_PERFORMING_RA)
     nr_ue_pucch_scheduler(mac, frame_tx, slot_tx, ul_info->phy_data);
 }
 
-bool nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t gNB_index)
+void nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t gNB_index)
 {
-  bool bsr_regular_triggered = false;
-  uint8_t num_lcid_with_data = 0; // for LCID with data only if LCGID is defined
-  uint32_t lcgid_buffer_remain[NR_MAX_NUM_LCGID] = {0,0,0,0,0,0,0,0};
-  int32_t lcid_bytes_in_buffer[NR_MAX_NUM_LCID];
-  /* Array for ordering LCID with data per decreasing priority order */
-  uint8_t lcid_reordered_array[NR_MAX_NUM_LCID] = {
-      NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID,
-      NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID,
-      NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID,
-      NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID,
-      NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID, NR_MAX_NUM_LCID,
-  };
-  uint8_t pos_next = 0;
-  //uint8_t highest_priority = 16;
-  uint8_t array_index = 0;
-  // Reset All BSR Infos
   for (int lcid = 1; lcid <= NR_MAX_NUM_LCID; lcid++) {
     // Reset transmission status
-    int idx = lcid_buffer_index(lcid);
-    lcid_bytes_in_buffer[idx] = 0;
-    mac->scheduling_info.lc_sched_info[idx].LCID_buffer_with_data = false;
+    mac->scheduling_info.lc_sched_info[lcid_buffer_index(lcid)].LCID_buffer_with_data = false;
   }
 
   for (int lcgid = 0; lcgid < NR_MAX_NUM_LCGID; lcgid++) {
@@ -1235,116 +1211,68 @@ bool nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t 
     mac->scheduling_info.lcg_sched_info[lcgid].BSR_bytes = 0;
   }
 
-  //Get Buffer Occupancy and fill lcid_reordered_array
+  bool bsr_regular_triggered = mac->BSR_reporting_active & NR_BSR_TRIGGER_REGULAR;
   for (int i = 0; i < mac->lc_ordered_list.count; i++) {
-    int lcid = mac->lc_ordered_list.array[i]->lcid;
-    NR_LC_SCHEDULING_INFO *sched_info = get_scheduling_info_from_lcid(mac, lcid);
-    int lcgid = sched_info->LCGID;
+    nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
+    int lcid = lc_info->lcid;
+    NR_LC_SCHEDULING_INFO *lc_sched_info = get_scheduling_info_from_lcid(mac, lcid);
+    int lcgid = lc_sched_info->LCGID;
 
-    // Store already available data to transmit per Group
-    if (lcgid < NR_MAX_NUM_LCGID) {
-      lcgid_buffer_remain[lcgid] += sched_info->LCID_buffer_remain;
-    }
+    // check if UL data for a logical channel which belongs to a LCG becomes available for transmission
+    if (lcgid != NR_INVALID_LCGID) {
+      mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mac->ue_id,
+                                                            mac->ue_id,
+                                                            gNB_index,
+                                                            frameP,
+                                                            slotP,
+                                                            ENB_FLAG_NO,
+                                                            MBMS_FLAG_NO,
+                                                            lcid,
+                                                            0,
+                                                            0);
 
-    mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mac->ue_id,
-                                                          mac->ue_id,
-                                                          gNB_index,
-                                                          frameP,
-                                                          slotP,
-                                                          ENB_FLAG_NO,
-                                                          MBMS_FLAG_NO,
-                                                          lcid,
-                                                          0,
-                                                          0);
+      lc_sched_info->LCID_buffer_remain = rlc_status.bytes_in_buffer;
 
-    int lc_idx = lcid_buffer_index(lcid);
-    lcid_bytes_in_buffer[lc_idx] = rlc_status.bytes_in_buffer;
-
-    if (rlc_status.bytes_in_buffer > 0) {
-      LOG_D(NR_MAC,
-            "[UE %d] PDCCH Tick : LCID%d LCGID%d has data to transmit =%d bytes at frame %d slot %d\n",
-            mac->ue_id,
-            lcid,
-            lcgid,
-            rlc_status.bytes_in_buffer,
-            frameP,
-            slotP);
-      sched_info->LCID_buffer_with_data = true;
-
-      //Update BSR_bytes and position in lcid_reordered_array only if Group is defined
-      if (lcgid < NR_MAX_NUM_LCGID) {
-        num_lcid_with_data ++;
-        // sum lcid buffer which has same lcgid
-        mac->scheduling_info.lcg_sched_info[lcgid].BSR_bytes += rlc_status.bytes_in_buffer;
-        //Fill in the array
-        array_index = 0;
-
-        do {
-          //if (mac->logicalChannelConfig[lcid]->ul_SpecificParameters->priority <= highest_priority) {
-          if (1) { // todo
-            //Insert if priority is higher or equal (lower or equal in value)
-            for (pos_next = num_lcid_with_data - 1; pos_next > array_index; pos_next--) {
-              lcid_reordered_array[pos_next] = lcid_reordered_array[pos_next - 1];
-            }
-
-            lcid_reordered_array[array_index] = lcid;
-            break;
-          }
-
-          array_index ++;
-        } while ((array_index < num_lcid_with_data) && (array_index <= NR_MAX_NUM_LCID));
-      }
-    }
-  }
-
-  // Check whether a regular BSR can be triggered according to the first cases in 38.321
-  if (num_lcid_with_data) {
-    LOG_D(NR_MAC, "[UE %d] PDCCH Tick at frame %d slot %d: NumLCID with data=%d Reordered LCID0=%d LCID1=%d LCID2=%d\n",
-          mac->ue_id,
-          frameP,
-          slotP,
-          num_lcid_with_data,
-          lcid_reordered_array[0],
-          lcid_reordered_array[1],
-          lcid_reordered_array[2]);
-
-    for (array_index = 0; array_index < num_lcid_with_data; array_index++) {
-      int lcid = lcid_reordered_array[array_index];
-      NR_LC_SCHEDULING_INFO *sched_info = get_scheduling_info_from_lcid(mac, lcid);
-      /* UL data, for a logical channel which belongs to a LCG, becomes available for transmission in the RLC entity
-         either the data belongs to a logical channel with higher priority than the priorities of the logical channels
-         which belong to any LCG and for which data is already available for transmission
-      */
-      {
-        bsr_regular_triggered = true;
+      if (rlc_status.bytes_in_buffer > 0) {
         LOG_D(NR_MAC,
-              "[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%ld data become available at frame %d slot %d\n",
+              "[UE %d] PDCCH Tick : LCID %d LCGID %d has data to transmit %d bytes at frame %d slot %d\n",
               mac->ue_id,
               lcid,
-              sched_info->LCGID,
+              lcgid,
+              rlc_status.bytes_in_buffer,
               frameP,
               slotP);
-        break;
-      }
-    }
 
-    // Trigger Regular BSR if ReTxBSR Timer has expired and UE has data for transmission
-    if (mac->scheduling_info.retxBSR_SF == 0) {
-      bsr_regular_triggered = true;
+        lc_sched_info->LCID_buffer_with_data = true;
 
-      if ((mac->BSR_reporting_active & NR_BSR_TRIGGER_REGULAR) == 0) {
-        LOG_I(NR_MAC, "[UE %d] PDCCH Tick : MAC BSR Triggered ReTxBSR Timer expiry at frame %d slot %d\n", mac->ue_id, frameP, slotP);
+        //Update BSR_bytes
+        mac->scheduling_info.lcg_sched_info[lcgid].BSR_bytes += rlc_status.bytes_in_buffer;
+
+        if (!bsr_regular_triggered) {
+          bsr_regular_triggered = true;
+          // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
+          // outlined in Sections 5.4.4 an 5.4.5 of 38.321
+          mac->scheduling_info.SR_pending = 1;
+          // Regular BSR trigger
+          mac->BSR_reporting_active |= NR_BSR_TRIGGER_REGULAR;
+          LOG_D(NR_MAC,
+                "[UE %d] MAC BSR Triggered LCID %d LCGID %d data become available at frame %d slot %d\n",
+                mac->ue_id,
+                lcid,
+                lcgid,
+                frameP,
+                slotP);
+          // if the BSR is triggered for a logical channel for which logicalChannelSR-DelayTimerApplied with value true
+          // start or restart the logicalChannelSR-DelayTimer
+          // else stop the logicalChannelSR-DelayTimer
+          if (lc_info->sr_DelayTimerApplied)
+            nr_timer_start(&mac->scheduling_info.sr_DelayTimer);
+          else
+            nr_timer_stop(&mac->scheduling_info.sr_DelayTimer);
+        }
       }
     }
   }
-
-  //Store Buffer Occupancy in remain buffers for next TTI
-  for (int lcid = 1; lcid <= NR_MAX_NUM_LCID; lcid++) {
-    NR_LC_SCHEDULING_INFO *sched_info = get_scheduling_info_from_lcid(mac, lcid);
-    sched_info->LCID_buffer_remain = lcid_bytes_in_buffer[lcid_buffer_index(lcid)];
-  }
-
-  return bsr_regular_triggered;
 }
 
 uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size, int value)
@@ -2627,7 +2555,7 @@ static int nr_ue_get_sdu_mac_ce_pre(NR_UE_MAC_INST_t *mac,
   mac_ce_p->bsr_header_len = 0;
   mac_ce_p->phr_header_len = 0;   //sizeof(SCH_SUBHEADER_FIXED);
   int lcg_id = 0;
-  while (lcg_id < NR_MAX_NUM_LCGID) {
+  while (lcg_id != NR_INVALID_LCGID) {
     if (mac->scheduling_info.lcg_sched_info[lcg_id].BSR_bytes) {
       num_lcg_id_with_data++;
     }
@@ -2759,7 +2687,7 @@ static void nr_ue_get_sdu_mac_ce_post(NR_UE_MAC_INST_t *mac,
         for (int lcid = 1; lcid <= NR_MAX_NUM_LCID; lcid++) {
           NR_LC_SCHEDULING_INFO *sched_info = get_scheduling_info_from_lcid(mac, lcid);
           lcg_id = sched_info->LCGID;
-          if ((lcg_id < NR_MAX_NUM_LCGID) && (mac->scheduling_info.lcg_sched_info[lcg_id].BSR_bytes)) {
+          if ((lcg_id != NR_INVALID_LCGID) && (mac->scheduling_info.lcg_sched_info[lcg_id].BSR_bytes)) {
             lcg_id_bsr_trunc = lcg_id;
           }
         }

@@ -68,6 +68,13 @@
 // NR UE defs
 // ==========
 
+#define NR_BSR_TRIGGER_NONE      (0) /* No BSR Trigger */
+#define NR_BSR_TRIGGER_REGULAR   (1) /* For Regular and ReTxBSR Expiry Triggers */
+#define NR_BSR_TRIGGER_PERIODIC  (2) /* For BSR Periodic Timer Expiry Trigger */
+#define NR_BSR_TRIGGER_PADDING   (4) /* For Padding BSR Trigger */
+
+#define NR_INVALID_LCGID (NR_MAX_NUM_LCGID)
+
 #define MAX_NUM_BWP_UE 5
 #define NUM_SLOT_FRAME 10
 
@@ -205,6 +212,8 @@ typedef struct {
   uint8_t  SR_pending;
   /// SR_COUNTER as defined in 38.321
   uint16_t SR_COUNTER;
+  // logicalChannelSR-DelayTimer
+  NR_timer_t sr_DelayTimer;
   /// retxBSR-Timer, default value is sf2560
   uint16_t retxBSR_Timer;
   /// retxBSR_SF, number of subframe before triggering a regular BSR
@@ -445,6 +454,7 @@ typedef struct nr_lcordered_info_s {
   uint32_t pbr; // in B/s (UINT_MAX = infinite)
   // Bucket size per lcid
   uint32_t bucket_size;
+  bool sr_DelayTimerApplied;
 } nr_lcordered_info_t;
 
 

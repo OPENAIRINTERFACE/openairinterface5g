@@ -72,6 +72,9 @@ void nr_ue_init_mac(NR_UE_MAC_INST_t *mac)
   mac->p_Max_alt = INT_MIN;
   reset_mac_inst(mac);
 
+  // need to inizialize because might not been setup (optional timer)
+  nr_timer_stop(&mac->scheduling_info.sr_DelayTimer);
+
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
   memset(mac->ssb_list, 0, sizeof(mac->ssb_list));
@@ -144,13 +147,19 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   // initialize Bj for each logical channel to zero
   // TODO reset also other status variables of LC, is this ok?
   for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+    LOG_D(NR_MAC, "Applying default logical channel config for LCID %d\n", i);
     nr_mac->scheduling_info.lc_sched_info[i].Bj = 0;
     nr_mac->scheduling_info.lc_sched_info[i].LCID_buffer_with_data = false;
     nr_mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
   }
 
   // TODO stop all running timers
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+    nr_mac->scheduling_info.lc_sched_info[i].Bj = 0;
+    nr_timer_stop(&nr_mac->scheduling_info.lc_sched_info[i].Bj_timer);
+  }
   nr_timer_stop(&nr_mac->ra.contention_resolution_timer);
+  nr_timer_stop(&nr_mac->scheduling_info.sr_DelayTimer);
 
   // consider all timeAlignmentTimers as expired and perform the corresponding actions in clause 5.2
   // TODO

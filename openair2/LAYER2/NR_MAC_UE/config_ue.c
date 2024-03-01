@@ -744,21 +744,24 @@ static void nr_configure_lc_config(NR_UE_MAC_INST_t *mac,
                                    NR_LogicalChannelConfig_t *mac_lc_config,
                                    NR_SRB_Identity_t srb_id)
 {
+  NR_LC_SCHEDULING_INFO *lc_sched_info = get_scheduling_info_from_lcid(mac, lc_info->lcid);
   if (srb_id > 0 && !mac_lc_config->ul_SpecificParameters) {
     // release configuration and reset to default
     set_default_logicalchannelconfig(lc_info, srb_id);
-    mac->scheduling_info.lc_sched_info[lc_info->lcid - 1].LCGID = 0;
+    // invalid LCGID to signal it is absent in the configuration
+    lc_sched_info->LCGID = NR_INVALID_LCGID;
     return;
   }
   AssertFatal(mac_lc_config->ul_SpecificParameters, "UL parameters shouldn't be NULL for DRBs\n");
   struct NR_LogicalChannelConfig__ul_SpecificParameters *ul_parm = mac_lc_config->ul_SpecificParameters;
   lc_info->priority = ul_parm->priority;
+  lc_info->sr_DelayTimerApplied = ul_parm->logicalChannelSR_DelayTimerApplied;
   lc_info->pbr = nr_get_pbr(ul_parm->prioritisedBitRate);
-  // TODO Verify setting to 0 is ok, 331 just says need R (release if NULL)
-  mac->scheduling_info.lc_sched_info[lc_info->lcid - 1].LCGID = ul_parm->logicalChannelGroup ? *ul_parm->logicalChannelGroup : 0;
+  // if logicalChannelGroup we release LCGID and set it to invalid
+  lc_sched_info->LCGID = ul_parm->logicalChannelGroup ? *ul_parm->logicalChannelGroup : NR_INVALID_LCGID;
   lc_info->bucket_size = get_lc_bucket_size(ul_parm->prioritisedBitRate, ul_parm->bucketSizeDuration);
   // setup and start Bj timer for this LC
-  NR_timer_t *bjt = &mac->scheduling_info.lc_sched_info[lc_info->lcid - 1].Bj_timer;
+  NR_timer_t *bjt = &lc_sched_info->Bj_timer;
   nr_timer_setup(bjt, UINT_MAX, 1);  // this timer never expires in principle, counter incremented by number of slots
   nr_timer_start(bjt);
 }
@@ -1557,6 +1560,37 @@ static void configure_physicalcellgroup(NR_UE_MAC_INST_t *mac,
                                         *p_UE_FR1 : *p_NR_FR1);
 }
 
+static uint32_t get_sr_DelayTimer(long logicalChannelSR_DelayTimer)
+{
+  uint32_t timer = 0;
+  switch (logicalChannelSR_DelayTimer) {
+    case NR_BSR_Config__logicalChannelSR_DelayTimer_sf20 :
+      timer = 20;
+      break;
+    case NR_BSR_Config__logicalChannelSR_DelayTimer_sf40 :
+      timer = 40;
+      break;
+    case NR_BSR_Config__logicalChannelSR_DelayTimer_sf64 :
+      timer = 64;
+      break;
+    case NR_BSR_Config__logicalChannelSR_DelayTimer_sf128 :
+      timer = 128;
+      break;
+    case NR_BSR_Config__logicalChannelSR_DelayTimer_sf512 :
+      timer = 512;
+      break;
+    case NR_BSR_Config__logicalChannelSR_DelayTimer_sf1024 :
+      timer = 1024;
+      break;
+    case NR_BSR_Config__logicalChannelSR_DelayTimer_sf2560 :
+      timer = 2560;
+      break;
+    default :
+      AssertFatal(false, "Invalid SR_DelayTimer %ld\n", logicalChannelSR_DelayTimer);
+  }
+  return timer;
+}
+
 static void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroupConfig_t *mcg)
 {
   NR_UE_SCHEDULING_INFO *si = &mac->scheduling_info;
@@ -1590,10 +1624,13 @@ static void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroup
     }
   }
   if (mcg->bsr_Config) {
+    int subframes_per_slot = nr_slots_per_frame[mac->current_UL_BWP->scs] / 10;
     si->periodicBSR_Timer = mcg->bsr_Config->periodicBSR_Timer;
     si->retxBSR_Timer = mcg->bsr_Config->retxBSR_Timer;
-    if (mcg->bsr_Config->logicalChannelSR_DelayTimer)
-      LOG_E(NR_MAC, "Handling of logicalChannelSR_DelayTimer not implemented\n");
+    if (mcg->bsr_Config->logicalChannelSR_DelayTimer) {
+      uint32_t target_sf = get_sr_DelayTimer(*mcg->bsr_Config->logicalChannelSR_DelayTimer);
+      nr_timer_setup(&si->sr_DelayTimer, target_sf * subframes_per_slot, 1); // 1 slot update rate
+    }
   }
   if (mcg->tag_Config) {
     // TODO TAG not handled
@@ -2053,9 +2090,6 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
   AssertFatal(cell_group_config, "CellGroupConfig should not be NULL\n");
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  if (cell_group_config->mac_CellGroupConfig)
-    configure_maccellgroup(mac, cell_group_config->mac_CellGroupConfig);
-
   if (cell_group_config->physicalCellGroupConfig)
     configure_physicalcellgroup(mac, cell_group_config->physicalCellGroupConfig);
 
@@ -2072,6 +2106,9 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
       configure_BWPs(mac, scd);
     }
   }
+
+  if (cell_group_config->mac_CellGroupConfig)
+    configure_maccellgroup(mac, cell_group_config->mac_CellGroupConfig);
 
   configure_logicalChannelBearer(mac,
                                  cell_group_config->rlc_BearerToAddModList,
