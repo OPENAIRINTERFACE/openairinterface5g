@@ -662,22 +662,26 @@ class Containerize():
 		collectInfo['proxy'] = files
 		mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
 		result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
+		# Cleaning any created tmp volume
+		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
+		mySSH.close()
+
 		allImagesSize = {}
 		if result is not None:
 			imageSize = float(result.group('size')) / 1000000
 			logging.debug('\u001B[1m   proxy size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
 			allImagesSize['proxy'] = str(round(imageSize,1)) + ' Mbytes'
+			logging.info('\u001B[1m Building L2sim Proxy Image Pass\u001B[0m')
+			HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
+			return True
 		else:
-			logging.debug('proxy size is unknown')
+			logging.error('proxy size is unknown')
 			allImagesSize['proxy'] = 'unknown'
-
-		# Cleaning any created tmp volume
-		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
-		mySSH.close()
-
-		logging.info('\u001B[1m Building L2sim Proxy Image Pass\u001B[0m')
-		HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
-		HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
+			logging.error('\u001B[1m Build of L2sim proxy failed\u001B[0m')
+			HTML.CreateHtmlTestRow('commit ' + tag, 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTabFooter(False)
+			return False
 
 	def BuildRunTests(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
