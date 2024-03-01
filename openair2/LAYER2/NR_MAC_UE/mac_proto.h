@@ -458,8 +458,6 @@ void init_RA(NR_UE_MAC_INST_t *mac,
 
 int16_t get_prach_tx_power(NR_UE_MAC_INST_t *mac);
 
-void set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu);
-
 void nr_Msg1_transmitted(NR_UE_MAC_INST_t *mac);
 void nr_Msg3_transmitted(NR_UE_MAC_INST_t *mac, uint8_t CC_id, frame_t frameP, slot_t slotP, uint8_t gNB_id);
 void nr_get_msg3_payload(NR_UE_MAC_INST_t *mac, uint8_t *buf, int TBS_max);

@@ -587,15 +587,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
        continue;
     }
 
-    uint16_t ra_rnti;
-
-    // ra_rnti from 5.1.3 in 38.321
-    // FK: in case of long PRACH the phone seems to expect the subframe number instead of the slot number here.
-    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present
-        == NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839)
-      ra_rnti = 1 + symbol + (9 /*slotP*/ * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
-    else
-      ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
+    rnti_t ra_rnti = nr_get_ra_rnti(symbol, slotP, freq_index, ul_carrier_id);
 
     // Configure RA BWP
     configure_UE_BWP(nr_mac, scc, NULL, ra, NULL, -1, -1);
