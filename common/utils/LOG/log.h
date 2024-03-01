@@ -235,23 +235,24 @@ typedef struct {
 
 typedef int(*log_vprint_func_t)(FILE *stream, const char *format, va_list ap );
 typedef int(*log_print_func_t)(FILE *stream, const char *format, ... );
+typedef struct {
+  int savedlevel;
+  char *filelog_name;
+} log_component_back_t;
+
 typedef struct  {
   const char        *name;
   int               level;
-  int               savedlevel;
-  int               flag;
-  int               filelog;
-  char              *filelog_name;
+  int filelog;
   FILE              *stream;
   log_vprint_func_t vprint;
-  log_print_func_t  print;
-  /* SR: make the log buffer component relative */
-  // char             log_buffer[MAX_LOG_TOTAL];
+  log_print_func_t print;
 } log_component_t;
 
 
 typedef struct {
   log_component_t         log_component[MAX_LOG_COMPONENTS];
+  log_component_back_t log_rarely_used[MAX_LOG_COMPONENTS];
   char                    level2string[NUM_LOG_LEVEL];
   int                     flag;
   char                   *filelog_name;

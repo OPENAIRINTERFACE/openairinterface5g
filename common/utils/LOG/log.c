@@ -416,8 +416,8 @@ int register_log_component(char *name,
     g_log->log_component[computed_compidx].name = strdup(name);
     g_log->log_component[computed_compidx].stream = stdout;
     g_log->log_component[computed_compidx].filelog = 0;
-    g_log->log_component[computed_compidx].filelog_name = malloc(strlen(name)+16);/* /tmp/<name>.%s  */
-    sprintf(g_log->log_component[computed_compidx].filelog_name,"/tmp/%s.%s",name,fext);
+    g_log->log_rarely_used[computed_compidx].filelog_name = malloc(strlen(name) + 16); /* /tmp/<name>.%s  */
+    sprintf(g_log->log_rarely_used[computed_compidx].filelog_name, "/tmp/%s.%s", name, fext);
   } else {
     fprintf(stderr,"{LOG} %s %d Couldn't register component %s\n",__FILE__,__LINE__,name);
   }
@@ -427,11 +427,13 @@ int register_log_component(char *name,
 
 static void unregister_all_log_components(void)
 {
-  log_component_t* lc = &g_log->log_component[0];
+  log_component_t *lc = g_log->log_component;
+  log_component_back_t *lb = g_log->log_rarely_used;
   while (lc->name) {
     free((char *)lc->name); // defined as const, but assigned through strdup()
-    free(lc->filelog_name);
+    free(lb->filelog_name);
     lc++;
+    lb++;
   }
 }
 
@@ -545,7 +547,7 @@ static inline int log_header(log_component_t *c,
 			     int line,
 			     int level)
 {
-  int flag= g_log->flag | c->flag;
+  int flag = g_log->flag; // | c->flag;
 
   char threadname[64];
   if (flag & FLAG_THREAD ) {
@@ -635,8 +637,8 @@ void log_dump(int component,
   va_list args;
   char *wbuf;
   log_component_t *c = &g_log->log_component[component];
-  int flag= g_log->flag | c->flag;
-  
+  int flag = g_log->flag; // | c->flag;
+
   switch(datatype) {
     case LOG_DUMP_DOUBLE:
       wbuf=malloc((buffsize * 10)  + 64 + MAX_LOG_TOTAL);
@@ -685,7 +687,7 @@ int set_log(int component,
            OAILOG_ERR);
 
   if ( g_log->log_component[component].level != OAILOG_DISABLE )
-    g_log->log_component[component].savedlevel = g_log->log_component[component].level;
+    g_log->log_rarely_used[component].savedlevel = g_log->log_component[component].level;
 
   g_log->log_component[component].level = level;
   return 0;
@@ -704,7 +706,7 @@ void set_glog_onlinelog(int enable)
 {
   for (int c=0; c< MAX_LOG_COMPONENTS; c++ ) {
     if ( enable ) {
-      g_log->log_component[c].level = g_log->log_component[c].savedlevel;
+      g_log->log_component[c].level = g_log->log_rarely_used[c].savedlevel;
       g_log->log_component[c].vprint = vfprintf;
       g_log->log_component[c].print = fprintf;
       g_log->log_component[c].stream = stdout;
@@ -741,7 +743,7 @@ void set_glog_filelog(int enable)
 void set_component_filelog(int comp)
 {
   if (g_log->log_component[comp].stream == NULL || g_log->log_component[comp].stream == stdout) {
-    g_log->log_component[comp].stream = fopen(g_log->log_component[comp].filelog_name,"w");
+    g_log->log_component[comp].stream = fopen(g_log->log_rarely_used[comp].filelog_name, "w");
   }
 
   g_log->log_component[comp].vprint = vfprintf;
@@ -892,7 +894,7 @@ static void log_output_memory(log_component_t *c, const char *file, const char *
       len = MAX_LOG_TOTAL;
     }
   }
-  if ( !((g_log->flag | c->flag) & FLAG_NOCOLOR) ) {
+  if (!((g_log->flag /*| c->flag*/) & FLAG_NOCOLOR)) {
     int n = snprintf(log_buffer+len, MAX_LOG_TOTAL-len, "%s", log_level_highlight_end[level]);
     if (n > 0) {
       len += n;
