@@ -26,10 +26,23 @@
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
+  010001
+  010002
   330201
   222222
   </TestCaseRequestedList>
   <TestCaseExclusionList></TestCaseExclusionList>
+
+  <testCase id= "010001">
+    <class>Detach_UE</class>
+    <desc>Detach UE</desc>
+    <id>idefix</id>
+  </testCase>
+  <testCase id="010002">
+    <class>Terminate_UE</class>
+    <desc>Terminate Quectel</desc>
+    <id>idefix</id>
+  </testCase>
 
   <testCase id="330201">
     <class>Undeploy_Object</class>
