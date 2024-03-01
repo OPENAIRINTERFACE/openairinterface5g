@@ -85,31 +85,6 @@ extern "C" {
 #define NUM_LOG_LEVEL 6 /*!< \brief the number of message levels users have with LOG (OAILOG_DISABLE is not available to user as a level, so it is not included)*/
 /** @}*/
 
-/** @defgroup _log_format Defined log format
- *  @ingroup _macro
- *  @brief Macro of log formats defined by LOG
- * @{*/
-
-/* .log_format = 0x13 uncolored standard messages
- * .log_format = 0x93 colored standard messages */
-/* keep white space in first position; switching it to 0 allows colors to be disabled*/
-#define LOG_RED "\033[1;31m"  /*!< \brief VT100 sequence for bold red foreground */
-#define LOG_GREEN "\033[32m"  /*!< \brief VT100 sequence for green foreground */
-#define LOG_ORANGE "\033[93m"   /*!< \brief VT100 sequence for orange foreground */
-#define LOG_BLUE "\033[34m" /*!< \brief VT100 sequence for blue foreground */
-#define LOG_CYBL "\033[40;36m"  /*!< \brief VT100 sequence for cyan foreground on black background */
-#define LOG_RESET "\033[0m" /*!< \brief VT100 sequence for reset (black) foreground */
-#define FLAG_NOCOLOR     0x0001  /*!< \brief use colors in log messages, depending on level */
-#define FLAG_THREAD      0x0008  /*!< \brief display thread name in log messages */
-#define FLAG_LEVEL       0x0010  /*!< \brief display log level in log messages */
-#define FLAG_FUNCT       0x0020
-#define FLAG_FILE_LINE   0x0040
-#define FLAG_TIME        0x0100
-#define FLAG_THREAD_ID   0x0200
-#define FLAG_REAL_TIME   0x0400
-#define FLAG_INITIALIZED 0x8000
-/** @}*/
-
 #define SET_LOG_OPTION(O)   g_log->flag = (g_log->flag | O)
 #define CLEAR_LOG_OPTION(O) g_log->flag = (g_log->flag & (~O))
 
@@ -138,92 +113,73 @@ extern "C" {
 #define DEBUG_DLSCH_DECOD  (1<<14)
 #define UE_TIMING          (1<<20)
 
-
-#define LOG_MASKMAP_INIT {\
-    {"PRACH",       DEBUG_PRACH},\
-    {"RU",          DEBUG_RU},\
-    {"UE_PHYPROC",  DEBUG_UE_PHYPROC},\
-    {"LTEESTIM",    DEBUG_LTEESTIM},\
-    {"DLCELLSPEC",  DEBUG_DLCELLSPEC},\
-    {"ULSCH",       DEBUG_ULSCH},\
-    {"RRC",         DEBUG_RRC},\
-    {"PDCP",        DEBUG_PDCP},\
-    {"DFT",         DEBUG_DFT},\
-    {"ASN1",        DEBUG_ASN1},\
-    {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
-    {"SECURITY",    DEBUG_SECURITY},\
-    {"NAS",         DEBUG_NAS},\
-    {"RLC",         DEBUG_RLC},\
-    {"DLSCH_DECOD", DEBUG_DLSCH_DECOD},\
-    {"UE_TIMING",   UE_TIMING},\
-    {NULL,-1}\
-  }
-
 #define SET_LOG_DEBUG(B)   g_log->debug_mask = (g_log->debug_mask | B)
 #define CLEAR_LOG_DEBUG(B) g_log->debug_mask = (g_log->debug_mask & (~B))
 
 #define SET_LOG_DUMP(B)   g_log->dump_mask = (g_log->dump_mask | B)
 #define CLEAR_LOG_DUMP(B) g_log->dump_mask = (g_log->dump_mask & (~B))
 
-typedef enum {
-  MIN_LOG_COMPONENTS = 0,
-  PHY = MIN_LOG_COMPONENTS,
-  MAC,
-  EMU,
-  SIM,
-  OMG,
-  OPT,
-  OTG,
-  OTG_LATENCY,
-  OTG_LATENCY_BG,
-  OTG_GP,
-  OTG_GP_BG,
-  OTG_JITTER,
-  RLC,
-  PDCP,
-  RRC,
-  NAS,
-  PERF,
-  OIP,
-  CLI,
-  OCM,
-  UDP_,
-  GTPU,
-  SDAP,
-  SPGW,
-  S1AP,
-  F1AP,
-  E1AP,
-  SCTP,
-  HW,
-  OSA,
-  RAL_ENB,
-  RAL_UE,
-  ENB_APP,
-  MCE_APP,
-  MME_APP,
-  TMR,
-  USIM,
-  LOCALIZE,
-  F1U,
-  X2AP,
-  M2AP,
-  M3AP,
-  NGAP,
-  GNB_APP,
-  NR_RRC,
-  NR_MAC,
-  NR_MAC_DCI,
-  NR_PHY_DCI,
-  NR_PHY,
-  LOADER,
-  ASN1,
-  NFAPI_VNF,
-  NFAPI_PNF,
-  ITTI,
-  UTIL,
-  MAX_LOG_PREDEF_COMPONENTS,
-} comp_name_t;
+#define FOREACH_COMP(COMP_DEF)  \
+  COMP_DEF(PHY, log)            \
+  COMP_DEF(MAC, log)            \
+  COMP_DEF(EMU, log)            \
+  COMP_DEF(SIM, txt)            \
+  COMP_DEF(OMG, csv)            \
+  COMP_DEF(OPT, log)            \
+  COMP_DEF(OTG, log)            \
+  COMP_DEF(OTG_LATENCY, dat)    \
+  COMP_DEF(OTG_LATENCY_BG, dat) \
+  COMP_DEF(OTG_GP, dat)         \
+  COMP_DEF(OTG_GP_BG, dat)      \
+  COMP_DEF(OTG_JITTER, dat)     \
+  COMP_DEF(RLC, )               \
+  COMP_DEF(PDCP, )              \
+  COMP_DEF(RRC, )               \
+  COMP_DEF(NAS, log)            \
+  COMP_DEF(OIP, )               \
+  COMP_DEF(CLI, )               \
+  COMP_DEF(OCM, )               \
+  COMP_DEF(GTPU, )              \
+  COMP_DEF(SDAP, )              \
+  COMP_DEF(SPGW, )              \
+  COMP_DEF(S1AP, )              \
+  COMP_DEF(F1AP, )              \
+  COMP_DEF(E1AP, )              \
+  COMP_DEF(SCTP, )              \
+  COMP_DEF(HW, )                \
+  COMP_DEF(OSA, )               \
+  COMP_DEF(ENB_APP, log)        \
+  COMP_DEF(MCE_APP, log)        \
+  COMP_DEF(MME_APP, log)        \
+  COMP_DEF(TMR, )               \
+  COMP_DEF(USIM, log)           \
+  COMP_DEF(F1U, )               \
+  COMP_DEF(X2AP, )              \
+  COMP_DEF(M2AP, )              \
+  COMP_DEF(M3AP, )              \
+  COMP_DEF(NGAP, )              \
+  COMP_DEF(GNB_APP, log)        \
+  COMP_DEF(NR_RRC, log)         \
+  COMP_DEF(NR_MAC, log)         \
+  COMP_DEF(NR_MAC_DCI, log)         \
+  COMP_DEF(NR_PHY_DCI, log)         \
+  COMP_DEF(NR_PHY, log)         \
+  COMP_DEF(LOADER, log)         \
+  COMP_DEF(ASN1, log)           \
+  COMP_DEF(NFAPI_VNF, log)      \
+  COMP_DEF(NFAPI_PNF, log)      \
+  COMP_DEF(ITTI, log)           \
+  COMP_DEF(UTIL, log)           \
+  COMP_DEF(MAX_LOG_PREDEF_COMPONENTS, )
+
+#define COMP_ENUM(comp, file_extension) comp,
+typedef enum { FOREACH_COMP(COMP_ENUM) } comp_name_t;
+
+#define COMP_TEXT(comp, file_extension) #comp,
+static const char *const comp_name[] = {FOREACH_COMP(COMP_TEXT)};
+
+#define COMP_EXTENSION(comp, file_extension) #file_extension,
+static const char *const comp_extension[] = {FOREACH_COMP(COMP_EXTENSION)};
 
 #define MAX_LOG_DYNALLOC_COMPONENTS 20
 #define MAX_LOG_COMPONENTS (MAX_LOG_PREDEF_COMPONENTS + MAX_LOG_DYNALLOC_COMPONENTS)
@@ -242,7 +198,7 @@ typedef struct {
 
 typedef struct  {
   const char        *name;
-  int               level;
+  int level;
   int filelog;
   FILE              *stream;
   log_vprint_func_t vprint;
@@ -282,6 +238,9 @@ void log_dump(int component, void *buffer, int buffsize,int datatype, const char
 int  set_log(int component, int level);
 void set_glog(int level);
 
+mapping * log_level_names_ptr(void);
+mapping * log_option_names_ptr(void);
+mapping * log_maskmap_ptr(void);
 void set_glog_onlinelog(int enable);
 void set_glog_filelog(int enable);
 void set_component_filelog(int comp);
@@ -290,9 +249,8 @@ void set_component_consolelog(int comp);
 int map_str_to_int(const mapping *map, const char *str);
 char *map_int_to_str(const mapping *map, const int val);
 void logClean (void);
-int  is_newline( char *str, int size);
 
-int register_log_component(char *name, char *fext, int compidx);
+int register_log_component(const char *name, const char *fext, int compidx);
 
 int logInit_log_mem(char*);
 void close_log_mem(void);
