@@ -29,7 +29,7 @@ void read_setup_ran(void* data, const ngran_node_t node_type)
 {
   assert(data != NULL);
 #ifdef E2AP_V1
-
+  (void)node_type;
 #elif defined(E2AP_V2) || defined(E2AP_V3) 
 
   arr_node_component_config_add_t* dst = (arr_node_component_config_add_t*)data;

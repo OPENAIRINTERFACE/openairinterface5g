@@ -1436,8 +1436,7 @@ target_link_libraries(L2 PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 if(E2_AGENT)
   target_link_libraries(L2 PUBLIC e2_agent e2_agent_arg e2_ran_func_du_cucp_cuup)
-  target_compile_definitions(L2 PRIVATE E2_AGENT)
-  target_compile_definitions(L2 PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
+  target_compile_definitions(L2 PRIVATE ${E2AP_VERSION} ${KPM_VERSION} E2_AGENT)
 endif()
 
 
@@ -1463,8 +1462,7 @@ target_link_libraries(e1_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs asn1_f1ap
 target_link_libraries(L2_NR PRIVATE f1ap x2ap s1ap ngap nr_rrc e1ap nr_rlc)
 if(E2_AGENT)
   target_link_libraries(L2_NR PUBLIC e2_agent e2_agent_arg e2_ran_func_du_cucp_cuup)
-  target_compile_definitions(L2_NR PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
-  target_compile_definitions(L2_NR PRIVATE E2_AGENT)
+  target_compile_definitions(L2_NR PRIVATE ${E2AP_VERSION} ${KPM_VERSION} E2_AGENT)
 endif()
 
 add_library(L2_LTE_NR
@@ -1983,8 +1981,7 @@ target_link_libraries(lte-softmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 if(E2_AGENT)
-  target_compile_definitions(lte-softmodem PRIVATE E2_AGENT)
-  target_compile_definitions(lte-softmodem PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
+  target_compile_definitions(lte-softmodem PRIVATE ${E2AP_VERSION} ${KPM_VERSION} E2_AGENT)
 endif()
 
 add_executable(oairu
@@ -2082,7 +2079,7 @@ target_link_libraries(nr-softmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 if(E2_AGENT)
-  target_compile_definitions(nr-softmodem PRIVATE ${E2AP_VERSION} ${KPM_VERSION})
+  target_compile_definitions(nr-softmodem PRIVATE ${E2AP_VERSION} ${KPM_VERSION} E2_AGENT)
 endif()
 
 
@@ -2095,10 +2092,6 @@ endif()
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(nr-softmodem PRIVATE
   asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
-if(E2_AGENT)
-  target_compile_definitions(nr-softmodem PRIVATE E2_AGENT)
-endif()
-
 
 add_executable(nr-cuup
   executables/nr-cuup.c
