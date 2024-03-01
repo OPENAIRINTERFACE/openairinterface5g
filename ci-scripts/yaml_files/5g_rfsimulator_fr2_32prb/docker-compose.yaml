@@ -1,18 +1,99 @@
 version: '3.8'
 services:
+    mysql:
+        container_name: "rfsim5g-mysql"
+        image: mysql:8.0
+        volumes:
+            - ../5g_rfsimulator/oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql
+            - ../5g_rfsimulator/mysql-healthcheck.sh:/tmp/mysql-healthcheck.sh
+        environment:
+            - TZ=Europe/Paris
+            - MYSQL_DATABASE=oai_db
+            - MYSQL_USER=test
+            - MYSQL_PASSWORD=test
+            - MYSQL_ROOT_PASSWORD=linux
+        healthcheck:
+            test: /bin/bash -c "/tmp/mysql-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 30
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.131
+    oai-amf:
+        container_name: "rfsim5g-oai-amf"
+        image: oaisoftwarealliance/oai-amf:v2.0.0
+        environment:
+            - TZ=Europe/paris
+        volumes:
+            - ../5g_rfsimulator/mini_nonrf_config.yaml:/openair-amf/etc/config.yaml
+        depends_on:
+            - mysql
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.132
+    oai-smf:
+        container_name: "rfsim5g-oai-smf"
+        image: oaisoftwarealliance/oai-smf:v2.0.0
+        environment:
+            - TZ=Europe/Paris
+        volumes:
+            - ../5g_rfsimulator/mini_nonrf_config.yaml:/openair-smf/etc/config.yaml
+        depends_on:
+            - oai-amf
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.133
+    oai-upf:
+        container_name: "rfsim5g-oai-upf"
+        image: oaisoftwarealliance/oai-upf:v2.0.0
+        environment:
+            - TZ=Europe/Paris
+        volumes:
+            - ../5g_rfsimulator/mini_nonrf_config.yaml:/openair-upf/etc/config.yaml
+        depends_on:
+            - oai-smf
+        cap_add:
+            - NET_ADMIN
+            - SYS_ADMIN
+        cap_drop:
+            - ALL
+        privileged: true
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.134
+            traffic_net:
+                ipv4_address: 192.168.72.134
+    oai-ext-dn:
+        privileged: true
+        container_name: rfsim5g-oai-ext-dn
+        image: oaisoftwarealliance/trf-gen-cn5g:focal
+        entrypoint: /bin/bash -c \
+              "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;"\
+              "ip route add 12.1.1.0/24 via 192.168.72.134 dev eth0; sleep infinity"
+        depends_on:
+            - oai-upf
+        networks:
+            traffic_net:
+                ipv4_address: 192.168.72.135
+        healthcheck:
+            test: /bin/bash -c "ping -c 2 192.168.72.134"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
     oai-gnb:
         image: oaisoftwarealliance/oai-gnb:develop
         privileged: true
         container_name: rfsim5g-oai-gnb
         environment:
-            USE_ADDITIONAL_OPTIONS: --do-ra --rfsim --rfsimulator.wait_timeout 20 --noS1 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
             ASAN_OPTIONS: detect_leaks=0
         networks:
             public_net:
                 ipv4_address: 192.168.71.140
         volumes:
-            - ../../conf_files/gnb.band261.32prb.rfsim.phytest-dora.conf:/opt/oai-gnb/etc/gnb.conf
-            - rrc.config:/opt/oai-gnb/
+            - ../../conf_files/gnb.sa.band261.u3.32prb.rfsim.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
@@ -24,11 +105,12 @@ services:
         privileged: true
         container_name: rfsim5g-oai-nr-ue
         environment:
-            USE_ADDITIONAL_OPTIONS: --do-ra --rfsim --noS1 --reconfig-file etc/rrc/reconfig.raw --rbconfig-file etc/rrc/rbconfig.raw --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim
+                                    --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+                                    -r 32 --numerology 3 --band 261 -C 27533160000 --ssb 73
             ASAN_OPTIONS: detect_leaks=0
         volumes:
             - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
-            - rrc.config:/opt/oai-nr-ue/etc/rrc/
         depends_on:
             - oai-gnb
         networks:
@@ -40,9 +122,6 @@ services:
             timeout: 5s
             retries: 5
 
-volumes:
-    rrc.config:
-
 networks:
     public_net:
         driver: bridge
@@ -52,3 +131,11 @@ networks:
                 - subnet: 192.168.71.128/26
         driver_opts:
             com.docker.network.bridge.name: "rfsim5g-public"
+    traffic_net:
+        driver: bridge
+        name: rfsim5g-oai-traffic-net
+        ipam:
+            config:
+                - subnet: 192.168.72.128/26
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim5g-traffic"

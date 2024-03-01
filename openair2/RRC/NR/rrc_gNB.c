@@ -197,21 +197,21 @@ static int get_ssb_arfcn(const f1ap_served_cell_info_t *cell_info, const NR_MIB_
   uint32_t dl_arfcn = get_dl_arfcn(cell_info);
   int scs = get_ssb_scs(cell_info);
   int band = get_dl_band(cell_info);
+  uint64_t freqpointa = from_nrarfcn(band, scs, dl_arfcn);
+  uint64_t freqssb = 0;
+  // 3GPP TS 38.211 sections 7.4.3.1 and 4.4.4.2
+  // for FR1 offsetToPointA and k_SSB are expressed in terms of 15 kHz SCS
+  // for FR2 offsetToPointA is expressed in terms of 60 kHz SCS and k_SSB expressed in terms of the subcarrier spacing provided
+  // by the higher-layer parameter subCarrierSpacingCommon
   // FR1 includes frequency bands from 410 MHz (ARFCN 82000) to 7125 MHz (ARFCN 875000)
   // FR2 includes frequency bands from 24.25 GHz (ARFCN 2016667) to 71.0 GHz (ARFCN 2795832)
-  uint64_t scaling = 0;
   if (dl_arfcn >= 82000 && dl_arfcn < 875000)
-    scaling = 1;
+    freqssb = freqpointa + 15000 * (offsetToPointA * 12 + kssb)  + 10ll * 12 * (1 << scs) * 15000;
   else if (dl_arfcn >= 2016667 && dl_arfcn < 2795832)
-    scaling = 4;
+    freqssb = freqpointa + 60000 * offsetToPointA * 12 + (1 << scs) * 15000 * (kssb  + 10ll * 12);
   else
     AssertFatal(false, "Invalid absoluteFrequencyPointA: %d\n", dl_arfcn);
 
-
-  uint64_t freqpointa = from_nrarfcn(band, scs, dl_arfcn);
-  // offsetToPointA and kSSB are both on 15kHz SCS for FR1 and 60kHz SCS for FR2 (see 38.211 sections 7.4.3.1 and 4.4.4.2)
-  // SSB uses the SCS of the cell and is 20 RBs wide, so use 10
-  uint64_t freqssb = freqpointa + scaling * 15000 * (offsetToPointA * 12 + kssb)  + 10ll * 12 * (1 << scs) * 15000;
   int bw_index = get_supported_band_index(scs, band, get_dl_bw(cell_info));
   int band_size_hz = get_supported_bw_mhz(band > 256 ? FR2 : FR1, bw_index) * 1000 * 1000;
   uint32_t ssb_arfcn = to_nrarfcn(band, freqssb, scs, band_size_hz);

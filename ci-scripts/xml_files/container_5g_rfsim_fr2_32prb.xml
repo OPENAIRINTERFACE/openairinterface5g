@@ -22,13 +22,12 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-fr2-32prb-5gnr-tdd</htmlTabRef>
-        <htmlTabName>Monolithic FR2 do-ra gNB</htmlTabName>
+        <htmlTabName>Monolithic FR2 gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <repeatCount>1</repeatCount>
         <TestCaseRequestedList>
  111111
  100001
- 004000
  000000
  000001
  020001
@@ -44,42 +43,35 @@
                 <images_to_pull>oai-gnb-asan oai-nr-ue-asan</images_to_pull>
         </testCase>
 
-	<testCase id="004000">
-            <class>Custom_Command</class>
-            <desc>Clean-Up any residual volume</desc>
-            <node>localhost</node>
-            <command>docker volume rm 5g_rfsimulator_fr2_32prb_rrc.config</command>
-        </testCase>
-
         <testCase id="000000">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI gNB</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_fr2_32prb</yaml_path>
-                <services>oai-gnb</services>
-                <nb_healthy>1</nb_healthy>
+                <services>mysql oai-amf oai-smf oai-upf oai-ext-dn</services>
+                <nb_healthy>5</nb_healthy>
         </testCase>
 
         <testCase id="000001">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI NR-UE</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_fr2_32prb</yaml_path>
-                <services>oai-nr-ue</services>
-                <nb_healthy>2</nb_healthy>
+                <services>oai-gnb oai-nr-ue</services>
+                <nb_healthy>7</nb_healthy>
         </testCase>
 
         <testCase id="020001">
                 <class>Ping</class>
-                <desc>Ping gNB from NR-UE</desc>
+                <desc>Ping ext-dn from NR-UE</desc>
                 <id>rfsim5g_ue</id>
-                <ping_args>-c20 -i0.2 10.0.1.1</ping_args>
+                <ping_args>-c 20 -i0.2 192.168.72.135</ping_args>
                 <ping_packetloss_threshold>0</ping_packetloss_threshold>
         </testCase>
 
         <testCase id="020002">
                 <class>Ping</class>
-                <desc>Ping NR-UE from gNB</desc>
-                <id>rfsim5g_gnb_nos1</id>
-                <ping_args>-c20 -i0.2 10.0.1.2</ping_args>
+                <desc>Ping NR-UE from ext-dn</desc>
+                <id>rfsim5g_ext_dn</id>
+                <ping_args>-c 20 12.1.1.2 -i0.2</ping_args>
                 <ping_packetloss_threshold>0</ping_packetloss_threshold>
         </testCase>
 
@@ -87,8 +79,8 @@
                 <class>UndeployGenObject</class>
                 <desc>Undeploy all OAI 5G stack</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_fr2_32prb</yaml_path>
-                <d_retx_th>0,0,0,0</d_retx_th>
-                <u_retx_th>0,0,0,0</u_retx_th>
+                <d_retx_th>10,0,0,0</d_retx_th>
+                <u_retx_th>10,0,0,0</u_retx_th>
         </testCase>
 
 </testCaseList>

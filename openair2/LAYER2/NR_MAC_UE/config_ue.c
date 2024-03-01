@@ -183,7 +183,7 @@ static void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
   else{
     for (int i=0; i<8; i++){
       if ((scc->ssb_PositionsInBurst.groupPresence->buf[0]>>(7-i))&0x01)
-        cfg->ssb_table.ssb_mask_list[i>>2].ssb_mask |= scc->ssb_PositionsInBurst.inOneGroup.buf[0]<<(24-8*(i%4));
+        cfg->ssb_table.ssb_mask_list[i>>2].ssb_mask |= ((uint32_t)scc->ssb_PositionsInBurst.inOneGroup.buf[0])<<(24-8*(i%4));
     }
   }
 
