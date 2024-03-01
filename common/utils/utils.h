@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #define sizeofArray(a) (sizeof(a)/sizeof(*(a)))
+#define CHECK_INDEX(ARRAY, INDEX) assert((INDEX) < sizeofArray(ARRAY))
 
 #define cmax(a,b)  ((a>b) ? (a) : (b))
 #define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))

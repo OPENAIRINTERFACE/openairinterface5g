@@ -48,6 +48,8 @@
 #include <stdatomic.h>
 #include "common/utils/LOG/log.h"
 
+#define LOG_MEM_SIZE 100*1024*1024
+
 // main log variables
 
 // Fixme: a better place to be shure it is called 
@@ -57,6 +59,13 @@ void read_cpu_hardware (void) __attribute__ ((constructor));
 #else 
   void read_cpu_hardware (void) {}
 #endif
+
+  
+typedef struct {
+  char* buf_p;
+  int buf_index;
+  int enable_flag;
+} log_mem_cnt_t;
 
 static log_mem_cnt_t log_mem_d[2];
 static int log_mem_flag = 0;

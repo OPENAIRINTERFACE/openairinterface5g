@@ -57,8 +57,6 @@
 #ifdef NDEBUG
 #warning assert is disabled
 #endif
-#define NUM_ELEMENTS(ARRAY) (sizeof(ARRAY) / sizeof(ARRAY[0]))
-#define CHECK_INDEX(ARRAY, INDEX) assert((INDEX) < NUM_ELEMENTS(ARRAY))
 
 #ifdef __cplusplus
 extern "C" {
@@ -295,17 +293,8 @@ int  is_newline( char *str, int size);
 
 int register_log_component(char *name, char *fext, int compidx);
 
-#define LOG_MEM_SIZE 100*1024*1024
-#define LOG_MEM_FILE "./logmem.log"
-void flush_mem_to_file(void);
 int logInit_log_mem(char*);
 void close_log_mem(void);
-  
-typedef struct {
-  char* buf_p;
-  int buf_index;
-  int enable_flag;
-} log_mem_cnt_t;
 
 /** @}*/
 
