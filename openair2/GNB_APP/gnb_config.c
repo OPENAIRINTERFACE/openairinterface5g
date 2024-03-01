@@ -32,7 +32,6 @@
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/nr/nr_common.h"
-#include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
 #include "oai_asn1.h"
 #include "executables/softmodem-common.h"

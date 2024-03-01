@@ -902,7 +902,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/LOG/vcd_signal_dumper.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/LOG/log.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/LOG/log.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../common/utils/LOG/log_extern.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/time_stat.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/ocp_itti/all_msg.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/ocp_itti/intertask_interface.h \

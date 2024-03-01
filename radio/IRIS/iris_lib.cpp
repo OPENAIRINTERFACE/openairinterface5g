@@ -19,7 +19,7 @@
 #include <cmath>
 #include <time.h>
 #include <limits>
-#include "common/utils/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "common_lib.h"
 #include <chrono>
 

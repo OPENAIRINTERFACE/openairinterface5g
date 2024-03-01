@@ -24,7 +24,6 @@
 #include <arpa/inet.h>
 #include "common/utils/LOG/log.h"
 #include "common/utils/nr/nr_common.h"
-#include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
 #include "common/utils/ocp_itti/intertask_interface.h"
 #include "openair2/GNB_APP/gnb_paramdef.h"

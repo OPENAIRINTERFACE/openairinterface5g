@@ -31,7 +31,6 @@
 #include <inttypes.h>
 
 #include "log.h"
-#include "log_extern.h"
 #include "assertions.h"
 #include "intertask_interface.h"
 #include "s1ap_eNB.h"

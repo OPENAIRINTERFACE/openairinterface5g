@@ -272,8 +272,7 @@ extern "C" {
 }
 #endif
 #endif
-/*--- INCLUDES ---------------------------------------------------------------*/
-#    include "log_if.h"
+
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
 void logTerm (void);
@@ -299,7 +298,7 @@ int register_log_component(char *name, char *fext, int compidx);
 #define LOG_MEM_SIZE 100*1024*1024
 #define LOG_MEM_FILE "./logmem.log"
 void flush_mem_to_file(void);
-int logInit_log_mem(void);
+int logInit_log_mem(char*);
 void close_log_mem(void);
   
 typedef struct {

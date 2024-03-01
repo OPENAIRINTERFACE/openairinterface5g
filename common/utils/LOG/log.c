@@ -46,7 +46,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <stdatomic.h>
-#include "common/utils/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 
 // main log variables
 
@@ -58,18 +58,16 @@ void read_cpu_hardware (void) __attribute__ ((constructor));
   void read_cpu_hardware (void) {}
 #endif
 
-log_mem_cnt_t log_mem_d[2];
-int log_mem_flag = 0;
+static log_mem_cnt_t log_mem_d[2];
+static int log_mem_flag = 0;
 volatile int log_mem_side=0;
-pthread_mutex_t log_mem_lock;
-pthread_cond_t log_mem_notify;
-pthread_t log_mem_thread;
-int log_mem_file_cnt=0;
+static pthread_mutex_t log_mem_lock;
+static pthread_cond_t log_mem_notify;
+static pthread_t log_mem_thread;
+static int log_mem_file_cnt=0;
 volatile int log_mem_write_flag=0;
 volatile int log_mem_write_side=0;
-char __log_mem_filename[1024]={0};
-char * log_mem_filename = &__log_mem_filename[0];
-char logmem_filename[1024] = {0};
+static char * log_mem_filename;
 
 const mapping log_level_names[] = {{"error", OAILOG_ERR},
                                    {"warn", OAILOG_WARNING},
@@ -935,28 +933,22 @@ static void log_output_memory(log_component_t *c, const char *file, const char *
   }
 }
 
-int logInit_log_mem (void)
+int logInit_log_mem (char * filename)
 {
-  if (log_mem_flag == 1) {
-    log_mem_d[0].buf_p = malloc(LOG_MEM_SIZE);
-    log_mem_d[0].buf_index = 0;
-    log_mem_d[0].enable_flag = 1;
-    log_mem_d[1].buf_p = malloc(LOG_MEM_SIZE);
-    log_mem_d[1].buf_index = 0;
-    log_mem_d[1].enable_flag = 1;
-    log_mem_side = 0;
-    if ((pthread_mutex_init(&log_mem_lock, NULL) != 0) || (pthread_cond_init(&log_mem_notify, NULL) != 0)) {
-        log_mem_d[1].enable_flag=0;
-        return -1;
-      }
-      pthread_create(&log_mem_thread, NULL, (void *(*)(void *))flush_mem_to_file, (void *)NULL);
-  } else {
-      log_mem_d[0].buf_p = NULL;
-      log_mem_d[1].buf_p = NULL;
-      log_mem_d[0].enable_flag = 0;
-      log_mem_d[1].enable_flag = 0;
+  log_mem_flag = 1;
+  log_mem_filename = filename; // in present code, the parameter is safe permanent pointer
+  log_mem_d[0].buf_p = malloc(LOG_MEM_SIZE);
+  log_mem_d[0].buf_index = 0;
+  log_mem_d[0].enable_flag = 1;
+  log_mem_d[1].buf_p = malloc(LOG_MEM_SIZE);
+  log_mem_d[1].buf_index = 0;
+  log_mem_d[1].enable_flag = 1;
+  log_mem_side = 0;
+  if ((pthread_mutex_init(&log_mem_lock, NULL) != 0) || (pthread_cond_init(&log_mem_notify, NULL) != 0)) {
+    log_mem_d[1].enable_flag=0;
+    return -1;
   }
-
+  pthread_create(&log_mem_thread, NULL, (void *(*)(void *))flush_mem_to_file, (void *)NULL);
   printf("log init done\n");
   
   return 0;
