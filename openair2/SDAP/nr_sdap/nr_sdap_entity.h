@@ -84,7 +84,7 @@ typedef struct nr_sdap_entity_s {
 
   void (*qfi2drb_map_update)(struct nr_sdap_entity_s *entity, uint8_t qfi, rb_id_t drb, bool has_sdap_rx, bool has_sdap_tx);
   void (*qfi2drb_map_delete)(struct nr_sdap_entity_s *entity, uint8_t qfi);
-  rb_id_t (*qfi2drb_map)(struct nr_sdap_entity_s *entity, uint8_t qfi, rb_id_t upper_layer_rb_id);
+  rb_id_t (*qfi2drb_map)(struct nr_sdap_entity_s *entity, uint8_t qfi);
 
   nr_sdap_ul_hdr_t (*sdap_construct_ctrl_pdu)(uint8_t qfi);
   rb_id_t (*sdap_map_ctrl_pdu)(struct nr_sdap_entity_s *entity, rb_id_t pdcp_entity, int map_type, uint8_t dl_qfi);
@@ -132,7 +132,7 @@ void nr_sdap_qfi2drb_map_del(nr_sdap_entity_t *entity, uint8_t qfi);
  * If there is no stored QoS flow to DRB mapping rule for the QoS flow as specified in the subclause 5.3, map the SDAP SDU to the default DRB
  * else, map the SDAP SDU to the DRB according to the stored QoS flow to DRB mapping rule.
  */
-rb_id_t nr_sdap_qfi2drb_map(nr_sdap_entity_t *entity, uint8_t qfi, rb_id_t upper_layer_rb_id);
+rb_id_t nr_sdap_qfi2drb_map(nr_sdap_entity_t *entity, uint8_t qfi);
 
 /*
  * TS 37.324 5.3 QoS flow to DRB Mapping 
@@ -155,16 +155,18 @@ rb_id_t nr_sdap_map_ctrl_pdu(nr_sdap_entity_t *entity, rb_id_t pdcp_entity, int 
 void nr_sdap_submit_ctrl_pdu(ue_id_t ue_id, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu);
 
 /*
- * TS 37.324 5.3 QoS flow to DRB Mapping 
- * 5.3.1 Configuration Procedures
- */
-void nr_sdap_ue_qfi2drb_config(nr_sdap_entity_t *existing_sdap_entity, rb_id_t pdcp_entity, ue_id_t ue_id, NR_QFI_t *mapped_qfi_2_add, uint8_t mappedQFIs2AddCount, uint8_t drb_identity, bool has_sdap_rx, bool has_sdap_tx);
-
-/*
  * TS 37.324 4.4 5.1.1 SDAP entity establishment
  * Establish an SDAP entity.
  */
-nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb, bool has_sdap_rx, bool has_sdap_tx, ue_id_t ue_id, int pdusession_id, bool is_defaultDRB, uint8_t default_DRB, NR_QFI_t *mapped_qfi_2_add, uint8_t mappedQFIs2AddCount);
+nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb,
+                                     bool has_sdap_rx,
+                                     bool has_sdap_tx,
+                                     ue_id_t ue_id,
+                                     int pdusession_id,
+                                     bool is_defaultDRB,
+                                     uint8_t default_DRB,
+                                     NR_QFI_t *mapped_qfi_2_add,
+                                     uint8_t mappedQFIs2AddCount);
 
 /* Entity Handling Related Functions */
 nr_sdap_entity_t *nr_sdap_get_entity(ue_id_t ue_id, int pdusession_id);
@@ -188,4 +190,25 @@ bool nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id);
  * @return                  True, it deleted at least one entity, false otherwise.
  */
 bool nr_sdap_delete_ue_entities(ue_id_t ue_id);
+
+/**
+ * @brief indicates whether it is a receiving SDAP entity
+ *        i.e. for UE, header for DL data is present
+ *             for gNB, header for UL data is present
+ */
+bool is_sdap_rx(bool is_gnb, NR_SDAP_Config_t *sdap_config);
+
+/**
+ * @brief indicates whether it is a transmitting SDAP entity
+ *        i.e. for UE, header for UL data is present
+ *             for gNB, header for DL data is present
+ */
+bool is_sdap_tx(bool is_gnb, NR_SDAP_Config_t *sdap_config);
+
+/**
+ * @brief               Run the SDAP reconfiguration for the DRB
+ * @param[in] ue_id     Unique identifier for the User Equipment. ID Range [0, 65536].
+ */
+void nr_reconfigure_sdap_entity(NR_SDAP_Config_t *sdap_config, ue_id_t ue_id, int pdusession_id, int drb_id);
+
 #endif
