@@ -146,13 +146,6 @@ uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size,
 */
 int nr_get_sf_periodicBSRTimer(uint8_t bucketSize);
 
-/*! \fn  int nr_get_sf_retxBSRTimer(uint8_t retxBSR_Timer)
-   \brief get the number of subframe form the bucket size duration configured by the higher layer
-\param[in]  retxBSR_Timer timer for regular BSR
-\return the time in sf
-*/
-int nr_get_sf_retxBSRTimer(uint8_t retxBSR_Timer);
-
 int8_t nr_ue_process_dci(NR_UE_MAC_INST_t *mac,
                          int cc_id,
                          frame_t frame,

@@ -214,10 +214,8 @@ typedef struct {
   uint16_t SR_COUNTER;
   // logicalChannelSR-DelayTimer
   NR_timer_t sr_DelayTimer;
-  /// retxBSR-Timer, default value is sf2560
-  uint16_t retxBSR_Timer;
-  /// retxBSR_SF, number of subframe before triggering a regular BSR
-  uint16_t retxBSR_SF;
+  /// retxBSR-Timer
+  NR_timer_t retxBSR_Timer;
   /// periodicBSR-Timer, default to infinity
   uint16_t periodicBSR_Timer;
   /// periodicBSR_SF, number of subframe before triggering a periodic BSR

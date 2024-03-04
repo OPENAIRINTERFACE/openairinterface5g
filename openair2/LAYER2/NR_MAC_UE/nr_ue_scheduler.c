@@ -115,10 +115,40 @@ NR_LC_SCHEDULING_INFO *get_scheduling_info_from_lcid(NR_UE_MAC_INST_t *mac, NR_L
   return &mac->scheduling_info.lc_sched_info[idx];
 }
 
+static void trigger_regular_bsr(NR_UE_MAC_INST_t *mac, bool sr_DelayTimerApplied)
+{
+  // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
+  // outlined in Sections 5.4.4 an 5.4.5 of 38.321
+  mac->scheduling_info.SR_pending = 1;
+  // Regular BSR trigger
+  mac->BSR_reporting_active |= NR_BSR_TRIGGER_REGULAR;
+  // if the BSR is triggered for a logical channel for which logicalChannelSR-DelayTimerApplied with value true
+  // start or restart the logicalChannelSR-DelayTimer
+  // else stop the logicalChannelSR-DelayTimer
+  if (sr_DelayTimerApplied)
+    nr_timer_start(&mac->scheduling_info.sr_DelayTimer);
+  else
+    nr_timer_stop(&mac->scheduling_info.sr_DelayTimer);
+}
+
 void update_mac_timers(NR_UE_MAC_INST_t *mac)
 {
   nr_timer_tick(&mac->ra.contention_resolution_timer);
   nr_timer_tick(&mac->scheduling_info.sr_DelayTimer);
+  bool retxBSR_expired = nr_timer_tick(&mac->scheduling_info.retxBSR_Timer);
+  if (retxBSR_expired) {
+    LOG_D(NR_MAC, "retxBSR timer expired\n");
+    for (int i = 0; i < mac->lc_ordered_list.count; i++) {
+      nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
+      NR_LogicalChannelIdentity_t lcid = lc_info->lcid;
+      // if at least one of the logical channels which belong to an LCG contains UL data
+      NR_LC_SCHEDULING_INFO *lc_sched_info = get_scheduling_info_from_lcid(mac, lcid);
+      if (lc_sched_info->LCGID < NR_MAX_NUM_LCGID && lc_sched_info->LCID_buffer_remain > 0) {
+        LOG_D(NR_MAC, "Triggering regular BSR after retxBSR timer expired\n");
+        trigger_regular_bsr(mac, lc_info->sr_DelayTimerApplied);
+      }
+    }
+  }
   for (int i = 0; i < NR_MAX_NUM_LCID; i++)
     AssertFatal(!nr_timer_tick(&mac->scheduling_info.lc_sched_info[i].Bj_timer),
                 "Bj timer for LCID %d expired! That should never happen\n",
@@ -574,7 +604,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     //Optional Data only included if indicated in pduBitmap
     pusch_config_pdu->pusch_data.rv_index = 0;  // 8.3 in 38.213
     pusch_config_pdu->pusch_data.harq_process_id = 0;
-    pusch_config_pdu->pusch_data.new_data_indicator = 1; // new data
+    pusch_config_pdu->pusch_data.new_data_indicator = true; // new data
     pusch_config_pdu->pusch_data.num_cb = 0;
     pusch_config_pdu->tbslbrm = 0;
 
@@ -824,6 +854,10 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   }
 
   pusch_config_pdu->ldpcBaseGraph = get_BG(pusch_config_pdu->pusch_data.tb_size << 3, pusch_config_pdu->target_code_rate);
+
+  //The MAC entity shall restart retxBSR-Timer upon reception of a grant for transmission of new data on any UL-SCH
+  if (pusch_config_pdu->pusch_data.new_data_indicator && dci && dci->ulsch_indicator)
+    nr_timer_start(&mac->scheduling_info.retxBSR_Timer);
 
   if (pusch_config_pdu->pusch_data.tb_size == 0) {
     LOG_E(MAC, "Invalid TBS = 0. Probably caused by missed detection of DCI\n");
@@ -1180,12 +1214,6 @@ void nr_ue_ul_scheduler(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
 
   // Call BSR procedure as described in Section 5.4.5 in 38.321
 
-  // First check ReTxBSR Timer because it is always configured
-  // Decrement ReTxBSR Timer if it is running and not null
-  if ((mac->scheduling_info.retxBSR_SF != NR_MAC_UE_BSR_TIMER_NOT_RUNNING) && (mac->scheduling_info.retxBSR_SF != 0)) {
-    mac->scheduling_info.retxBSR_SF--;
-  }
-
   // Decrement Periodic Timer if it is running and not null
   if ((mac->scheduling_info.periodicBSR_SF != NR_MAC_UE_BSR_TIMER_NOT_RUNNING) && (mac->scheduling_info.periodicBSR_SF != 0)) {
     mac->scheduling_info.periodicBSR_SF--;
@@ -1250,11 +1278,7 @@ void nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t 
 
         if (!bsr_regular_triggered) {
           bsr_regular_triggered = true;
-          // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
-          // outlined in Sections 5.4.4 an 5.4.5 of 38.321
-          mac->scheduling_info.SR_pending = 1;
-          // Regular BSR trigger
-          mac->BSR_reporting_active |= NR_BSR_TRIGGER_REGULAR;
+          trigger_regular_bsr(mac, lc_info->sr_DelayTimerApplied);
           LOG_D(NR_MAC,
                 "[UE %d] MAC BSR Triggered LCID %d LCGID %d data become available at frame %d slot %d\n",
                 mac->ue_id,
@@ -1262,13 +1286,6 @@ void nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t 
                 lcgid,
                 frameP,
                 slotP);
-          // if the BSR is triggered for a logical channel for which logicalChannelSR-DelayTimerApplied with value true
-          // start or restart the logicalChannelSR-DelayTimer
-          // else stop the logicalChannelSR-DelayTimer
-          if (lc_info->sr_DelayTimerApplied)
-            nr_timer_start(&mac->scheduling_info.sr_DelayTimer);
-          else
-            nr_timer_stop(&mac->scheduling_info.sr_DelayTimer);
         }
       }
     }
@@ -1375,58 +1392,6 @@ int nr_get_sf_periodicBSRTimer(uint8_t sf_offset) {
     case NR_BSR_Config__periodicBSR_Timer_infinity:
     default:
       return 0xFFFF;
-      break;
-  }
-}
-
-int nr_get_sf_retxBSRTimer(uint8_t sf_offset) {
-  switch (sf_offset) {
-    case NR_BSR_Config__retxBSR_Timer_sf10:
-      return 10;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf20:
-      return 20;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf40:
-      return 40;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf80:
-      return 80;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf160:
-      return 160;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf320:
-      return 320;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf640:
-      return 640;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf1280:
-      return 1280;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf2560:
-      return 2560;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf5120:
-      return 5120;
-      break;
-
-    case NR_BSR_Config__retxBSR_Timer_sf10240:
-      return 10240;
-      break;
-
-    default:
-      return -1;
       break;
   }
 }
@@ -2563,11 +2528,6 @@ static int nr_ue_get_sdu_mac_ce_pre(NR_UE_MAC_INST_t *mac,
     lcg_id++;
   }
 
-  //Restart ReTxBSR Timer at new grant indication (38.321)
-  if (mac->scheduling_info.retxBSR_SF != NR_MAC_UE_BSR_TIMER_NOT_RUNNING) {
-    mac->scheduling_info.retxBSR_SF = nr_get_sf_retxBSRTimer(mac->scheduling_info.retxBSR_Timer);
-  }
-
   // periodicBSR-Timer expires, trigger BSR
   if ((mac->scheduling_info.periodicBSR_Timer != NR_BSR_Config__periodicBSR_Timer_infinity)
       && (mac->scheduling_info.periodicBSR_SF == 0)) {
@@ -2780,9 +2740,7 @@ static void nr_ue_get_sdu_mac_ce_post(NR_UE_MAC_INST_t *mac,
           mac_ce_p->bsr_header_len,
           buflen);
     // Reset ReTx BSR Timer
-    mac->scheduling_info.retxBSR_SF = nr_get_sf_retxBSRTimer(mac->scheduling_info.retxBSR_Timer);
-    LOG_D(NR_MAC, "[UE %d] MAC ReTx BSR Timer Reset =%d\n", mac->ue_id, mac->scheduling_info.retxBSR_SF);
-
+    nr_timer_start(&mac->scheduling_info.retxBSR_Timer);
     // Reset Periodic Timer except when BSR is truncated
     if ((mac_ce_p->bsr_t == NULL) && (mac->scheduling_info.periodicBSR_Timer != NR_BSR_Config__periodicBSR_Timer_infinity)) {
       mac->scheduling_info.periodicBSR_SF = nr_get_sf_periodicBSRTimer(mac->scheduling_info.periodicBSR_Timer);
