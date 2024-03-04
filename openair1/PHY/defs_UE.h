@@ -721,8 +721,7 @@ typedef struct {
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              time_sync_cell;
-  int              timing_advance; ///timing advance signalled from eNB
-  int              hw_timing_advance;
+  int timing_advance; /// timing advance signalled from eNB
   int              N_TA_offset; ///timing offset used in TDD
   /// Flag to tell if UE is secondary user (cognitive mode)
   unsigned char    is_secondary_ue;

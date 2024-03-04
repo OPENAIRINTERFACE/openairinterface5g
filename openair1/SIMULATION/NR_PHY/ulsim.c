@@ -552,6 +552,8 @@ int main(int argc, char *argv[])
   gNB = RC.gNB[0];
   gNB->ofdm_offset_divisor = UINT_MAX;
   gNB->num_pusch_symbols_per_thread = 1;
+  gNB->RU_list[0] = calloc(1, sizeof(**gNB->RU_list));
+  gNB->RU_list[0]->rfdevice.openair0_cfg = openair0_cfg;
 
   initFloatingCoresTpool(threadCnt, &gNB->threadPool, false, "gNB-tpool");
   initNotifiedFIFO(&gNB->respDecode);

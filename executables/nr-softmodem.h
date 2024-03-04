@@ -18,8 +18,6 @@
 // clang-format off
 #define CMDLINE_PARAMS_DESC_GNB { \
   {"single-thread-disable", CONFIG_HLP_NOSNGLT,        PARAMFLAG_BOOL,   .iptr=&single_thread_flag,           .defintval=1,                     TYPE_INT,    0},        \
-  {"A" ,                    CONFIG_HLP_TADV,           0,                .uptr=&timing_advance,               .defintval=0,                     TYPE_UINT,   0},        \
-  {"E" ,                    CONFIG_HLP_TQFS,           PARAMFLAG_BOOL,   .i8ptr=&threequarter_fs,             .defintval=0,                     TYPE_INT8,   0},        \
   {"m" ,                    CONFIG_HLP_DLMCS_PHYTEST,  0,                .uptr=&target_dl_mcs,                .defintval=0,                     TYPE_UINT,   0},        \
   {"l" ,                    CONFIG_HLP_DLNL_PHYTEST,   0,                .uptr=&target_dl_Nl,                 .defintval=0,                     TYPE_UINT,   0},        \
   {"L" ,                    CONFIG_HLP_ULNL_PHYTEST,   0,                .uptr=&target_ul_Nl,                 .defintval=0,                     TYPE_UINT,   0},        \

@@ -293,7 +293,6 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->chest_freq           = nrUE_params.chest_freq;
   UE->chest_time           = nrUE_params.chest_time;
   UE->no_timing_correction = nrUE_params.no_timing_correction;
-  UE->timing_advance       = nrUE_params.timing_advance;
 
   LOG_I(PHY,"Set UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n, chest-freq %d, chest-time %d\n",
         UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction, UE->chest_freq, UE->chest_time);
@@ -307,7 +306,7 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
 
   fp->nb_antennas_rx       = nrUE_params.nb_antennas_rx;
   fp->nb_antennas_tx       = nrUE_params.nb_antennas_tx;
-  fp->threequarter_fs      = nrUE_params.threequarter_fs;
+  fp->threequarter_fs = get_softmodem_params()->threequarter_fs;
   fp->N_RB_DL              = nrUE_params.N_RB_DL;
   fp->ssb_start_subcarrier = nrUE_params.ssb_start_subcarrier;
   fp->ofdm_offset_divisor  = nrUE_params.ofdm_offset_divisor;

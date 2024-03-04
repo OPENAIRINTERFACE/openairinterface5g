@@ -713,8 +713,6 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t total_transmitted_bits;
   uint32_t total_system_throughput;
 
-  int hw_timing_advance;
-
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;

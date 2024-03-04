@@ -274,8 +274,7 @@ static void get_options(configmodule_interface_t *cfg)
 {
   int CC_id=0;
   int tddflag=0;
-  int dumpframe=0;
-  int timingadv=0;
+  int dumpframe = 0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
 
   set_default_frame_parms(frame_parms);
@@ -288,8 +287,6 @@ static void get_options(configmodule_interface_t *cfg)
   config_process_cmdline(cfg, cmdline_uemodeparams, sizeofArray(cmdline_uemodeparams), NULL);
   config_process_cmdline(cfg, cmdline_ueparams, sizeofArray(cmdline_ueparams), NULL);
   nfapi_setmode(nfapi_mode);
-
-  get_softmodem_params()->hw_timing_advance = timingadv;
 
   if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
 

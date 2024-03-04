@@ -102,7 +102,6 @@ int attach_rru(RU_t *ru);
 int connect_rau(RU_t *ru);
 static void NRRCconfig_RU(configmodule_interface_t *cfg);
 
-extern uint32_t timing_advance;
 extern int emulate_rf;
 extern int numerology;
 
@@ -857,22 +856,17 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   for (i = 0; i < ru->nb_tx; i++)
     txp[i] = (void *)&ru->common.txdata[i][fp->get_samples_slot_timestamp(slot, fp, 0)] - sf_extension * sizeof(int32_t);
 
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST,
-                                          (timestamp + ru->ts_offset - ru->openair0_cfg.tx_sample_advance - timing_advance) & 0xffffffff);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp + ru->ts_offset) & 0xffffffff);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1);
   // prepare tx buffer pointers
-  txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
-                                    timestamp + ru->ts_offset - ru->openair0_cfg.tx_sample_advance - timing_advance - sf_extension,
-                                    txp,
-                                    siglen + sf_extension,
-                                    ru->nb_tx,
-                                    flags);
+  txs = ru->rfdevice
+            .trx_write_func(&ru->rfdevice, timestamp + ru->ts_offset - sf_extension, txp, siglen + sf_extension, ru->nb_tx, flags);
   LOG_D(PHY,
         "[TXPATH] RU %d aa %d tx_rf, writing to TS %llu, %d.%d, unwrapped_frame %d, slot %d, flags %d, siglen+sf_extension %d, "
         "returned %d, E %f\n",
         ru->idx,
         i,
-        (long long unsigned int)(timestamp + ru->ts_offset - ru->openair0_cfg.tx_sample_advance - timing_advance - sf_extension),
+        (long long unsigned int)(timestamp + ru->ts_offset - sf_extension),
         frame,
         slot,
         proc->frame_tx_unwrap,

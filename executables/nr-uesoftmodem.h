@@ -52,8 +52,6 @@
   {"ue-scan-carrier",              CONFIG_HLP_UESCAN,          PARAMFLAG_BOOL,  .iptr=&(nrUE_params.UE_scan_carrier),        .defintval=0,      TYPE_INT,      0}, \
   {"ue-fo-compensation",           CONFIG_HLP_UEFO,            PARAMFLAG_BOOL,  .iptr=&(nrUE_params.UE_fo_compensation),     .defintval=0,      TYPE_INT,      0}, \
   {"ue-max-power",                 NULL,                       0,               .iptr=&(tx_max_power[0]),            .defintval=90,     TYPE_INT,      0}, \
-  {"A" ,                           CONFIG_HLP_TADV,            0,               .iptr=&(nrUE_params.timing_advance),         .defintval=0,      TYPE_INT,      0}, \
-  {"E" ,                           CONFIG_HLP_TQFS,            PARAMFLAG_BOOL,  .iptr=&(nrUE_params.threequarter_fs),       .defintval=0,      TYPE_UINT8,    0}, \
   {"r"  ,                          CONFIG_HLP_PRB_SA,          0,               .iptr=&(nrUE_params.N_RB_DL),                .defintval=106,    TYPE_UINT,     0}, \
   {"ssb",                          CONFIG_HLP_SSC,             0,               .iptr=&(nrUE_params.ssb_start_subcarrier), .defintval=516,    TYPE_UINT16,   0}, \
   {"T" ,                           CONFIG_HLP_TDD,             PARAMFLAG_BOOL,  .iptr=&tddflag,                      .defintval=0,      TYPE_INT,      0}, \
@@ -72,16 +70,14 @@ typedef struct {
   int            max_ldpc_iterations; // number of maximum LDPC iterations
   tpool_t        Tpool;             // thread pool 
   int            UE_scan_carrier;
-  int            UE_fo_compensation;
-  int            timing_advance;
+  int UE_fo_compensation;
   uint64_t       if_freq;
   int            if_freq_off;
   int            chest_freq;
   int            chest_time;
   int            no_timing_correction;
   int            nb_antennas_rx;
-  int            nb_antennas_tx;
-  int            threequarter_fs;
+  int nb_antennas_tx;
   int            N_RB_DL;
   int            ssb_start_subcarrier;
 } nrUE_params_t;
