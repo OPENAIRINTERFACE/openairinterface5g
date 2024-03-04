@@ -904,6 +904,11 @@ static void nr_rrc_process_rrcsetup(NR_UE_RRC_INST_t *rrc,
   // if the RRCSetup is received in response to an RRCReestablishmentRequest
   // or RRCResumeRequest or RRCResumeRequest1
   // TODO none of the procedures implemented yet
+  if (rrc->ra_trigger == RRC_CONNECTION_REESTABLISHMENT) {
+    LOG_E(NR_RRC, "Handling of RRCSetup in response of RRCReestablishment not implemented yet. Going back to IDLE.\n");
+    nr_rrc_going_to_IDLE(rrc, OTHER, NULL);
+    return;
+  }
 
   // perform the cell group configuration procedure in accordance with the received masterCellGroup
   nr_rrc_ue_process_masterCellGroup(rrc,
