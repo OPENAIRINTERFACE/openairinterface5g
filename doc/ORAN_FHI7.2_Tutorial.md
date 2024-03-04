@@ -634,7 +634,7 @@ Edit the sample OAI gNB configuration file and check following parameters:
   that is employed by the xRAN library (`xran_fh_init` and `xran_fh_config`
   structs in the code):
   * `dpdk_devices`: PCI addresses of NIC VFs binded to the DPDK (not the physical NIC but the VFs, use `lspci | grep Virtual`)
-  * `system_core`: absolute CPU core ID for DPDK control threads
+  * `system_core`: absolute CPU core ID for DPDK control threads, it should be an isolated core, in our environment we are using CPU 0
     (`rte_mp_handle`, `eal-intr-thread`, `iavf-event-thread`)
   * `io_core`: absolute CPU core ID for XRAN library, it should be an isolated core, in our environment we are using CPU 4
   * `worker_cores`: array of absolute CPU core IDs for XRAN library, they should be isolated cores, in our environment we are using CPU 2
