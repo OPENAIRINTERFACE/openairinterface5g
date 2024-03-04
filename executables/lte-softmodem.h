@@ -170,9 +170,6 @@ extern void init_UE(int nb_inst,
 
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char *name);
 
-extern void init_ocm(void);
-extern void init_ue_devices(PHY_VARS_UE *);
-
 PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 
 void init_eNB_afterRU(void);

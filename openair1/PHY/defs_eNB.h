@@ -616,10 +616,6 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t max_peak_val;
   int max_eNB_id, max_sync_pos;
 
-  /// \brief sinr for all subcarriers of the current link (used only for abstraction).
-  /// first index: ? [0..N_RB_DL*12[
-  double *sinr_dB;
-
   /// N0 (used for abstraction)
   double N0;
 

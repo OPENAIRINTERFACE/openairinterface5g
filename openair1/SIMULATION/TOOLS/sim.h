@@ -264,8 +264,6 @@ typedef enum {
 #define CHANNELMOD_HELP_MODELLIST "<list name> channel list name in config file describing the model type and its parameters\n"
 // clang-format off
 #define CHANNELMOD_PARAMS_DESC {  \
-  {"s"      ,                     CONFIG_HLP_SNR,                     PARAMFLAG_CMDLINE_NOPREFIXENABLED,  .dblptr=&snr_dB,              .defdblval=25,                    TYPE_DOUBLE, 0}, \
-  {"sinr_dB",                     NULL,                               0,                                  .dblptr=&sinr_dB,             .defdblval=0 ,                    TYPE_DOUBLE, 0}, \
   {"max_chan",                    "Max number of runtime models",     0,                                  .uptr=&max_chan,              .defintval=10,                    TYPE_UINT,   0}, \
   {CHANNELMOD_MODELLIST_PARANAME, CHANNELMOD_HELP_MODELLIST,          0,                                  .strptr=&modellist_name,      .defstrval="DefaultChannelList",  TYPE_STRING, 0}, \
 }
@@ -302,18 +300,11 @@ typedef struct {
   double r_re_UL[NUMBER_OF_eNB_MAX][2][30720];
   double r_im_UL[NUMBER_OF_eNB_MAX][2][30720];
   int RU_output_mask[NUMBER_OF_UE_MAX];
-  int UE_output_mask[NUMBER_OF_RU_MAX];
   pthread_mutex_t RU_output_mutex[NUMBER_OF_UE_MAX];
   pthread_mutex_t UE_output_mutex[NUMBER_OF_RU_MAX];
-  pthread_mutex_t subframe_mutex;
-  int subframe_ru_mask;
-  int subframe_UE_mask;
   openair0_timestamp current_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
   openair0_timestamp current_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
-  openair0_timestamp last_ru_rx_timestamp[NUMBER_OF_RU_MAX][MAX_NUM_CCs];
-  openair0_timestamp last_UE_rx_timestamp[MAX_MOBILES_PER_ENB][MAX_NUM_CCs];
   double ru_amp[NUMBER_OF_RU_MAX];
-  pthread_t rfsim_thread;
 } sim_t;
 
 

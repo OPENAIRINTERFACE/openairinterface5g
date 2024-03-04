@@ -21,11 +21,11 @@ The telnet server provides an API which can be used by any oai component to add 
 
 telnet server source files are located in [common/utils/telnetsrv](https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop/common/utils/telnetsrv)
 
-1. [telnetsrv.c](https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop/common/utils/telnetsrv/telnetsrv.c) contains the telnet server implementation, including the implementation of the `telnet` CLI command. This implementation is compatible with all softmodem executables and is in charge of loading any additional `libtelnetsrv_<app> .so` containing code specific to the running executables.
-1.  [telnetsrv.h](https://gitlab.eurecom.fr/oai/openairinterface5g/tree/develop/common/utils/telnetsrv/telnetsrv.h) is the telnet server include file containing both private and public data type definitions. It also contains API prototypes for functions that are used to register a new command in the server.
+1. [telnetsrv.c](../telnetsrv.c) contains the telnet server implementation, including the implementation of the `telnet` CLI command. This implementation is compatible with all softmodem executables and is in charge of loading any additional `libtelnetsrv_<app> .so` containing code specific to the running executables.
+1.  [telnetsrv.h](../telnetsrv.h) is the telnet server include file containing both private and public data type definitions. It also contains API prototypes for functions that are used to register a new command in the server.
 1.  `telnetsrv_<XXX\>.c`: implementation of \<XXX\> CLI command which are delivered with the telnet server and are common to all softmodem executables. 
 1. `telnetsrv_<XXX\>.h`: include file for the implementation of XXX CLI command. Usually included only in the corresponding `.c`file
 1.  `telnetsrv_<app>_<XXX>.c`: implementation of \<XXX\> CLI command specific to the executable identified by \<app\>.These sources are used to create `libtelnetsrv_<app>.so` at build time.
-1.  [telnetsrv_CMakeLists.txt](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/utils/telnetsrv/telnetsrv_CMakeLists.txt): CMakelists file containing the cmake instructions to build the telnet server. this file is included in the [global oai CMakelists](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/cmake_targets/CMakeLists.txt).
+1.  [telnetsrv_CMakeLists.txt](../CMakeLists.txt): CMakelists file containing the cmake instructions to build the telnet server. this file is included in the [global oai CMakelists](../../../../cmake_targets/CMakeLists.txt).
 
 [oai telnet server home](telnetsrv.md)

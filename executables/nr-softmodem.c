@@ -116,7 +116,6 @@ unsigned char NB_gNB_INST = 1;
 char *uecap_file;
 
 runmode_t mode = normal_txrx;
-static double snr_dB=20;
 
 #if MAX_NUM_CCs == 1
 rx_gain_t rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
