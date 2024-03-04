@@ -249,3 +249,71 @@ steps](../docker/README.md) and then use the docker-compose file directly.
 Some tests are run from source (e.g.
 `ci-scripts/xml_files/gnb_phytest_usrp_run.xml`), which directly give the
 options they are run with.
+
+## How to retrieve core dumps (for CI team members)
+
+The entrypoint scripts of all containers print the core pattern that is used on
+the running machine. Search for `core_pattern` at the start of the container
+logs to retrieve the possible location. Possible locations might be:
+
+- a path: the corresponding directory must be mounted in the container to be
+  writable
+- systemd-coredumpd: see [documentation](https://systemd.io/COREDUMP/)
+- abrt: see [documentation](https://abrt.readthedocs.io/en/latest/usage.html)
+- apport: see [documentation](https://wiki.ubuntu.com/Apport)
+
+You furthermore have to extract the executable that caused the core dump.
+Download the container image, and extract, e.g.:
+
+```
+docker create --name c1 porcepix.sboai.cs.eurecom.fr/oai-gnb:develop-c99db698
+docker cp c1:/opt/oai-gnb/bin/nr-softmodem /tmp
+docker rm c1
+```
+
+### Core dump in a file
+
+**This is not recommended, as files could pile up and fill the system disk
+completely!** Prefer systemd or abrt instead.
+
+If the core pattern is a path: it should at least include the time in the
+pattern name (suggested pattern: `/tmp/core.%e.%p.%t`) to correlate the time
+the segfault occurred with the CI logs. If you identified the core dump,
+copy the core dump from that machine; if identification is difficult, consider
+rerunning the pipeline.
+
+### Core dump via systemd
+
+Run this command to list all core dumps:
+
+```
+sudo coredumpctl list
+```
+
+Scroll to the end and find the core dump of interest (it lists the executables
+in the last column; use the time to correlate the segfault and the CI run).
+Take the PID of the executable (first column after the time). Dump the core
+dump to a location of your choice:
+
+```
+sudo coredumpctl dump <PID> > /tmp/coredump
+```
+
+### Core dump via abrt (automatic bug reporting tool)
+
+TBD: use the documentation page for the moment.
+
+### Core dump via apport
+
+On Ubuntu machines, apport first needs to be enabled to collect core dumps:
+
+```
+sudo systemctl enable apport.service
+```
+
+and [needs to be enabled](https://wiki.ubuntu.com/Apport#How_to_enable_apport).
+Then, show a list of core dumps using
+
+```
+sudo apport-cli
+```
