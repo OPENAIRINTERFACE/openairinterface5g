@@ -121,5 +121,6 @@ WORKDIR /opt/oai-gnb
 #EXPOSE 50000/udp # IF5 / ORI (control)
 #EXPOSE 50001/udp # IF5 / ECPRI (data)
 
-ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
+COPY --from=gnb-base /tini /tini
+ENTRYPOINT ["/tini", "-v", "--", "/opt/oai-gnb/bin/entrypoint.sh"]
 CMD ["/opt/oai-gnb/bin/nr-softmodem", "-O", "/opt/oai-gnb/etc/gnb.conf"]
