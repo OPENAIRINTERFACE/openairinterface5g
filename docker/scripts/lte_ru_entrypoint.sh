@@ -5,6 +5,9 @@ set -uo pipefail
 PREFIX=/opt/oai-lte-ru
 CONFIGFILE=$PREFIX/etc/rru.conf
 
+echo "=================================="
+echo "/proc/sys/kernel/core_pattern=$(cat /proc/sys/kernel/core_pattern)"
+
 if [ ! -f $CONFIGFILE ]; then
   echo "No configuration file found: please mount at $CONFIGFILE"
   exit 255
