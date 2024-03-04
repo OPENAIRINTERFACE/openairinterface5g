@@ -216,10 +216,8 @@ typedef struct {
   NR_timer_t sr_DelayTimer;
   /// retxBSR-Timer
   NR_timer_t retxBSR_Timer;
-  /// periodicBSR-Timer, default to infinity
-  uint16_t periodicBSR_Timer;
-  /// periodicBSR_SF, number of subframe before triggering a periodic BSR
-  uint16_t periodicBSR_SF;
+  /// periodicBSR-Timer
+  NR_timer_t periodicBSR_Timer;
   /// default value is 0: not configured
   uint16_t sr_ProhibitTimer;
   /// sr ProhibitTime running
@@ -239,10 +237,6 @@ typedef struct {
   int16_t prohibitPHR_SF;
   ///DL Pathloss Change in db
   uint16_t PathlossChange_db;
-  /// default value is false
-  uint16_t extendedBSR_Sizes_r10;
-  /// default value is false
-  uint16_t extendedPHR_r10;
 } NR_UE_SCHEDULING_INFO;
 
 typedef enum {

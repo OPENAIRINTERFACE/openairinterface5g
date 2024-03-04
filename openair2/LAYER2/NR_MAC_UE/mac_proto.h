@@ -139,13 +139,6 @@ void nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t 
 uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size,
                                     int value);
 
-/*! \fn  int nr_get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
-   \brief get the number of subframe from the periodic BSR timer configured by the higher layers
-\param[in] periodicBSR_Timer timer for periodic BSR
-\return the number of subframe
-*/
-int nr_get_sf_periodicBSRTimer(uint8_t bucketSize);
-
 int8_t nr_ue_process_dci(NR_UE_MAC_INST_t *mac,
                          int cc_id,
                          frame_t frame,

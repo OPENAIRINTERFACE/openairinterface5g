@@ -1634,6 +1634,62 @@ static uint32_t nr_get_sf_retxBSRTimer(long retxBSR_Timer)
   return timer;
 }
 
+static uint32_t nr_get_sf_periodicBSRTimer(long periodicBSR)
+{
+  uint32_t timer = 0;
+  switch (periodicBSR) {
+    case NR_BSR_Config__periodicBSR_Timer_sf1:
+      timer = 1;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf5:
+      timer = 5;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf10:
+      timer = 10;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf16:
+      timer = 16;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf20:
+      timer = 20;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf32:
+      timer = 32;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf40:
+      timer = 40;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf64:
+      timer = 64;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf80:
+      timer = 80;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf128:
+      timer = 128;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf160:
+      timer = 160;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf320:
+      timer = 320;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf640:
+      timer = 640;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf1280:
+      timer = 1280;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_sf2560:
+      timer = 2560;
+      break;
+    case NR_BSR_Config__periodicBSR_Timer_infinity:
+      timer = UINT_MAX;
+    default:
+      AssertFatal(false, "Invalid periodicBSR_Timer %ld\n", periodicBSR);
+  }
+  return timer;
+}
 
 static void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroupConfig_t *mcg)
 {
@@ -1669,7 +1725,10 @@ static void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroup
   }
   if (mcg->bsr_Config) {
     int subframes_per_slot = nr_slots_per_frame[mac->current_UL_BWP->scs] / 10;
-    si->periodicBSR_Timer = mcg->bsr_Config->periodicBSR_Timer;
+    uint32_t periodic_sf = nr_get_sf_periodicBSRTimer(mcg->bsr_Config->periodicBSR_Timer);
+    uint32_t target = periodic_sf < UINT_MAX ? periodic_sf * subframes_per_slot : periodic_sf;
+    nr_timer_setup(&si->periodicBSR_Timer, target, 1); // 1 slot update rate
+    nr_timer_start(&si->periodicBSR_Timer);
     uint32_t retx_sf = nr_get_sf_retxBSRTimer(mcg->bsr_Config->retxBSR_Timer);
     nr_timer_setup(&si->retxBSR_Timer, retx_sf * subframes_per_slot, 1); // 1 slot update rate
     if (mcg->bsr_Config->logicalChannelSR_DelayTimer) {
