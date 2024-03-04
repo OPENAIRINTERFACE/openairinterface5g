@@ -60,6 +60,7 @@
 #include "f1ap_messages_types.h"
 #include "openair2/F1AP/f1ap_ids.h"
 #include "openair2/E1AP/e1ap_asnc.h"
+#include "openair2/E1AP/e1ap.h"
 #include "NGAP_asn_constant.h"
 #include "NGAP_PDUSessionResourceSetupRequestTransfer.h"
 #include "NGAP_PDUSessionResourceModifyRequestTransfer.h"
@@ -130,9 +131,9 @@ nr_rrc_pdcp_config_security(
 )
 //------------------------------------------------------------------------------
 {
-  uint8_t kRRCenc[16] = {0};
-  uint8_t kRRCint[16] = {0};
-  uint8_t kUPenc[16] = {0};
+  uint8_t kRRCenc[NR_K_KEY_SIZE] = {0};
+  uint8_t kRRCint[NR_K_KEY_SIZE] = {0};
+  uint8_t kUPenc[NR_K_KEY_SIZE]  = {0};
   //uint8_t                            *k_kdf  = NULL;
   static int                          print_keys= 1;
   gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
@@ -406,19 +407,13 @@ static void trigger_bearer_setup(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, int n, pdu
       DRB_nGRAN_to_setup_t *drb = pdu->DRBnGRanList + j;
 
       drb->id = rrc_drb->drb_id;
-
+      /* SDAP */
       struct sdap_config_s *sdap_config = &rrc_drb->cnAssociation.sdap_config;
-      drb->defaultDRB = sdap_config->defaultDRB;
-      drb->sDAP_Header_UL = sdap_config->sdap_HeaderUL;
-      drb->sDAP_Header_DL = sdap_config->sdap_HeaderDL;
-
-      struct pdcp_config_s *pdcp_config = &rrc_drb->pdcp_config;
-      drb->pDCP_SN_Size_UL = pdcp_config->pdcp_SN_SizeUL;
-      drb->pDCP_SN_Size_DL = pdcp_config->pdcp_SN_SizeDL;
-      drb->discardTimer = pdcp_config->discardTimer;
-      drb->reorderingTimer = pdcp_config->t_Reordering;
-
-      drb->rLC_Mode = rrc->configuration.um_on_default_drb ? E1AP_RLC_Mode_rlc_um_bidirectional : E1AP_RLC_Mode_rlc_am;
+      drb->sdap_config.defaultDRB = sdap_config->defaultDRB;
+      drb->sdap_config.sDAP_Header_UL = sdap_config->sdap_HeaderUL;
+      drb->sdap_config.sDAP_Header_DL = sdap_config->sdap_HeaderDL;
+      /* PDCP */
+      set_bearer_context_pdcp_config(&drb->pdcp_config, rrc_drb, rrc->configuration.um_on_default_drb);
 
       drb->numCellGroups = 1; // assume one cell group associated with a DRB
 

@@ -37,7 +37,7 @@
 
 static void fill_DRB_configList_e1(NR_DRB_ToAddModList_t *DRB_configList, const pdu_session_to_setup_t *pdu)
 {
-  for (int i=0; i < pdu->numDRB2Setup; i++) {
+  for (int i = 0; i < pdu->numDRB2Setup; i++) {
     const DRB_nGRAN_to_setup_t *drb = pdu->DRBnGRanList + i;
     asn1cSequenceAdd(DRB_configList->list, struct NR_DRB_ToAddMod, ie);
     ie->drb_Identity = drb->id;
@@ -47,12 +47,12 @@ static void fill_DRB_configList_e1(NR_DRB_ToAddModList_t *DRB_configList, const 
     // sdap_Config
     asn1cCalloc(ie->cnAssociation->choice.sdap_Config, sdap_config);
     sdap_config->pdu_Session = pdu->sessionId;
-    sdap_config->sdap_HeaderDL = drb->sDAP_Header_DL;
-    sdap_config->sdap_HeaderUL = drb->sDAP_Header_UL;
-    sdap_config->defaultDRB = drb->defaultDRB;
-
+    /* SDAP */
+    sdap_config->sdap_HeaderDL = drb->sdap_config.sDAP_Header_DL;
+    sdap_config->sdap_HeaderUL = drb->sdap_config.sDAP_Header_UL;
+    sdap_config->defaultDRB    = drb->sdap_config.defaultDRB;
     asn1cCalloc(sdap_config->mappedQoS_FlowsToAdd, FlowsToAdd);
-    for (int j=0; j < drb->numQosFlow2Setup; j++) {
+    for (int j = 0; j < drb->numQosFlow2Setup; j++) {
       asn1cSequenceAdd(FlowsToAdd->list, NR_QFI_t, qfi);
       *qfi = drb->qosFlows[j].qfi;
     }
@@ -63,26 +63,22 @@ static void fill_DRB_configList_e1(NR_DRB_ToAddModList_t *DRB_configList, const 
     ie->recoverPDCP = NULL;
     asn1cCalloc(ie->pdcp_Config, pdcp_config);
     asn1cCalloc(pdcp_config->drb, drbCfg);
-    asn1cCallocOne(drbCfg->discardTimer, drb->discardTimer);
-    asn1cCallocOne(drbCfg->pdcp_SN_SizeUL, drb->pDCP_SN_Size_UL);
-    asn1cCallocOne(drbCfg->pdcp_SN_SizeDL, drb->pDCP_SN_Size_DL);
+    asn1cCallocOne(drbCfg->discardTimer, drb->pdcp_config.discardTimer);
+    asn1cCallocOne(drbCfg->pdcp_SN_SizeUL, drb->pdcp_config.pDCP_SN_Size_UL);
+    asn1cCallocOne(drbCfg->pdcp_SN_SizeDL, drb->pdcp_config.pDCP_SN_Size_DL);
     drbCfg->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
     drbCfg->headerCompression.choice.notUsed = 0;
-
     drbCfg->integrityProtection = NULL;
     drbCfg->statusReportRequired = NULL;
     drbCfg->outOfOrderDelivery = NULL;
     pdcp_config->moreThanOneRLC = NULL;
-
     pdcp_config->t_Reordering = calloc(1, sizeof(*pdcp_config->t_Reordering));
-    *pdcp_config->t_Reordering = drb->reorderingTimer;
+    *pdcp_config->t_Reordering = drb->pdcp_config.reorderingTimer;
     pdcp_config->ext1 = NULL;
-
     if (pdu->integrityProtectionIndication == 0 || // Required
         pdu->integrityProtectionIndication == 1) { // Preferred
-      asn1cCallocOne(drbCfg->integrityProtection, NR_PDCP_Config__drb__integrityProtection_enabled);
+        asn1cCallocOne(drbCfg->integrityProtection, NR_PDCP_Config__drb__integrityProtection_enabled);
     }
-
     if (pdu->confidentialityProtectionIndication == 2) { // Not Needed
       asn1cCalloc(pdcp_config->ext1, ext1);
       asn1cCallocOne(ext1->cipheringDisabled, NR_PDCP_Config__ext1__cipheringDisabled_true);
@@ -227,7 +223,10 @@ void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req)
   get_e1_if()->bearer_setup_response(&resp);
 }
 
-void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req)
+/**
+ * @brief Fill Bearer Context Modification Response and send to callback
+ */
+void e1_bearer_context_modif(const e1ap_bearer_mod_req_t *req)
 {
   AssertFatal(req->numPDUSessionsMod > 0, "need at least one PDU session to modify\n");
 
@@ -239,7 +238,8 @@ void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req)
 
   instance_t f1inst = get_f1_gtp_instance();
 
-  for (int i=0; i < req->numPDUSessionsMod; i++) {
+  /* PDU Session Resource To Modify List (see 9.3.3.11 of TS 38.463) */
+  for (int i = 0; i < req->numPDUSessionsMod; i++) {
     DevAssert(req->pduSessionMod[i].sessionId > 0);
     LOG_I(E1AP,
           "UE %d: updating PDU session ID %ld (%ld bearers)\n",
@@ -248,10 +248,15 @@ void e1_bearer_context_modif(const e1ap_bearer_setup_req_t *req)
           req->pduSessionMod[i].numDRB2Modify);
     modif.pduSessionMod[i].id = req->pduSessionMod[i].sessionId;
     modif.pduSessionMod[i].numDRBModified = req->pduSessionMod[i].numDRB2Modify;
-    for (int j=0; j < req->pduSessionMod[i].numDRB2Modify; j++) {
-      const DRB_nGRAN_to_setup_t *to_modif = &req->pduSessionMod[i].DRBnGRanModList[j];
+    /* DRBs to modify */
+    for (int j = 0; j < req->pduSessionMod[i].numDRB2Modify; j++) {
+      const DRB_nGRAN_to_mod_t *to_modif = &req->pduSessionMod[i].DRBnGRanModList[j];
       DRB_nGRAN_modified_t *modified = &modif.pduSessionMod[i].DRBnGRanModList[j];
       modified->id = to_modif->id;
+
+      if (to_modif->pdcp_config.pDCP_Reestablishment) {
+        nr_pdcp_reestablishment(req->gNB_cu_up_ue_id, to_modif->id, false);
+      }
 
       if (f1inst < 0) // no F1-U?
         continue; // nothing to do
