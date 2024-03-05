@@ -28,7 +28,6 @@
         <TestCaseRequestedList>
  111111
  100001
- 000000
  000001
  000002
  000003
@@ -47,36 +46,26 @@
                 <images_to_pull>oai-gnb-asan oai-nr-ue-asan</images_to_pull>
         </testCase>
 
-        <testCase id="000000">
-                <class>DeployGenObject</class>
-                <desc>Deploy MySql Database</desc>
-                <yaml_path>yaml_files/5g_rfsimulator_2x2</yaml_path>
-                <services>mysql</services>
-                <nb_healthy>1</nb_healthy>
-        </testCase>
-
         <testCase id="000001">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_2x2</yaml_path>
-                <services>oai-amf oai-smf oai-upf oai-ext-dn</services>
+                <services>mysql oai-amf oai-smf oai-upf oai-ext-dn</services>
                 <nb_healthy>5</nb_healthy>
         </testCase>
 
         <testCase id="000002">
                 <class>DeployGenObject</class>
-                <desc>Deploy OAI 5G gNB RF sim SA</desc>
+                <desc>Deploy OAI 5G gNB+UE RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_2x2</yaml_path>
-                <services>oai-gnb</services>
-                <nb_healthy>6</nb_healthy>
+                <services>oai-gnb oai-nr-ue</services>
+                <nb_healthy>7</nb_healthy>
         </testCase>
 
         <testCase id="000003">
-                <class>DeployGenObject</class>
-                <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
-                <yaml_path>yaml_files/5g_rfsimulator_2x2</yaml_path>
-                <services>oai-nr-ue</services>
-                <nb_healthy>7</nb_healthy>
+                <class>Attach_UE</class>
+                <desc>Attach OAI UE (Wait for IP)</desc>
+                <id>rfsim5g_ue</id>
         </testCase>
 
         <testCase id="020001">
