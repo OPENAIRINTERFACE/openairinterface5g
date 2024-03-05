@@ -117,5 +117,6 @@ RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai
     echo "ldd on libtelnetsrv_5Gue.so" && ldd /usr/local/lib/libtelnetsrv_5Gue.so
 
 WORKDIR /opt/oai-nr-ue
+COPY --from=nr-ue-base /tini /tini
 CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem", "-O", "/opt/oai-nr-ue/etc/nr-ue.conf"]
-ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]
+ENTRYPOINT ["/tini", "-v", "--", "/opt/oai-nr-ue/bin/entrypoint.sh"]

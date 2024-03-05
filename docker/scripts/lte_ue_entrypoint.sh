@@ -5,6 +5,9 @@ set -uo pipefail
 PREFIX=/opt/oai-lte-ue
 USIM_CONFIGFILE=$PREFIX/etc/ue_usim.conf
 
+echo "=================================="
+echo "/proc/sys/kernel/core_pattern=$(cat /proc/sys/kernel/core_pattern)"
+
 if [ ! -f $USIM_CONFIGFILE ]; then
   echo "No ue_usim.conf configuration file found: please mount at $USIM_CONFIGFILE"
   exit 255

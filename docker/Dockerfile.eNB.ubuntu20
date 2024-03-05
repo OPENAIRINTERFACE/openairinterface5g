@@ -112,5 +112,6 @@ EXPOSE 2152/udp 36412/udp 36422/udp
 #EXPOSE 50000/udp # IF5 / ORI (control)
 #EXPOSE 50001/udp # IF5 / ECPRI (data)
 
-ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+COPY --from=enb-base /tini /tini
+ENTRYPOINT ["/tini", "-v", "--", "/opt/oai-enb/bin/entrypoint.sh"]
 CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
