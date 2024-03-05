@@ -41,9 +41,7 @@
 
 #include <asn_application.h>
 
-#include "RRC/NR/nr_rrc_defs.h"
 #include "RRC/NR/nr_rrc_config.h"
-
 
 /*
  * The variant of the above function which dumps the BASIC-XER (XER_F_BASIC)

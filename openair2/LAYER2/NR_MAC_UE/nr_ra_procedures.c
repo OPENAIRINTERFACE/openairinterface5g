@@ -86,26 +86,26 @@ void init_RA(NR_UE_MAC_INST_t *mac,
 
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
-      LOG_I(MAC, "Initialization of 2-step contention-free random access procedure\n");
+      LOG_I(NR_MAC, "Initialization of 2-step contention-free random access procedure\n");
       prach_resources->RA_TYPE = RA_2STEP;
       ra->cfra = 1;
     } else if (rach_ConfigDedicated->ext1){
       if (rach_ConfigDedicated->ext1->cfra_TwoStep_r16){
-        LOG_I(MAC, "Setting RA type to 2-step...\n");
+        LOG_I(NR_MAC, "Setting RA type to 2-step...\n");
         prach_resources->RA_TYPE = RA_2STEP;
         ra->cfra = 1;
       } else {
-        LOG_E(MAC, "Config not handled\n");
+        LOG_E(NR_MAC, "Config not handled\n");
       }
     } else {
-      LOG_E(MAC, "Config not handled\n");
+      LOG_E(NR_MAC, "Config not handled\n");
     }
   } else if (nr_rach_ConfigCommon){
-    LOG_I(MAC, "Initialization of 4-step contention-based random access procedure\n");
+    LOG_I(NR_MAC, "Initialization of 4-step contention-based random access procedure\n");
     prach_resources->RA_TYPE = RA_4STEP;
     ra->cfra = 0;
   } else {
-    LOG_E(MAC, "Config not handled\n");
+    LOG_E(NR_MAC, "Config not handled\n");
   }
 
   switch (rach_ConfigGeneric->powerRampingStep){ // in dB
