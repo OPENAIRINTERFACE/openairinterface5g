@@ -152,7 +152,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
 int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
                            const UE_nr_rxtx_proc_t *proc,
                            int32_t pdcch_est_size,
-                           int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                           c16_t pdcch_dl_ch_estimates[][pdcch_est_size],
                            nr_phy_data_t *phy_data,
                            int n_ss,
                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);

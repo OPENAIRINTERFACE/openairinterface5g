@@ -215,6 +215,8 @@ typedef enum {
   GNB_APP,
   NR_RRC,
   NR_MAC,
+  NR_MAC_DCI,
+  NR_PHY_DCI,
   NR_PHY,
   LOADER,
   ASN1,
@@ -223,8 +225,7 @@ typedef enum {
   ITTI,
   UTIL,
   MAX_LOG_PREDEF_COMPONENTS,
-}
-comp_name_t;
+} comp_name_t;
 
 #define MAX_LOG_DYNALLOC_COMPONENTS 20
 #define MAX_LOG_COMPONENTS (MAX_LOG_PREDEF_COMPONENTS + MAX_LOG_DYNALLOC_COMPONENTS)
@@ -247,7 +248,7 @@ typedef struct  {
   log_vprint_func_t vprint;
   log_print_func_t  print;
   /* SR: make the log buffer component relative */
-  char             log_buffer[MAX_LOG_TOTAL];
+  // char             log_buffer[MAX_LOG_TOTAL];
 } log_component_t;
 
 

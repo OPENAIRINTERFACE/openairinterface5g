@@ -73,21 +73,30 @@ void nr_fill_reg_list(int reg_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL * NR_
     }
 
     if (pdcch_pdu_rel15->dci_pdu[d].RNTI != 0xFFFF)
-      LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", d, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
+      LOG_D(NR_PHY_DCI,
+            "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n",
+            d,
+            bsize,
+            R,
+            pdcch_pdu_rel15->dci_pdu[d].CceIndex);
 
     int list_idx = 0;
     for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
       int cce = pdcch_pdu_rel15->dci_pdu[d].CceIndex + cce_idx;
-      LOG_D(PHY, "cce_idx %d\n", cce);
+      LOG_D(NR_PHY_DCI, "cce_idx %d\n", cce);
       for (uint8_t bundle_idx=0; bundle_idx<NR_NB_REG_PER_CCE/bsize; bundle_idx++) {
         uint8_t k = 6 * cce / bsize + bundle_idx;
         int f = cce_to_reg_interleaving(R, k, n_shift, C, bsize, N_regs);
-        LOG_D(PHY, "Bundle index %d: f(%d) = %d\n", bundle_idx, k, f);
+        LOG_D(NR_PHY_DCI, "Bundle index %d: f(%d) = %d\n", bundle_idx, k, f);
         // reg_list contains the regs to be allocated per symbol
         // the same rbs are allocated in each symbol
         for (uint8_t reg_idx = 0; reg_idx < bsize / dur; reg_idx++) {
           reg_list[d][list_idx] = f * bsize / dur + reg_idx;
-          LOG_D(PHY, "rb %d nb of symbols per rb %d start subcarrier %d\n", reg_list[d][list_idx], dur, reg_list[d][list_idx] * NR_NB_SC_PER_RB);
+          LOG_D(NR_PHY_DCI,
+                "rb %d nb of symbols per rb %d start subcarrier %d\n",
+                reg_list[d][list_idx],
+                dur,
+                reg_list[d][list_idx] * NR_NB_SC_PER_RB);
           list_idx++;
         }
       }
