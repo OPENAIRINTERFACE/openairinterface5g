@@ -192,7 +192,7 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   nr_mac->scheduling_info.sr_id = -1; // invalid init value
 
   // cancel any triggered Buffer Status Reporting procedure
-  nr_mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
+  nr_mac->scheduling_info.BSR_reporting_active = NR_BSR_TRIGGER_NONE;
 
   // cancel any triggered Power Headroom Reporting procedure
   // TODO PHR not implemented yet

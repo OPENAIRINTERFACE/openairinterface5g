@@ -208,6 +208,10 @@ typedef struct {
   NR_LC_SCHEDULING_INFO lc_sched_info[NR_MAX_NUM_LCID];
   // lcg scheduling info
   NR_LCG_SCHEDULING_INFO lcg_sched_info[NR_MAX_NUM_LCGID];
+  /// BSR report flag management
+  uint8_t BSR_reporting_active;
+  // LCID triggering BSR
+  NR_LogicalChannelIdentity_t regularBSR_trigger_lcid;
   /// SR pending as defined in 38.321
   uint8_t  SR_pending;
   /// SR_COUNTER as defined in 38.321
@@ -447,6 +451,7 @@ typedef struct nr_lcordered_info_s {
   // Bucket size per lcid
   uint32_t bucket_size;
   bool sr_DelayTimerApplied;
+  bool lc_SRMask;
 } nr_lcordered_info_t;
 
 
@@ -523,9 +528,6 @@ typedef struct NR_UE_MAC_INST_s {
   nr_ue_if_module_t       *if_module;
   nr_phy_config_t         phy_config;
   nr_synch_request_t      synch_request;
-
-  /// BSR report flag management
-  uint8_t BSR_reporting_active;
 
   // order lc info
   A_SEQUENCE_OF(nr_lcordered_info_t) lc_ordered_list;

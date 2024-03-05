@@ -756,6 +756,7 @@ static void nr_configure_lc_config(NR_UE_MAC_INST_t *mac,
   struct NR_LogicalChannelConfig__ul_SpecificParameters *ul_parm = mac_lc_config->ul_SpecificParameters;
   lc_info->priority = ul_parm->priority;
   lc_info->sr_DelayTimerApplied = ul_parm->logicalChannelSR_DelayTimerApplied;
+  lc_info->lc_SRMask = ul_parm->logicalChannelSR_Mask;
   lc_info->pbr = nr_get_pbr(ul_parm->prioritisedBitRate);
   // if logicalChannelGroup we release LCGID and set it to invalid
   lc_sched_info->LCGID = ul_parm->logicalChannelGroup ? *ul_parm->logicalChannelGroup : NR_INVALID_LCGID;

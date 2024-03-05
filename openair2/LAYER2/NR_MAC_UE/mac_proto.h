@@ -120,25 +120,6 @@ subframe number \param[in] slotP slot number
 */
 int8_t nr_ue_get_SR(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP);
 
-/*! \fn  nr_update_bsr
-   \brief get the rlc stats and update the bsr level for each lcid
-\param[in] mac pointer to UE MAC instance
-\param[in] frameP Frame index
-\param[in] slotP number
-\param[in] gNB_index
-*/
-void nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t gNB_index);
-
-/*! \fn  nr_locate_BsrIndexByBufferSize (int *table, int size, int value)
-   \brief locate the BSR level in the table as defined in 38.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
-\param[in] *table Pointer to BSR table
-\param[in] size Size of the table
-\param[in] value Value of the buffer
-\return the index in the BSR_LEVEL table
-*/
-uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size,
-                                    int value);
-
 int8_t nr_ue_process_dci(NR_UE_MAC_INST_t *mac,
                          int cc_id,
                          frame_t frame,
