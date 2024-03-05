@@ -26,7 +26,6 @@
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100002
- 004000
  222222
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
@@ -35,13 +34,6 @@
                 <class>UndeployGenObject</class>
                 <desc>Undeploy all OAI 5G stack</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_fr2_32prb</yaml_path>
-        </testCase>
-
-	<testCase id="004000">
-            <class>Custom_Command</class>
-            <desc>Clean-Up any residual volume</desc>
-            <node>localhost</node>
-            <command>docker volume rm 5g_rfsimulator_fr2_32prb_rrc.config</command>
         </testCase>
 
         <testCase id="222222">

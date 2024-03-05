@@ -104,5 +104,6 @@ RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai
     ldconfig
 
 WORKDIR /opt/oai-lte-ue
+COPY --from=lte-ue-base /tini /tini
 CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem"]
-ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]
+ENTRYPOINT ["/tini", "-v", "--", "/opt/oai-lte-ue/bin/entrypoint.sh"]

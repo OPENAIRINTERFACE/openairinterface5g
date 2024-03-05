@@ -75,11 +75,11 @@ sequenceDiagram
   Note over u: E1AP_CUUP_task (SCTP Handler)
   Note over u: ASN1 decoder
 ```
-
+More details about the E1AP procedures in OAI are available in this document: [E1 Procedures](./e1ap_procedures.md).
 
 # 2. Running the E1 Split
 
-The setup is assuming that all modules are running on the same machine. The user can refer to the [F1 design document](./F1-design.md) for local deployment of the DU.
+The setup is assuming that all modules are running on the same machine. The user can refer to the [F1 design document](./../F1-design.md) for local deployment of the DU.
 
 ## 2.1 Configuration File
 

@@ -29,6 +29,7 @@
  100021
  000021
  000022
+ 000023
  020021
  030021
  030022
@@ -57,6 +58,12 @@
                 <yaml_path>yaml_files/5g_f1_rfsimulator</yaml_path>
                 <services>oai-cu oai-du oai-nr-ue</services>
                 <nb_healthy>8</nb_healthy>
+        </testCase>
+
+        <testCase id="000023">
+                <class>Attach_UE</class>
+                <desc>Attach OAI UE (Wait for IP)</desc>
+                <id>rfsim5g_ue</id>
         </testCase>
 
         <testCase id="020021">

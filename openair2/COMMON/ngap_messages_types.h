@@ -276,12 +276,14 @@ typedef struct pdusession_s {
   /* The transport layer address for the IP packets */
   pdu_session_type_t pdu_session_type;
   transport_layer_addr_t upf_addr;
-  /* S-GW Tunnel endpoint identifier */
+  /* Outgoing (UL) NG-U Tunnel Endpoint Identifier (S-GW/UPF) */
   uint32_t gtp_teid;
   /* Stores the DRB ID of the DRBs used by this PDU Session */
   uint8_t used_drbs[MAX_DRBS_PER_UE];
+  /* Incoming (DL) NG-U Tunnel Endpoint Identifier (S-GW/UPF) */
   uint32_t gNB_teid_N3;
   transport_layer_addr_t gNB_addr_N3;
+  /* Incoming (DL) NG-U Tunnel Endpoint Identifier (S-GW/UPF) */
   uint32_t UPF_teid_N3;
   transport_layer_addr_t UPF_addr_N3;
   nssai_t nssai;
@@ -306,7 +308,7 @@ typedef struct pdusession_setup_s {
   uint8_t pdu_session_type;
   transport_layer_addr_t gNB_addr;
 
-  /* UPF Tunnel endpoint identifier */
+  /* Incoming NG-U Tunnel Endpoint Identifier (S-GW/UPF) */
   uint32_t gtp_teid;
 
   /* qos flow list number */

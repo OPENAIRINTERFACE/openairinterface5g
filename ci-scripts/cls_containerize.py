@@ -662,22 +662,26 @@ class Containerize():
 		collectInfo['proxy'] = files
 		mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
 		result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
+		# Cleaning any created tmp volume
+		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
+		mySSH.close()
+
 		allImagesSize = {}
 		if result is not None:
 			imageSize = float(result.group('size')) / 1000000
 			logging.debug('\u001B[1m   proxy size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
 			allImagesSize['proxy'] = str(round(imageSize,1)) + ' Mbytes'
+			logging.info('\u001B[1m Building L2sim Proxy Image Pass\u001B[0m')
+			HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
+			return True
 		else:
-			logging.debug('proxy size is unknown')
+			logging.error('proxy size is unknown')
 			allImagesSize['proxy'] = 'unknown'
-
-		# Cleaning any created tmp volume
-		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
-		mySSH.close()
-
-		logging.info('\u001B[1m Building L2sim Proxy Image Pass\u001B[0m')
-		HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
-		HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
+			logging.error('\u001B[1m Build of L2sim proxy failed\u001B[0m')
+			HTML.CreateHtmlTestRow('commit ' + tag, 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTabFooter(False)
+			return False
 
 	def BuildRunTests(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
@@ -951,12 +955,12 @@ class Containerize():
 		if svcName == '':
 			logging.warning('no service name given: starting all services in ci-docker-compose.yml!')
 
-		mySSH.command(f'docker-compose --file ci-docker-compose.yml up -d -- {svcName}', '\$', 30)
+		mySSH.command(f'docker compose --file ci-docker-compose.yml up -d -- {svcName}', '\$', 30)
 
 		# Checking Status
 		grep = ''
 		if svcName != '': grep = f' | grep -A3 {svcName}'
-		mySSH.command(f'docker-compose --file ci-docker-compose.yml config {grep}', '\$', 5)
+		mySSH.command(f'docker compose --file ci-docker-compose.yml config {grep}', '\$', 5)
 		result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
 		unhealthyNb = 0
 		healthyNb = 0
@@ -1058,55 +1062,55 @@ class Containerize():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		logging.debug('\u001B[1m Undeploying OAI Object from server: ' + lIpAddr + '\u001B[0m')
-		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, lUserName, lPassWord)
-
-		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
-
+		logging.debug(f'\u001B[1m Undeploying OAI Object from server: {lIpAddr}\u001B[0m')
+		mySSH = cls_cmd.getConnection(lIpAddr)
+		yamlDir = f'{lSourcePath}/{self.yamlPath[self.eNB_instance]}'
+		mySSH.run(f'cd {yamlDir}')
 		svcName = self.services[self.eNB_instance]
 		forceDown = False
 		if svcName != '':
 			logging.warning(f'service name given, but will stop all services in ci-docker-compose.yml!')
 			svcName = ''
 
-		mySSH.command(f'docker-compose -f ci-docker-compose.yml config --services', '\$', 5)
+		ret = mySSH.run(f'docker compose -f {yamlDir}/ci-docker-compose.yml config --services')
+		if ret.returncode != 0:
+			HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', "cannot enumerate running services")
+			self.exitStatus = 1
+			return
 		# first line has command, last line has next command prompt
-		allServices = mySSH.getBefore().split('\r\n')[1:-1]
+		allServices = ret.stdout.splitlines()
 		services = []
 		for s in allServices:
-			mySSH.command(f'docker-compose -f ci-docker-compose.yml ps --all -- {s}', '\$', 5, silent=False)
-			running = mySSH.getBefore().split('\r\n')[2:-1]
+			# outputs the hash if the container is running
+			ret = mySSH.run(f'docker compose -f {yamlDir}/ci-docker-compose.yml ps --all --quiet -- {s}')
+			running = ret.stdout.splitlines()
 			logging.debug(f'running services: {running}')
-			if len(running) > 0: # something is running for that service
+			if ret.stdout != "" and ret.returncode == 0: # something is running for that service
 				services.append(s)
 		logging.info(f'stopping services {services}')
 
-		mySSH.command(f'docker-compose -f ci-docker-compose.yml stop -t3', '\$', 30)
-		time.sleep(5)  # give some time to running containers to stop
+		mySSH.run(f'docker compose -f {yamlDir}/ci-docker-compose.yml stop -t3')
+		copyin_res = True
 		for svcName in services:
 			# head -n -1 suppresses the final "X exited with status code Y"
 			filename = f'{svcName}-{HTML.testCase_id}.log'
-			mySSH.command(f'docker-compose -f ci-docker-compose.yml logs --no-log-prefix -- {svcName} &> {lSourcePath}/cmake_targets/log/{filename}', '\$', 120)
+			mySSH.run(f'docker compose -f {yamlDir}/ci-docker-compose.yml logs --no-log-prefix -- {svcName} &> {lSourcePath}/cmake_targets/log/{filename}')
+			copyin_res = mySSH.copyin(f'{lSourcePath}/cmake_targets/log/{filename}', f'{filename}') and copyin_res
+		# when nv-cubb container is available, copy L1 pcap, OAI Aerial pipeline
+		if 'nv-cubb' in allServices:
+			mySSH.run(f'cp {lSourcePath}/cmake_targets/share/gnb_nvipc.pcap {lSourcePath}/cmake_targets/gnb_nvipc.pcap')
 
-		mySSH.command('docker-compose -f ci-docker-compose.yml down -v', '\$', 5)
-		mySSH.close()
+		mySSH.run(f'docker compose -f {yamlDir}/ci-docker-compose.yml down -v')
 
 		# Analyzing log file!
-		files = ','.join([f'{s}-{HTML.testCase_id}' for s in services])
-		if len(services) > 1:
-			files = '{' + files + '}'
-		copyin_res = 0
-		if len(services) > 0:
-			copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, f'{lSourcePath}/cmake_targets/log/{files}.log', '.')
-		if copyin_res == -1:
-			HTML.htmleNBFailureMsg='Could not copy logfile to analyze it!'
+		if not copyin_res:
+			HTML.htmleNBFailureMsg='Could not copy logfile(s) to analyze it!'
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 			self.exitStatus = 1
 		# use function for UE log analysis, when oai-nr-ue container is used
 		elif 'oai-nr-ue' in services or 'lte_ue0' in services:
 			self.exitStatus == 0
-			logging.debug('\u001B[1m Analyzing UE logfile ' + filename + ' \u001B[0m')
+			logging.debug(f'Analyzing UE logfile {filename}')
 			logStatus = cls_oaicitest.OaiCiTest().AnalyzeLogFile_UE(f'{filename}', HTML, RAN)
 			if (logStatus < 0):
 				fullStatus = False
@@ -1125,11 +1129,12 @@ class Containerize():
 					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			# all the xNB run logs shall be on the server 0 for logCollecting
 			if self.eNB_serverId[self.eNB_instance] != '0':
-				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, f'./{files}.log', f'{self.eNBSourceCodePath}/cmake_targets/')
+				mySSH.copyout(f'./*.log', f'{lSourcePath}/cmake_targets/', recursive=True)
 		if self.exitStatus == 0:
 			logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 		else:
 			logging.error('\u001B[1m Undeploying OAI Object Failed\u001B[0m')
+		mySSH.close()
 
 	def DeployGenObject(self, HTML, RAN, UE):
 		self.exitStatus = 0

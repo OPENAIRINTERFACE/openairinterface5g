@@ -888,13 +888,8 @@ void add_drb(int is_gnb,
       exit(-1);
     }
     pdusession_id = s->cnAssociation->choice.sdap_Config->pdu_Session;
-    if (is_gnb) {
-      has_sdap_rx = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present;
-      has_sdap_tx = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present;
-    } else {
-      has_sdap_tx = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present;
-      has_sdap_rx = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present;
-    }
+    has_sdap_rx = is_sdap_rx(is_gnb, s->cnAssociation->choice.sdap_Config);
+    has_sdap_tx = is_sdap_tx(is_gnb, s->cnAssociation->choice.sdap_Config);
     is_sdap_DefaultDRB = s->cnAssociation->choice.sdap_Config->defaultDRB == true ? 1 : 0;
     mappedQFIs2Add = (NR_QFI_t*)s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.array[0]; 
     mappedQFIs2AddCount = s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.count;
@@ -926,8 +921,16 @@ void add_drb(int is_gnb,
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
     LOG_I(PDCP, "added drb %d to UE ID %ld\n", drb_id, UEid);
-
-    new_nr_sdap_entity(is_gnb, has_sdap_rx, has_sdap_tx, UEid, pdusession_id, is_sdap_DefaultDRB, drb_id, mappedQFIs2Add, mappedQFIs2AddCount);
+    /* add new SDAP entity for the PDU session the DRB belongs to */
+    new_nr_sdap_entity(is_gnb,
+                       has_sdap_rx,
+                       has_sdap_tx,
+                       UEid,
+                       pdusession_id,
+                       is_sdap_DefaultDRB,
+                       drb_id,
+                       mappedQFIs2Add,
+                       mappedQFIs2AddCount);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
@@ -1127,7 +1130,7 @@ void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering)
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_config, NR_SDAP_Config_t *sdap_config)
+void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_config)
 {
   // The enabling/disabling of ciphering or integrity protection
   // can be changed only by releasing and adding the DRB
@@ -1162,10 +1165,6 @@ void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, NR_PDCP_Config_t *pdcp_c
         drb->sn_size = size;
       }
     }
-  }
-  if (sdap_config) {
-    // nr_reconfigure_sdap_entity
-    AssertFatal(false, "Function to reconfigure SDAP entity not implemented yet\n");
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
@@ -1210,9 +1209,10 @@ void nr_pdcp_reestablishment(ue_id_t ue_id, int rb_id, bool srb_flag)
   rb = nr_pdcp_get_rb(ue, rb_id, srb_flag);
 
   if (rb != NULL) {
+    LOG_D(PDCP, "UE %4.4lx re-establishment of %sRB %d\n", ue_id, srb_flag ? "S" : "D", rb_id);
     rb->reestablish_entity(rb);
   } else {
-    LOG_W(PDCP, "UE %4.4lx cannot re-establish RB %d (is_srb %d), RB not found\n", ue_id, rb_id, srb_flag);
+    LOG_W(PDCP, "UE %4.4lx cannot re-establish %sRB %d, RB not found\n", ue_id, srb_flag ? "S" : "D", rb_id);
   }
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);

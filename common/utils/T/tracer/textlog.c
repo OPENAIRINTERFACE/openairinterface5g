@@ -1,42 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
 #include <signal.h>
 #include "database.h"
 #include "event.h"
 #include "handler.h"
 #include "logger/logger.h"
 #include "view/view.h"
-#include "gui/gui.h"
 #include "utils.h"
-#include "event_selector.h"
 #include "configuration.h"
 
-typedef struct {
-  int socket;
-  int *is_on;
-  int nevents;
-  pthread_mutex_t lock;
-} textlog_data;
-
-void is_on_changed(void *_d)
+void activate_traces(int socket, int *is_on, int nevents)
 {
-  textlog_data *d = _d;
   char t;
 
-  if (pthread_mutex_lock(&d->lock)) abort();
-
-  if (d->socket == -1) goto no_connection;
-
   t = 1;
-  if (socket_send(d->socket, &t, 1) == -1 ||
-      socket_send(d->socket, &d->nevents, sizeof(int)) == -1 ||
-      socket_send(d->socket, d->is_on, d->nevents * sizeof(int)) == -1)
+  if (socket_send(socket, &t, 1) == -1 ||
+      socket_send(socket, &nevents, sizeof(int)) == -1 ||
+      socket_send(socket, is_on, nevents * sizeof(int)) == -1)
     abort();
-
-no_connection:
-  if (pthread_mutex_unlock(&d->lock)) abort();
 }
 
 void usage(void)
@@ -54,28 +36,18 @@ void usage(void)
 "    -full                     also dump buffers' content\n"
 "    -raw-time                 also prints 'raw time'\n"
 "    -ip <host>                connect to given IP address (default %s)\n"
-"    -p <port>                 connect to given port (default %d)\n"
-"    -x                        GUI output\n"
-"    -debug-gui                activate GUI debug logs\n"
-"    -no-gui                   disable GUI entirely\n",
+"    -p <port>                 connect to given port (default %d)\n",
   DEFAULT_REMOTE_IP,
   DEFAULT_REMOTE_PORT
   );
   exit(1);
 }
 
-static void *gui_thread(void *_g)
-{
-  gui *g = _g;
-  gui_loop(g);
-  return NULL;
-}
-
 int main(int n, char **v)
 {
-  extern int volatile gui_logd;
   char *database_filename = NULL;
   void *database;
+  int socket;
   char *ip = DEFAULT_REMOTE_IP;
   int port = DEFAULT_REMOTE_PORT;
   char **on_off_name;
@@ -86,11 +58,7 @@ int main(int n, char **v)
   int i;
   event_handler *h;
   logger *textlog;
-  gui *g = NULL;    /* initialization not necessary but gcc is not happy */
-  int gui_mode = 0;
   view *out;
-  int gui_active = 1;
-  textlog_data textlog_data;
   int full = 0;
   int raw_time = 0;
 
@@ -115,15 +83,10 @@ int main(int n, char **v)
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=1; continue; }
     if (!strcmp(v[i], "-OFF"))
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
-    if (!strcmp(v[i], "-x")) { gui_mode = 1; continue; }
-    if (!strcmp(v[i], "-debug-gui")) { gui_logd = 1; continue; }
-    if (!strcmp(v[i], "-no-gui")) { gui_active = 0; continue; }
     if (!strcmp(v[i], "-full")) { full = 1; continue; }
     if (!strcmp(v[i], "-raw-time")) { raw_time = 1; continue; }
     usage();
   }
-
-  if (gui_active == 0) gui_mode = 0;
 
   if (database_filename == NULL) {
     printf("ERROR: provide a database file (-d)\n");
@@ -140,29 +103,12 @@ int main(int n, char **v)
 
   h = new_handler(database);
 
-  if (gui_active) {
-    g = gui_init();
-    new_thread(gui_thread, g);
-  }
-
-  if (gui_mode) {
-    widget *w, *win;
-//    w = new_textlist(g, 600, 20, 0);
-    w = new_textlist(g, 800, 50, BACKGROUND_COLOR);
-    win = new_toplevel_window(g, 800, 50*12, "textlog");
-    widget_add_child(g, win, w, -1);
-    out = new_view_textlist(1000, 10, g, w);
-    //tout = new_view_textlist(7, 4, g, w);
-  } else {
-    out = new_view_stdout();
-  }
+  out = new_view_stdout();
 
   for (i = 0; i < number_of_events; i++) {
     char *name, *desc;
     database_get_generic_description(database, i, &name, &desc);
     textlog = new_textlog(h, database, name, desc);
-//        "ENB_PHY_UL_CHANNEL_ESTIMATE",
-//        "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
     logger_add_view(textlog, out);
     if (full) textlog_dump_buffer(textlog, 1);
     if (raw_time) textlog_raw_time(textlog, 1);
@@ -173,24 +119,21 @@ int main(int n, char **v)
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
 
-  textlog_data.socket = -1;
-  textlog_data.is_on = is_on;
-  textlog_data.nevents = number_of_events;
-  if (pthread_mutex_init(&textlog_data.lock, NULL)) abort();
-  if (gui_active)
-    setup_event_selector(g, database, is_on, is_on_changed, &textlog_data);
-
-  textlog_data.socket = connect_to(ip, port);
+  socket = connect_to(ip, port);
+  if (socket == -1) {
+    printf("fatal: connection failed\n");
+    return 1;
+  }
 
   /* send the first message - activate selected traces */
-  is_on_changed(&textlog_data);
+  activate_traces(socket, is_on, number_of_events);
 
   OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
 
   /* read messages */
   while (1) {
     event e;
-    e = get_event(textlog_data.socket, &ebuf, database);
+    e = get_event(socket, &ebuf, database);
     if (e.type == -1) break;
     handle_event(h, e);
   }

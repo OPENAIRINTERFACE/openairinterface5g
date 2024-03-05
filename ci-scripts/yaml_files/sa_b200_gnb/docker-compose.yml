@@ -5,6 +5,8 @@ services:
         image: oai-gnb:latest
         privileged: true
         container_name: sa-b200-gnb
+        ulimits:
+          core: -1 # for core dumps
         environment:
             USE_B2XX: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa --RUs.[0].sdr_addrs serial=30C51D4 --telnetsrv --telnetsrv.shrmod ci --continuous-tx --log_config.global_log_options level,nocolor,time,line_num,function

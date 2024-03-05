@@ -42,6 +42,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
   uint32_t         rcvd_count;
   int              header_size;
   int              integrity_size;
+  int              sdap_header_size = 0;
   int              rx_deliv_sn;
   uint32_t         rx_deliv_hfn;
 
@@ -62,6 +63,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
   entity->stats.rxpdu_pkts++;
   entity->stats.rxpdu_bytes += size;
 
+  if (entity->has_sdap_rx) sdap_header_size = 1; // SDAP Header is one byte
 
   if (entity->sn_size == 12) {
     rcvd_sn = ((buffer[0] & 0xf) <<  8) |
@@ -82,7 +84,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     integrity_size = 0;
   }
 
-  if (size < header_size + integrity_size + 1) {
+  if (size < header_size + sdap_header_size + integrity_size + 1) {
     LOG_E(PDCP, "bad PDU received (size = %d)\n", size);
 
     entity->stats.rxpdu_dd_pkts++;
@@ -106,7 +108,8 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
 
   if (entity->has_ciphering)
     entity->cipher(entity->security_context,
-                   buffer+header_size, size-header_size,
+                   buffer + header_size + sdap_header_size,
+                   size - (header_size + sdap_header_size),
                    entity->rb_id, rcvd_count, entity->is_gnb ? 0 : 1);
 
   if (entity->has_integrity) {
@@ -184,6 +187,7 @@ static int nr_pdcp_entity_process_sdu(nr_pdcp_entity_t *entity,
   int      sn;
   int      header_size;
   int      integrity_size;
+  int      sdap_header_size = 0;
   char    *buf = pdu_buffer;
   DevAssert(size + 3 + 4 <= pdu_max_size);
   int      dc_bit;
@@ -193,6 +197,8 @@ static int nr_pdcp_entity_process_sdu(nr_pdcp_entity_t *entity,
 
   count = entity->tx_next;
   sn = entity->tx_next & entity->sn_max;
+
+  if (entity->has_sdap_tx) sdap_header_size = 1; // SDAP header is one byte
 
   /* D/C bit is only to be set for DRBs */
   if (entity->type == NR_PDCP_DRB_AM || entity->type == NR_PDCP_DRB_UM) {
@@ -236,7 +242,8 @@ static int nr_pdcp_entity_process_sdu(nr_pdcp_entity_t *entity,
 
   if (entity->has_ciphering && (entity->is_gnb || entity->security_mode_completed)) {
     entity->cipher(entity->security_context,
-                   (unsigned char *)buf + header_size, size + integrity_size,
+                   (unsigned char *)buf + header_size + sdap_header_size,
+                   size + integrity_size - sdap_header_size,
                    entity->rb_id, count, entity->is_gnb ? 1 : 0);
   } else {
     entity->security_mode_completed = true;
@@ -409,6 +416,10 @@ static void free_rx_list(nr_pdcp_entity_t *entity)
   entity->rx_size = 0;
 }
 
+/**
+ * @brief PDCP entity re-establishment according to 5.1.2 of 3GPP TS 38.323
+ * @todo  deal with ciphering/integrity algos and keys for transmitting/receiving entity procedures
+*/
 static void nr_pdcp_entity_reestablish_drb_am(nr_pdcp_entity_t *entity)
 {
   /* transmitting entity procedures */

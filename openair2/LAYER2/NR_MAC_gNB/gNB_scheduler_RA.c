@@ -587,15 +587,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
        continue;
     }
 
-    uint16_t ra_rnti;
-
-    // ra_rnti from 5.1.3 in 38.321
-    // FK: in case of long PRACH the phone seems to expect the subframe number instead of the slot number here.
-    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present
-        == NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839)
-      ra_rnti = 1 + symbol + (9 /*slotP*/ * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
-    else
-      ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
+    rnti_t ra_rnti = nr_get_ra_rnti(symbol, slotP, freq_index, ul_carrier_id);
 
     // Configure RA BWP
     configure_UE_BWP(nr_mac, scc, NULL, ra, NULL, -1, -1);
@@ -2070,29 +2062,18 @@ static void nr_fill_rar(uint8_t Mod_idP, NR_RA_t *ra, uint8_t *dlsch_buffer, nfa
   LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
   LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 #endif
-
-  int mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
-  // time alloc
-  int Msg3_t_alloc = (unsigned char) (rar->UL_GRANT_3 & 0x0f);
-  // frequency alloc
-  int Msg3_f_alloc = (uint16_t) ((rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12));
-  // frequency hopping
-  int freq_hopping = (unsigned char) (rar->UL_GRANT_1 >> 2);
-  // TA command
-  int  ta_command = rar->TA2 + (rar->TA1 << 5);
-  // TC-RNTI
-  int t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
-
-  LOG_D(NR_MAC, "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti %x \n",
+  LOG_D(NR_MAC,
+        "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti "
+        "%x \n",
         __FUNCTION__,
-        Msg3_t_alloc,
-        Msg3_f_alloc,
-        ta_command,
-        mcs,
-        freq_hopping,
+        rar->UL_GRANT_3 & 0x0f,
+        (rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12),
+        rar->TA2 + (rar->TA1 << 5),
+        rar->UL_GRANT_4 >> 4,
+        rar->UL_GRANT_1 >> 2,
         tpc_command,
         csi_req,
-        t_crnti);
+        rar->TCRNTI_2 + (rar->TCRNTI_1 << 8));
 }
 
 void nr_schedule_RA(module_id_t module_idP,

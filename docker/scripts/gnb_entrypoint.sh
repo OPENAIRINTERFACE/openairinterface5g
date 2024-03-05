@@ -5,6 +5,8 @@ set -uo pipefail
 PREFIX=/opt/oai-gnb
 CONFIGFILE=$PREFIX/etc/gnb.conf
 
+echo "=================================="
+echo "/proc/sys/kernel/core_pattern=$(cat /proc/sys/kernel/core_pattern)"
 
 if [ ! -f $CONFIGFILE ]; then
   echo "No configuration file found: please mount at $CONFIGFILE"

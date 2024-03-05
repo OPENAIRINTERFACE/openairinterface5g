@@ -551,9 +551,6 @@ typedef struct PHY_VARS_eNB_NB_IoT_s {
   int                           max_eNB_id, max_sync_pos;
   ///
   int                           N_TA_offset;                        ///timing offset used in TDD
-  /// \brief sinr for all subcarriers of the current link (used only for abstraction).
-  /// first index: ? [0..N_RB_DL*12[
-  double                        *sinr_dB;
   /// N0 (used for abstraction)
   double                        N0;
   ///
@@ -636,8 +633,6 @@ typedef struct PHY_VARS_eNB_NB_IoT_s {
   uint32_t                                  total_transmitted_bits;
   ///
   uint32_t                                  total_system_throughput;
-  ///
-  int                                       hw_timing_advance;
   ///
   time_stats_t                       phy_proc;
   time_stats_t                       phy_proc_tx;
@@ -873,7 +868,6 @@ typedef struct {
     int              rx_offset; /// Timing offset
     int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
     int              timing_advance; ///timing advance signalled from eNB
-    int              hw_timing_advance;
     int              N_TA_offset; ///timing offset used in TDD
     /// Flag to tell if UE is secondary user (cognitive mode)
     unsigned char    is_secondary_ue;
@@ -888,9 +882,6 @@ typedef struct {
   int              mac_enabled;
   /// Flag to initialize averaging of PHY measurements
   int              init_averaging;
-  /// \brief sinr for all subcarriers of the current link (used only for abstraction).
-  /// - first index: ? [0..12*N_RB_DL[
-  double           *sinr_dB;
   /// \brief sinr for all subcarriers of first symbol for the CQI Calculation.
   /// - first index: ? [0..12*N_RB_DL[
   double           *sinr_CQI_dB;

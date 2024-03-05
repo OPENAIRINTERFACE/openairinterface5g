@@ -112,5 +112,6 @@ WORKDIR /opt/oai-enb
 # 36422 --> X2C, SCTP/UDP
 EXPOSE 2152/udp 36412/udp 36422/udp
 
-ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+COPY --from=enb-base /tini /tini
+ENTRYPOINT ["/tini", "-v", "--", "/opt/oai-enb/bin/entrypoint.sh"]
 CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]

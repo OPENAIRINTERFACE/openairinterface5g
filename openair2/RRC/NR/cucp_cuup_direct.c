@@ -31,7 +31,7 @@ static void cucp_cuup_bearer_context_setup_direct(sctp_assoc_t assoc_id, const e
   e1_bearer_context_setup(req);
 }
 
-static void cucp_cuup_bearer_context_modif_direct(sctp_assoc_t assoc_id, const e1ap_bearer_setup_req_t *req)
+static void cucp_cuup_bearer_context_modif_direct(sctp_assoc_t assoc_id, const e1ap_bearer_mod_req_t *req)
 {
   AssertFatal(assoc_id == -1, "illegal assoc_id %d, impossible for integrated CU\n", assoc_id);
   e1_bearer_context_modif(req);

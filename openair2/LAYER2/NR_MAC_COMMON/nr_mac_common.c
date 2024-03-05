@@ -5325,3 +5325,19 @@ uint16_t compute_PDU_length(uint32_t num_TLV, uint16_t total_length)
   pdu_length += (num_TLV * 4) + total_length;
   return pdu_length;
 }
+
+// RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
+// - this does not apply to contention-free RA Preamble for beam failure recovery request
+// - getting star_symb, SFN_nbr from table 6.3.3.2-3 (TDD and FR1 scenario)
+// - s_id is starting symbol of the PRACH occasion [0...14]
+// - t_id is the first slot of the PRACH occasion in a system frame [0...80]
+// - f_id: index of the PRACH occasion in the frequency domain
+// - ul_carrier_id: UL carrier used for RA preamble transmission, hardcoded for NUL carrier
+rnti_t nr_get_ra_rnti(uint8_t s_id, uint8_t t_id, uint8_t f_id, uint8_t ul_carrier_id)
+{
+  // 3GPP TS 38.321 Section 5.1.3
+  rnti_t ra_rnti = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
+  LOG_D(MAC, "f_id %d t_id %d s_id %d ul_carrier_id %d Computed RA_RNTI is 0x%04X\n", f_id, t_id, s_id, ul_carrier_id, ra_rnti);
+
+  return ra_rnti;
+}

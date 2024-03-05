@@ -72,8 +72,6 @@ static telnetshell_cmddef_t channelmod_cmdarray[] = {
 
 static telnetshell_vardef_t channelmod_vardef[] = {{"", 0, 0, NULL}};
 
-static double snr_dB=25;
-static double sinr_dB=0;
 static unsigned int max_chan;
 static channel_desc_t **defined_channels;
 static char *modellist_name;
@@ -2259,14 +2257,6 @@ int modelid_fromstrtype(char *modeltype) {
     LOG_E(OCM,"random_channel.c: Error channel model %s unknown\n",modeltype);
 
   return modelid;
-}
-
-double channelmod_get_snr_dB(void) {
-  return snr_dB;
-}
-
-double channelmod_get_sinr_dB(void) {
-  return sinr_dB;
 }
 
 void init_channelmod(void) {

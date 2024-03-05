@@ -322,4 +322,6 @@ uint16_t nr_get_csi_bitlen(nr_csi_report_t *csi_report_template, uint8_t csi_rep
 
 uint16_t compute_PDU_length(uint32_t num_TLV, uint16_t total_length);
 
+rnti_t nr_get_ra_rnti(uint8_t s_id, uint8_t t_id, uint8_t f_id, uint8_t ul_carrier_id);
+
 #endif

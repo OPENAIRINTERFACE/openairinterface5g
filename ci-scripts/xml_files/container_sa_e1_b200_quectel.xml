@@ -37,6 +37,10 @@
     370001
     370000
     370002
+    360001
+    100002
+    360002
+    350000
     310011
     310002
     330201
@@ -114,9 +118,9 @@
 
   <testCase id="350000">
     <class>Ping</class>
-    <desc>Ping: 20pings in 20sec</desc>
+    <desc>Ping: 50pings in 10sec</desc>
     <id>idefix</id>
-    <ping_args>-c 20 %cn_ip%</ping_args>
+    <ping_args>-c 20 -i 0.2 %cn_ip%</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
     <ping_rttavg_threshold>25</ping_rttavg_threshold>
   </testCase>
@@ -150,6 +154,27 @@
     <direction>BIDIR</direction>
     <id>idefix</id>
     <iperf_profile>single-ue</iperf_profile>
+  </testCase>
+
+  <testCase id="360001">
+    <class>Custom_Command</class>
+    <desc>Trigger Reestablishment (on DU)</desc>
+    <node>ofqot</node>
+    <command>echo ci force_reestab | nc -N 192.168.68.195 9090 | grep -E 'Reset RLC counters of UE RNTI [0-9a-f]{4} to trigger reestablishment'</command>
+    <command_fail>yes</command_fail>
+  </testCase>
+  <testCase id="360002">
+    <class>Custom_Command</class>
+    <desc>Verify Reestablishment (on CU)</desc>
+    <node>ofqot</node>
+    <command>echo ci get_reestab_count | nc -N 192.168.68.194 9090 | grep -E 'UE RNTI [0-9a-f]{4} reestab 1'</command>
+    <command_fail>yes</command_fail>
+  </testCase>
+
+  <testCase id="100002">
+    <class>IdleSleep</class>
+    <desc>Sleep</desc>
+    <idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
   </testCase>
 
   <testCase id="330201">

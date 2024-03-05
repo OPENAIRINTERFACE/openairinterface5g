@@ -206,17 +206,6 @@ static int allocCirBuf(rfsimulator_state_t *bridge, int sock)
 
   if ( bridge->channelmod > 0) {
     // create channel simulation model for this mode reception
-    // snr_dB is pure global, coming from configuration paramter "-s"
-    // Fixme: referenceSignalPower should come from the right place
-    // but the datamodel is inconsistant
-    // legacy: RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower
-    // (must not come from ru[]->frame_parms as it doesn't belong to ru !!!)
-    // Legacy sets it as:
-    // ptr->channel_model->path_loss_dB = -132.24 + snr_dB - RC.ru[0]->frame_parms->pdsch_config_common.referenceSignalPower;
-    // we use directly the paramter passed on the command line ("-s")
-    // the value channel_model->path_loss_dB seems only a storage place (new_channel_desc_scm() only copy the passed value)
-    // Legacy changes directlty the variable channel_model->path_loss_dB place to place
-    // while calling new_channel_desc_scm() with path losses = 0
     static bool init_done=false;
 
     if (!init_done) {
@@ -755,6 +744,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
 }
 
 static int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, void **samplesVoid, int nsamps, int nbAnt, int flags) {
+  timestamp -= device->openair0_cfg->command_line_sample_advance;
   return rfsimulator_write_internal(device->priv, timestamp, samplesVoid, nsamps, nbAnt, flags, false); // false = with lock
   // return rfsimulator_write_internal(device->priv, timestamp, samplesVoid, nsamps, nbAnt, flags, true);
 }

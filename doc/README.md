@@ -43,6 +43,7 @@ There is some general information in the [OpenAirInterface Gitlab Wiki](https://
 - [How to run a 5G-NSA setup](./TESTING_GNB_W_COTS_UE.md)
 - [How to run a 4G setup using L1 simulator](./L1SIM.md) _Note: we recommend the RFsimulator_
 - [How to use the L2 simulator](./L2NFAPI.md)
+- [How to use the OAI channel simulator](../openair1/SIMULATION/TOOLS/DOC/channel_simulation.md)
 - [How to use multiple BWPs](./RUN_NR_multiple_BWPs.md)
 - [How to run OAI-VNF and OAI-PNF](./RUN_NR_NFAPI.md) _Note: does not work currently_
 - [How to use the positioning reference signal (PRS)](./RUN_NR_PRS.md)
@@ -57,7 +58,7 @@ Legacy unmaintained files:
 # Designs
 
 - General software architecture notes: [SW_archi.md](./SW_archi.md)
-- [Information on E1](./E1-design.md)
+- [Information on E1](./E1AP/E1-design.md)
 - [Information on F1](./F1-design.md)
 - [Information on how NR nFAPI works](./NR_NFAPI_archi.md)
 - [Flow graph of the L1 in gNB](SW-archi-graph.md)

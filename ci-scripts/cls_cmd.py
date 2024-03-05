@@ -86,6 +86,12 @@ class Cmd(metaclass=abc.ABCMeta):
 		return
 
 class LocalCmd(Cmd):
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_value, exc_traceback):
+		self.close()
+
 	def __init__(self, d = None):
 		self.cwd = d
 		if self.cwd is not None:
@@ -122,12 +128,40 @@ class LocalCmd(Cmd):
 		if src[0] != '/' or tgt[0] != '/':
 			raise Exception('support only absolute file paths!')
 		opt = '-r' if recursive else ''
-		self.run(f'cp {opt} {src} {tgt}')
+		return self.run(f'cp {opt} {src} {tgt}').returncode == 0
 
 	def copyout(self, src, tgt, recursive=False):
-		self.copyin(src, tgt, recursive)
+		return self.copyin(src, tgt, recursive)
+
+def PutFile(client, src, tgt):
+	success = True
+	sftp = client.open_sftp()
+	try:
+		sftp.put(src, tgt)
+	except FileNotFoundError as error:
+		logging.error(f"error while putting {src}: {error}")
+		success = False
+	sftp.close()
+	return success
+
+def GetFile(client, src, tgt):
+	success = True
+	sftp = client.open_sftp()
+	try:
+		sftp.get(src, tgt)
+	except FileNotFoundError as error:
+		logging.error(f"error while getting {src}: {error}")
+		success = False
+	sftp.close()
+	return success
 
 class RemoteCmd(Cmd):
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_value, exc_traceback):
+		self.close()
+
 	def __init__(self, hostname, d=None):
 		cIdx = 0
 		logging.getLogger('paramiko').setLevel(logging.ERROR) # prevent spamming through Paramiko
@@ -193,36 +227,38 @@ class RemoteCmd(Cmd):
 	def getBefore(self):
 		return self.cp.stdout
 
+	# if recursive is True, tgt must be a directory (and src is file or directory)
+	# if recursive is False, tgt and src must be a file name
 	def copyout(self, src, tgt, recursive=False):
 		logging.debug(f"copyout: local:{src} -> remote:{tgt}")
 		if recursive:
 			tmpfile = f"{uuid.uuid4()}.tar"
 			abstmpfile = f"/tmp/{tmpfile}"
-			cmd = LocalCmd()
-			cmd.run(f"tar -cf {abstmpfile} {src}")
-			sftp = self.client.open_sftp()
-			sftp.put(abstmpfile, abstmpfile)
-			sftp.close()
-			cmd.run(f"rm {abstmpfile}")
-			self.run(f"mv {abstmpfile} {tgt}; cd {tgt} && tar -xf {tmpfile} && rm {tmpfile}")
+			with LocalCmd() as cmd:
+				if cmd.run(f"tar -cf {abstmpfile} {src}").returncode != 0:
+					return False
+				if not PutFile(self.client, abstmpfile, abstmpfile):
+					return False
+				cmd.run(f"rm {abstmpfile}")
+				ret = self.run(f"mv {abstmpfile} {tgt}; cd {tgt} && tar -xf {tmpfile} && rm {tmpfile}")
+				return ret.returncode == 0
 		else:
-			sftp = self.client.open_sftp()
-			sftp.put(src, tgt)
-			sftp.close()
+			return PutFile(self.client, src, tgt)
 
+	# if recursive is True, tgt must be a directory (and src is file or directory)
+	# if recursive is False, tgt and src must be a file name
 	def copyin(self, src, tgt, recursive=False):
 		logging.debug(f"copyin: remote:{src} -> local:{tgt}")
 		if recursive:
 			tmpfile = f"{uuid.uuid4()}.tar"
 			abstmpfile = f"/tmp/{tmpfile}"
-			self.run(f"tar -cf {abstmpfile} {src}")
-			sftp = self.client.open_sftp()
-			sftp.get(abstmpfile, abstmpfile)
-			sftp.close()
+			if self.run(f"tar -cf {abstmpfile} {src}").returncode != 0:
+				return False
+			if not GetFile(self.client, abstmpfile, abstmpfile):
+				return False
 			self.run(f"rm {abstmpfile}")
-			cmd = LocalCmd()
-			cmd.run(f"mv {abstmpfile} {tgt}; cd {tgt} && tar -xf {tmpfile} && rm {tmpfile}")
+			with LocalCmd() as cmd:
+				ret = cmd.run(f"mv {abstmpfile} {tgt}; cd {tgt} && tar -xf {tmpfile} && rm {tmpfile}")
+				return ret.returncode == 0
 		else:
-			sftp = self.client.open_sftp()
-			sftp.get(src, tgt)
-			sftp.close()
+			return GetFile(self.client, src, tgt)

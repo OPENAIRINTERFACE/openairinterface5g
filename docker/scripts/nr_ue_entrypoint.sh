@@ -5,6 +5,9 @@ set -uo pipefail
 PREFIX=/opt/oai-nr-ue
 CONFIGFILE=$PREFIX/etc/nr-ue.conf
 
+echo "=================================="
+echo "/proc/sys/kernel/core_pattern=$(cat /proc/sys/kernel/core_pattern)"
+
 if [ ! -f $CONFIGFILE ]; then
   echo "No configuration file found: please mount at $CONFIGFILE"
   exit 255

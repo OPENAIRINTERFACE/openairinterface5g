@@ -5,8 +5,10 @@ services:
         image: oai-gnb:latest
         privileged: true
         container_name: sa-cucp-gnb
+        ulimits:
+          core: -1 # for core dumps
         environment:
-            USE_ADDITIONAL_OPTIONS: --sa --log_config.global_log_options level,nocolor,time,line_num,function
+            USE_ADDITIONAL_OPTIONS: --sa --telnetsrv --telnetsrv.shrmod ci --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
             - ../../conf_files/gnb-cucp.sa.f1.quectel.conf:/opt/oai-gnb/etc/gnb.conf
         networks:
@@ -23,6 +25,8 @@ services:
         image: oai-nr-cuup:latest
         privileged: true
         container_name: sa-cuup-gnb
+        ulimits:
+          core: -1 # for core dumps
         environment:
             USE_ADDITIONAL_OPTIONS: --sa --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
@@ -41,9 +45,17 @@ services:
         image: oai-gnb:latest
         privileged: true
         container_name: sa-du-b200-gnb
+        ulimits:
+          core: -1 # for core dumps
         environment:
             USE_B2XX: 'yes'
-            USE_ADDITIONAL_OPTIONS: --sa --RUs.[0].sdr_addrs serial=30C51D4 --continuous-tx -E --log_config.global_log_options level,nocolor,time,line_num,function --gNBs.[0].min_rxtxtime 2 --gNBs.[0].do_CSIRS 1 --gNBs.[0].do_SRS 1 --RUs.[0].att_rx 18 --RUs.[0].att_tx 18
+            USE_ADDITIONAL_OPTIONS: --sa
+                                    --RUs.[0].sdr_addrs serial=30C51D4
+                                    --continuous-tx -E
+                                    --telnetsrv --telnetsrv.shrmod ci
+                                    --gNBs.[0].min_rxtxtime 2 --gNBs.[0].do_CSIRS 1 --gNBs.[0].do_SRS 1
+                                    --RUs.[0].att_rx 18 --RUs.[0].att_tx 18
+                                    --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
             - ../../conf_files/gnb-du.sa.band78.106prb.usrpb200.conf:/opt/oai-gnb/etc/gnb.conf
             - /dev:/dev

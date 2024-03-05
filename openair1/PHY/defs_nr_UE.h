@@ -512,10 +512,6 @@ typedef struct PHY_VARS_NR_UE_s {
   /// Flag to initialize averaging of PHY measurements
   int init_averaging;
 
-  /// \brief sinr for all subcarriers of the current link (used only for abstraction).
-  /// - first index: ? [0..12*N_RB_DL[
-  double *sinr_dB;
-
   /// sinr_effective used for CQI calulcation
   double sinr_eff;
 

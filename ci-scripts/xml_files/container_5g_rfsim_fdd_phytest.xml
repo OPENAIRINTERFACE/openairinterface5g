@@ -50,7 +50,7 @@
             <class>Custom_Command</class>
             <desc>Clean-Up any residual volume</desc>
             <node>localhost</node>
-            <command>docker volume rm 5g_rfsimulator_fdd_phytest_rrc.config</command>
+            <command>docker volume rm 5g_rfsimulator_fdd_phytest_rrc.config -f</command>
         </testCase>
 
         <testCase id="000010">

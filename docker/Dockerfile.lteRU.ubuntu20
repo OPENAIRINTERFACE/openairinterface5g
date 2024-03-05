@@ -88,5 +88,6 @@ RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai
 
 WORKDIR /opt/oai-lte-ru
 
-ENTRYPOINT ["/opt/oai-lte-ru/bin/entrypoint.sh"]
+COPY --from=ru-base /tini /tini
+ENTRYPOINT ["/tini", "-v", "--", "/opt/oai-lte-ru/bin/entrypoint.sh"]
 CMD ["/opt/oai-lte-ru/bin/oairu", "-O", "/opt/oai-lte-ru/etc/rru.conf"]

@@ -74,15 +74,7 @@
 #define CONFIG_HLP_DLSHIFT       "dynamic shift for LLR compuation for TM3/4 (default 0)\n"
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
 #define CONFIG_HLP_DMAMAP        "use DMA memory mapping\n"
-#define CONFIG_HLP_TDD           "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
-#define CONFIG_HLP_TADV          "Set timing_advance\n"
-
-
-
-
-
-
-
+#define CONFIG_HLP_TDD "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters specific to UE                                                                     */
@@ -106,7 +98,6 @@
     {"usrp-args",         CONFIG_HLP_USRP_ARGS,   0,               .strptr=&usrp_args,         .defstrval="type=b200",TYPE_STRING,   0},   \
     {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  .uptr=&mmapped_dma,                  .defintval=0,          TYPE_INT,      0},   \
     {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  .iptr=&tddflag,                      .defintval=0,          TYPE_INT,      0},   \
-    {"A",                 CONFIG_HLP_TADV,        0,               .iptr=&(timingadv),                  .defintval=0,          TYPE_INT,      0},   \
     {"ue-idx-standalone", NULL,                   0,               .u16ptr=&ue_idx_standalone,          .defuintval=0xFFFF,    TYPE_UINT16,   0},   \
     {"node-number",       NULL,                   0,               .u16ptr=&node_number,                .defuintval=2,         TYPE_UINT16,   0},   \
   }
@@ -178,9 +169,6 @@ extern void init_UE(int nb_inst,
                     LTE_DL_FRAME_PARMS *fp);
 
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char *name);
-
-extern void init_ocm(void);
-extern void init_ue_devices(PHY_VARS_UE *);
 
 PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 

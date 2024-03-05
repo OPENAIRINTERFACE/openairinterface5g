@@ -138,7 +138,7 @@ static int trx_brf_write(openair0_device *device,
     brf_state_t *brf = (brf_state_t*)device->priv;
     /* BRF has only 1 rx/tx chaine : is it correct? */
     int16_t *samples = (int16_t*)buff[0];
-
+    timestamp -= device->openair0_cfg->command_line_sample_advance - device->openair0_cfg->tx_sample_advance;
     //memset(&brf->meta_tx, 0, sizeof(brf->meta_tx));
     // When  BLADERF_META_FLAG_TX_NOW is used the timestamp is not used, so one can't schedule a tx
     if (brf->meta_tx.flags == 0 )

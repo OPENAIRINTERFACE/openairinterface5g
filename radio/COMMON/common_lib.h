@@ -215,6 +215,7 @@ typedef struct openair0_config {
   int mmapped_dma;
   //! offset in samples between TX and RX paths
   int tx_sample_advance;
+  int command_line_sample_advance;
   //! samples per packet on the fronthaul interface
   int samples_per_packet;
   //! number of RX channels (=RX antennas)

@@ -43,18 +43,16 @@
 
         <testCase id="000020">
                 <class>DeployGenObject</class>
-                <desc>Deploy OAI-DU</desc>
+                <desc>Deploy OAI-DU+nrUE</desc>
                 <yaml_path>yaml_files/5g_rfsimulator_accelleran</yaml_path>
-                <services>oai-du</services>
-                <nb_healthy>1</nb_healthy>
+                <services>oai-du oai-nr-ue</services>
+                <nb_healthy>2</nb_healthy>
         </testCase>
 
         <testCase id="000021">
-                <class>DeployGenObject</class>
-                <desc>Deploy nrUE</desc>
-                <yaml_path>yaml_files/5g_rfsimulator_accelleran</yaml_path>
-                <services>oai-nr-ue</services>
-                <nb_healthy>2</nb_healthy>
+                <class>Attach_UE</class>
+                <desc>Attach OAI UE (Wait for IP)</desc>
+                <id>rfsim5g_ue</id>
         </testCase>
 
         <testCase id="020021">

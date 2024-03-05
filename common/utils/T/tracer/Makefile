@@ -31,9 +31,8 @@ extract: extract.o database.o event.o utils.o configuration.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 textlog: utils.o textlog.o database.o event.o handler.o configuration.o \
-         event_selector.o view/view.a gui/gui.a logger/logger.a \
-         filter/filter.a
-	$(CC) $(CFLAGS) -o textlog $^ $(LIBS) $(XLIBS)
+         view/view.a logger/logger.a filter/filter.a
+	$(CC) $(CFLAGS) -o textlog $^ $(LIBS)
 
 enb: utils.o enb.o database.o event.o handler.o configuration.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \

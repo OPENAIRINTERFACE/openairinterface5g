@@ -428,6 +428,7 @@ static int trx_usrp_write(openair0_device *device,
 			  int flags) {
   int ret=0;
   usrp_state_t *s = (usrp_state_t *)device->priv;
+  timestamp -= device->openair0_cfg->command_line_sample_advance + device->openair0_cfg->tx_sample_advance;
   int nsamps2;  // aligned to upper 32 or 16 byte boundary
 
   radio_tx_burst_flag_t flags_burst = (radio_tx_burst_flag_t) (flags & 0xf);
@@ -1316,7 +1317,7 @@ extern "C" {
       case 46080000:
         s->usrp->set_master_clock_rate(46.08e6);
         //openair0_cfg[0].samples_per_packet    = 1024;
-        openair0_cfg[0].tx_sample_advance     = 115;
+        openair0_cfg[0].tx_sample_advance     = 164;
         openair0_cfg[0].tx_bw                 = 40e6;
         openair0_cfg[0].rx_bw                 = 40e6;
         break;

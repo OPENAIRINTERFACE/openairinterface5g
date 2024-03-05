@@ -175,7 +175,7 @@ struct NR_DL_FRAME_PARMS {
   /// subcarrier spacing (15,30,60,120)
   uint32_t subcarrier_spacing;
   /// 3/4 sampling
-  uint8_t threequarter_fs;
+  int threequarter_fs;
   /// Size of FFT
   uint16_t ofdm_symbol_size;
   /// Number of prefix samples in all but first symbol of slot

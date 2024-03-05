@@ -103,7 +103,6 @@ struct timing_info_t {
 } timing_info;
 
 // Fix per CC openair rf/if device update
-// extern openair0_device openair0;
 
 extern int oai_exit;
 

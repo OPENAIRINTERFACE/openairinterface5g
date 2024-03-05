@@ -5,6 +5,8 @@ services:
         privileged: true
         network_mode: host
         container_name: oai-nr-ue
+        ulimits:
+          core: -1 # for core dumps
         #entrypoint: /bin/bash -c "sleep infinity"
         environment:
             TZ: Europe/Paris

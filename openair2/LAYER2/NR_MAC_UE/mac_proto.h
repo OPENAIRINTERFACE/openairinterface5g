@@ -401,7 +401,6 @@ and fills the PRACH PDU per each FD occasion.
 void nr_ue_pucch_scheduler(NR_UE_MAC_INST_t *mac, frame_t frameP, int slotP, void *phy_data);
 void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot);
 void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot);
-void schedule_ta_command(fapi_nr_dl_config_request_t *dl_config, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
 
 /* \brief This function schedules the Msg3 transmission
 @param
@@ -458,8 +457,6 @@ void init_RA(NR_UE_MAC_INST_t *mac,
 
 int16_t get_prach_tx_power(NR_UE_MAC_INST_t *mac);
 
-void set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu);
-
 void nr_Msg1_transmitted(NR_UE_MAC_INST_t *mac);
 void nr_Msg3_transmitted(NR_UE_MAC_INST_t *mac, uint8_t CC_id, frame_t frameP, slot_t slotP, uint8_t gNB_id);
 void nr_get_msg3_payload(NR_UE_MAC_INST_t *mac, uint8_t *buf, int TBS_max);
@@ -500,7 +497,7 @@ int nr_ue_pusch_scheduler(const NR_UE_MAC_INST_t *mac,
                           int *slot_tx,
                           const long k2);
 
-int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
+int get_rnti_type(const NR_UE_MAC_INST_t *mac, const uint16_t rnti);
 
 // Configuration of Msg3 PDU according to clauses:
 // - 8.3 of 3GPP TS 38.213 version 16.3.0 Release 16

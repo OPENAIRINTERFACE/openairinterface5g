@@ -232,15 +232,14 @@ int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL){
 // - If the current tx frame and slot match the TA configuration
 //   then timing advance is processed and set to be applied in the next UL transmission
 // - Application of timing adjustment according to TS 38.213 p4.2
-// todo:
 // - handle RAR TA application as per ch 4.2 TS 38.213
 void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx)
 {
   if (frame_tx == ue->ta_frame && slot_tx == ue->ta_slot) {
-
     uint16_t ofdm_symbol_size = ue->frame_parms.ofdm_symbol_size;
 
-    // convert time factor "16 * 64 * T_c / (2^mu)" in N_TA calculation in TS38.213 section 4.2 to samples by multiplying with samples per second
+    // convert time factor "16 * 64 * T_c / (2^mu)" in N_TA calculation in TS38.213 section 4.2 to samples by multiplying with
+    // samples per second
     //   16 * 64 * T_c            / (2^mu) * samples_per_second
     // = 16 * T_s                 / (2^mu) * samples_per_second
     // = 16 * 1 / (15 kHz * 2048) / (2^mu) * (15 kHz * 2^mu * ofdm_symbol_size)
@@ -250,7 +249,8 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx)
 
     ue->timing_advance += (ue->ta_command - 31) * bw_scaling;
 
-    LOG_D(PHY, "[UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+    LOG_D(PHY,
+          "[UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
           ue->Mod_id,
           frame_tx,
           slot_tx,
@@ -426,16 +426,13 @@ unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb
 int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
                            const UE_nr_rxtx_proc_t *proc,
                            int32_t pdcch_est_size,
-                           int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                           c16_t pdcch_dl_ch_estimates[][pdcch_est_size],
                            nr_phy_data_t *phy_data,
                            int n_ss,
                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
-  unsigned int dci_cnt=0;
-  fapi_nr_dci_indication_t dci_ind = {0};
-  nr_downlink_indication_t dl_indication;
   NR_UE_PDCCH_CONFIG *phy_pdcch_config = &phy_data->phy_pdcch_config;
 
   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &phy_pdcch_config->pdcch_config[n_ss];
@@ -444,39 +441,26 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
 
   /// PDCCH/DCI e-sequence (input to rate matching).
   int32_t pdcch_e_rx_size = NR_MAX_PDCCH_SIZE;
-  int16_t pdcch_e_rx[pdcch_e_rx_size];
+  c16_t pdcch_e_rx[pdcch_e_rx_size];
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
   nr_rx_pdcch(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, pdcch_e_rx, rel15, rxdataF);
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
 
+  fapi_nr_dci_indication_t dci_ind;
+  nr_dci_decoding_procedure(ue, proc, pdcch_e_rx, &dci_ind, rel15);
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_IN);
-
-#ifdef NR_PDCCH_SCHED_DEBUG
-  printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure for search space %d)\n",
-	 n_ss);
-#endif
-
-  dci_cnt = nr_dci_decoding_procedure(ue, proc, pdcch_e_rx, &dci_ind, rel15);
-
-#ifdef NR_PDCCH_SCHED_DEBUG
-  LOG_I(PHY,"<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
-#endif
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_OUT);
-
-  for (int i=0; i<dci_cnt; i++) {
-    LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
-          ue->Mod_id,frame_rx%1024,nr_slot_rx,
+  for (int i = 0; i < dci_ind.number_of_dcis; i++) {
+    LOG_D(PHY,
+          "[UE  %d] AbsSubFrame %d.%d: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
+          ue->Mod_id,
+          frame_rx % 1024,
+          nr_slot_rx,
           i + 1,
-          dci_cnt,
+          dci_ind.number_of_dcis,
           dci_ind.dci_list[i].rnti,
           dci_ind.dci_list[i].dci_format);
   }
 
-  dci_ind.number_of_dcis = dci_cnt;
-
+  nr_downlink_indication_t dl_indication;
   // fill dl_indication message
   nr_fill_dl_indication(&dl_indication, &dci_ind, NULL, proc, ue, phy_data);
   //  send to mac
@@ -485,7 +469,7 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
   stop_meas(&ue->dlsch_rx_pdcch_stats);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
-  return(dci_cnt);
+  return (dci_ind.number_of_dcis);
 }
 
 static int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
@@ -861,9 +845,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
   const uint32_t rxdataF_sz = ue->frame_parms.samples_per_slot_wCP;
   __attribute__ ((aligned(32))) c16_t rxdataF[ue->frame_parms.nb_antennas_rx][rxdataF_sz];
   // checking if current frame is compatible with SSB periodicity
-  if (cfg->ssb_table.ssb_period == 0 ||
-      !(frame_rx%(1<<(cfg->ssb_table.ssb_period-1)))){
-
+  if (cfg->ssb_table.ssb_period == 0 || !(frame_rx % (1 << (cfg->ssb_table.ssb_period - 1)))) {
     const int estimateSz = fp->symbols_per_slot * fp->ofdm_symbol_size;
     // loop over SSB blocks
     for(int ssb_index=0; ssb_index<fp->Lmax; ssb_index++) {
@@ -874,9 +856,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
         int ssb_slot = ssb_start_symbol/fp->symbols_per_slot;
         int ssb_slot_2 = (cfg->ssb_table.ssb_period == 0) ? ssb_slot+(fp->slots_per_frame>>1) : -1;
 
-        if (ssb_slot == nr_slot_rx ||
-            ssb_slot_2 == nr_slot_rx) {
-
+        if (ssb_slot == nr_slot_rx || ssb_slot_2 == nr_slot_rx) {
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
           LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
 
@@ -990,7 +970,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
 
     // Hold the channel estimates in frequency domain.
   int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
-  __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
+  __attribute__((aligned(16))) c16_t pdcch_dl_ch_estimates[4 * fp->nb_antennas_rx][pdcch_est_size];
 
   uint8_t dci_cnt = 0;
   for(int n_ss = 0; n_ss<phy_pdcch_config->nb_search_space; n_ss++) {
