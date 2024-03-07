@@ -826,7 +826,7 @@ static bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *
   return dec;
 }
 
-void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_data_t *phy_data)
+int pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_data_t *phy_data)
 {
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
@@ -834,6 +834,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   NR_UE_PDCCH_CONFIG *phy_pdcch_config = &phy_data->phy_pdcch_config;
+  int sampleShift = 0;
   nr_ue_dlsch_init(phy_data->dlsch, NR_MAX_NB_LAYERS>4 ? 2:1, ue->max_ldpc_iterations);
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
@@ -896,17 +897,9 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
 
             if (ue->no_timing_correction==0 && pbchSuccess == 0) {
               LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
-              nr_adjust_synch_ue(fp,
-                                 ue,
-                                 gNB_id,
-                                 fp->ofdm_symbol_size,
-                                 dl_ch_estimates_time,
-                                 frame_rx,
-                                 nr_slot_rx,
-                                 0,
-                                 16384);
+              sampleShift =
+                  nr_adjust_synch_ue(fp, ue, gNB_id, fp->ofdm_symbol_size, dl_ch_estimates_time, frame_rx, nr_slot_rx, 16384);
             }
-            ue->apply_timing_offset = true;
           }
           LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
           nr_ue_rrc_measurements(ue, proc, rxdataF);
@@ -996,6 +989,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr
   LOG_D(PHY,"[UE %d] Frame %d, nr_slot_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_slot_rx, dci_cnt);
   phy_pdcch_config->nb_search_space = 0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_OUT);
+  return sampleShift;
 }
 
 void pdsch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_data_t *phy_data)

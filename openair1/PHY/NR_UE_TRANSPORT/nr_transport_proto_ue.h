@@ -287,6 +287,7 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
 /*! \brief receiver for the PBCH
   \returns number of tx antennas or -1 if error
 */
+
 int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                const UE_nr_rxtx_proc_t *proc,
                const int estimateSz,
@@ -296,11 +297,6 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                MIMO_mode_t mimo_mode,
                fapiPbch_t *result,
                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
-
-int nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
-                      PHY_VARS_NR_UE *ue,
-                      int pbch_initial_symbol,
-                      c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 #ifndef modOrder
 #define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
@@ -323,7 +319,11 @@ int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue,
 @param n_frames
   @param sa current running mode
 */
-int nr_initial_sync(const UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *phy_vars_ue, int n_frames, int sa);
+typedef struct {
+  bool cell_notdetected;
+  int rx_offset;
+} nr_initial_sync_t;
+nr_initial_sync_t nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *phy_vars_ue, int n_frames, int sa);
 
 /*!
   \brief This function gets the carrier frequencies either from FP or command-line-set global variables, depending on the
