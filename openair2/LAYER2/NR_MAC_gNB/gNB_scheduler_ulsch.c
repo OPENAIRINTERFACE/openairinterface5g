@@ -625,8 +625,8 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
 
     // if not missed detection (10dB threshold for now)
     if (rssi>0) {
+      UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
       if (ul_cqi != 0xff) {
-        UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
         UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10, UE_scheduling_control->pusch_snrx10, 30);
       }
       if (timing_advance != 0xffff)
@@ -765,7 +765,6 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
         if (timing_advance != 0xffff)
           UE_scheduling_control->ta_update = timing_advance;
         UE_scheduling_control->raw_rssi = rssi;
-        UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
         LOG_D(NR_MAC, "[UE %04x] PUSCH TPC %d and TA %d\n", UE_msg3_stage->rnti, UE_scheduling_control->tpc0, UE_scheduling_control->ta_update);
         if (ra->cfra) {
           LOG_A(NR_MAC, "(rnti 0x%04x) CFRA procedure succeeded!\n", ra->rnti);
