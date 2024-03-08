@@ -91,6 +91,53 @@ void clear_nr_nfapi_information(gNB_MAC_INST *gNB,
   future_ul_tti_req->SFN = (prev_slot / num_slots) % 1024;
   LOG_D(NR_MAC, "%d.%d UL_tti_req_ahead SFN.slot = %d.%d for index %d \n", frameP, slotP, future_ul_tti_req->SFN, future_ul_tti_req->Slot, prev_slot % size);
   /* future_ul_tti_req->Slot is fixed! */
+  for (int i = 0; i < future_ul_tti_req->n_pdus; i++) {
+    switch(future_ul_tti_req->pdus_list[i].pdu_type){
+      case NFAPI_NR_UL_CONFIG_PRACH_PDU_TYPE:
+        if(future_ul_tti_req->pdus_list[i].prach_pdu.beamforming.prgs_list){
+          for (int j = 0; j < future_ul_tti_req->pdus_list[i].prach_pdu.beamforming.num_prgs; ++j) {
+            if(future_ul_tti_req->pdus_list[i].prach_pdu.beamforming.prgs_list[j].dig_bf_interface_list){
+              free(future_ul_tti_req->pdus_list[i].prach_pdu.beamforming.prgs_list[j].dig_bf_interface_list);
+            }
+          }
+          free(future_ul_tti_req->pdus_list[i].prach_pdu.beamforming.prgs_list);
+        }
+        break;
+      case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
+        if(future_ul_tti_req->pdus_list[i].pusch_pdu.beamforming.prgs_list){
+          for (int j = 0; j < future_ul_tti_req->pdus_list[i].pusch_pdu.beamforming.num_prgs; ++j) {
+            if(future_ul_tti_req->pdus_list[i].pusch_pdu.beamforming.prgs_list[j].dig_bf_interface_list){
+              free(future_ul_tti_req->pdus_list[i].pusch_pdu.beamforming.prgs_list[j].dig_bf_interface_list);
+            }
+          }
+          free(future_ul_tti_req->pdus_list[i].pusch_pdu.beamforming.prgs_list);
+        }
+        break;
+      case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
+        if(future_ul_tti_req->pdus_list[i].pucch_pdu.beamforming.prgs_list){
+          for (int j = 0; j < future_ul_tti_req->pdus_list[i].pucch_pdu.beamforming.num_prgs; ++j) {
+            if(future_ul_tti_req->pdus_list[i].pucch_pdu.beamforming.prgs_list[j].dig_bf_interface_list){
+              free(future_ul_tti_req->pdus_list[i].pucch_pdu.beamforming.prgs_list[j].dig_bf_interface_list);
+            }
+          }
+          free(future_ul_tti_req->pdus_list[i].pucch_pdu.beamforming.prgs_list);
+        }
+        break;
+      case NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE:
+        if(future_ul_tti_req->pdus_list[i].srs_pdu.beamforming.prgs_list){
+          for (int j = 0; j < future_ul_tti_req->pdus_list[i].srs_pdu.beamforming.num_prgs; ++j) {
+            if(future_ul_tti_req->pdus_list[i].srs_pdu.beamforming.prgs_list[j].dig_bf_interface_list){
+              free(future_ul_tti_req->pdus_list[i].srs_pdu.beamforming.prgs_list[j].dig_bf_interface_list);
+            }
+          }
+          free(future_ul_tti_req->pdus_list[i].srs_pdu.beamforming.prgs_list);
+        }
+      default:
+        break;
+    }
+    future_ul_tti_req->pdus_list[i].pdu_type = 0;
+    future_ul_tti_req->pdus_list[i].pdu_size = 0;
+  }
   future_ul_tti_req->n_pdus = 0;
   future_ul_tti_req->n_ulsch = 0;
   future_ul_tti_req->n_ulcch = 0;

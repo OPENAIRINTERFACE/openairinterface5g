@@ -1,0 +1,76 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 04cfa53..6eef6d6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -42,6 +42,8 @@ OPTION(DOCA_GPU_DPDK "Enable DOCA GPUNetIO" ON)
+ OPTION(NVIPC_DOCA_ENABLE "Build libnvipc.so with DOCA" ON)
+ OPTION(NVIPC_DOCA_GPUNETIO "Use DOCA gpunetio in DOCA GPU DMA" OFF)
+
++project(gt_common_libs)
++
+ find_package(PkgConfig REQUIRED)
+
+ # Disable NVIPC_DOCA_ENABLE if DOCA version < 2
+diff --git a/nvIPC/CMakeLists.txt b/nvIPC/CMakeLists.txt
+index 633bbb7..dad7a7a 100644
+--- a/nvIPC/CMakeLists.txt
++++ b/nvIPC/CMakeLists.txt
+@@ -19,7 +19,7 @@
+ # OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ # STRICT LIABILITY, OR TOR (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-
++include(GNUInstallDirs)
+ # lib: nvipc
+ set(SOURCES configs/nv_ipc_config.c
+             configs/nv_ipc_yaml_parser.cpp
+@@ -68,6 +68,8 @@ target_include_directories(nvipc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE
+ target_include_directories(nvipc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/cuda>)
+ target_include_directories(nvipc PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/gpudata>)
+
++set_target_properties(nvipc PROPERTIES PUBLIC_HEADER $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
++
+ target_compile_options(nvipc PRIVATE ${AERIAL_ARCH_TUNE_FLAGS})
+
+ if(NVIPC_DPDK_ENABLE OR NVIPC_DOCA_GPUNETIO)
+@@ -120,4 +122,8 @@ else()
+     target_link_libraries(nvipc PUBLIC rt -pthread nvlog)
+ endif()
+
++install(TARGETS nvipc
++    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/..)
++
+ add_subdirectory(tests)
+diff --git a/nvlog/CMakeLists.txt b/nvlog/CMakeLists.txt
+index 7b65242..c0c5080 100644
+--- a/nvlog/CMakeLists.txt
++++ b/nvlog/CMakeLists.txt
+@@ -20,6 +20,8 @@
+ # STRICT LIABILITY, OR TOR (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
++include(GNUInstallDirs)
++
+ if(NOT CMAKE_BUILD_TYPE STREQUAL "Release")
+     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+@@ -42,6 +44,8 @@ target_include_directories(nvlog PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../extern
+ target_include_directories(nvlog PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../external/fmtlog_flat)
+ target_link_libraries(nvlog rt -pthread yaml fmtlog-shared fmt::fmt)
+
++set_target_properties(nvlog PROPERTIES PUBLIC_HEADER $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
++
+ ######## libnvlog_static.a #############
+ add_library(nvlog_static STATIC ${SOURCES})
+ set_property(TARGET nvlog_static PROPERTY POSITION_INDEPENDENT_CODE ON)
+@@ -68,5 +72,9 @@ target_compile_options(nvlog_static PRIVATE ${AERIAL_ARCH_TUNE_FLAGS})
+ #add_executable(nvlog_observer ${SOURCES})
+ #target_link_libraries(nvlog_observer nvlog_static -pthread)
+
++install(TARGETS nvlog
++    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/../)
++
+ ######## test directory ################
+ add_subdirectory(test)

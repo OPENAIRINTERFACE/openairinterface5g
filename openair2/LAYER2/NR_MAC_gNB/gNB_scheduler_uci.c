@@ -1042,11 +1042,11 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     }
 
     // tpc (power control) only if we received AckNack
-    if (uci_01->harq.harq_confidence_level==0)
-      sched_ctrl->tpc1 = nr_get_tpc(nrmac->pucch_target_snrx10, uci_01->ul_cqi, 30);
-    else
-      sched_ctrl->tpc1 = 3;
-    sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
+    if (uci_01->harq.harq_confidence_level == 0 && uci_01->ul_cqi != 0xff) {
+      sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
+      sched_ctrl->tpc1 = nr_get_tpc(nrmac->pucch_target_snrx10, sched_ctrl->pucch_snrx10, 30);
+    } else
+      sched_ctrl->tpc1 = 1;
   }
 
   // check scheduling request result, confidence_level == 0 is good
@@ -1085,10 +1085,10 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
   // tpc (power control)
   // TODO PUCCH2 SNR computation is not correct -> ignore the following
-  //sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-  //                              uci_234->ul_cqi,
-  //                              30);
-  //sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
+  if (uci_234->ul_cqi != 0xff) {
+    sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
+    sched_ctrl->tpc1 = nr_get_tpc(nrmac->pucch_target_snrx10, sched_ctrl->pucch_snrx10, 30);
+  }
 
   // TODO: handle SR
   if (uci_234->pduBitmap & 0x1) {

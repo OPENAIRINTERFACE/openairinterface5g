@@ -2040,8 +2040,10 @@ int pnf_read_dispatch_message(pnf_t* pnf)
 		{
 			NFAPI_TRACE(NFAPI_TRACE_INFO, "PNF Failed to unpack p5 message header\n");
 			return 0;
-		}
-		message_size = header.message_length;
+		}else{
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "PNF Unpack p5 message header success\n");
+    }
+		message_size = header.message_length+header_buffer_size;
 
 		// now have the size of the mesage
 	}
@@ -2206,7 +2208,7 @@ int pnf_nr_read_dispatch_message(pnf_t* pnf)
 			// print the received message
 			printf("\n MESSAGE RECEIVED: \n");
 			for(int i=0; i<message_size; i++){
-				printf("%d", read_buffer[i]);
+				printf("read_buffer[%d] = 0x%02x\n",i, read_buffer[i]);
 			}
 			printf("\n");
 #endif

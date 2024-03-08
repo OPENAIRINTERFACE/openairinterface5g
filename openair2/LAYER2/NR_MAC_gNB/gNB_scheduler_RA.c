@@ -317,6 +317,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
 
       UL_tti_req->SFN = frameP;
       UL_tti_req->Slot = slotP;
+      UL_tti_req->rach_present = 1;
       for (int fdm_index=0; fdm_index < fdm; fdm_index++) { // one structure per frequency domain occasion
         for (int td_index=0; td_index<N_t_slot; td_index++) {
 
@@ -498,7 +499,11 @@ static void nr_schedule_msg2(uint16_t rach_frame,
   while ((eff_slot-rach_slot)<=sl_ahead) {
     eff_slot += tdd_period_slot;
   }
-
+#ifdef ENABLE_AERIAL
+  if (nfapi_mode > 0) { // Aerial needs slot_ahead = 0, requiring addition of another TDD period
+    eff_slot += tdd_period_slot;
+  }
+#endif
   int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
   if (FR==nr_FR2) {
     int num_tdd_period = (eff_slot%nr_slots_per_frame[mu])/tdd_period_slot;
@@ -1052,10 +1057,12 @@ static void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
   pusch_pdu->dmrs_config_type = 0;
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
+  pusch_pdu->pusch_identity = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
   pusch_pdu->dmrs_ports = 1;  // 6.2.2 in 38.214 only port 0 to be used
   pusch_pdu->num_dmrs_cdm_grps_no_data = 2;  // no data in dmrs symbols as in 6.2.2 in 38.214
   pusch_pdu->resource_alloc = 1; //type 1
+  memset(pusch_pdu->rb_bitmap, 0, sizeof(pusch_pdu->rb_bitmap));
   pusch_pdu->rb_start = msg3_first_rb;
   if (msg3_nb_rb > pusch_pdu->bwp_size)
     AssertFatal(1==0,"MSG3 allocated number of RBs exceed the BWP size\n");
@@ -1077,6 +1084,23 @@ static void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->pusch_data.harq_process_id = 0;
   pusch_pdu->pusch_data.new_data_indicator = (round == 0) ? 1 : 0;;
   pusch_pdu->pusch_data.num_cb = 0;
+
+  // Beamforming
+  pusch_pdu->beamforming.num_prgs = 0;
+  pusch_pdu->beamforming.prg_size = 0; // bwp_size;
+  pusch_pdu->beamforming.dig_bf_interface = 0;
+  if (pusch_pdu->beamforming.num_prgs > 0) {
+    if (pusch_pdu->beamforming.prgs_list == NULL) {
+      pusch_pdu->beamforming.prgs_list = calloc(pusch_pdu->beamforming.num_prgs, sizeof(*pusch_pdu->beamforming.prgs_list));
+    }
+    if (pusch_pdu->beamforming.dig_bf_interface > 0) {
+      if (pusch_pdu->beamforming.prgs_list[0].dig_bf_interface_list == NULL) {
+        pusch_pdu->beamforming.prgs_list[0].dig_bf_interface_list =
+            calloc(pusch_pdu->beamforming.dig_bf_interface, sizeof(*pusch_pdu->beamforming.prgs_list[0].dig_bf_interface_list));
+      }
+    }
+    pusch_pdu->beamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = 0;
+  }
   int num_dmrs_symb = 0;
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
     num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
@@ -1278,6 +1302,12 @@ static void nr_generate_Msg2(module_id_t module_idP,
     dl_tti_pdsch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdsch_pdu));
     dl_req->nPDUs+=1;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
+
+    pdsch_pdu_rel15->precodingAndBeamforming.num_prgs = 0;
+    pdsch_pdu_rel15->precodingAndBeamforming.prg_size = 0;
+    pdsch_pdu_rel15->precodingAndBeamforming.dig_bf_interfaces = 0;
+    pdsch_pdu_rel15->precodingAndBeamforming.prgs_list[0].pm_idx = 0;
+    pdsch_pdu_rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = 0;
 
     LOG_A(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg2 DCI, rnti 0x%x, state %d, CoreSetType %d\n",
           module_idP, CC_id, frameP, slotP, ra->RA_rnti, ra->state,pdcch_pdu_rel15->CoreSetType);
