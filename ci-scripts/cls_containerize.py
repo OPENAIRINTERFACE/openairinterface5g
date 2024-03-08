@@ -1113,8 +1113,8 @@ class Containerize():
 			logging.debug(f'Analyzing UE logfile {filename}')
 			logStatus = cls_oaicitest.OaiCiTest().AnalyzeLogFile_UE(f'{filename}', HTML, RAN)
 			if (logStatus < 0):
-				fullStatus = False
 				HTML.CreateHtmlTestRow('UE log Analysis', 'KO', logStatus)
+				self.exitStatus = 1
 			else:
 				HTML.CreateHtmlTestRow('UE log Analysis', 'OK', CONST.ALL_PROCESSES_OK)
 		else:
@@ -1385,6 +1385,7 @@ class Containerize():
 					logStatus = UE.AnalyzeLogFile_UE(f'{logPath}/{filename}', HTML, RAN)
 					if (logStatus < 0):
 						fullStatus = False
+						self.exitStatus = 1
 						HTML.CreateHtmlTestRow('UE log Analysis', 'KO', logStatus)
 					else:
 						HTML.CreateHtmlTestRow('UE log Analysis', 'OK', CONST.ALL_PROCESSES_OK)
