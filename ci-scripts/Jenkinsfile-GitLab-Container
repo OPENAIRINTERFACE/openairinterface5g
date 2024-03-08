@@ -562,6 +562,29 @@ pipeline {
             }
           }
         }
+        stage ("SA-AERIAL-CN5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-SA-AERIAL-CN5G', 'SA-AERIAL-CN5G')
+            }
+          }
+          post {
+            always {
+              script {
+                // Using a unique variable name for each test stage to avoid overwriting on a global variable
+                // due to parallel-time concurrency
+                saAERIALStatus = finalizeSlaveJob('RAN-SA-AERIAL-CN5G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+                failingStages += saAERIALStatus
+              }
+            }
+          }
+        }
         stage ("SA-OAIUE-CN5G") {
           when { expression {do5Gtest} }
           steps {

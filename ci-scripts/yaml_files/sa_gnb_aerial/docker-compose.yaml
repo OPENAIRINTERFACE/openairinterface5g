@@ -1,0 +1,65 @@
+version: "3.8"
+services:
+  nv-cubb:
+    container_name: nv-cubb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    network_mode: host
+    shm_size: 4096m
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+      - /lib/modules:/lib/modules
+      - /dev/hugepages:/dev/hugepages
+      - /usr/src:/usr/src
+      - ./aerial_l1_entrypoint.sh:/opt/nvidia/cuBB/aerial_l1_entrypoint.sh
+      - /var/log/aerial:/var/log/aerial
+      - ../../../cmake_targets/share:/opt/cuBB/share
+    userns_mode: host
+    ipc: "shareable"
+    image: cubb-build:23-2
+    environment:
+      - cuBB_SDK=/opt/nvidia/cuBB
+    command: bash -c " rm -rf /tmp/phy.log && chmod +x /opt/nvidia/cuBB/aerial_l1_entrypoint.sh && /opt/nvidia/cuBB/aerial_l1_entrypoint.sh"
+    healthcheck:
+      test: ["CMD-SHELL",'grep -q "L1 is ready!" /tmp/phy.log && echo 0 || echo 1']
+      interval: 20s
+      timeout: 5s
+      retries: 5
+  oai-gnb-aerial:
+    cpuset: "13-20"
+    image: oai-gnb-aerial:latest
+    depends_on:
+      nv-cubb:
+        condition: service_healthy
+    privileged: true
+    ipc: "container:nv-cubb"
+    environment:
+      USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities:
+                - gpu
+    network_mode: host
+    shm_size: 4096m
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../../conf_files/gnb-vnf.sa.band78.273prb.aerial.conf:/opt/oai-gnb/etc/gnb.conf
+    container_name: oai-gnb-aerial
+    healthcheck:
+      test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+      interval: 10s
+      timeout: 5s
+      retries: 5
