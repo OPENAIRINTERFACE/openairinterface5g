@@ -69,7 +69,7 @@
 #include "common/ran_context.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
-#include "common/utils/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"

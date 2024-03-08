@@ -48,7 +48,7 @@ This header file must be included */
 #endif
 #ifndef project_include
   #define project_include
-  #include "common/utils/LOG/log_if.h"
+  #include "common/utils/LOG/log.h"
   #include "PHY/defs_RU.h"
 #endif
 

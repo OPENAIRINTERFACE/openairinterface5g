@@ -32,7 +32,6 @@
 
 #include "cli.h"
 #include "log.h"
-#include "log_extern.h"
 
 extern cli_config *cli_cfg;
 

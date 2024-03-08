@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #define sizeofArray(a) (sizeof(a)/sizeof(*(a)))
+#define CHECK_INDEX(ARRAY, INDEX) assert((INDEX) < sizeofArray(ARRAY))
 
 // Prevent double evaluation in max macro
 #define cmax(a,b) ({ __typeof__ (a) _a = (a); \

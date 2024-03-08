@@ -27,7 +27,7 @@
 */
 
 #include "pdcp_sequence_manager.h"
-#include "common/utils//LOG/log_if.h"
+#include "common/utils/LOG/log.h"
 #include "pdcp_util.h"
 
 /*
