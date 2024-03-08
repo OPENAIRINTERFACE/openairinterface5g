@@ -19,7 +19,6 @@
  *      contact@openairinterface.org
  */
 
-
 #include <string.h>
 #include "SCHED_NR_UE/defs.h"
 #include "nr_estimation.h"
@@ -34,6 +33,8 @@
 #include "filt16a_32.h"
 #include "T.h"
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
+
 extern openair0_config_t openair0_cfg[];
 
 //#define DEBUG_PDSCH

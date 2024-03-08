@@ -27,7 +27,6 @@
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_interface.h"
-#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 #include "fapi_nr_l1.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -38,10 +37,7 @@
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
-#include "NR_SRS-ResourceSet.h"
-
 #include "assertions.h"
-
 #include <time.h>
 
 //#define DEBUG_RXDATA
@@ -1040,17 +1036,17 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
           case 0:
             LOG_W(NR_PHY, "SRS report was not requested by MAC\n");
             return 0;
-          case 1 << NR_SRS_ResourceSet__usage_beamManagement:
-            srs_indication->srs_usage = NR_SRS_ResourceSet__usage_beamManagement;
+          case 1 << NFAPI_NR_SRS_BEAMMANAGEMENT:
+            srs_indication->srs_usage = NFAPI_NR_SRS_BEAMMANAGEMENT;
             break;
-          case 1 << NR_SRS_ResourceSet__usage_codebook:
-            srs_indication->srs_usage = NR_SRS_ResourceSet__usage_codebook;
+          case 1 << NFAPI_NR_SRS_CODEBOOK:
+            srs_indication->srs_usage = NFAPI_NR_SRS_CODEBOOK;
             break;
-          case 1 << NR_SRS_ResourceSet__usage_nonCodebook:
-            srs_indication->srs_usage = NR_SRS_ResourceSet__usage_nonCodebook;
+          case 1 << NFAPI_NR_SRS_NONCODEBOOK:
+            srs_indication->srs_usage = NFAPI_NR_SRS_NONCODEBOOK;
             break;
-          case 1 << NR_SRS_ResourceSet__usage_antennaSwitching:
-            srs_indication->srs_usage = NR_SRS_ResourceSet__usage_antennaSwitching;
+          case 1 << NFAPI_NR_SRS_ANTENNASWITCH:
+            srs_indication->srs_usage = NFAPI_NR_SRS_ANTENNASWITCH;
             break;
           default:
             LOG_E(NR_PHY, "Invalid srs_pdu->srs_parameters_v4.usage %i\n", srs_pdu->srs_parameters_v4.usage);
@@ -1073,7 +1069,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
 
         start_meas(&gNB->srs_report_tlv_stats);
         switch (srs_indication->srs_usage) {
-          case NR_SRS_ResourceSet__usage_beamManagement: {
+          case NFAPI_NR_SRS_BEAMMANAGEMENT: {
             start_meas(&gNB->srs_beam_report_stats);
             nfapi_nr_srs_beamforming_report_t nr_srs_bf_report;
             nr_srs_bf_report.prg_size = srs_pdu->beamforming.prg_size;
@@ -1102,7 +1098,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
             break;
           }
 
-          case NR_SRS_ResourceSet__usage_codebook: {
+          case NFAPI_NR_SRS_CODEBOOK: {
             start_meas(&gNB->srs_iq_matrix_stats);
             nfapi_nr_srs_normalized_channel_iq_matrix_t nr_srs_channel_iq_matrix;
             nr_srs_channel_iq_matrix.normalized_iq_representation = srs_pdu->srs_parameters_v4.iq_representation;
@@ -1151,8 +1147,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
             break;
           }
 
-          case NR_SRS_ResourceSet__usage_nonCodebook:
-          case NR_SRS_ResourceSet__usage_antennaSwitching:
+          case NFAPI_NR_SRS_NONCODEBOOK:
+          case NFAPI_NR_SRS_ANTENNASWITCH:
             LOG_W(NR_PHY, "PHY procedures for this SRS usage are not implemented yet!\n");
             break;
 

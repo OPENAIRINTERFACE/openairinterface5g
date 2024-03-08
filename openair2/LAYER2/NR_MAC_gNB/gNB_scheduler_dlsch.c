@@ -37,8 +37,6 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "LAYER2/RLC/rlc.h"
 
-/*NFAPI*/
-#include "nfapi_nr_interface.h"
 /*TAG*/
 #include "NR_TAG-Id.h"
 

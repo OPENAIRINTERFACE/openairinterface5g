@@ -34,6 +34,7 @@
 #define NR_SCH_DMRS_H
 
 #include "PHY/defs_nr_common.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 
 #define NR_PDSCH_DMRS_ANTENNA_PORT0 1000
 #define NR_PDSCH_DMRS_NB_ANTENNA_PORTS 12
