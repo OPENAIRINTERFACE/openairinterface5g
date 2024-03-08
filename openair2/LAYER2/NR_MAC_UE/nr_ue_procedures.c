@@ -1306,10 +1306,9 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   current_harq->active = true;
   current_harq->ack_received = false;
   current_harq->pucch_resource_indicator = pucch_id;
-  current_harq->dai = dai;
-  current_harq->j_dai = 0;
   current_harq->n_CCE = n_CCE;
   current_harq->N_CCE = N_CCE;
+  current_harq->dai_cumul = 0;
   current_harq->delta_pucch = delta_pucch;
   // FIXME k0 != 0 currently not taken into consideration
   int scs = mac->current_DL_BWP ? mac->current_DL_BWP->scs : get_softmodem_params()->numerology;
@@ -1322,27 +1321,39 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   }
   // counter DAI in DCI ranges from 0 to 3
   // we might have more than 4 HARQ processes to report per PUCCH
-  // we need to keep track of how many same DAI were received
-  int count = 0;
+  // we need to keep track of how many DAI we received in a slot (dai_cumul) despite the modulo operation
+  int highest_dai = -1;
+  int temp_dai = dai;
   for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++) {
+    // looking for other active HARQ processes with feedback in the same frame/slot
     if (i == harq_id)
       continue;
     NR_UE_HARQ_STATUS_t *harq = &mac->dl_harq_info[i];
     if (harq->active &&
         harq->ul_frame == current_harq->ul_frame &&
         harq->ul_slot == current_harq->ul_slot) {
-      if (harq->dai == dai) {
-        // need to take into account possible
-        // missed DCI detections
-        int missed_detections = count / (4 * (current_harq->j_dai + 1));
-        current_harq->j_dai += (missed_detections + 1);
-        count += missed_detections;
-      }
-      count++;
+      // highest_dai is the largest cumulative dai in the set of HARQ allocations for a given slot
+      if (harq->dai_cumul > highest_dai)
+        highest_dai = harq->dai_cumul - 1;
     }
   }
-  LOG_D(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d fb time %d\n",
-        harq_id, frame, slot, current_harq->ul_frame, current_harq->ul_slot, data_toul_fb);
+
+  current_harq->dai_cumul = temp_dai + 1;  // DAI = 0 (temp_dai) corresponds to 1st assignment and so on
+  // if temp_dai is less or equal than cumulative highest dai for given slot
+  // it's an indication dai was reset due to modulo 4 operation
+  if (temp_dai <= highest_dai) {
+    int mod4_count = (highest_dai / 4) + 1; // to take into account how many times dai wrapped up (modulo 4)
+    current_harq->dai_cumul += (mod4_count * 4);
+  }
+  LOG_D(NR_MAC,
+        "Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d fb time %d total dai %d\n",
+        harq_id,
+        frame,
+        slot,
+        current_harq->ul_frame,
+        current_harq->ul_slot,
+        data_toul_fb,
+        current_harq->dai_cumul);
 }
 
 int nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
@@ -2284,46 +2295,40 @@ bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sche
             mac->nr_ue_emul_l1.harq[dl_harq_pid].active_dl_harq_sfn = frame;
             mac->nr_ue_emul_l1.harq[dl_harq_pid].active_dl_harq_slot = slot;
           }
-          if (current_harq->dai >= NR_DL_MAX_DAI) {
-            LOG_E(MAC,"PUCCH Downlink DAI has an invalid value of %d\n", current_harq->dai);
-          }
-          else {
-            if (res_ind != -1 && res_ind != current_harq->pucch_resource_indicator)
-              LOG_E(MAC,
-                    "Value of pucch_resource_indicator %d not matching with what set before %d (Possibly due to a false DCI) \n",
-                    current_harq->pucch_resource_indicator,
-                    res_ind);
-            else{
-              int dai_current = current_harq->dai + (current_harq->j_dai * 4) + 1; // DCI DAI to counter DAI conversion
-
-              if (dai_current == 0) {
-                LOG_E(MAC,"PUCCH Downlink dai is invalid\n");
-                return false;
-              } else if (dai_current > dai_max) {
-                dai_max = dai_current;
-              }
-
-              number_harq_feedback++;
-              if (current_harq->ack_received) {
-                ack_data[code_word][dai_current - 1] = current_harq->ack;
-                current_harq->active = false;
-                current_harq->ack_received = false;
-              } else {
-                LOG_E(NR_MAC, "DLSCH ACK/NACK reporting initiated for harq pid %d before DLSCH decoding completed\n", dl_harq_pid);
-                ack_data[code_word][dai_current - 1] = 0;
-              }
-              dai[code_word][dai_current - 1] = current_harq->dai + 1;
-              int temp_ind = current_harq->pucch_resource_indicator;
-              AssertFatal(res_ind == -1 || res_ind == temp_ind,
-                          "Current resource index %d does not match with previous resource index %d\n",
-                          temp_ind,
-                          res_ind);
-              res_ind = temp_ind;
-              pucch->n_CCE = current_harq->n_CCE;
-              pucch->N_CCE = current_harq->N_CCE;
-              pucch->delta_pucch = current_harq->delta_pucch;
-              LOG_D(PHY,"%4d.%2d Sent %d ack on harq pid %d\n", frame, slot, current_harq->ack, dl_harq_pid);
+          if (res_ind != -1 && res_ind != current_harq->pucch_resource_indicator)
+            LOG_E(NR_MAC,
+                  "Value of pucch_resource_indicator %d not matching with what set before %d (Possibly due to a false DCI) \n",
+                  current_harq->pucch_resource_indicator,
+                  res_ind);
+          else{
+            if (current_harq->dai_cumul == 0) {
+              LOG_E(NR_MAC,"PUCCH Downlink DAI is invalid\n");
+              return false;
+            } else if (current_harq->dai_cumul > dai_max) {
+              dai_max = current_harq->dai_cumul;
             }
+
+            number_harq_feedback++;
+            int dai_index = current_harq->dai_cumul - 1;
+            if (current_harq->ack_received) {
+              ack_data[code_word][dai_index] = current_harq->ack;
+              current_harq->active = false;
+              current_harq->ack_received = false;
+            } else {
+              LOG_E(NR_MAC, "DLSCH ACK/NACK reporting initiated for harq pid %d before DLSCH decoding completed\n", dl_harq_pid);
+              ack_data[code_word][dai_index] = 0;
+            }
+            dai[code_word][dai_index] = (dai_index % 4) + 1; // value between 1 and 4
+            int temp_ind = current_harq->pucch_resource_indicator;
+            AssertFatal(res_ind == -1 || res_ind == temp_ind,
+                        "Current resource index %d does not match with previous resource index %d\n",
+                        temp_ind,
+                        res_ind);
+            res_ind = temp_ind;
+            pucch->n_CCE = current_harq->n_CCE;
+            pucch->N_CCE = current_harq->N_CCE;
+            pucch->delta_pucch = current_harq->delta_pucch;
+            LOG_D(NR_MAC,"%4d.%2d Sent %d ack on harq pid %d\n", frame, slot, current_harq->ack, dl_harq_pid);
           }
         }
       }
