@@ -76,9 +76,6 @@
 #include "lte-softmodem.h"
 #include "executables/softmodem-common.h"
 
-/* temporary compilation wokaround (UE/eNB split */
-
-
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
@@ -579,9 +576,10 @@ int main( int argc, char **argv ) {
   // to make a graceful exit when ctrl-c is pressed
   set_softmodem_sighandler();
 #ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
-  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+  // strdup to put the sring in the core file for post mortem identification
+  LOG_I(HW, "Version: %s\n", strdup(PACKAGE_VERSION));
 
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
