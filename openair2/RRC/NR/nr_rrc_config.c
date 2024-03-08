@@ -608,25 +608,27 @@ static struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(co
   return periodic_srs;
 }
 
-static void config_srs(const NR_ServingCellConfigCommon_t *scc,
-                       NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
-                       const NR_UE_NR_Capability_t *uecap,
-                       const int curr_bwp,
-                       const int uid,
-                       const int res_id,
-                       const long maxMIMO_Layers,
-                       const int do_srs)
+static NR_SetupRelease_SRS_Config_t *get_config_srs(const NR_ServingCellConfigCommon_t *scc,
+                                                    const NR_UE_NR_Capability_t *uecap,
+                                                    const int curr_bwp,
+                                                    const int uid,
+                                                    const int res_id,
+                                                    const long maxMIMO_Layers,
+                                                    int do_srs)
 {
-  setup_release_srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
-
-  NR_SRS_Config_t *srs_Config;
-  if (setup_release_srs_Config->choice.setup) {
-    srs_Config = setup_release_srs_Config->choice.setup;
-    ASN_STRUCT_FREE(asn_DEF_NR_SRS_Config, srs_Config);
+  // if in the future NUMBER_OF_gNB_MAX is increased, it will be necessary to improve the allocation of SRS resources,
+  // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
+  static_assert(NUMBER_OF_gNB_MAX <= 32,
+                "SRS can only handle up to 30 UEs (additional ones are handled gracefully, but don't have SRS enabled\n");
+  if (do_srs && (uid < 0 || uid > 29)) {
+    LOG_E(NR_RRC, "gNB cannot allocate SRS resources for UID %d: available resources exceeded\n", uid);
+    do_srs = 0;
   }
 
+  NR_SetupRelease_SRS_Config_t *setup_release_srs_Config = calloc(1,sizeof(*setup_release_srs_Config));
+  setup_release_srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
   setup_release_srs_Config->choice.setup = calloc(1,sizeof(*setup_release_srs_Config->choice.setup));
-  srs_Config = setup_release_srs_Config->choice.setup;
+  NR_SRS_Config_t *srs_Config = setup_release_srs_Config->choice.setup;
 
   srs_Config->srs_ResourceSetToReleaseList = NULL;
 
@@ -733,6 +735,8 @@ static void config_srs(const NR_ServingCellConfigCommon_t *scc,
   srs_res0->spatialRelationInfo->referenceSignal.present = NR_SRS_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
   srs_res0->spatialRelationInfo->referenceSignal.choice.ssb_Index = 0;
   asn1cSeqAdd(&srs_Config->srs_ResourceToAddModList->list,srs_res0);
+
+  return setup_release_srs_Config;
 }
 
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
@@ -1443,15 +1447,7 @@ static void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
                                 && servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers ?
                             *servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
 
-  ubwp->bwp_Dedicated->srs_Config = calloc(1,sizeof(*ubwp->bwp_Dedicated->srs_Config));
-  config_srs(scc,
-             ubwp->bwp_Dedicated->srs_Config,
-             NULL,
-             curr_bwp,
-             uid,
-             bwp_loop+1,
-             maxMIMO_Layers,
-             configuration->do_SRS);
+  ubwp->bwp_Dedicated->srs_Config = get_config_srs(scc, NULL, curr_bwp, uid, bwp_loop + 1, maxMIMO_Layers, configuration->do_SRS);
 
   ubwp->bwp_Dedicated->configuredGrantConfig = NULL;
   ubwp->bwp_Dedicated->beamFailureRecoveryConfig = NULL;
@@ -2227,8 +2223,7 @@ static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
                             : 1;
 
   // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
-  initialUplinkBWP->srs_Config = calloc(1, sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(scc, initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
+  initialUplinkBWP->srs_Config = get_config_srs(scc, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
 
   scheduling_request_config(scc, pucch_Config, scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing);
 
@@ -2525,17 +2520,8 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
 
   // UL and SRS configuration
   if (configuration->do_SRS && uplinkConfig && uplinkConfig->initialUplinkBWP) {
-    if (!uplinkConfig->initialUplinkBWP->srs_Config) {
-      uplinkConfig->initialUplinkBWP->srs_Config = calloc(1, sizeof(*uplinkConfig->initialUplinkBWP->srs_Config));
-    }
-    config_srs(scc,
-               SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
-               uecap,
-               curr_bwp,
-               uid,
-               0,
-               maxMIMO_Layers,
-               configuration->do_SRS);
+    ASN_STRUCT_FREE(asn_DEF_NR_SetupRelease_SRS_Config, uplinkConfig->initialUplinkBWP->srs_Config);
+    uplinkConfig->initialUplinkBWP->srs_Config = get_config_srs(scc, uecap, curr_bwp, uid, 0, maxMIMO_Layers, configuration->do_SRS);
   }
 
   // Set DL MCS table
@@ -2570,7 +2556,9 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
         }
         *pusch_Config->maxRank = ul_max_layers;
       }
-      config_srs(scc, ul_bwp->bwp_Dedicated->srs_Config, uecap, bwp_size, uid, i + 1, maxMIMO_Layers, configuration->do_SRS);
+
+      ASN_STRUCT_FREE(asn_DEF_NR_SetupRelease_SRS_Config, ul_bwp->bwp_Dedicated->srs_Config);
+      ul_bwp->bwp_Dedicated->srs_Config = get_config_srs(scc, uecap, bwp_size, uid, i + 1, maxMIMO_Layers, configuration->do_SRS);
     }
   }
   update_cqitables(bwp_Dedicated->pdsch_Config, SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup);
@@ -2647,11 +2635,6 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
 
   if (uecap == NULL)
     LOG_E(RRC, "No UE Capabilities available when programming default CellGroup in NSA\n");
-
-  // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
-  // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
-  // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
-  AssertFatal(uid >= 0 && uid < 30, "gNB cannot allocate the SRS resources\n");
 
   uint64_t bitmap = get_ssb_bitmap(servingcellconfigcommon);
   // See comment at the end of this function regarding ServingCellConfig
@@ -2772,8 +2755,7 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
 
   int curr_bwp = NRRIV2BW(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
                           MAX_BWP_SIZE);
-  initialUplinkBWP->srs_Config = calloc(1, sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(servingcellconfigcommon, initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, configuration->do_SRS);
+  initialUplinkBWP->srs_Config = get_config_srs(servingcellconfigcommon, NULL, curr_bwp, uid, 0, maxMIMO_Layers, configuration->do_SRS);
 
   // Downlink BWPs
   int n_dl_bwp = 1;

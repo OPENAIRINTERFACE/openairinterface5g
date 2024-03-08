@@ -30,8 +30,13 @@
 * \warning
 */
 
+#ifndef NR_ULSCH_H_
+#define NR_ULSCH_H_
+
 #include "PHY/defs_gNB.h"
 #include "common/utils/threadPool/thread-pool.h"
+
+#define NUMBER_FRAMES_PHY_UE_INACTIVE 10
 
 void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch, uint16_t N_RB_UL);
 
@@ -71,10 +76,10 @@ void nr_ulsch_unscrambling(int16_t* llr, uint32_t size, uint32_t Nid, uint32_t n
 
 void nr_ulsch_layer_demapping(int16_t *llr_cw, uint8_t Nl, uint8_t mod_order, uint32_t length, int16_t **llr_layers);
 
-NR_gNB_ULSCH_t *find_nr_ulsch(PHY_VARS_gNB *gNB, uint16_t rnti, int pid);
-
 void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
 void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
 NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch);
+
+#endif /* NR_ULSCH_H_ */

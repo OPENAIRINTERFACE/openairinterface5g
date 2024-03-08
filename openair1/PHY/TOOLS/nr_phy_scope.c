@@ -614,8 +614,8 @@ static void pucchIQ (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
 static void puschThroughtput (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   // PUSCH Throughput
   /*
-  float tput_time_enb[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
-  float tput_enb[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
+  float tput_time_enb[MAX_MOBILES_PER_GNB][TPUT_WINDOW_LENGTH] = {{0}};
+  float tput_enb[MAX_MOBILES_PER_GNB][TPUT_WINDOW_LENGTH] = {{0}};
 
   memmove( tput_time_enb[UE_id], &tput_time_enb[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
   memmove( tput_enb[UE_id], &tput_enb[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
@@ -725,7 +725,7 @@ static void *scope_thread_gNB(void *arg) {
   int fl_argc=1;
   char *name="5G-gNB-scope";
   fl_initialize (&fl_argc, &name, NULL, 0, 0);
-  int nb_ue=min(NUMBER_OF_UE_MAX, scope_enb_num_ue);
+  int nb_ue=min(MAX_MOBILES_PER_GNB, scope_enb_num_ue);
   OAI_phy_scope_t  *form_gnb = create_phy_scope_gnb();
 
   while (!oai_exit) {
@@ -985,9 +985,9 @@ static void uePdschIQ  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_
 }
 static void uePdschThroughput  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   /*
-  float tput_time_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
-  float tput_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
-  float tput_ue_max[NUMBER_OF_UE_MAX] = {0};
+  float tput_time_ue[MAX_MOBILES_PER_GNB][TPUT_WINDOW_LENGTH] = {{0}};
+  float tput_ue[MAX_MOBILES_PER_GNB][TPUT_WINDOW_LENGTH] = {{0}};
+  float tput_ue_max[MAX_MOBILES_PER_GNB] = {0};
 
 
   // PDSCH Throughput
@@ -1178,7 +1178,7 @@ static void reset_stats_gNB(FL_OBJECT *button,
   int i,k;
   //PHY_VARS_gNB *phy_vars_gNB = RC.gNB[0][0];
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+  for (i=0; i<MAX_MOBILES_PER_GNB; i++) {
     for (k=0; k<8; k++) { //harq_processes
       /*      for (j=0; j<phy_vars_gNB->dlsch[i][0]->Mlimit; j++) {
               phy_vars_gNB->UE_stats[i].dlsch_NAK[k][j]=0;

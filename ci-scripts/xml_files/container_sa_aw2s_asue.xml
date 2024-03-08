@@ -40,9 +40,15 @@
     002008
     002009
     002010
+    002011
+    002012
+    002013
+    002014
+    002015
     000100
     000010
     000020
+    002016
     000200
     003000
     004000
@@ -132,12 +138,42 @@
     <id>amarisoft_ue_10</id>
   </testCase>
 
+  <testCase id="002011">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_11</id>
+  </testCase>
+
+  <testCase id="002012">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_12</id>
+  </testCase>
+
+  <testCase id="002013">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_13</id>
+  </testCase>
+
+  <testCase id="002014">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_14</id>
+  </testCase>
+
+  <testCase id="002015">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_15</id>
+  </testCase>
+
   <testCase id="000010">
     <class>Iperf</class>
     <desc>iperf (DL/7Mbps/UDP)(30 sec)(multi-ue profile)</desc>
     <iperf_args>-u -b 70M -t 30 -i 1 -R</iperf_args>
     <direction>IPERF3</direction>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10 amarisoft_ue_11 amarisoft_ue_12 amarisoft_ue_13 amarisoft_ue_14 amarisoft_ue_15</id>
     <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
     <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
     <iperf_profile>balanced</iperf_profile>
@@ -148,7 +184,7 @@
     <desc>iperf (UL/3.6Mbps/UDP)(30 sec)(multi-ue profile)</desc>
     <iperf_args>-u -b 36M -t 30 -i 1 </iperf_args>
     <direction>IPERF3</direction>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10 amarisoft_ue_11 amarisoft_ue_12 amarisoft_ue_13 amarisoft_ue_14 amarisoft_ue_15</id>
     <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
     <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
     <iperf_profile>balanced</iperf_profile>
@@ -157,17 +193,23 @@
   <testCase id="000100">
     <class>Ping</class>
     <desc>Ping: 20pings in 20sec, multi-ue</desc>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10 amarisoft_ue_11 amarisoft_ue_12 amarisoft_ue_13 amarisoft_ue_14 amarisoft_ue_15</id>
     <ping_args>-c 20 %cn_ip%</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
     <ping_rttavg_threshold>25</ping_rttavg_threshold>
   </testCase>
 
+  <testCase id="002016">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_16</id>
+  </testCase>
+
   <testCase id="000200">
     <class>Ping</class>
-    <desc>Ping: 100pings in 20sec, multi-ue</desc>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
-    <ping_args>-c 100 -i 0.2 %cn_ip%</ping_args>
+    <desc>Ping: 50pings in 10sec, multi-ue</desc>
+    <id>amarisoft_ue_16</id>
+    <ping_args>-c 50 -i 0.2 %cn_ip%</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
     <ping_rttavg_threshold>30</ping_rttavg_threshold>
   </testCase>
@@ -175,7 +217,7 @@
   <testCase id="003000">
     <class>Detach_UE</class>
     <desc>Detach UE</desc>
-    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10</id>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5 amarisoft_ue_6 amarisoft_ue_7 amarisoft_ue_8 amarisoft_ue_9 amarisoft_ue_10 amarisoft_ue_11 amarisoft_ue_12 amarisoft_ue_13 amarisoft_ue_14 amarisoft_ue_15 amarisoft_ue_16</id>
   </testCase>
 
   <testCase id="004000">

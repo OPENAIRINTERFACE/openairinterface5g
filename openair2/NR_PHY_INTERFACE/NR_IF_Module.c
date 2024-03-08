@@ -177,6 +177,9 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
   }
 
   if (UL_info->rx_ind.number_of_pdus > 0 && UL_info->crc_ind.number_crcs > 0) {
+    // see nr_fill_indication about why this mutex is necessary
+    int rc = pthread_mutex_lock(&UL_info->crc_rx_mutex);
+    DevAssert(rc == 0);
     AssertFatal(UL_info->rx_ind.number_of_pdus == UL_info->crc_ind.number_crcs,
                 "number_of_pdus %d, number_crcs %d\n",
                 UL_info->rx_ind.number_of_pdus, UL_info->crc_ind.number_crcs);
@@ -210,9 +213,11 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
                 rx->rssi);
       handle_nr_ul_harq(UL_info->CC_id, UL_info->module_id, UL_info->frame, UL_info->slot, crc);
     }
+    UL_info->rx_ind.number_of_pdus = 0;
+    UL_info->crc_ind.number_crcs = 0;
+    rc = pthread_mutex_unlock(&UL_info->crc_rx_mutex);
+    DevAssert(rc == 0);
   }
-  UL_info->rx_ind.number_of_pdus = 0;
-  UL_info->crc_ind.number_crcs = 0;
 }
 
 void handle_nr_srs(NR_UL_IND_t *UL_info) {

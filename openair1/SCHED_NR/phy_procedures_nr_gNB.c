@@ -467,75 +467,13 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   else if (SNRtimes10 >  635) cqi=255;
   else                        cqi=(640+SNRtimes10)/5;
 
-
-  if (0/*pusch_pdu->mcs_index == 9*/) {
-      __attribute__((unused))
-      int off = ((pusch_pdu->rb_size&1) == 1)? 4:0;
-
-      LOG_M("rxsigF0.m",
-            "rxsF0",
-            &gNB->common_vars
-                 .rxdataF[0][(slot_rx % RU_RX_SLOT_DEPTH) * gNB->frame_parms.ofdm_symbol_size * gNB->frame_parms.symbols_per_slot],
-            gNB->frame_parms.ofdm_symbol_size * gNB->frame_parms.symbols_per_slot,
-            1,
-            1);
-      LOG_M("chestF0.m",
-            "chF0",
-            &gNB->pusch_vars[0].ul_ch_estimates[0][pusch_pdu->start_symbol_index * gNB->frame_parms.ofdm_symbol_size],
-            gNB->frame_parms.ofdm_symbol_size,
-            1,
-            1);
-      LOG_M("chestF0_ext.m",
-            "chF0_ext",
-            &gNB->pusch_vars[0]
-                 .ul_ch_estimates_ext[0][(pusch_pdu->start_symbol_index + 1) * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-            (pusch_pdu->nr_of_symbols - 1) * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-            1,
-            1);
-      LOG_M("rxsigF0_comp.m",
-            "rxsF0_comp",
-            &gNB->pusch_vars[0].rxdataF_comp[0][pusch_pdu->start_symbol_index * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-            pusch_pdu->nr_of_symbols * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-            1,
-            1);
-      LOG_M("rxsigF0_llr.m",
-            "rxsF0_llr",
-            &gNB->pusch_vars[0].llr[0],
-            (pusch_pdu->nr_of_symbols - 1) * NR_NB_SC_PER_RB * pusch_pdu->rb_size * pusch_pdu->qam_mod_order,
-            1,
-            0);
-      if (gNB->frame_parms.nb_antennas_rx > 1) {
-        LOG_M(
-            "rxsigF1.m",
-            "rxsF1",
-            &gNB->common_vars
-                 .rxdataF[1][(slot_rx % RU_RX_SLOT_DEPTH) * gNB->frame_parms.ofdm_symbol_size * gNB->frame_parms.symbols_per_slot],
-            gNB->frame_parms.ofdm_symbol_size * gNB->frame_parms.symbols_per_slot,
-            1,
-            1);
-        LOG_M("chestF1.m",
-              "chF1",
-              &gNB->pusch_vars[0].ul_ch_estimates[1][pusch_pdu->start_symbol_index * gNB->frame_parms.ofdm_symbol_size],
-              gNB->frame_parms.ofdm_symbol_size,
-              1,
-              1);
-        LOG_M("chestF1_ext.m",
-              "chF1_ext",
-              &gNB->pusch_vars[0]
-                   .ul_ch_estimates_ext[1][(pusch_pdu->start_symbol_index + 1) * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-              (pusch_pdu->nr_of_symbols - 1) * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-              1,
-              1);
-        LOG_M("rxsigF1_comp.m",
-              "rxsF1_comp",
-              &gNB->pusch_vars[0].rxdataF_comp[1][pusch_pdu->start_symbol_index * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-              pusch_pdu->nr_of_symbols * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-              1,
-              1);
-      }
-      exit(-1);
-
-    }
+  // multiple threads might call this function at the same time, or while the
+  // L2 reads the messages. Hence, if not protected, crc and rx indications
+  // might not appear pairwise (in the same order) in the same slot, or even in
+  // separate slots. The L2 does not support this; hence, use the crc_rx_mutex
+  // to ensure that messages are pairwise.
+  int rc = pthread_mutex_lock(&gNB->UL_INFO.crc_rx_mutex);
+  DevAssert(rc == 0);
 
   // crc indication
   uint16_t num_crc = gNB->UL_INFO.crc_ind.number_crcs;
@@ -573,8 +511,10 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
     gNB->rx_pdu_list[num_rx].pdu_length = harq_process->TBS;
     gNB->rx_pdu_list[num_rx].pdu = harq_process->b;
   }
-
   gNB->UL_INFO.rx_ind.number_of_pdus++;
+
+  rc = pthread_mutex_unlock(&gNB->UL_INFO.crc_rx_mutex);
+  DevAssert(rc == 0);
 }
 
 // Function to fill UL RB mask to be used for N0 measurements

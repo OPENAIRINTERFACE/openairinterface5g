@@ -317,7 +317,7 @@ static void rrc_gNB_CU_DU_init(gNB_RRC_INST *rrc)
 void openair_rrc_gNB_configuration(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration)
 {
   AssertFatal(rrc != NULL, "RC.nrrrc not initialized!");
-  AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
+  AssertFatal(MAX_MOBILES_PER_GNB < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");
   rrc->module_id = 0;
   rrc_gNB_CU_DU_init(rrc);
@@ -2698,14 +2698,12 @@ rrc_gNB_generate_RRCRelease(
 int rrc_gNB_generate_pcch_msg(sctp_assoc_t assoc_id, const NR_SIB1_t *sib1, uint32_t tmsi, uint8_t paging_drx)
 {
   instance_t instance = 0;
-  uint8_t CC_id = 0;
   const unsigned int Ttab[4] = {32,64,128,256};
   uint8_t Tc;
   uint8_t Tue;
   uint32_t pfoffset;
   uint32_t N;  /* N: min(T,nB). total count of PF in one DRX cycle */
   uint32_t Ns = 0;  /* Ns: max(1,nB/T) */
-  uint8_t i_s;  /* i_s = floor(UE_ID/N) mod Ns */
   uint32_t T;  /* DRX cycle */
   uint32_t length;
   uint8_t buffer[RRC_BUF_SIZE];
@@ -2767,44 +2765,9 @@ int rrc_gNB_generate_pcch_msg(sctp_assoc_t assoc_id, const NR_SIB1_t *sib1, uint
       return (-1);
   }
 
-  /* insert data to UE_PF_PO or update data in UE_PF_PO */
-  pthread_mutex_lock(&ue_pf_po_mutex);
-  uint8_t i = 0;
-
-  for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-    if ((UE_PF_PO[CC_id][i].enable_flag == true && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(tmsi%1024))
-        || (UE_PF_PO[CC_id][i].enable_flag != true)) {
-      /* set T = min(Tc,Tue) */
-      UE_PF_PO[CC_id][i].T = T;
-      /* set UE_ID */
-      UE_PF_PO[CC_id][i].ue_index_value = (uint16_t)(tmsi%1024);
-      /* calculate PF and PO */
-      /* set PF_min and PF_offset: (SFN + PF_offset) mod T = (T div N)*(UE_ID mod N) */
-      UE_PF_PO[CC_id][i].PF_min = (T / N) * (UE_PF_PO[CC_id][i].ue_index_value % N);
-      UE_PF_PO[CC_id][i].PF_offset = pfoffset;
-      /* set i_s */
-      /* i_s = floor(UE_ID/N) mod Ns */
-      i_s = (uint8_t)((UE_PF_PO[CC_id][i].ue_index_value / N) % Ns);
-      UE_PF_PO[CC_id][i].i_s = i_s;
-
-      // TODO,set PO
-
-      if (UE_PF_PO[CC_id][i].enable_flag == true) {
-        //paging exist UE log
-        LOG_D(NR_RRC,"[gNB %ld] CC_id %d In rrc_gNB_generate_pcch_msg: Update exist UE %d, T %d, N %d, PF %d, i_s %d, PF_offset %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value,
-              T, N, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].i_s, UE_PF_PO[CC_id][i].PF_offset);
-      } else {
-        /* set enable_flag */
-        UE_PF_PO[CC_id][i].enable_flag = true;
-        //paging new UE log
-        LOG_D(NR_RRC,"[gNB %ld] CC_id %d In rrc_gNB_generate_pcch_msg: Insert a new UE %d, T %d, N %d, PF %d, i_s %d, PF_offset %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value,
-              T, N, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].i_s, UE_PF_PO[CC_id][i].PF_offset);
-      }
-      break;
-    }
-  }
-
-  pthread_mutex_unlock(&ue_pf_po_mutex);
+  (void) N; /* not used, suppress warning */
+  (void) Ns; /* not used, suppress warning */
+  (void) pfoffset; /* not used, suppress warning */
 
   /* Create message for PDCP (DLInformationTransfer_t) */
   length = do_NR_Paging (instance,
