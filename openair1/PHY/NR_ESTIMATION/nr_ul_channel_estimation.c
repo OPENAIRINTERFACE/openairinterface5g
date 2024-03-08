@@ -110,8 +110,16 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   }
 
   if (pusch_pdu->transform_precoding == transformPrecoder_disabled) {
-    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], (int32_t *)pilot, (1000+p), 0, nb_rb_pusch,
-                     (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
+    // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+    nr_pusch_dmrs_rx(gNB,
+                     Ns,
+                     gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol],
+                     (int32_t *)pilot,
+                     (1000 + p),
+                     0,
+                     nb_rb_pusch,
+                     (pusch_pdu->bwp_start + pusch_pdu->rb_start) * NR_NB_SC_PER_RB,
+                     pusch_pdu->dmrs_config_type);
   } else { // if transform precoding or SC-FDMA is enabled in Uplink
     // NR_SC_FDMA supports type1 DMRS so only 6 DMRS REs per RB possible
     const uint16_t index = get_index_for_dmrs_lowpapr_seq(nb_rb_pusch * (NR_NB_SC_PER_RB/2));

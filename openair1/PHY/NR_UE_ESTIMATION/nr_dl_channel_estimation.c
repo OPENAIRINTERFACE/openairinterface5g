@@ -661,7 +661,8 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 #endif
 
   // generate pilot
-  nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
+  // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+  nr_pbch_dmrs_rx(dmrss, ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
   for (int aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -901,7 +902,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
   
   // generate pilot
-  nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
+  // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+  nr_pbch_dmrs_rx(dmrss, ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
   for (int aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -1114,7 +1116,8 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     dmrs_ref = BWPStart;
   // generate pilot
   int pilot[(nb_rb_coreset + dmrs_ref) * 3] __attribute__((aligned(16)));
-  nr_pdcch_dmrs_rx(ue,Ns,ue->nr_gold_pdcch[gNB_id][Ns][symbol], &pilot[0],2000,(nb_rb_coreset+dmrs_ref));
+  // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+  nr_pdcch_dmrs_rx(ue, Ns, ue->nr_gold_pdcch[gNB_id][Ns][symbol], &pilot[0], 2000, (nb_rb_coreset + dmrs_ref));
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -1651,7 +1654,15 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
 
   c16_t pilot[3280] __attribute__((aligned(16)));
-  nr_pdsch_dmrs_rx(ue, Ns, ue->nr_gold_pdsch[gNB_id][Ns][symbol][nscid], (int32_t *)pilot, 1000 + p, 0, nb_rb_pdsch + rb_offset, config_type);
+  // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+  nr_pdsch_dmrs_rx(ue,
+                   Ns,
+                   ue->nr_gold_pdsch[gNB_id][Ns][symbol][nscid],
+                   (int32_t *)pilot,
+                   1000 + p,
+                   0,
+                   nb_rb_pdsch + rb_offset,
+                   config_type);
 
   uint8_t nushift = 0;
   if (config_type == NFAPI_NR_DMRS_TYPE1) {
