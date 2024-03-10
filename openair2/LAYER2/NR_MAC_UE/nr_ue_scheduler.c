@@ -1738,8 +1738,8 @@ static void build_ssb_list(NR_UE_MAC_INST_t *mac)
     uint32_t curr_mask = cfg->ssb_table.ssb_mask_list[ssb_index / 32].ssb_mask;
     // check if if current SSB is transmitted
     if ((curr_mask >> (31 - (ssb_index % 32))) & 0x01) {
-      ssb_list->nb_tx_ssb++;
       ssb_list->nb_ssb_per_index[ssb_index]=ssb_list->nb_tx_ssb;
+      ssb_list->nb_tx_ssb++;
     }
   }
   ssb_list->tx_ssb = calloc(ssb_list->nb_tx_ssb, sizeof(*ssb_list->tx_ssb));
