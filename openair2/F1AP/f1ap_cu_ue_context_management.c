@@ -64,6 +64,15 @@ static void setQos(F1AP_NonDynamic5QIDescriptor_t **toFill)
   }
 }
 
+static void f1ap_write_drb_nssai(const nssai_t *nssai, F1AP_SNSSAI_t *asn1_nssai)
+{
+  OCTET_STRING_fromBuf(&asn1_nssai->sST, (char *)&nssai->sst, 1);
+
+  /* OPTIONAL */
+  if (nssai->sd != 0xffffff)
+    OCTET_STRING_fromBuf(asn1_nssai->sD, (char *)&nssai->sd, 3);
+}
+
 int CU_send_UE_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_setup_t *f1ap_ue_context_setup_req)
 {
   F1AP_F1AP_PDU_t  pdu= {0};
@@ -393,16 +402,9 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_setu
             asn1cCallocOne(DRB_Information->dRB_QoS.reflective_QoS_Attribute, 1L);
           }
         } // dRB_QoS
-        /* 12.1.2.2 sNSSAI */
-        {
-          /* sST */
-          OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, (char *)&f1ap_ue_context_setup_req->drbs_to_be_setup[i].nssai.sst, 1);
 
-          /* OPTIONAL */
-          const uint32_t sd = (f1ap_ue_context_setup_req->drbs_to_be_setup[i].nssai.sd & 0xffffff);
-          if (sd != 0xffffff)
-            OCTET_STRING_fromBuf(DRB_Information->sNSSAI.sD, (char *)&sd, 3);
-        }
+        /* 12.1.2.2 sNSSAI */
+        f1ap_write_drb_nssai(&drb->nssai, &DRB_Information->sNSSAI);
 
         /* OPTIONAL */
         /* 12.1.2.3 notificationControl */
@@ -1300,16 +1302,9 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_conte
             asn1cCallocOne(DRB_Information->dRB_QoS.reflective_QoS_Attribute, 1L);
           }
         } // dRB_QoS
-        /* 12.1.2.2 sNSSAI */
-        {
-          /* sST */
-          OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, (char *)&f1ap_ue_context_modification_req->drbs_to_be_setup[i].nssai.sst, 1);
 
-          /* OPTIONAL */
-          const uint32_t sd = (f1ap_ue_context_modification_req->drbs_to_be_setup[i].nssai.sd & 0xffffff);
-          if (sd != 0xffffff)
-            OCTET_STRING_fromBuf(DRB_Information->sNSSAI.sD, (char *)&sd, 3);
-        }
+        /* 12.1.2.2 sNSSAI */
+        f1ap_write_drb_nssai(&drb->nssai, &DRB_Information->sNSSAI);
 
         /* OPTIONAL */
         /* 12.1.2.3 notificationControl */
