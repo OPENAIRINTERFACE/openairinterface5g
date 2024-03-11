@@ -216,6 +216,36 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_i
           drb_p->rlc_mode = RLC_MODE_TM;
           break;
       }
+
+      if (drbs_tobesetup_item_p->qoSInformation.present == F1AP_QoSInformation_PR_eUTRANQoS) {
+        AssertFatal(false, "Decode of eUTRANQoS is not implemented yet");
+      } // EUTRAN QoS Information
+      else {
+        /* 12.1.2 DRB_Information */
+        if (drbs_tobesetup_item_p->qoSInformation.present == F1AP_QoSInformation_PR_choice_extension) {
+          F1AP_QoSInformation_ExtIEs_t *ie =
+              (F1AP_QoSInformation_ExtIEs_t *)drbs_tobesetup_item_p->qoSInformation.choice.choice_extension;
+          if (ie->id == F1AP_ProtocolIE_ID_id_DRB_Information && ie->criticality == F1AP_Criticality_reject
+              && ie->value.present == F1AP_QoSInformation_ExtIEs__value_PR_DRB_Information) {
+
+            const F1AP_DRB_Information_t *dRB_Info = &ie->value.choice.DRB_Information;
+            f1ap_drb_information_t *drb_info = &drb_p->drb_info;
+
+            /* QoS-Flow-Level-QoS-Parameters */
+            /* QoS Characteristics*/
+            f1ap_read_drb_qos_param(&dRB_Info->dRB_QoS, &drb_info->drb_qos);
+
+            // 12.1.2.4 flows_Mapped_To_DRB_List
+            drb_info->flows_to_be_setup_length = dRB_Info->flows_Mapped_To_DRB_List.list.count;
+            drb_info->flows_mapped_to_drb = calloc(drb_info->flows_to_be_setup_length, sizeof(f1ap_flows_mapped_to_drb_t));
+            AssertFatal(drb_info->flows_mapped_to_drb, "could not allocate memory for drb_p->drb_info.flows_mapped_to_drb\n");
+            f1ap_read_flows_mapped(&dRB_Info->flows_Mapped_To_DRB_List, drb_info->flows_mapped_to_drb, drb_info->flows_to_be_setup_length);
+
+            /* S-NSSAI */
+            f1ap_read_drb_nssai(&dRB_Info->sNSSAI, &drb_p->nssai);
+          }
+        }
+      }
     }
   }
 
