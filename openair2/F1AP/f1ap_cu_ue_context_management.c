@@ -273,7 +273,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_setu
     ie12->value.present = F1AP_UEContextSetupRequestIEs__value_PR_DRBs_ToBeSetup_List;
 
     for (int i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; i++) {
-      //
+      const f1ap_drb_to_be_setup_t *drb = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
       asn1cSequenceAdd(ie12->value.choice.DRBs_ToBeSetup_List.list, F1AP_DRBs_ToBeSetup_ItemIEs_t, drbs_toBeSetup_item_ies);
       drbs_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_Item;
       drbs_toBeSetup_item_ies->criticality   = F1AP_Criticality_reject;
@@ -281,7 +281,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_setu
       /* 12.1 DRBs_ToBeSetup_Item */
       F1AP_DRBs_ToBeSetup_Item_t *drbs_toBeSetup_item=&drbs_toBeSetup_item_ies->value.choice.DRBs_ToBeSetup_Item;
       /* 12.1.1 dRBID */
-      drbs_toBeSetup_item->dRBID = f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id; // 9
+      drbs_toBeSetup_item->dRBID = drb->drb_id;
       /* 12.1.2 qoSInformation */
       int some_decide_qos = 0; // BK: Need Check
 
@@ -1163,6 +1163,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_conte
     ie12->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_DRBs_ToBeSetupMod_List;
 
     for (int i = 0; i < f1ap_ue_context_modification_req->drbs_to_be_setup_length; i++) {
+      const f1ap_drb_to_be_setup_t *drb = &f1ap_ue_context_modification_req->drbs_to_be_setup[i];
       asn1cSequenceAdd(ie12->value.choice.DRBs_ToBeSetupMod_List.list,
                      F1AP_DRBs_ToBeSetupMod_ItemIEs_t, drbs_toBeSetupMod_item_ies);
       drbs_toBeSetupMod_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_ToBeSetupMod_Item;
@@ -1172,7 +1173,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_conte
       F1AP_DRBs_ToBeSetupMod_Item_t *drbs_toBeSetupMod_item=
           &drbs_toBeSetupMod_item_ies->value.choice.DRBs_ToBeSetupMod_Item;
       /* dRBID */
-      drbs_toBeSetupMod_item->dRBID = f1ap_ue_context_modification_req->drbs_to_be_setup[i].drb_id;
+      drbs_toBeSetupMod_item->dRBID = drb->drb_id;
       /* qoSInformation */
 
       if(f1ap_ue_context_modification_req->QoS_information_type == EUTRAN_QoS){
