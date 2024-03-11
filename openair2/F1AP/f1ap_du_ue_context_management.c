@@ -37,7 +37,6 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
@@ -755,16 +754,6 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(sctp_assoc_t assoc_id, f1ap_ue_context_r
   return 0;
 }
 
-static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, char *DUaddr, uint16_t DUport)
-{
-  openAddr_t tmp = {0};
-  strncpy(tmp.originHost, DUaddr, sizeof(tmp.originHost)-1);
-  strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
-  sprintf(tmp.originService, "%d", DUport);
-  sprintf(tmp.destinationService, "%d", CUport);
-  return gtpv1Init(tmp);
-}
-
 int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_UEContextModificationRequest_t    *container;
@@ -835,27 +824,6 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
       OCTET_STRING_TO_UINT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
        // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
       drb_p->up_ul_tnl[0].port = getCxt(instance)->net_config.CUport;
-
-      extern instance_t DUuniqInstance;
-      if (DUuniqInstance == 0) {
-        char gtp_tunnel_ip_address[32];
-        snprintf(gtp_tunnel_ip_address,
-                 sizeof(gtp_tunnel_ip_address),
-                 "%d.%d.%d.%d",
-                 drb_p->up_ul_tnl[0].tl_address & 0xff,
-                 (drb_p->up_ul_tnl[0].tl_address >> 8) & 0xff,
-                 (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
-                 (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
-        getCxt(instance)->gtpInst = du_create_gtpu_instance_to_cu(gtp_tunnel_ip_address,
-                                                                  getCxt(instance)->net_config.CUport,
-                                                                  getCxt(instance)->net_config.DU_f1_ip_address.ipv4_address,
-                                                                  getCxt(instance)->net_config.DUport);
-        AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
-        // Fixme: fully inconsistent instances management
-        // dirty global var is a bad fix
-        extern instance_t legacyInstanceMapping;
-        legacyInstanceMapping = DUuniqInstance = getCxt(instance)->gtpInst;
-      }
 
       switch (drbs_tobesetupmod_item_p->rLCMode) {
       case F1AP_RLCMode_rlc_am:
