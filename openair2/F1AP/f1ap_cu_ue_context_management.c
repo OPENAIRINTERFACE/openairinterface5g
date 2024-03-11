@@ -39,31 +39,6 @@
 #include "rrc_extern.h"
 #include "openair2/RRC/NR/rrc_gNB_NGAP.h"
 
-static void setQos(F1AP_NonDynamic5QIDescriptor_t **toFill)
-{
-  asn1cCalloc(*toFill, tmp);
-  /* fiveQI */
-  tmp->fiveQI = 1L;
-
-  /* OPTIONAL */
-  /* qoSPriorityLevel */
-  if (0) {
-    asn1cCallocOne((*toFill)->qoSPriorityLevel, 1L);
-  }
-
-  /* OPTIONAL */
-  /* averagingWindow */
-  if (0) {
-    asn1cCallocOne((*toFill)->averagingWindow, 1L);
-  }
-
-  /* OPTIONAL */
-  /* maxDataBurstVolume */
-  if (0) {
-    asn1cCallocOne((*toFill)->maxDataBurstVolume, 1L);
-  }
-}
-
 static void f1ap_write_drb_qos_param(const f1ap_qos_flow_level_qos_parameters_t *drb_qos_in, F1AP_QoSFlowLevelQoSParameters_t *asn1_qosparam)
 {
   int type = drb_qos_in->qos_characteristics.qos_type;
@@ -135,6 +110,82 @@ static void f1ap_write_drb_nssai(const nssai_t *nssai, F1AP_SNSSAI_t *asn1_nssai
   /* OPTIONAL */
   if (nssai->sd != 0xffffff)
     OCTET_STRING_fromBuf(asn1_nssai->sD, (char *)&nssai->sd, 3);
+}
+
+static void f1ap_write_flows_mapped(const f1ap_flows_mapped_to_drb_t *flows_mapped, F1AP_Flows_Mapped_To_DRB_List_t *asn1_flows_mapped, int n)
+{
+  for (int k = 0; k < n; k++) {
+    asn1cSequenceAdd(asn1_flows_mapped->list, F1AP_Flows_Mapped_To_DRB_Item_t, flow_item);
+
+    const f1ap_flows_mapped_to_drb_t *qos_flow_in = flows_mapped + k;
+
+    /* qoSFlowIndicator */
+    flow_item->qoSFlowIdentifier = qos_flow_in->qfi;
+
+    /* qoSFlowLevelQoSParameters */
+    const f1ap_qos_flow_level_qos_parameters_t *flow_qos_params_in = &qos_flow_in->qos_params;
+    /* qoS_Characteristics */
+
+    F1AP_QoS_Characteristics_t *QosParams = &flow_item->qoSFlowLevelQoSParameters.qoS_Characteristics;
+    const f1ap_qos_characteristics_t *flow_qos_char_in = &flow_qos_params_in->qos_characteristics;
+
+    int type = flow_qos_params_in->qos_characteristics.qos_type;
+    if (type == non_dynamic) {
+      QosParams->present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
+      asn1cCalloc(QosParams->choice.non_Dynamic_5QI, tmp);
+
+      /* 5QI */
+      tmp->fiveQI = flow_qos_char_in->non_dynamic.fiveqi;
+    } else {
+      QosParams->present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
+      asn1cCalloc(QosParams->choice.dynamic_5QI, tmp);
+      /* qoSPriorityLevel */
+      tmp->qoSPriorityLevel = flow_qos_char_in->dynamic.qos_priority_level;
+      /* packetDelayBudget */
+      tmp->packetDelayBudget = flow_qos_char_in->dynamic.packet_delay_budget;
+      /* packetErrorRate */
+      tmp->packetErrorRate.pER_Scalar = flow_qos_char_in->dynamic.packet_error_rate.per_scalar;
+      tmp->packetErrorRate.pER_Exponent = flow_qos_char_in->dynamic.packet_error_rate.per_exponent;
+
+      /* OPTIONAL delayCritical */
+      //asn1cCallocOne(QosParams->choice.dynamic_5QI->delayCritical, 1);
+
+      /* OPTIONAL averagingWindow */
+      //asn1cCallocOne(QosParams->choice.dynamic_5QI->averagingWindow, 1);
+
+      /* OPTIONAL maxDataBurstVolume */
+      //asn1cCallocOne(QosParams->choice.dynamic_5QI->maxDataBurstVolume, 1);
+    }
+
+    /* nGRANallocationRetentionPriority */
+    {
+      flow_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel =
+          flow_qos_params_in->alloc_reten_priority.priority_level;
+      flow_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability =
+          flow_qos_params_in->alloc_reten_priority.preemption_capability;
+      flow_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability =
+          flow_qos_params_in->alloc_reten_priority.preemption_vulnerability;
+    } // nGRANallocationRetentionPriority
+
+    /* OPTIONAL */
+    /* gBR_QoS_Flow_Information */
+    if (0) {
+      asn1cCalloc(flow_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information, tmp);
+      asn_long2INTEGER(&tmp->maxFlowBitRateDownlink, 1L);
+      asn_long2INTEGER(&tmp->maxFlowBitRateUplink, 1L);
+      asn_long2INTEGER(&tmp->guaranteedFlowBitRateDownlink, 1L);
+      asn_long2INTEGER(&tmp->guaranteedFlowBitRateUplink, 1L);
+
+      /* OPTIONAL maxPacketLossRateDownlink */
+      //asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateDownlink, 1L);
+
+      /* OPTIONAL maxPacketLossRateUplink */
+      //asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateUplink, 1L);
+    }
+
+    /* OPTIONAL reflective_QoS_Attribute */
+    //asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.reflective_QoS_Attribute, 1L);
+  }
 }
 
 int CU_send_UE_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_setup_t *f1ap_ue_context_setup_req)
@@ -408,91 +459,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_context_setu
         }
 
         /* 12.1.2.4 flows_Mapped_To_DRB_List */  // BK: need verifiy
-
-        for (int k = 0; k < 1; k ++) {
-          asn1cSequenceAdd(DRB_Information->flows_Mapped_To_DRB_List.list,
-            F1AP_Flows_Mapped_To_DRB_Item_t, flows_mapped_to_drb_item);
-          /* qoSFlowIndicator */
-          flows_mapped_to_drb_item->qoSFlowIdentifier = 1L;
-          /* qoSFlowLevelQoSParameters */
-          {
-            /* qoS_Characteristics */
-            {
-              int some_decide_qoS_characteristics = 0; // BK: Need Check
-              F1AP_QoS_Characteristics_t *QosParams=&flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.qoS_Characteristics;
-
-              if (some_decide_qoS_characteristics) {
-                QosParams->present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
-                setQos(&QosParams->choice.non_Dynamic_5QI);
-              } else {
-                QosParams->present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
-                asn1cCalloc(QosParams->choice.dynamic_5QI, tmp);
-                /* qoSPriorityLevel */
-                tmp->qoSPriorityLevel = 1L;
-                /* packetDelayBudget */
-                tmp->packetDelayBudget = 1L;
-                /* packetErrorRate */
-                tmp->packetErrorRate.pER_Scalar = 1L;
-                tmp->packetErrorRate.pER_Exponent = 6L;
-
-                /* OPTIONAL */
-                /* delayCritical */
-                if (0) {
-                  asn1cCalloc(QosParams->choice.dynamic_5QI->delayCritical, tmp);
-                  *tmp = 1L;
-                }
-
-                /* OPTIONAL */
-                /* averagingWindow */
-                if (0) {
-                  asn1cCalloc(QosParams->choice.dynamic_5QI->averagingWindow, tmp);
-                  *tmp = 1L;
-                }
-
-                /* OPTIONAL */
-                /* maxDataBurstVolume */
-                if (0) {
-                  asn1cCalloc(QosParams->choice.dynamic_5QI->maxDataBurstVolume, tmp);
-                  *tmp= 1L;
-                }
-              } // if some_decide_qoS_characteristics
-            } // qoS_Characteristics
-            /* nGRANallocationRetentionPriority */
-            {
-              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
-              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
-              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
-            } // nGRANallocationRetentionPriority
-
-            /* OPTIONAL */
-            /* gBR_QoS_Flow_Information */
-            if (0) {
-              asn1cCalloc(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information, tmp);
-              asn_long2INTEGER(&tmp->maxFlowBitRateDownlink, 1L);
-              asn_long2INTEGER(&tmp->maxFlowBitRateUplink, 1L);
-              asn_long2INTEGER(&tmp->guaranteedFlowBitRateDownlink, 1L);
-              asn_long2INTEGER(&tmp->guaranteedFlowBitRateUplink, 1L);
-
-              /* OPTIONAL */
-              /* maxPacketLossRateDownlink */
-              if (0) {
-                asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateDownlink, 1L);
-              }
-
-              /* OPTIONAL */
-              /* maxPacketLossRateUplink */
-              if (0) {
-                asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateUplink, 1L);
-              }
-            }
-
-            /* OPTIONAL */
-            /* reflective_QoS_Attribute */
-            if (0) {
-              asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.reflective_QoS_Attribute, 1L);
-            }
-          } // qoSFlowLevelQoSParameters
-        }
+        f1ap_write_flows_mapped(drb_info->flows_mapped_to_drb, &DRB_Information->flows_Mapped_To_DRB_List, drb_info->flows_to_be_setup_length);
       } // if some_decide_qos
 
       /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
@@ -1228,102 +1195,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(sctp_assoc_t assoc_id, f1ap_ue_conte
         }
 
         /* 12.1.2.4 flows_Mapped_To_DRB_List */
-        for (int k = 0; k < drb_info_in->flows_to_be_setup_length; k++) {
-          asn1cSequenceAdd(DRB_Information->flows_Mapped_To_DRB_List.list,
-                         F1AP_Flows_Mapped_To_DRB_Item_t, flows_mapped_to_drb_item);
-
-          f1ap_flows_mapped_to_drb_t *qos_flow_in = drb_info_in->flows_mapped_to_drb + k;
-
-          /* qoSFlowIndicator */
-          flows_mapped_to_drb_item->qoSFlowIdentifier = qos_flow_in->qfi;
-          /* qoSFlowLevelQoSParameters */
-          {
-            f1ap_qos_flow_level_qos_parameters_t *flow_qos_params_in = &qos_flow_in->qos_params;
-            /* qoS_Characteristics */
-            {
-              int some_decide_qoS_characteristics = flow_qos_params_in->qos_characteristics.qos_type;
-              F1AP_QoS_Characteristics_t *QosParams = &flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.qoS_Characteristics;
-              f1ap_qos_characteristics_t *flow_qos_char_in = &flow_qos_params_in->qos_characteristics;
-
-              if (some_decide_qoS_characteristics == non_dynamic) {
-                QosParams->present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
-                asn1cCalloc(QosParams->choice.non_Dynamic_5QI, tmp);
-
-                /* 5QI */
-                tmp->fiveQI = flow_qos_char_in->non_dynamic.fiveqi;
-              } else {
-                QosParams->present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
-                asn1cCalloc(QosParams->choice.dynamic_5QI, tmp);
-                /* qoSPriorityLevel */
-                tmp->qoSPriorityLevel = flow_qos_char_in->dynamic.qos_priority_level;
-                /* packetDelayBudget */
-                tmp->packetDelayBudget = flow_qos_char_in->dynamic.packet_delay_budget;
-                /* packetErrorRate */
-                tmp->packetErrorRate.pER_Scalar = flow_qos_char_in->dynamic.packet_error_rate.per_scalar;
-                tmp->packetErrorRate.pER_Exponent = flow_qos_char_in->dynamic.packet_error_rate.per_exponent;
-
-                /* OPTIONAL */
-                /* delayCritical */
-                if (0) {
-                  asn1cCalloc(QosParams->choice.dynamic_5QI->delayCritical, tmp);
-                  *tmp = 1L;
-                }
-
-                /* OPTIONAL */
-                /* averagingWindow */
-                if (0) {
-                  asn1cCalloc(QosParams->choice.dynamic_5QI->averagingWindow, tmp);
-                  *tmp = 1L;
-                }
-
-                /* OPTIONAL */
-                /* maxDataBurstVolume */
-                if (0) {
-                  asn1cCalloc(QosParams->choice.dynamic_5QI->maxDataBurstVolume, tmp);
-                  *tmp= 1L;
-                }
-              } // if some_decide_qoS_characteristics
-
-            } // qoS_Characteristics
-            /* nGRANallocationRetentionPriority */
-            {
-              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel =
-                  flow_qos_params_in->alloc_reten_priority.priority_level;
-              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability =
-                  flow_qos_params_in->alloc_reten_priority.preemption_capability;
-              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability =
-                  flow_qos_params_in->alloc_reten_priority.preemption_vulnerability;
-            } // nGRANallocationRetentionPriority
-
-            /* OPTIONAL */
-            /* gBR_QoS_Flow_Information */
-            if (0) {
-              asn1cCalloc(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information, tmp);
-              asn_long2INTEGER(&tmp->maxFlowBitRateDownlink, 1L);
-              asn_long2INTEGER(&tmp->maxFlowBitRateUplink, 1L);
-              asn_long2INTEGER(&tmp->guaranteedFlowBitRateDownlink, 1L);
-              asn_long2INTEGER(&tmp->guaranteedFlowBitRateUplink, 1L);
-
-              /* OPTIONAL */
-              /* maxPacketLossRateDownlink */
-              if (0) {
-                asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateDownlink, 1L);
-              }
-
-              /* OPTIONAL */
-              /* maxPacketLossRateUplink */
-              if (0) {
-                asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateUplink, 1L);
-              }
-            }
-
-            /* OPTIONAL */
-            /* reflective_QoS_Attribute */
-            if (0) {
-              asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.reflective_QoS_Attribute, 1L);
-            }
-          } // qoSFlowLevelQoSParameters
-        }
+        f1ap_write_flows_mapped(drb_info_in->flows_mapped_to_drb, &DRB_Information->flows_Mapped_To_DRB_List, drb_info_in->flows_to_be_setup_length);
 
       } //QoS information
 
