@@ -474,9 +474,10 @@ int main ( int argc, char **argv )
   // to make a graceful exit when ctrl-c is pressed
   set_softmodem_sighandler();
 #ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
-  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+  // strdup to put the sring in the core file for post mortem identification
+  LOG_I(HW, "Version: %s\n", strdup(PACKAGE_VERSION));
 
   /* Read configuration */
   if (RC.nb_inst > 0) {

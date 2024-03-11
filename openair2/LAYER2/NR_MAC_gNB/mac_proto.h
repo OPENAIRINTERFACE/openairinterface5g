@@ -272,7 +272,7 @@ NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
                                    const NR_tda_info_t *tda_info,
                                    const int Layers);
 
-uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
+uint8_t nr_get_tpc(int target, int snrx10, int incr);
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
 
@@ -316,12 +316,6 @@ NR_UE_info_t* add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
 void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti);
 
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
-
-int get_dlscs(nfapi_nr_config_request_t *cfg);
-
-int get_ulscs(nfapi_nr_config_request_t *cfg);
-
-int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
 
 int nr_write_ce_dlsch_pdu(module_id_t module_idP,
                           const NR_UE_sched_ctrl_t *ue_sched_ctl,

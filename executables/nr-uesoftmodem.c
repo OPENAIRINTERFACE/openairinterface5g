@@ -497,11 +497,11 @@ int main(int argc, char **argv)
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_nrUE.vcd");
   }
-
-  #ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#ifndef PACKAGE_VERSION
+#define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
-  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
+  // strdup to put the sring in the core file for post mortem identification
+  LOG_I(HW, "Version: %s\n", strdup(PACKAGE_VERSION));
 
   PHY_vars_UE_g = malloc(sizeof(*PHY_vars_UE_g));
   PHY_vars_UE_g[0] = malloc(sizeof(*PHY_vars_UE_g[0]) * MAX_NUM_CCs);
@@ -567,9 +567,6 @@ int main(int argc, char **argv)
     }
 
     init_openair0();
-    // init UE_PF_PO and mutex lock
-    pthread_mutex_init(&ue_pf_po_mutex, NULL);
-    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
     set_latency_target();
 
     if(IS_SOFTMODEM_DOSCOPE_QT) {

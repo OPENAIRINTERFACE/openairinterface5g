@@ -39,7 +39,7 @@
 #include "LAYER2/MAC/defs.h"
 #include "PHY_INTERFACE/defs.h"
 #include "LAYER2/MAC/vars.h"
-#include "UTIL/LOG/log_extern.h"
+#include "UTIL/LOG/log.h"
 
 uint16_t n_rnti = 0x1235;
 int n_users = 1;

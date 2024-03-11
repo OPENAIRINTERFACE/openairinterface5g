@@ -1,4 +1,4 @@
 #!/bin/sh
 echo "building ctags for openair1 and openair2 ..."
-ctags -e -R  --exclude=openair1/DOCS/ --exclude=openair2/DOCS/ --exclude=openair1/SIMULATION/ --exclude=targets/DOCS/ --exclude=targets/PROJECTS/ openair1 openair2 openair3 targets cmake_targets common nfapi executables radio
+ctags -e -R  --exclude=openair1/DOCS/ --exclude=openair2/DOCS/ --exclude=openair1/SIMULATION/ --exclude=targets/DOCS/ --exclude=targets/PROJECTS/ openair1 openair2 openair3 targets cmake_targets common fapi nfapi executables radio
 

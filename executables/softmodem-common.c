@@ -138,10 +138,8 @@ void get_common_options(configmodule_interface_t *cfg, uint32_t execmask)
   }
 
   if (logmem_filename != NULL && strlen(logmem_filename) > 0) {
-    log_mem_filename = &logmem_filename[0];
-    log_mem_flag = 1;
-    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
-    logInit_log_mem();
+    printf("Enabling OPT for log save at memory %s\n",logmem_filename);
+    logInit_log_mem(logmem_filename);
   }
 
   if (noS1) {

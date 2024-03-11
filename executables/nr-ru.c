@@ -1285,7 +1285,7 @@ void *ru_thread( void *param ) {
 
   while (!oai_exit) {
     
-    if (NFAPI_MODE==NFAPI_MODE_VNF) {
+    if (NFAPI_MODE==NFAPI_MODE_VNF || NFAPI_MODE == NFAPI_MODE_AERIAL ) {
       // We should make a VNF main loop with proper tasks calls in case of VNF
       slot_start = timespec_add(slot_start,slot_duration);
       struct timespec curr_time;
@@ -1331,11 +1331,10 @@ void *ru_thread( void *param ) {
         reset_meas(&ru->tx_fhaul);
     }
     proc->timestamp_tx = proc->timestamp_rx;
-    int sl=proc->tti_tx;
-    for (int slidx=0;slidx<ru->sl_ahead;slidx++)
-       proc->timestamp_tx += fp->get_samples_per_slot((sl+slidx)%fp->slots_per_frame,fp);
-    proc->frame_tx = (proc->tti_rx > (fp->slots_per_frame - 1 - (ru->sl_ahead))) ? (proc->frame_rx + 1) & 1023 : proc->frame_rx;
+    for (int i = proc->tti_rx; i < proc->tti_rx + ru->sl_ahead; i++)
+      proc->timestamp_tx += fp->get_samples_per_slot(i % fp->slots_per_frame, fp);
     proc->tti_tx = (proc->tti_rx + ru->sl_ahead) % fp->slots_per_frame;
+    proc->frame_tx = proc->tti_rx > proc->tti_tx ? (proc->frame_rx + 1) & 1023 : proc->frame_rx;
     int absslot_rx = proc->timestamp_rx/fp->get_samples_per_slot(proc->tti_rx,fp);
     int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
     clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_south_in[rt_prof_idx]);
@@ -1349,27 +1348,6 @@ void *ru_thread( void *param ) {
     if (ru->idx != 0)
       proc->frame_tx = (proc->frame_tx + proc->frame_offset) & 1023;
 
-    LOG_D(NR_PHY, "In %d.%d: Checking L1 status\n", proc->frame_rx, proc->tti_rx);
-    for (int n = 0; n < RU_RX_SLOT_DEPTH; n++)
-      LOG_D(NR_PHY, "slot n %d => %d\n", n, rx_tti_busy[n]);
-    // handle potential race by blocking if rxdataF is being used by L1
-    // collect all pending msg in L1 return fifo to not down the memory is available (rx_tti_busy[slot] boolean array)
-    notifiedFIFO_elt_t *res = pollNotifiedFIFO(&gNB->L1_rx_out);
-    LOG_D(NR_PHY, "%d.%d Polling L1_rx_out %p\n", proc->frame_rx, proc->tti_rx, res);
-    while (res) {
-      processingData_L1_t *info = (processingData_L1_t *)NotifiedFifoData(res);
-      LOG_D(NR_PHY,
-            "%d.%d res %d.%d completed, clearing %d\n",
-            proc->frame_rx,
-            proc->tti_rx,
-            info->frame_rx,
-            info->slot_rx,
-            info->slot_rx % RU_RX_SLOT_DEPTH);
-
-      rx_tti_busy[info->slot_rx % RU_RX_SLOT_DEPTH] = false;
-      res = pollNotifiedFIFO(&gNB->L1_rx_out);
-    }
-    LOG_D(NR_PHY, "%d.%d Done polling\n", proc->frame_rx, proc->tti_rx);
     // do RX front-end processing (frequency-shift, dft) if needed
     int slot_type = nr_slot_select(cfg, proc->frame_rx, proc->tti_rx);
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
@@ -1379,6 +1357,7 @@ void *ru_thread( void *param ) {
           LOG_D(NR_PHY, "%d.%d Waiting to access RX slot %d\n", proc->frame_rx, proc->tti_rx, proc->tti_rx % RU_RX_SLOT_DEPTH);
           // now we block and wait our slot memory zone is freed from previous slot processing
           // as we can get other slots ending, we loop on the queue
+          notifiedFIFO_elt_t *res = NULL;
           while (not_done) {
             res = pullNotifiedFIFO(&gNB->L1_rx_out);
             if (!res)
@@ -1414,17 +1393,16 @@ void *ru_thread( void *param ) {
                      proc->tti_rx * gNB->frame_parms.samples_per_slot_wCP);
 
         // Do PRACH RU processing
-        int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
-        uint8_t prachStartSymbol,N_dur;
+        int prach_id = find_nr_prach_ru(ru, proc->frame_rx, proc->tti_rx, SEARCH_EXIST);
         if (prach_id>=0) {
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );
 
           T(T_GNB_PHY_PRACH_INPUT_SIGNAL, T_INT(proc->frame_rx), T_INT(proc->tti_rx), T_INT(0),
             T_BUFFER(&ru->common.rxdata[0][fp->get_samples_slot_timestamp(proc->tti_rx-1,fp,0)]/*-ru->N_TA_offset*/, fp->get_samples_per_slot(proc->tti_rx,fp)*4*2));
-          N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
+          int N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
 
           for (int prach_oc = 0; prach_oc<ru->prach_list[prach_id].num_prach_ocas; prach_oc++) {
-            prachStartSymbol = ru->prach_list[prach_id].prachStartSymbol+prach_oc*N_dur;
+            int prachStartSymbol = ru->prach_list[prach_id].prachStartSymbol + prach_oc * N_dur;
             //comment FK: the standard 38.211 section 5.3.2 has one extra term +14*N_RA_slot. This is because there prachStartSymbol is given wrt to start of the 15kHz slot or 60kHz slot. Here we work slot based, so this function is anyway only called in slots where there is PRACH. Its up to the MAC to schedule another PRACH PDU in the case there are there N_RA_slot \in {0,1}.
             rx_nr_prach_ru(ru,
                            ru->prach_list[prach_id].fmt, //could also use format

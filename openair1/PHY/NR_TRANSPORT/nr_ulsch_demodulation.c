@@ -1178,7 +1178,8 @@ static uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
 
       int sum_det = 0;
       for (int k = 0; k < 4; k++) {
-        sum_det += ((((int *)&determ_fin_128[0])[k]) >> 2);
+        AssertFatal(((int *)&determ_fin_128[0])[k] > 0 ,"Right shifting negative values is UB" );
+        sum_det += ((((uint32_t *)&determ_fin_128[0])[k]) >> 2);
       }
 
       int b = log2_approx(sum_det) - 8;

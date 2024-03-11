@@ -41,6 +41,7 @@
 #include "common/utils/nr/nr_common.h"
 #include <complex.h>
 #include "openair1/PHY/TOOLS/phy_scope_interface.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 
 /* dynamic shift for LLR computation for TM3/4
  * set as command line argument, see lte-softmodem.c
@@ -275,7 +276,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   const int frame = proc->frame_rx;
   const int nr_slot_rx = proc->nr_slot_rx;
   const int gNB_id = proc->gNB_id;
-
   uint8_t slot = 0;
 
   int32_t codeword_TB0 = -1;
@@ -699,7 +699,8 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
   N_bundle = nb_rb_pdsch/L;
   C=N_bundle/R;
 
-  uint32_t *bundle_deint = malloc(N_bundle*sizeof(uint32_t));
+  uint32_t bundle_deint[N_bundle];
+  memset(bundle_deint, 0 , sizeof(bundle_deint));
 
   printf("N_bundle %u L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
 
@@ -727,7 +728,6 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 		  //printf("k %d m %d bundle_deint %d llr_deint %d\n", k, m, bundle_deint[k], llr_deint[bundle_deint[k]*nb_re*L+m]);
 	  }
   }
-  free(bundle_deint);
 }
 
 //==============================================================================================

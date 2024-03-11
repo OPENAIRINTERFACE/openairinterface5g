@@ -292,6 +292,7 @@ void phy_viterbi_dot11_sse2(char *y,unsigned char *decoded_bytes,unsigned short 
   // Traceback
   if (traceback == 1) {
     prev_state0 = 0;
+    AssertFatal((offset+n-1) > 0, "Left shift is undefined if the left operand is negative\n"); 
     TB_ptr2 = (unsigned char *)&TB[(offset+n-1)<<2];
 
     for (position = offset+n-1 ; position>-1; position--) {

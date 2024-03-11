@@ -110,8 +110,16 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   }
 
   if (pusch_pdu->transform_precoding == transformPrecoder_disabled) {
-    nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], (int32_t *)pilot, (1000+p), 0, nb_rb_pusch,
-                     (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
+    // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+    nr_pusch_dmrs_rx(gNB,
+                     Ns,
+                     gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol],
+                     (int32_t *)pilot,
+                     (1000 + p),
+                     0,
+                     nb_rb_pusch,
+                     (pusch_pdu->bwp_start + pusch_pdu->rb_start) * NR_NB_SC_PER_RB,
+                     pusch_pdu->dmrs_config_type);
   } else { // if transform precoding or SC-FDMA is enabled in Uplink
     // NR_SC_FDMA supports type1 DMRS so only 6 DMRS REs per RB possible
     const uint16_t index = get_index_for_dmrs_lowpapr_seq(nb_rb_pusch * (NR_NB_SC_PER_RB/2));
@@ -634,10 +642,21 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
 
   c16_t srs_ls_estimated_channel[frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)];
   uint32_t noise_power_per_rb[srs_pdu->bwp_size];
-  int16_t ch_real[frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS];
-  int16_t ch_imag[frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS];
-  int16_t noise_real[frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS];
-  int16_t noise_imag[frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS];
+
+  const uint32_t arr_len = frame_parms->nb_antennas_rx * N_ap * M_sc_b_SRS;
+
+  int16_t ch_real[arr_len];
+  memset(ch_real, 0, arr_len * sizeof(int16_t));
+  
+  int16_t ch_imag[arr_len];
+  memset(ch_imag, 0, arr_len * sizeof(int16_t));
+ 
+  int16_t noise_real[arr_len];
+  memset(noise_real, 0, arr_len * sizeof(int16_t));
+ 
+  int16_t noise_imag[arr_len];
+  memset(noise_imag, 0, arr_len * sizeof(int16_t));
+
   int16_t ls_estimated[2];
 
   uint8_t mem_offset = ((16 - ((long)&srs_estimated_channel_freq[0][0][subcarrier_offset + nr_srs_info->k_0_p[0][0]])) & 0xF) >> 2; // >> 2 <=> /sizeof(int32_t)
@@ -836,8 +855,7 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
   } // for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++)
 
   // Compute signal power
-  uint32_t signal_power = calc_power(ch_real,frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS)
-                          + calc_power(ch_imag,frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS);
+  uint32_t signal_power = calc_power(ch_real, arr_len) + calc_power(ch_imag, arr_len);
 
 #ifdef SRS_DEBUG
   LOG_I(NR_PHY,"signal_power = %u\n", signal_power);
@@ -890,8 +908,7 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
 
   } // for (int rb = 0; rb < m_SRS_b; rb++)
 
-  uint32_t noise_power = max(calc_power(noise_real,frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS)
-                             + calc_power(noise_imag,frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS), 1);
+  const uint32_t noise_power = max(calc_power(noise_real, arr_len) + calc_power(noise_imag, arr_len), 1);
 
   *snr = dB_fixed((int32_t)((signal_power<<factor_bits)/(noise_power))) - factor_dB;
 

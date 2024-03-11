@@ -766,21 +766,22 @@ int main(int argc, char **argv)
       }
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, 1, 0);
-	printf("nr_initial_sync1 returns %d\n",ret);
-	if (ret<0) n_errors++;
+  nr_initial_sync_t ret = nr_initial_sync(&proc, UE, 1, 0);
+  printf("nr_initial_sync1 returns %d\n", ret.cell_notdetected);
+  if (ret.cell_notdetected)
+    n_errors++;
       }
       else {
         UE_nr_rxtx_proc_t proc={0};
 
-	UE->rx_offset=0;
-	uint8_t ssb_index = 0;
-  const int estimateSz = frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
-  __attribute__((aligned(32))) struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
-  __attribute__((aligned(32))) struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
-  while (!((SSB_positions >> ssb_index) & 0x01))
-    ssb_index++; // to select the first transmitted ssb
-  UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index);
+        uint8_t ssb_index = 0;
+        const int estimateSz = frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
+        __attribute__((aligned(32))) struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
+        __attribute__((
+            aligned(32))) struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
+        while (!((SSB_positions >> ssb_index) & 0x01))
+          ssb_index++; // to select the first transmitted ssb
+        UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index);
 
         int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
         proc.nr_slot_rx = ssb_slot;

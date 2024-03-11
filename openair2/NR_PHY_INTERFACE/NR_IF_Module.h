@@ -35,7 +35,6 @@
 
 #include <pthread.h>
 #include <stdint.h>
-#include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"
 #include "common/platform_constants.h"
 #include "common/platform_types.h"
@@ -64,15 +63,17 @@ typedef struct {
 
   /// crc indication list
   nfapi_nr_crc_indication_t crc_ind;
+  /// RX indication
+  nfapi_nr_rx_data_indication_t rx_ind;
+  /// mutex to protect concurrent access to crc_ind and rx_ind, which the L2
+  /// needs to be pairwise
+  pthread_mutex_t crc_rx_mutex;
 
   /// RACH indication list
   nfapi_nr_rach_indication_t rach_ind;
 
   /// SRS indication list
   nfapi_nr_srs_indication_t srs_ind;
-
-  /// RX indication
-  nfapi_nr_rx_data_indication_t rx_ind;
 
   /// UCI indication
   nfapi_nr_uci_indication_t uci_ind;

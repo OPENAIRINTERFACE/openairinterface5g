@@ -80,12 +80,13 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "gnb_config.h"
 #include "openair2/E1AP/e1ap_common.h"
-
+#ifdef ENABLE_AERIAL
+#include "nfapi/oai_integration/aerial/fapi_nvIPC.h"
+#endif
 #ifdef E2_AGENT
 #include "openair2/E2AP/flexric/src/agent/e2_agent_api.h"
 #include "openair2/E2AP/RAN_FUNCTION/init_ran_func.h"
 #endif
-
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -286,9 +287,15 @@ static int create_gNB_tasks(ngran_node_t node_type, configmodule_interface_t *cf
   itti_wait_ready(1);
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
+#ifdef ENABLE_AERIAL
+  AssertFatal(NFAPI_MODE == NFAPI_MODE_AERIAL,"Can only be run with '--nfapi AERIAL' when compiled with AERIAL support, if you want to run other (n)FAPI modes, please run ./build_oai without -w AERIAL");
+#endif
+
   RCconfig_verify(cfg, node_type);
 
-  RCconfig_nr_prs();
+  if(NFAPI_MODE != NFAPI_MODE_AERIAL){
+    RCconfig_nr_prs();
+  }
 
   if (RC.nb_nr_macrlc_inst > 0)
     RCconfig_nr_macrlc(cfg);
@@ -663,10 +670,10 @@ int main( int argc, char **argv ) {
     }
   }
 #ifndef PACKAGE_VERSION
-#  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
+#define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
-  LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-
+  // strdup to put the sring in the core file for post mortem identification
+  LOG_I(HW, "Version: %s\n", strdup(PACKAGE_VERSION));
 
   // don't create if node doesn't connect to RRC/S1/GTP
   const ngran_node_t node_type = get_node_type();
@@ -679,15 +686,12 @@ int main( int argc, char **argv ) {
     AssertFatal(ret == 0, "cannot create ITTI tasks\n");
   }
 
-  // init UE_PF_PO and mutex lock
-  pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
   mlockall(MCL_CURRENT | MCL_FUTURE);
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
   usleep(1000);
 
-  if (NFAPI_MODE) {
+  if (NFAPI_MODE && NFAPI_MODE != NFAPI_MODE_AERIAL) {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
@@ -706,7 +710,7 @@ int main( int argc, char **argv ) {
   printf("wait_gNBs()\n");
   wait_gNBs();
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
-  int sl_ahead=6;
+  int sl_ahead = NFAPI_MODE == NFAPI_MODE_AERIAL ? 0 : 6;
   if (RC.nb_RU >0) {
     printf("Initializing RU threads\n");
     init_NR_RU(uniqCfg, get_softmodem_params()->rf_config_file);
@@ -749,7 +753,9 @@ int main( int argc, char **argv ) {
 
   if (RC.nb_RU > 0)
     start_NR_RU();
-
+#ifdef ENABLE_AERIAL
+  nvIPC_Init();
+#endif
   if (RC.nb_nr_L1_inst > 0) {
     printf("wait RUs\n");
     wait_RUs();
@@ -778,7 +784,7 @@ int main( int argc, char **argv ) {
       load_softscope("nrqt", &p);
     }
 
-    if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {
+    if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF && NFAPI_MODE != NFAPI_MODE_AERIAL) {
       printf("Not NFAPI mode - call init_eNB_afterRU()\n");
       init_eNB_afterRU();
     } else {
@@ -823,7 +829,6 @@ int main( int argc, char **argv ) {
   pthread_mutex_destroy(&sync_mutex);
   pthread_cond_destroy(&nfapi_sync_cond);
   pthread_mutex_destroy(&nfapi_sync_mutex);
-  pthread_mutex_destroy(&ue_pf_po_mutex);
 
   // *** Handle per CC_id openair0
 

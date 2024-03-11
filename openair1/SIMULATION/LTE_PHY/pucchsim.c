@@ -31,7 +31,7 @@
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
 
-#include "UTIL/LOG/log_extern.h"
+#include "UTIL/LOG/log.h"
 
 #include "unitary_defs.h"
 

@@ -27,7 +27,6 @@
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_interface.h"
-#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 #include "fapi_nr_l1.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -38,10 +37,7 @@
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
-#include "NR_SRS-ResourceSet.h"
-
 #include "assertions.h"
-
 #include <time.h>
 
 //#define DEBUG_RXDATA
@@ -471,75 +467,13 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   else if (SNRtimes10 >  635) cqi=255;
   else                        cqi=(640+SNRtimes10)/5;
 
-
-  if (0/*pusch_pdu->mcs_index == 9*/) {
-      __attribute__((unused))
-      int off = ((pusch_pdu->rb_size&1) == 1)? 4:0;
-
-      LOG_M("rxsigF0.m",
-            "rxsF0",
-            &gNB->common_vars
-                 .rxdataF[0][(slot_rx % RU_RX_SLOT_DEPTH) * gNB->frame_parms.ofdm_symbol_size * gNB->frame_parms.symbols_per_slot],
-            gNB->frame_parms.ofdm_symbol_size * gNB->frame_parms.symbols_per_slot,
-            1,
-            1);
-      LOG_M("chestF0.m",
-            "chF0",
-            &gNB->pusch_vars[0].ul_ch_estimates[0][pusch_pdu->start_symbol_index * gNB->frame_parms.ofdm_symbol_size],
-            gNB->frame_parms.ofdm_symbol_size,
-            1,
-            1);
-      LOG_M("chestF0_ext.m",
-            "chF0_ext",
-            &gNB->pusch_vars[0]
-                 .ul_ch_estimates_ext[0][(pusch_pdu->start_symbol_index + 1) * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-            (pusch_pdu->nr_of_symbols - 1) * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-            1,
-            1);
-      LOG_M("rxsigF0_comp.m",
-            "rxsF0_comp",
-            &gNB->pusch_vars[0].rxdataF_comp[0][pusch_pdu->start_symbol_index * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-            pusch_pdu->nr_of_symbols * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-            1,
-            1);
-      LOG_M("rxsigF0_llr.m",
-            "rxsF0_llr",
-            &gNB->pusch_vars[0].llr[0],
-            (pusch_pdu->nr_of_symbols - 1) * NR_NB_SC_PER_RB * pusch_pdu->rb_size * pusch_pdu->qam_mod_order,
-            1,
-            0);
-      if (gNB->frame_parms.nb_antennas_rx > 1) {
-        LOG_M(
-            "rxsigF1.m",
-            "rxsF1",
-            &gNB->common_vars
-                 .rxdataF[1][(slot_rx % RU_RX_SLOT_DEPTH) * gNB->frame_parms.ofdm_symbol_size * gNB->frame_parms.symbols_per_slot],
-            gNB->frame_parms.ofdm_symbol_size * gNB->frame_parms.symbols_per_slot,
-            1,
-            1);
-        LOG_M("chestF1.m",
-              "chF1",
-              &gNB->pusch_vars[0].ul_ch_estimates[1][pusch_pdu->start_symbol_index * gNB->frame_parms.ofdm_symbol_size],
-              gNB->frame_parms.ofdm_symbol_size,
-              1,
-              1);
-        LOG_M("chestF1_ext.m",
-              "chF1_ext",
-              &gNB->pusch_vars[0]
-                   .ul_ch_estimates_ext[1][(pusch_pdu->start_symbol_index + 1) * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-              (pusch_pdu->nr_of_symbols - 1) * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-              1,
-              1);
-        LOG_M("rxsigF1_comp.m",
-              "rxsF1_comp",
-              &gNB->pusch_vars[0].rxdataF_comp[1][pusch_pdu->start_symbol_index * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-              pusch_pdu->nr_of_symbols * (off + (NR_NB_SC_PER_RB * pusch_pdu->rb_size)),
-              1,
-              1);
-      }
-      exit(-1);
-
-    }
+  // multiple threads might call this function at the same time, or while the
+  // L2 reads the messages. Hence, if not protected, crc and rx indications
+  // might not appear pairwise (in the same order) in the same slot, or even in
+  // separate slots. The L2 does not support this; hence, use the crc_rx_mutex
+  // to ensure that messages are pairwise.
+  int rc = pthread_mutex_lock(&gNB->UL_INFO.crc_rx_mutex);
+  DevAssert(rc == 0);
 
   // crc indication
   uint16_t num_crc = gNB->UL_INFO.crc_ind.number_crcs;
@@ -577,8 +511,10 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
     gNB->rx_pdu_list[num_rx].pdu_length = harq_process->TBS;
     gNB->rx_pdu_list[num_rx].pdu = harq_process->b;
   }
-
   gNB->UL_INFO.rx_ind.number_of_pdus++;
+
+  rc = pthread_mutex_unlock(&gNB->UL_INFO.crc_rx_mutex);
+  DevAssert(rc == 0);
 }
 
 // Function to fill UL RB mask to be used for N0 measurements
@@ -1040,17 +976,17 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
           case 0:
             LOG_W(NR_PHY, "SRS report was not requested by MAC\n");
             return 0;
-          case 1 << NR_SRS_ResourceSet__usage_beamManagement:
-            srs_indication->srs_usage = NR_SRS_ResourceSet__usage_beamManagement;
+          case 1 << NFAPI_NR_SRS_BEAMMANAGEMENT:
+            srs_indication->srs_usage = NFAPI_NR_SRS_BEAMMANAGEMENT;
             break;
-          case 1 << NR_SRS_ResourceSet__usage_codebook:
-            srs_indication->srs_usage = NR_SRS_ResourceSet__usage_codebook;
+          case 1 << NFAPI_NR_SRS_CODEBOOK:
+            srs_indication->srs_usage = NFAPI_NR_SRS_CODEBOOK;
             break;
-          case 1 << NR_SRS_ResourceSet__usage_nonCodebook:
-            srs_indication->srs_usage = NR_SRS_ResourceSet__usage_nonCodebook;
+          case 1 << NFAPI_NR_SRS_NONCODEBOOK:
+            srs_indication->srs_usage = NFAPI_NR_SRS_NONCODEBOOK;
             break;
-          case 1 << NR_SRS_ResourceSet__usage_antennaSwitching:
-            srs_indication->srs_usage = NR_SRS_ResourceSet__usage_antennaSwitching;
+          case 1 << NFAPI_NR_SRS_ANTENNASWITCH:
+            srs_indication->srs_usage = NFAPI_NR_SRS_ANTENNASWITCH;
             break;
           default:
             LOG_E(NR_PHY, "Invalid srs_pdu->srs_parameters_v4.usage %i\n", srs_pdu->srs_parameters_v4.usage);
@@ -1073,7 +1009,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
 
         start_meas(&gNB->srs_report_tlv_stats);
         switch (srs_indication->srs_usage) {
-          case NR_SRS_ResourceSet__usage_beamManagement: {
+          case NFAPI_NR_SRS_BEAMMANAGEMENT: {
             start_meas(&gNB->srs_beam_report_stats);
             nfapi_nr_srs_beamforming_report_t nr_srs_bf_report;
             nr_srs_bf_report.prg_size = srs_pdu->beamforming.prg_size;
@@ -1102,7 +1038,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
             break;
           }
 
-          case NR_SRS_ResourceSet__usage_codebook: {
+          case NFAPI_NR_SRS_CODEBOOK: {
             start_meas(&gNB->srs_iq_matrix_stats);
             nfapi_nr_srs_normalized_channel_iq_matrix_t nr_srs_channel_iq_matrix;
             nr_srs_channel_iq_matrix.normalized_iq_representation = srs_pdu->srs_parameters_v4.iq_representation;
@@ -1151,8 +1087,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
             break;
           }
 
-          case NR_SRS_ResourceSet__usage_nonCodebook:
-          case NR_SRS_ResourceSet__usage_antennaSwitching:
+          case NFAPI_NR_SRS_NONCODEBOOK:
+          case NFAPI_NR_SRS_ANTENNASWITCH:
             LOG_W(NR_PHY, "PHY procedures for this SRS usage are not implemented yet!\n");
             break;
 

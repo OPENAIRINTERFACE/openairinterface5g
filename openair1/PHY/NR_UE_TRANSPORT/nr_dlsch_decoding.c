@@ -36,15 +36,14 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
-#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "common/utils/nr/nr_common.h"
 #include "openair1/PHY/TOOLS/phy_scope_interface.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 

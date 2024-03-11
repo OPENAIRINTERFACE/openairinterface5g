@@ -30,7 +30,7 @@
  */
 
 /*!\brief Timing drift hysterisis in samples*/
-#define SYNCH_HYST 2
+#define NR_SYNCH_HYST 1
 
 /* A function to perform the channel estimation of DL PRS signal */
 int nr_prs_channel_estimation(uint8_t gNB_id,
@@ -91,15 +91,14 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 int rxdataFsize,
                                 c16_t rxdataF[][rxdataFsize]);
 
-void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
-                        PHY_VARS_NR_UE *ue,
-                        module_id_t gNB_id,
-			int estimateSz,
-			struct complex16 dl_ch_estimates_time [][estimateSz],
-                        uint8_t frame,
-                        uint8_t subframe,
-                        unsigned char clear,
-                        short coef);
+int nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
+                       PHY_VARS_NR_UE *ue,
+                       module_id_t gNB_id,
+                       int estimateSz,
+                       struct complex16 dl_ch_estimates_time[][estimateSz],
+                       uint8_t frame,
+                       uint8_t subframe,
+                       short coef);
 
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                         const UE_nr_rxtx_proc_t *proc,

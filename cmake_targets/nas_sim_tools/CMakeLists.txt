@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 project(NAS_SIM_TOOLS)
 
@@ -6,6 +6,7 @@ include(FindPkgConfig)
 pkg_search_module(CONFIG libconfig REQUIRED)
 include_directories(${CONFIG_INCLUDE_DIRS})
 add_definitions(-std=gnu99)
+include("../macros.cmake")
 
 ENABLE_LANGUAGE(C)
 

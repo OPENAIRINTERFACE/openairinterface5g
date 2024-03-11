@@ -171,6 +171,7 @@ int LDPCencoder(unsigned char **inputArray, unsigned char **outputArray, encoder
       {
         fprintf(fd,"\n//row: %d\n",i1);
         fprintf(fd2,"\n//row: %d\n",i1);
+        AssertFatal(shift > 0 , "The result of the right shift is undefined because the right operand is negative\n");
 	fprintf(fd,"     d2[%d]=",(Zc*i1)>>shift);
 	fprintf(fd2,"     d2[%d]=",(Zc*i1)>>(shift-1));
 

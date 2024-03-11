@@ -33,7 +33,6 @@
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "assertions.h"
-#include "MAC/mac.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
@@ -89,13 +88,9 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
         itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
       }
       break;
-
-    case CCCH:
-      AssertFatal(false, "use RLC instead\n");
-      break;
-
+      
     case NR_SBCCH_SL_BCH:
-      if (pdu_len>0) {
+      if (pdu_len > 0) {
         LOG_T(NR_RRC, "[UE %d] Received SL-MIB for NR_SBCCH_SL_BCH.\n", module_id);
 
         MessageDef *message_p;

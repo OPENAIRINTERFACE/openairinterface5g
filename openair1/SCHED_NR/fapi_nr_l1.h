@@ -32,7 +32,6 @@
 
 #include "PHY/defs_gNB.h"
 #include "SCHED_NR/sched_nr.h"
-#include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"
 
 // added

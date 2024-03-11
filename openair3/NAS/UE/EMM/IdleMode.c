@@ -679,7 +679,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
 {
   LOG_FUNC_IN;
 
-  emm_sap_t emm_sap;
+  emm_sap_t emm_sap = {0};
   int rc = RETURNerror;
   emm_data_t *emm_data = user->emm_data;
   emm_plmn_list_t *emm_plmn_list = user->emm_plmn_list;

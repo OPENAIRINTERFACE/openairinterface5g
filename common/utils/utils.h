@@ -18,10 +18,23 @@ extern "C" {
 #endif
 
 #define sizeofArray(a) (sizeof(a)/sizeof(*(a)))
+#define CHECK_INDEX(ARRAY, INDEX) assert((INDEX) < sizeofArray(ARRAY))
 
-#define cmax(a,b)  ((a>b) ? (a) : (b))
-#define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
-#define cmin(a,b)  ((a<b) ? (a) : (b))
+// Prevent double evaluation in max macro
+#define cmax(a,b) ({ __typeof__ (a) _a = (a); \
+                     __typeof__ (b) _b = (b); \
+                     _a > _b ? _a : _b; })
+
+
+#define cmax3(a,b,c) ( cmax(cmax(a,b), c) )  
+
+// Prevent double evaluation in min macro
+#define cmin(a,b) ({ __typeof__ (a) _a = (a); \
+                     __typeof__ (b) _b = (b); \
+                     _a < _b ? _a : _b; })
+
+
+
 
 #ifdef __cplusplus
 #ifdef min

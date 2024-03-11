@@ -22,7 +22,8 @@
 | nokiabox      | 172.21.19.39    | _None_                | gNB (Nokia), 5GC   | _Nokia RF integrated_                                 |
 | avra          | 172.21.16.124   | CI-Avra-Usage         | gNB (n78)          | AW2S Jaguar (192.168.80.239)                          |
 | orion         | 172.21.16.134   | CI-Orion-Build-Sanity-Check-Deploy-Test, CI-Orion-DsTester-Deploy-Test | Build | |
-| bellatrix     | 172.21.16.104   | CI-Bellatrix-RAN-Docker | Static Code Analysis | --                                                    |
+| aerial2       | 172.21.16.131   | CI-Aerial2-Usage      | gNB (PNF/Nvidia CUBB + VNF) | Foxconn RU, _Nvidia Aerial SDK integrated_   |
+| sphex         | 172.21.17.54    | CI-Sphex-Usage        | Quectel             | Quectel module                                       |
 
 Note: The available resources, and their current usage, is indicated here:
 - [Lockable resources of jenkins-oai](https://jenkins-oai.eurecom.fr/lockable-resources/):
@@ -188,6 +189,10 @@ information on how the images are built.
   ~5G-NR
   - 5G-NR SA test setup: gNB on avra(RHEL9.2) + N310, OAIUE on caracal(RHEL9.1) + N310, OAI CN5G
   - OpenShift cluster for CN deployment and container images for gNB and UE deployment
+- [RAN-SA-AERIAL-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-AERIAL-CN5G/)
+  ~5G-NR
+  - 5G-NR SA test setup: OAI VNF  + PNF/NVIDIA CUBB on Aerial2 (U22) + Foxconn RU, COTS UE (Quctel RM500Q), OAI CN5G
+  - container images for gNB deployment
 
 ### RAN-CI-NSA-Trigger
 
@@ -250,7 +255,44 @@ Some tests are run from source (e.g.
 `ci-scripts/xml_files/gnb_phytest_usrp_run.xml`), which directly give the
 options they are run with.
 
-## How to retrieve core dumps (for CI team members)
+## How to debug CI failures
+
+It is possible to debug CI failures using the generated core dump and the image
+used for the run. A script is provided (see developer instructions below) that,
+provided the core dump file, container image, and the source tree, executes
+`gdb` inside the container; using the core dump information, a developer can
+investigate the cause of failure.
+
+### Developer instructions
+
+The CI team will send you a docker image and a core dump file, and the commit
+as of which the pipeline failed. Let's assume the coredump is stored at
+`/tmp/coredump.tar.xz`, and the image is in `/tmp/oai-nr-ue.tar.gz`. First, you
+should check out the corresponding branch (or directly the commit), let's say
+in `~/oai-branch-fail`. Now, unpack the core dump, load the image into docker,
+and use the script [`docker/debug_core_image.sh`](../docker/debug_core_image.sh)
+to open gdb, as follows:
+
+```
+cd /tmp
+tar -xJf /tmp/coredump.tar.xz
+docker load < /tmp/oai-nr-ue.tar.gz
+~/oai-branch-fail/docker/debug_core_image.sh <image> /tmp/coredump ~/oai-branch-fail
+```
+
+where you replace `<image>` with the image loaded in `docker load`. The script
+will start the container and open gdb; you should see information about where
+the failure (e.g., segmentation fault) happened. If you just see `??`, the core
+dump and container image don't match. Be also on the lookout for the
+corresponding message from gdb:
+```
+warning: core file may not match specified executable file.
+```
+
+Once you quit `gdb`, the container image will be removed automatically.
+
+
+### CI team instructions
 
 The entrypoint scripts of all containers print the core pattern that is used on
 the running machine. Search for `core_pattern` at the start of the container
@@ -262,19 +304,14 @@ logs to retrieve the possible location. Possible locations might be:
 - abrt: see [documentation](https://abrt.readthedocs.io/en/latest/usage.html)
 - apport: see [documentation](https://wiki.ubuntu.com/Apport)
 
-You furthermore have to extract the executable that caused the core dump.
-Download the container image, and extract, e.g.:
+See below for instructions on how to retrieve the core dump. Further, download
+the image and store it to a file using `docker save`. Make sure to pick the
+right image (Ubuntu or RHEL)!
 
-```
-docker create --name c1 porcepix.sboai.cs.eurecom.fr/oai-gnb:develop-c99db698
-docker cp c1:/opt/oai-gnb/bin/nr-softmodem /tmp
-docker rm c1
-```
-
-### Core dump in a file
+#### Core dump in a file
 
 **This is not recommended, as files could pile up and fill the system disk
-completely!** Prefer systemd or abrt instead.
+completely!** Prefer another method further down.
 
 If the core pattern is a path: it should at least include the time in the
 pattern name (suggested pattern: `/tmp/core.%e.%p.%t`) to correlate the time
@@ -282,38 +319,31 @@ the segfault occurred with the CI logs. If you identified the core dump,
 copy the core dump from that machine; if identification is difficult, consider
 rerunning the pipeline.
 
-### Core dump via systemd
+#### Core dump via systemd
 
-Run this command to list all core dumps:
+Use the first command to list all core dumps. Scroll down to the core dump of
+interest (it lists the executables in the last column; use the time to
+correlate the segfault and the CI run).  Take the PID of the executable (first
+column after the time). Dump the core dump to a location of your choice.
 
 ```
 sudo coredumpctl list
-```
-
-Scroll to the end and find the core dump of interest (it lists the executables
-in the last column; use the time to correlate the segfault and the CI run).
-Take the PID of the executable (first column after the time). Dump the core
-dump to a location of your choice:
-
-```
 sudo coredumpctl dump <PID> > /tmp/coredump
 ```
 
-### Core dump via abrt (automatic bug reporting tool)
+#### Core dump via abrt (automatic bug reporting tool)
 
 TBD: use the documentation page for the moment.
 
-### Core dump via apport
+#### Core dump via apport
 
-On Ubuntu machines, apport first needs to be enabled to collect core dumps:
-
+I did not find an easy way to use apport. Anyway, the systemd approach works
+fine. So remove apport, install systemd-coredump, and verify it is the new
+coredump handler:
 ```
-sudo systemctl enable apport.service
-```
-
-and [needs to be enabled](https://wiki.ubuntu.com/Apport#How_to_enable_apport).
-Then, show a list of core dumps using
-
-```
-sudo apport-cli
+sudo systemctl stop apport
+sudo systemctl mask --now apport
+sudo apt install systemd-coredump
+# Verify this changed the core pattern to a pipe to systemd-coredump
+sysctl kernel.core_pattern
 ```

@@ -195,7 +195,7 @@ void *eNB_app_task(void *args_p) {
   uint32_t                        enb_id_end = enb_id_start + enb_nb;
   uint32_t                        register_enb_pending=0;
   uint32_t                        registered_enb=0;
-  long                            enb_register_retry_timer_id;
+  long                            enb_register_retry_timer_id = 0;
   uint32_t                        x2_register_enb_pending = 0;
   uint32_t                        x2_registered_enb = 0;
   long                            x2_enb_register_retry_timer_id;

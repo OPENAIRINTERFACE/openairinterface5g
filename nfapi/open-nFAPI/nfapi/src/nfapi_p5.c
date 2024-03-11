@@ -35,6 +35,7 @@
 #include <nfapi.h>
 #include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 #include <debug.h>
 
 
@@ -1670,6 +1671,16 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
                         end,
                         &pack_uint16_tlv_value);
   numTLVs++;
+
+  if (NFAPI_MODE != NFAPI_MODE_AERIAL) {
+    // TLV not supported by Aerial L1
+    pack_nr_tlv(NFAPI_NR_CONFIG_FREQUENCY_SHIFT_7P5KHZ_TAG,
+                &(pNfapiMsg->carrier_config.frequency_shift_7p5khz),
+                ppWritePackedMsg,
+                end,
+                &pack_uint8_tlv_value);
+    numTLVs++;
+  }
   // END Carrier Configuration
 
   // START Cell Configuration
@@ -1695,13 +1706,15 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
                         end,
                         &pack_uint32_tlv_value);
   numTLVs++;
-
-  retval &= pack_nr_tlv(NFAPI_NR_CONFIG_BCH_PAYLOAD_TAG,
-                        &(pNfapiMsg->ssb_config.bch_payload),
-                        ppWritePackedMsg,
-                        end,
-                        &pack_uint8_tlv_value);
-  numTLVs++;
+  if (NFAPI_MODE != NFAPI_MODE_AERIAL) {
+    // TLV not supported by Aerial L1
+    retval &= pack_nr_tlv(NFAPI_NR_CONFIG_BCH_PAYLOAD_TAG,
+                          &(pNfapiMsg->ssb_config.bch_payload),
+                          ppWritePackedMsg,
+                          end,
+                          &pack_uint8_tlv_value);
+    numTLVs++;
+  }
 
   retval &= pack_nr_tlv(NFAPI_NR_CONFIG_SCS_COMMON_TAG,
                         &(pNfapiMsg->ssb_config.scs_common),
@@ -1780,6 +1793,16 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
                           end,
                           &pack_uint16_tlv_value);
     numTLVs++;
+    for (int k = 0; k < prach_fd_occasion.num_unused_root_sequences.value; k++) {
+      prach_fd_occasion.unused_root_sequences_list[k].tl.tag = NFAPI_NR_CONFIG_UNUSED_ROOT_SEQUENCES_TAG;
+      prach_fd_occasion.unused_root_sequences_list[k].value = 0;
+      pack_nr_tlv(NFAPI_NR_CONFIG_UNUSED_ROOT_SEQUENCES_TAG,
+                  &(prach_fd_occasion.unused_root_sequences_list[k]),
+                  ppWritePackedMsg,
+                  end,
+                  &pack_uint16_tlv_value);
+      numTLVs++;
+    }
   }
 
   retval &= pack_nr_tlv(NFAPI_NR_CONFIG_SSB_PER_RACH_TAG,
@@ -1788,15 +1811,25 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
                         end,
                         &pack_uint8_tlv_value);
   numTLVs++;
+  pNfapiMsg->prach_config.prach_multiple_carriers_in_a_band.tl.tag = NFAPI_NR_CONFIG_PRACH_MULTIPLE_CARRIERS_IN_A_BAND_TAG;
+  pNfapiMsg->prach_config.prach_multiple_carriers_in_a_band.value = 0;
+  pack_nr_tlv(NFAPI_NR_CONFIG_PRACH_MULTIPLE_CARRIERS_IN_A_BAND_TAG,
+              &(pNfapiMsg->prach_config.prach_multiple_carriers_in_a_band),
+              ppWritePackedMsg,
+              end,
+              &pack_uint8_tlv_value);
+  numTLVs++;
   // END PRACH Configuration
   // START SSB Table
-  retval &= pack_nr_tlv(NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG,
-                        &(pNfapiMsg->ssb_table.ssb_offset_point_a),
-                        ppWritePackedMsg,
-                        end,
-                        &pack_uint16_tlv_value);
-  numTLVs++;
-
+  if (NFAPI_MODE != NFAPI_MODE_AERIAL) {
+    // TLV not supported by Aerial L1
+    retval &= pack_nr_tlv(NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG,
+                          &(pNfapiMsg->ssb_table.ssb_offset_point_a),
+                          ppWritePackedMsg,
+                          end,
+                          &pack_uint16_tlv_value);
+    numTLVs++;
+  }
   retval &=
       pack_nr_tlv(NFAPI_NR_CONFIG_SSB_PERIOD_TAG, &(pNfapiMsg->ssb_table.ssb_period), ppWritePackedMsg, end, &pack_uint8_tlv_value);
   numTLVs++;
@@ -1807,7 +1840,10 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
                         end,
                         &pack_uint8_tlv_value);
   numTLVs++;
-
+  /* was unused */
+  pNfapiMsg->ssb_table.MIB.tl.tag = NFAPI_NR_CONFIG_MIB_TAG;
+  pack_nr_tlv(NFAPI_NR_CONFIG_MIB_TAG, &(pNfapiMsg->ssb_table.MIB), ppWritePackedMsg, end, &pack_uint32_tlv_value);
+  numTLVs++;
   // SCF222.10.02 Table 3-25 : If included there must be two instances of this TLV
   retval &= pack_nr_tlv(NFAPI_NR_CONFIG_SSB_MASK_TAG,
                         &(pNfapiMsg->ssb_table.ssb_mask_list[0].ssb_mask),
@@ -1822,26 +1858,48 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
                         end,
                         &pack_uint32_tlv_value);
   numTLVs++;
+  if (NFAPI_MODE != NFAPI_MODE_AERIAL) {
+    // TLV not supported by Aerial L1
+    for (int i = 0; i < 64; i++) {
+      // SCF222.10.02 Table 3-25 : If included there must be 64 instances of this TLV
+      retval &= pack_nr_tlv(NFAPI_NR_CONFIG_BEAM_ID_TAG,
+                            &(pNfapiMsg->ssb_table.ssb_beam_id_list[i].beam_id),
+                            ppWritePackedMsg,
+                            end,
+                            &pack_uint8_tlv_value);
+      numTLVs++;
+    }
 
-  for (int i = 0; i < 64; i++) {
-    // SCF222.10.02 Table 3-25 : If included there must be 64 instances of this TLV
-    retval &= pack_nr_tlv(NFAPI_NR_CONFIG_BEAM_ID_TAG,
-                          &(pNfapiMsg->ssb_table.ssb_beam_id_list[i].beam_id),
+    // END SSB Table
+    // START TDD Table
+    retval &= pack_nr_tlv(NFAPI_NR_CONFIG_TDD_PERIOD_TAG,
+                          &(pNfapiMsg->tdd_table.tdd_period),
                           ppWritePackedMsg,
                           end,
                           &pack_uint8_tlv_value);
     numTLVs++;
+    // END TDD Table
+    for (int i = 0; i < 40; i++) {
+      for (int k = 0; k < 14; k++) {
+        pack_nr_tlv(NFAPI_NR_CONFIG_SLOT_CONFIG_TAG,
+                    &(pNfapiMsg->tdd_table.max_tdd_periodicity_list[i].max_num_of_symbol_per_slot_list[k].slot_config),
+                    ppWritePackedMsg,
+                    end,
+                    &pack_uint8_tlv_value);
+        numTLVs++;
+      }
+    }
   }
-
-  // END SSB Table
-  // START TDD Table
-  retval &=
-      pack_nr_tlv(NFAPI_NR_CONFIG_TDD_PERIOD_TAG, &(pNfapiMsg->tdd_table.tdd_period), ppWritePackedMsg, end, &pack_uint8_tlv_value);
-  numTLVs++;
-  // END TDD Table
-
   // START Measurement Config
   // SCF222.10.02 Table 3-27 : Contains only one TLV and is currently unused
+  pNfapiMsg->measurement_config.rssi_measurement.tl.tag = NFAPI_NR_CONFIG_RSSI_MEASUREMENT_TAG;
+  pNfapiMsg->measurement_config.rssi_measurement.value = 1;
+  pack_nr_tlv(NFAPI_NR_CONFIG_RSSI_MEASUREMENT_TAG,
+              &(pNfapiMsg->measurement_config.rssi_measurement),
+              ppWritePackedMsg,
+              end,
+              &pack_uint8_tlv_value);
+  numTLVs++;
   // END Measurement Config
 
   // START Digital Beam Table (DBT) PDU
@@ -1851,57 +1909,57 @@ static uint8_t pack_nr_config_request(void *msg, uint8_t **ppWritePackedMsg, uin
   // START Precoding Matrix (PM) PDU
   // Struct in nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h nfapi_nr_pm_pdu_t, currently unused, tag to use for AERIAL
   // is 0xA011 END Precoding Matrix (PM) PDU
-
-  // START nFAPI TLVs included in CONFIG.request for IDLE and CONFIGURED states
-  retval &= pack_nr_tlv(NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV4_TAG,
-                        &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv4),
-                        ppWritePackedMsg,
-                        end,
-                        &pack_ipv4_address_value);
-  numTLVs++;
-
-  retval &= pack_nr_tlv(NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV6_TAG,
-                        &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv6),
-                        ppWritePackedMsg,
-                        end,
-                        &pack_ipv6_address_value);
-  numTLVs++;
-
-  retval &= pack_nr_tlv(NFAPI_NR_NFAPI_P7_VNF_PORT_TAG,
-                        &(pNfapiMsg->nfapi_config.p7_vnf_port),
-                        ppWritePackedMsg,
-                        end,
-                        &pack_uint16_tlv_value);
-  numTLVs++;
-
-  retval &= pack_nr_tlv(NFAPI_NR_NFAPI_TIMING_WINDOW_TAG,
-                        &(pNfapiMsg->nfapi_config.timing_window),
-                        ppWritePackedMsg,
-                        end,
-                        &pack_uint8_tlv_value);
-  numTLVs++;
-
-  retval &= pack_nr_tlv(NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG,
-                        &(pNfapiMsg->nfapi_config.timing_info_mode),
-                        ppWritePackedMsg,
-                        end,
-                        &pack_uint8_tlv_value);
-  numTLVs++;
-
-  retval &= pack_nr_tlv(NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG,
-                        &(pNfapiMsg->nfapi_config.timing_info_period),
-                        ppWritePackedMsg,
-                        end,
-                        &pack_uint8_tlv_value);
-  numTLVs++;
-  // END nFAPI TLVs included in CONFIG.request for IDLE and CONFIGURED states
-
-  if (pNfapiMsg->vendor_extension != 0 && config != 0) {
-    retval &= pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config);
-    NFAPI_TRACE(NFAPI_TRACE_DEBUG, "Packing CONFIG.request vendor_extension_tlv %d\n", pNfapiMsg->vendor_extension->tag);
+  if(NFAPI_MODE != NFAPI_MODE_AERIAL){
+    // START nFAPI TLVs included in CONFIG.request for IDLE and CONFIGURED states
+    retval &= pack_nr_tlv(NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV4_TAG,
+                          &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv4),
+                          ppWritePackedMsg,
+                          end,
+                          &pack_ipv4_address_value);
     numTLVs++;
-  }
 
+    retval &= pack_nr_tlv(NFAPI_NR_NFAPI_P7_VNF_ADDRESS_IPV6_TAG,
+                          &(pNfapiMsg->nfapi_config.p7_vnf_address_ipv6),
+                          ppWritePackedMsg,
+                          end,
+                          &pack_ipv6_address_value);
+    numTLVs++;
+
+    retval &= pack_nr_tlv(NFAPI_NR_NFAPI_P7_VNF_PORT_TAG,
+                          &(pNfapiMsg->nfapi_config.p7_vnf_port),
+                          ppWritePackedMsg,
+                          end,
+                          &pack_uint16_tlv_value);
+    numTLVs++;
+
+    retval &= pack_nr_tlv(NFAPI_NR_NFAPI_TIMING_WINDOW_TAG,
+                          &(pNfapiMsg->nfapi_config.timing_window),
+                          ppWritePackedMsg,
+                          end,
+                          &pack_uint8_tlv_value);
+    numTLVs++;
+
+    retval &= pack_nr_tlv(NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG,
+                          &(pNfapiMsg->nfapi_config.timing_info_mode),
+                          ppWritePackedMsg,
+                          end,
+                          &pack_uint8_tlv_value);
+    numTLVs++;
+
+    retval &= pack_nr_tlv(NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG,
+                          &(pNfapiMsg->nfapi_config.timing_info_period),
+                          ppWritePackedMsg,
+                          end,
+                          &pack_uint8_tlv_value);
+    numTLVs++;
+    // END nFAPI TLVs included in CONFIG.request for IDLE and CONFIGURED states
+
+    if (pNfapiMsg->vendor_extension != 0 && config != 0) {
+      retval &= pack_vendor_extension_tlv(pNfapiMsg->vendor_extension, ppWritePackedMsg, end, config);
+      NFAPI_TRACE(NFAPI_TRACE_DEBUG, "Packing CONFIG.request vendor_extension_tlv %d\n", pNfapiMsg->vendor_extension->tag);
+      numTLVs++;
+    }
+  }
   pNfapiMsg->num_tlv = numTLVs;
   retval &= push8(pNfapiMsg->num_tlv, &pNumTLVFields, end);
   return retval;
@@ -2170,7 +2228,7 @@ static uint8_t pack_p5_message_body(nfapi_p4_p5_message_header_t *header, uint8_
 
 static uint32_t get_packed_msg_len(uintptr_t msgHead, uintptr_t msgEnd) {
   if (msgEnd < msgHead) {
-    NFAPI_TRACE(NFAPI_TRACE_ERROR, "get_packed_msg_len: Error in pointers supplied %lu, %lu\n", msgHead, msgEnd);
+    NFAPI_TRACE(NFAPI_TRACE_ERROR, "get_packed_msg_len: Error in pointers supplied %p, %p\n", &msgHead, &msgEnd);
     return 0;
   }
 
@@ -2178,6 +2236,7 @@ static uint32_t get_packed_msg_len(uintptr_t msgHead, uintptr_t msgEnd) {
 }
 
 // Main pack function - public
+
 int nfapi_nr_p5_message_pack(void *pMessageBuf,
                              uint32_t messageBufLen,
                              void *pPackedBuf,

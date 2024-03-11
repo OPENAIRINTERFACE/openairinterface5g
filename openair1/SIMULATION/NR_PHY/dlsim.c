@@ -959,7 +959,6 @@ int main(int argc, char **argv)
       //multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
 
-      UE->rx_offset=0;
       UE_proc.frame_rx = frame;
       UE_proc.nr_slot_rx = slot;
       UE_proc.gNB_id = 0;

@@ -95,13 +95,13 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
 
   // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value
   // configured by the NW.
-  mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
-  mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
-  mac->BSR_reporting_active = BSR_TRIGGER_NONE;
+  mac->scheduling_info.periodicBSR_SF = NR_MAC_UE_BSR_TIMER_NOT_RUNNING;
+  mac->scheduling_info.retxBSR_SF = NR_MAC_UE_BSR_TIMER_NOT_RUNNING;
+  mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
 
   for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
     LOG_D(NR_MAC, "Applying default logical channel config for LCGID %d\n", i);
-    mac->scheduling_info.lc_sched_info[i].LCID_status = LCID_EMPTY;
+    mac->scheduling_info.lc_sched_info[i].LCID_buffer_with_data = false;
     mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
     mac->scheduling_info.lc_sched_info[i].Bj = 0;
   }

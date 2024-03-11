@@ -46,6 +46,7 @@
 #include "common/ran_context.h"
 #include "openair2/PHY_INTERFACE/queue_t.h"
 #include "gnb_ind_vars.h"
+#include "LAYER2/MAC/mac.h"
 
 #define TEST
 

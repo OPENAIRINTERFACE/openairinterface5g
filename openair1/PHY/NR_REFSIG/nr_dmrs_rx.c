@@ -38,6 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "nr_refsig.h"
 #include "PHY/defs_gNB.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 
 // Table 6.4.1.1.3-1/2 from TS 38.211
 static const int delta1[8] = {0, 0, 1, 1, 0, 0, 1, 1};
@@ -195,9 +196,7 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
 }
 
 
-int nr_pbch_dmrs_rx(int symbol,
-                    unsigned int *nr_gold_pbch,
-                    int32_t *output)
+int nr_pbch_dmrs_rx(int symbol, unsigned int *nr_gold_pbch, int32_t *output)
 {
   int m,m0,m1;
   uint8_t idx=0;
@@ -257,14 +256,14 @@ void nr_gen_ref_conj_symbols(uint32_t *in, uint32_t length, int16_t *output, uin
 }
 
 int nr_pusch_lowpaprtype1_dmrs_rx(PHY_VARS_gNB *gNB,
-                     unsigned int Ns,
-                     int16_t *dmrs_seq,
-                     int32_t *output,
-                     unsigned short p,
-                     unsigned char lp,
-                     unsigned short nb_pusch_rb,
-                     uint32_t re_offset,
-                     uint8_t dmrs_type)
+                                  unsigned int Ns,
+                                  int16_t *dmrs_seq,
+                                  int32_t *output,
+                                  unsigned short p,
+                                  unsigned char lp,
+                                  unsigned short nb_pusch_rb,
+                                  uint32_t re_offset,
+                                  uint8_t dmrs_type)
 {
   int8_t w, nb_dmrs;
   int k;

@@ -24,6 +24,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 
 void nr_generate_dci_top(processingData_L1tx_t *msgTx,
                          int slot,

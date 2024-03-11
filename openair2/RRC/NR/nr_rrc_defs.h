@@ -40,7 +40,6 @@
 #include "nr_rrc_common.h"
 #include "ds/byte_array.h"
 
-#include "common/ngran_types.h"
 #include "common/platform_constants.h"
 #include "common/platform_types.h"
 #include "mac_rrc_dl.h"

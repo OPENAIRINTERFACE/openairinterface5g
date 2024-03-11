@@ -315,7 +315,7 @@ void *MCE_app_task(void *args_p) {
   uint32_t                        register_mce_pending=0;
   uint32_t                        registered_mce=0;
   //long                            mce_register_retry_timer_id;
-  long 				  mce_scheduling_info_timer_id;
+  long 				  mce_scheduling_info_timer_id = 0;
   //uint32_t                        m3_register_mce_pending = 0;
  // uint32_t                        x2_registered_mce = 0;
  // long                            x2_mce_register_retry_timer_id;

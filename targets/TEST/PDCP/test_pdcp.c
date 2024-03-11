@@ -27,7 +27,7 @@
 
 #include "MAC_INTERFACE/vars.h"
 #include "LAYER2/MAC/vars.h"
-#include "UTIL/LOG/log_if.h"
+#include "UTIL/LOG/log.h"
 #include "test_util.h"
 #include "test_pdcp.h"
 

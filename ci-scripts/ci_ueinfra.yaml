@@ -18,6 +18,17 @@ up2:
   IF: wwan0
   MTU: 1500
 
+sphex_quectel:
+  Host: sphex
+  InitScript: sudo stdbuf -oL /home/oaicicd/quectel-CM/quectel-CM -4 -s oai.ipv4 &> /tmp/quecel-cm.log &
+  TermScript: sudo -S killall --signal SIGKILL quectel-CM
+  AttachScript: sudo python3 ci_ctl_qtel.py /dev/ttyUSB3 wup
+  DetachScript: sudo python3 ci_ctl_qtel.py /dev/ttyUSB3 detach
+  NetworkScript: ip a show dev wwan0
+  IF: wwan0
+  MTU: 1500
+  LogStore: /media/ci_qlogs
+
 adb_ue_1:
   Host: nano
   InitScript: /home/oaicicd/ci_ctl_adb.sh initialize R3CM40LZPHT
@@ -118,6 +129,48 @@ amarisoft_ue_10:
   DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":10}'
   NetworkScript: ip netns exec ue10 ip a show dev pdn0
   CmdPrefix: ip netns exec ue10
+  MTU: 1500
+amarisoft_ue_11:
+  Host: amariue
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":11}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":11}'
+  NetworkScript: ip netns exec ue11 ip a show dev pdn0
+  CmdPrefix: ip netns exec ue11
+  MTU: 1500
+amarisoft_ue_12:
+  Host: amariue
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":12}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":12}'
+  NetworkScript: ip netns exec ue12 ip a show dev pdn0
+  CmdPrefix: ip netns exec ue12
+  MTU: 1500
+amarisoft_ue_13:
+  Host: amariue
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":13}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":13}'
+  NetworkScript: ip netns exec ue13 ip a show dev pdn0
+  CmdPrefix: ip netns exec ue13
+  MTU: 1500
+amarisoft_ue_14:
+  Host: amariue
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":14}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":14}'
+  NetworkScript: ip netns exec ue14 ip a show dev pdn0
+  CmdPrefix: ip netns exec ue14
+  MTU: 1500
+amarisoft_ue_15:
+  Host: amariue
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":15}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":15}'
+  NetworkScript: ip netns exec ue15 ip a show dev pdn0
+  CmdPrefix: ip netns exec ue15
+  MTU: 1500
+amarisoft_ue_16:
+  Host: amariue
+  AttachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":16}'
+  DetachScript: /root/2023-10-27/libs/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":16}'
+  NetworkScript: ip netns exec ue16 ip a show dev pdn0
+  CmdPrefix: ip netns exec ue16
   MTU: 1500
 
 oai_ue_caracal:

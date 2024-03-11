@@ -45,7 +45,6 @@
 /* MAC */
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
-#include "LAYER2/MAC/mac.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "mac_defs_sl.h"
 
@@ -181,7 +180,7 @@ typedef struct {
   // after multiplexing buffer remain for each lcid
   int32_t LCID_buffer_remain;
   // buffer status for each lcid
-  uint8_t LCID_status;
+  bool LCID_buffer_with_data;
   // logical channel group id of this LCID
   long LCGID;
   // Bj bucket usage per lcid
@@ -340,10 +339,9 @@ typedef struct {
   frame_t ul_frame;
   int ul_slot;
   uint8_t ack;
-  uint8_t dai;
   int n_CCE;
   int N_CCE;
-  int j_dai;
+  int dai_cumul;
   int8_t delta_pucch;
   uint32_t R;
   uint32_t TBS;
@@ -444,6 +442,11 @@ typedef struct nr_lcordered_info_s {
   // Bucket size per lcid
   uint32_t bucket_size;
 } nr_lcordered_info_t;
+
+
+typedef struct {
+  uint8_t payload[NR_CCCH_PAYLOAD_SIZE_MAX];
+} __attribute__ ((__packed__)) NR_CCCH_PDU;
 
 typedef struct {
   NR_SearchSpace_t *otherSI_SS;

@@ -409,6 +409,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
     }
 
     /// Power noise estimation
+    AssertFatal(csirs_config_pdu->nr_of_rbs > 0, " nr_of_rbs needs to be greater than 0\n");
     uint16_t noise_real[frame_parms->nb_antennas_rx][N_ports][csirs_config_pdu->nr_of_rbs];
     uint16_t noise_imag[frame_parms->nb_antennas_rx][N_ports][csirs_config_pdu->nr_of_rbs];
     for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {

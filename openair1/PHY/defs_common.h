@@ -953,7 +953,7 @@ typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_rela
 
 #define NB_BANDS_MAX 8
 
-#include "common/utils/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;

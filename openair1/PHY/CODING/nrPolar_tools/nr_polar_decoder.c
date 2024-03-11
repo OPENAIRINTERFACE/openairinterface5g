@@ -116,6 +116,7 @@ int8_t polar_decoder(double *input,
   }
 
   //The index of the last 1-valued bit that appears in each column.
+  AssertFatal(polarParams->crcParityBits > 0, "UB for VLA. crcParityBits negative\n"); 
   uint16_t last1ind[polarParams->crcParityBits];
 
   for (int j=0; j<polarParams->crcParityBits; j++) {

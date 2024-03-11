@@ -1,0 +1,139 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+        <htmlTabRef>TEST-AERIAL-SA</htmlTabRef>
+        <htmlTabName>AERIAL 100 MHz TDD SA</htmlTabName>
+        <htmlTabIcon>tasks</htmlTabIcon>
+        <repeatCount>1</repeatCount>
+        <TestCaseRequestedList>
+                111111
+                000222
+                001111
+                002222
+                002223
+                000111
+                100000
+                000011
+                000022
+                000033
+                000222
+                003333
+                222222
+        </TestCaseRequestedList>
+        <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="111111">
+                <class>Pull_Local_Registry</class>
+                <desc>Pull Images from Local Registry</desc>
+                <test_svr_id>0</test_svr_id>
+                <images_to_pull>oai-gnb-aerial</images_to_pull>
+        </testCase>
+
+        <testCase id="001111">
+                <class>Initialize_UE</class>
+                <desc>Initialize Quectel</desc>
+                <id>sphex_quectel</id>
+        </testCase>
+
+        <testCase id="002222">
+                <class>Deploy_Object</class>
+                <desc>Deploy PNF/Nvidia CUBB in a container</desc>
+                <yaml_path>ci-scripts/yaml_files/sa_gnb_aerial</yaml_path>
+                <services>nv-cubb</services>
+                <eNB_instance>0</eNB_instance>
+                <eNB_serverId>0</eNB_serverId>
+        </testCase>
+
+        <testCase id="002223">
+                <class>Deploy_Object</class>
+                <desc>Deploy VNF in a container</desc>
+                <yaml_path>ci-scripts/yaml_files/sa_gnb_aerial</yaml_path>
+                <services>oai-gnb-aerial</services>
+                <eNB_instance>0</eNB_instance>
+                <eNB_serverId>0</eNB_serverId>
+        </testCase>
+
+        <testCase id="000111">
+                <class>Attach_UE</class>
+                <desc>Attach Quectel</desc>
+                <id>sphex_quectel</id>
+        </testCase>
+
+        <testCase id="100000">
+                <class>Custom_Command</class>
+                <desc>Adding a IP route</desc>
+                <node>sphex</node>
+                <command>sudo ip route add 192.168.71.128/26 via 12.1.1.151 dev wwan0</command>
+        </testCase>
+
+        <testCase id="000011">
+                <class>Ping</class>
+                <desc>Ping: 100pings in 20sec</desc>
+                <id>sphex_quectel</id>
+                <ping_args>-c 100 -i 0.2 %cn_ip%</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+        <testCase id="000022">
+                <class>Iperf</class>
+                <desc>iperf (DL/UDP/80M)(30 sec)(single-ue profile)</desc>
+                <iperf_args>-u -b 80M -t 30 -R</iperf_args>
+                <direction>IPERF3</direction>
+                <id>sphex_quectel</id>
+                <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
+                <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
+        </testCase>
+
+        <testCase id="000033">
+                <class>Iperf</class>
+                <desc>iperf (UL/UDP/40M)(30 sec)(single-ue profile)</desc>
+                <iperf_args>-u -b 40M -t 30</iperf_args>
+                <direction>IPERF3</direction>
+                <id>sphex_quectel</id>
+                <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
+                <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
+        </testCase>
+
+        <testCase id="000222">
+                <class>Detach_UE</class>
+                <desc>Detach Quectel</desc>
+                <id>sphex_quectel</id>
+        </testCase>
+
+        <testCase id="003333">
+                <class>Terminate_UE</class>
+                <desc>Terminate Quectel</desc>
+                <id>sphex_quectel</id>
+        </testCase>
+
+        <testCase id="222222">
+                <class>Undeploy_Object</class>
+                <desc>Undeploy gNB</desc>
+                <yaml_path>ci-scripts/yaml_files/sa_gnb_aerial</yaml_path>
+                <eNB_instance>0</eNB_instance>
+                <eNB_serverId>0</eNB_serverId>
+                <d_retx_th>20,100,100,100</d_retx_th>
+                <u_retx_th>20,100,100,100</u_retx_th>
+        </testCase>
+</testCaseList>
+

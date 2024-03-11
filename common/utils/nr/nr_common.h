@@ -214,10 +214,6 @@ void nr_est_delay(int ofdm_symbol_size, const c16_t *ls_est, c16_t *ch_estimates
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
-#define cmax(a,b)  ((a>b) ? (a) : (b))
-#define cmax3(a,b,c) ((cmax(a,b)>c) ? (cmax(a,b)) : (c))
-#define cmin(a,b)  ((a<b) ? (a) : (b))
-
 #ifdef __cplusplus
 #ifdef min
 #undef min

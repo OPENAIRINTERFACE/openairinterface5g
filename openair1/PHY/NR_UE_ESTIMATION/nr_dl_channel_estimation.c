@@ -19,7 +19,6 @@
  *      contact@openairinterface.org
  */
 
-
 #include <string.h>
 #include "SCHED_NR_UE/defs.h"
 #include "nr_estimation.h"
@@ -34,6 +33,8 @@
 #include "filt16a_32.h"
 #include "T.h"
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
+#include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
+
 extern openair0_config_t openair0_cfg[];
 
 //#define DEBUG_PDSCH
@@ -129,6 +130,8 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     printf("[gNB %d][rsc %d] PRS config l %d k_prime %d:\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", gNB_id, rsc_id, l, k_prime, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
 #endif
     // Pilots generation and modulation
+
+    AssertFatal(num_pilots > 0, "num_pilots needs to be gt 0 or mod_prs[0] UB");
     for (int m = 0; m < num_pilots; m++) 
     {
       idx = (((nr_gold_prs[l][(m<<1)>>5])>>((m<<1)&0x1f))&3);
@@ -658,7 +661,8 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 #endif
 
   // generate pilot
-  nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
+  // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+  nr_pbch_dmrs_rx(dmrss, ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
   for (int aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -898,7 +902,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
   
   // generate pilot
-  nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
+  // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+  nr_pbch_dmrs_rx(dmrss, ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
   for (int aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -1111,7 +1116,8 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     dmrs_ref = BWPStart;
   // generate pilot
   int pilot[(nb_rb_coreset + dmrs_ref) * 3] __attribute__((aligned(16)));
-  nr_pdcch_dmrs_rx(ue,Ns,ue->nr_gold_pdcch[gNB_id][Ns][symbol], &pilot[0],2000,(nb_rb_coreset+dmrs_ref));
+  // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+  nr_pdcch_dmrs_rx(ue, Ns, ue->nr_gold_pdcch[gNB_id][Ns][symbol], &pilot[0], 2000, (nb_rb_coreset + dmrs_ref));
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -1648,7 +1654,15 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
 
   c16_t pilot[3280] __attribute__((aligned(16)));
-  nr_pdsch_dmrs_rx(ue, Ns, ue->nr_gold_pdsch[gNB_id][Ns][symbol][nscid], (int32_t *)pilot, 1000 + p, 0, nb_rb_pdsch + rb_offset, config_type);
+  // Note: pilot returned by the following function is already the complex conjugate of the transmitted DMRS
+  nr_pdsch_dmrs_rx(ue,
+                   Ns,
+                   ue->nr_gold_pdsch[gNB_id][Ns][symbol][nscid],
+                   (int32_t *)pilot,
+                   1000 + p,
+                   0,
+                   nb_rb_pdsch + rb_offset,
+                   config_type);
 
   uint8_t nushift = 0;
   if (config_type == NFAPI_NR_DMRS_TYPE1) {
