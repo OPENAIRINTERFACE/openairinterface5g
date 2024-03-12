@@ -389,7 +389,7 @@ networks:
         name: rfsim5g-oai-e1-net
         ipam:
             config:
-                - subnet: 192.168.77.1/28
+                - subnet: 192.168.77.0/28
         driver_opts:
             com.docker.network.bridge.name: "rfsim5g-e1"
     ue_net:
@@ -397,6 +397,6 @@ networks:
         name: rfsim5g-oai-ue-net
         ipam:
             config:
-                - subnet: 192.168.78.1/28
+                - subnet: 192.168.78.0/28
         driver_opts:
             com.docker.network.bridge.name: "rfsim5g-ue"
