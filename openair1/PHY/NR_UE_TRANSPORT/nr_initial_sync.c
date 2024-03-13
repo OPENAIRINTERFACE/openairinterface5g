@@ -100,10 +100,10 @@ void free_list(NR_UE_SSB *node) {
   free(node);
 }
 
-int nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
-                      PHY_VARS_NR_UE *ue,
-                      int pbch_initial_symbol,
-                      c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+static bool nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
+                              PHY_VARS_NR_UE *ue,
+                              int pbch_initial_symbol,
+                              c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
@@ -138,8 +138,8 @@ int nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
   }
 
   NR_UE_SSB *temp_ptr = best_ssb;
-  int ret = -1;
-  while (ret != 0 && temp_ptr != NULL) {
+  bool ret = false;
+  while (!ret && temp_ptr != NULL) {
 
     start_meas(&ue->dlsch_channel_estimation_stats);
     // computing channel estimation for selected best ssb
@@ -153,11 +153,18 @@ int nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
 
     stop_meas(&ue->dlsch_channel_estimation_stats);
     fapiPbch_t result = {0};
-    ret = nr_rx_pbch(ue, proc, estimateSz, dl_ch_estimates, frame_parms, temp_ptr->i_ssb, &result, rxdataF);
 
-    if (DUMP_PBCH_CH_ESTIMATES && (ret == 0)) {
+    int pbch_res = nr_rx_pbch(ue, proc, estimateSz, dl_ch_estimates, frame_parms, temp_ptr->i_ssb, &result, rxdataF);
+    ret = pbch_res == 0;
+
+    if (DUMP_PBCH_CH_ESTIMATES && ret) {
       write_output("pbch_ch_estimates.m", "pbch_ch_estimates", dl_ch_estimates, frame_parms->nb_antennas_rx*estimateSz, 1, 1);
-      write_output("pbch_ch_estimates_time.m", "pbch_ch_estimates_time", dl_ch_estimates_time, frame_parms->nb_antennas_rx*frame_parms->ofdm_symbol_size, 1, 1);
+      write_output("pbch_ch_estimates_time.m",
+                   "pbch_ch_estimates_time",
+                   dl_ch_estimates_time,
+                   frame_parms->nb_antennas_rx * frame_parms->ofdm_symbol_size,
+                   1,
+                   1);
     }
 
     temp_ptr=temp_ptr->next_ssb;
@@ -165,7 +172,7 @@ int nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
 
   free_list(best_ssb);
 
-  if (ret == 0) {
+  if (ret) {
     frame_parms->nb_antenna_ports_gNB = 1; // pbch_tx_ant;
     LOG_I(PHY, "[UE%d] Initial sync: pbch decoded sucessfully, ssb index %d\n", ue->Mod_id, frame_parms->ssb_index);
   }
@@ -258,7 +265,7 @@ nr_initial_sync_t nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, i
 
         int freq_offset_sss = 0;
         bool ret_sss = rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss, rxdataF);
-        ret.cell_notdetected = !ret_sss; // rx_sss_nr returns true if success
+        ret.cell_detected = ret_sss; // rx_sss_nr returns true if success
         // digital compensation of FFO for SSB symbols
         if (ue->UE_fo_compensation) {
           double s_time = 1 / (1.0e3 * fp->samples_per_subframe); // sampling time
@@ -278,12 +285,12 @@ nr_initial_sync_t nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, i
           ue->common_vars.freq_offset += freq_offset_sss;
         }
 
-        if (ret.cell_notdetected == 0) { // we got sss channel
+        if (ret.cell_detected) { // we got sss channel
           nr_gold_pbch(ue);
-          ret.cell_notdetected = nr_pbch_detection(proc, ue, 1, rxdataF); // start pbch detection at first symbol after pss
+          ret.cell_detected = nr_pbch_detection(proc, ue, 1, rxdataF); // start pbch detection at first symbol after pss
         }
 
-        if (ret.cell_notdetected == 0) {
+        if (ret.cell_detected) {
           // sync at symbol ue->symbol_offset
           // computing the offset wrt the beginning of the frame
           int mu = fp->numerology_index;
@@ -343,7 +350,7 @@ nr_initial_sync_t nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, i
               fp->Nid_cell,
               metric_tdd_ncp,
               phase_tdd_ncp,
-              !ret.cell_notdetected,
+              ret.cell_detected,
               ret.rx_offset);
 #endif
 
@@ -352,11 +359,11 @@ nr_initial_sync_t nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, i
         LOG_I(PHY, "TDD Normal prefix: SSS error condition: sync_pos %d\n", sync_pos);
 #endif
       }
-      if (ret.cell_notdetected == 0)
+      if (ret.cell_detected)
         break;
     }
   } else {
-    ret.cell_notdetected = true;
+    ret.cell_detected = false;
   }
 
   /* Consider this is a false detection if the offset is > 1000 Hz
@@ -367,7 +374,7 @@ nr_initial_sync_t nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, i
      LOG_E(HW, "Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
      }*/
 
-  if (ret.cell_notdetected == 0) { // PBCH found so indicate sync to higher layers and configure frame parameters
+  if (ret.cell_detected) { // PBCH found so indicate sync to higher layers and configure frame parameters
 
     //#ifdef DEBUG_INITIAL_SYNCH
 
@@ -402,7 +409,7 @@ nr_initial_sync_t nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *ue, i
   }
 
   // gain control
-  if (ret.cell_notdetected != 0) { // we are not synched, so we cannot use rssi measurement (which is based on channel estimates)
+  if (!ret.cell_detected) { // we are not synched, so we cannot use rssi measurement (which is based on channel estimates)
     int rx_power = 0;
 
     // do a measurement on the best guess of the PSS
