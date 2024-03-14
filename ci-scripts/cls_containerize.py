@@ -517,9 +517,13 @@ class Containerize():
 		# Remove all intermediate build images and clean up
 		cmd.run(f"{self.cli} image rm ran-build:{imageTag} ran-build-asan:{imageTag}")
 		cmd.run(f"{self.cli} volume prune --force")
-		# Remove any cached artifacts: we don't use the cache for now, prevent
-		# out of diskspace problem
-		cmd.run(f"{self.cli} buildx prune --filter=until=6h --force")
+
+		# Remove some cached artifacts to prevent out of diskspace problem
+		logging.debug(cmd.run("df -h").stdout)
+		logging.debug(cmd.run("docker system df").stdout)
+		cmd.run(f"{self.cli} buildx prune --filter until=1h --force")
+		logging.debug(cmd.run("df -h").stdout)
+		logging.debug(cmd.run("docker system df").stdout)
 
 		# create a zip with all logs
 		build_log_name = f'build_log_{self.testCase_id}'
