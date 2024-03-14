@@ -261,6 +261,7 @@ struct NR_DL_FRAME_PARMS {
   uint32_t ofdm_offset_divisor;
   uint16_t tdd_slot_config;
   uint8_t tdd_period;
+  bool print_ue_help_cmdline_log;
 };
 
 // PRS config structures

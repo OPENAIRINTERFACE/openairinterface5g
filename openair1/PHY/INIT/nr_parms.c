@@ -212,22 +212,20 @@ uint32_t get_samples_slot_timestamp(int slot, const NR_DL_FRAME_PARMS *fp, uint8
   return samp_count;
 }
 
-int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
-                        NR_DL_FRAME_PARMS *fp)
+void nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg, NR_DL_FRAME_PARMS *fp)
 {
 
-  AssertFatal (cfg != NULL, "%s %s:%i Null pointer to cfg %p!\n", __FUNCTION__, __FILE__, __LINE__, cfg);
+  AssertFatal (cfg, "Null pointer to cfg!\n");
 
   fp->frame_type = cfg->cell_config.frame_duplex_type.value;
-  fp->L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value)<<32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value ;
+  fp->L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value) << 32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value;
   fp->N_RB_DL = cfg->carrier_config.dl_grid_size[cfg->ssb_config.scs_common.value].value;
   fp->N_RB_UL = cfg->carrier_config.ul_grid_size[cfg->ssb_config.scs_common.value].value;
 
   int Ncp = NFAPI_CP_NORMAL;
   int mu = cfg->ssb_config.scs_common.value;
 
-
-  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n", mu, fp->N_RB_DL, Ncp);
 
   if (Ncp == NFAPI_CP_EXTENDED)
     AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
@@ -266,8 +264,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
   for (int p=0; p<num_tx_ant; p++)
     fp->N_ssb += ((fp->L_ssb >> (63-p)) & 0x01);
 
-  return 0;
-
+  fp->print_ue_help_cmdline_log = true;
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,

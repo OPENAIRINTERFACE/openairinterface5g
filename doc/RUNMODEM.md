@@ -102,6 +102,12 @@ Command line parameters for UE in `--sa` mode:
 - `--band` : NR band number (default value 78)
 - `--ssb` : SSB start subcarrier (default value 516)
 
+To simplify the configuration for the user testing OAI UE with OAI gNB, the latter prints the following LOG that guides the user to correctly set the UE command line parameters.
+
+```
+[PHY]   Command line parameters for the UE: -C 3319680000 -r 106 --numerology 1 --band 78 --ssb 516
+```
+
 You can run this, using USRPs, on two separate machines:
 
 ```
