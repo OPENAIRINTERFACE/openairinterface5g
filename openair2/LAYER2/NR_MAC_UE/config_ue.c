@@ -1355,21 +1355,40 @@ static void configure_common_BWP_ul(NR_UE_MAC_INST_t *mac, int bwp_id, NR_BWP_Up
 }
 
 void nr_rrc_mac_config_req_reset(module_id_t module_id,
-                                 NR_UE_MAC_reset_cause_t reset_cause)
+                                 NR_UE_MAC_reset_cause_t cause)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  reset_mac_inst(mac);
-  reset_ra(&mac->ra);
-  release_mac_configuration(mac);
-  nr_ue_init_mac(mac);
 
-  // Sending to PHY a request to resync
-  // with no target cell ID
-  if (reset_cause != DETACH) {
-    mac->synch_request.Mod_id = module_id;
-    mac->synch_request.CC_id = 0;
-    mac->synch_request.synch_req.target_Nid_cell = -1;
-    mac->if_module->synch_request(&mac->synch_request);
+  switch (cause) {
+    case GO_TO_IDLE:
+      reset_ra(&mac->ra);
+      release_mac_configuration(mac, cause);
+      nr_ue_init_mac(mac);
+      nr_ue_mac_default_configs(mac);
+      // new sync but no target cell id -> -1
+      nr_ue_send_synch_request(mac, module_id, 0, -1);
+      break;
+    case DETACH:
+      reset_ra(&mac->ra);
+      reset_mac_inst(mac);
+      nr_ue_reset_sync_state(mac);
+      release_mac_configuration(mac, cause);
+      break;
+    case T300_EXPIRY:
+      reset_mac_inst(mac);
+      reset_ra(&mac->ra);
+      mac->state = UE_SYNC; // still in sync but need to restart RA
+      break;
+    case RE_ESTABLISHMENT:
+      reset_mac_inst(mac);
+      nr_ue_mac_default_configs(mac);
+      nr_ue_reset_sync_state(mac);
+      release_mac_configuration(mac, cause);
+      // new sync with old cell ID (re-establishment on the same cell)
+      nr_ue_send_synch_request(mac, module_id, 0, mac->physCellId);
+      break;
+    default:
+      AssertFatal(false, "Invalid MAC reset cause %d\n", cause);
   }
 }
 

@@ -205,7 +205,8 @@ NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id);
 
 void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac);
 void reset_ra(RA_config_t *ra);
-void release_mac_configuration(NR_UE_MAC_INST_t *mac);
+void release_mac_configuration(NR_UE_MAC_INST_t *mac,
+                               NR_UE_MAC_reset_cause_t cause);
 
 /**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
@@ -449,6 +450,9 @@ void nr_get_prach_resources(NR_UE_MAC_INST_t *mac,
 
 void prepare_msg4_feedback(NR_UE_MAC_INST_t *mac, int pid, int ack_nack);
 void configure_initial_pucch(PUCCH_sched_t *pucch, int res_ind);
+
+void nr_ue_reset_sync_state(NR_UE_MAC_INST_t *mac);
+void nr_ue_send_synch_request(NR_UE_MAC_INST_t *mac, module_id_t module_id, int cc_id, int cell_id);
 
 void init_RA(NR_UE_MAC_INST_t *mac,
              NR_PRACH_RESOURCES_t *prach_resources,

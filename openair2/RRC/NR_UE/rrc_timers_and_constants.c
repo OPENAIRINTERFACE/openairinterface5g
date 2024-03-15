@@ -121,8 +121,16 @@ void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc)
 
   bool t300_expired = nr_timer_tick(&timers->T300);
   if(t300_expired) {
-    LOG_W(NR_RRC, "Timer T300 expired\n");
+    LOG_W(NR_RRC, "Timer T300 expired! No timely response to RRCSetupRequest\n");
     handle_t300_expiry(rrc);
+  }
+
+  bool t301_expired = nr_timer_tick(&timers->T301);
+  // Upon T301 expiry, the UE shall perform the actions upon going to RRC_IDLE
+  // with release cause 'RRC connection failure'
+  if(t301_expired) {
+    LOG_W(NR_RRC, "Timer T301 expired! No timely response to RRCReestabilshmentRequest\n");
+    nr_rrc_going_to_IDLE(rrc, RRC_CONNECTION_FAILURE, NULL);
   }
 
   bool t304_expired = nr_timer_tick(&timers->T304);
@@ -146,7 +154,7 @@ void nr_rrc_handle_timers(NR_UE_RRC_INST_t *rrc)
 
   bool t311_expired = nr_timer_tick(&timers->T311);
   if(t311_expired) {
-    LOG_W(NR_RRC, "Timer T311 expired\n");
+    LOG_W(NR_RRC, "Timer T311 expired! No suitable cell found in time after initiation of re-establishment\n");
     // Upon T311 expiry, the UE shall perform the actions upon going to RRC_IDLE
     // with release cause 'RRC connection failure'
     nr_rrc_going_to_IDLE(rrc, RRC_CONNECTION_FAILURE, NULL);

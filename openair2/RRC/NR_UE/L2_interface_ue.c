@@ -54,6 +54,8 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
                               const frame_t frame,
                               const int slot,
                               const rnti_t rnti,
+                              const uint32_t cellid,
+                              const long arfcn,
                               const channel_t channel,
                               const uint8_t* pduP,
                               const sdu_size_t pdu_len)
@@ -84,6 +86,8 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
         NR_RRC_MAC_BCCH_DATA_IND (message_p).slot = slot;
         NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu_size = sdu_size;
         NR_RRC_MAC_BCCH_DATA_IND (message_p).gnb_index = gNB_index;
+        NR_RRC_MAC_BCCH_DATA_IND (message_p).phycellid = cellid;
+        NR_RRC_MAC_BCCH_DATA_IND (message_p).ssb_arfcn = arfcn;
         NR_RRC_MAC_BCCH_DATA_IND (message_p).is_bch = (channel == NR_BCCH_BCH);
         itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
       }
@@ -122,10 +126,11 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
   return(0);
 }
 
-void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti)
+void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti, int gnb_id)
 {
   MessageDef *message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_MSG3_IND);
   NR_RRC_MAC_MSG3_IND (message_p).rnti = rnti;
+  NR_RRC_MAC_MSG3_IND (message_p).gnb_id = gnb_id;
   itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(mod_id), message_p);
 }
 

@@ -56,12 +56,11 @@ void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data
 void nr_ue_init_mac(NR_UE_MAC_INST_t *mac)
 {
   LOG_I(NR_MAC, "[UE%d] Initializing MAC\n", mac->ue_id);
-  mac->first_sync_frame = -1;
+  nr_ue_reset_sync_state(mac);
   mac->get_sib1 = false;
   mac->get_otherSI = false;
   mac->phy_config_request_sent = false;
   memset(&mac->phy_config, 0, sizeof(mac->phy_config));
-  mac->state = UE_NOT_SYNC;
   mac->si_window_start = -1;
   mac->servCellIndex = 0;
   mac->harq_ACK_SpatialBundlingPUCCH = false;
@@ -69,6 +68,9 @@ void nr_ue_init_mac(NR_UE_MAC_INST_t *mac)
   mac->uecap_maxMIMO_PDSCH_layers = 0;
   mac->uecap_maxMIMO_PUSCH_layers_cb = 0;
   mac->uecap_maxMIMO_PUSCH_layers_nocb = 0;
+  mac->p_Max = INT_MIN;
+  mac->p_Max_alt = INT_MIN;
+  reset_mac_inst(mac);
 
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
@@ -76,35 +78,32 @@ void nr_ue_init_mac(NR_UE_MAC_INST_t *mac)
     memset(&mac->ssb_list[i], 0, sizeof(mac->ssb_list[i]));
     memset(&mac->prach_assoc_pattern[i], 0, sizeof(mac->prach_assoc_pattern[i]));
   }
-  for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++) {
-    mac->ul_harq_info[k].last_ndi = -1; // initialize to invalid value
-    mac->dl_harq_info[k].last_ndi = -1; // initialize to invalid value
-  }
 }
 
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
 {
   // default values as defined in 38.331 sec 9.2.2
-  mac->scheduling_info.retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf10240;
-  mac->scheduling_info.periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_infinity;
-  mac->scheduling_info.SR_COUNTER = 0;
-  mac->scheduling_info.SR_pending = 0;
-  mac->scheduling_info.sr_ProhibitTimer = 0;
-  mac->scheduling_info.sr_ProhibitTimer_Running = 0;
-  mac->scheduling_info.sr_id = -1; // invalid init value
+  mac->scheduling_info.retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf80;
+  mac->scheduling_info.periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf10;
+  mac->scheduling_info.periodicPHR_Timer = NR_PHR_Config__phr_PeriodicTimer_sf10;
+  mac->scheduling_info.prohibitPHR_Timer = NR_PHR_Config__phr_ProhibitTimer_sf10;
+}
 
-  // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value
-  // configured by the NW.
-  mac->scheduling_info.periodicBSR_SF = NR_MAC_UE_BSR_TIMER_NOT_RUNNING;
-  mac->scheduling_info.retxBSR_SF = NR_MAC_UE_BSR_TIMER_NOT_RUNNING;
-  mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
+void nr_ue_send_synch_request(NR_UE_MAC_INST_t *mac, module_id_t module_id, int cc_id, int cell_id)
+{
+  // Sending to PHY a request to resync
+  mac->synch_request.Mod_id = module_id;
+  mac->synch_request.CC_id = cc_id;
+  mac->synch_request.synch_req.target_Nid_cell = cell_id;
+  mac->if_module->synch_request(&mac->synch_request);
+}
 
-  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
-    LOG_D(NR_MAC, "Applying default logical channel config for LCGID %d\n", i);
-    mac->scheduling_info.lc_sched_info[i].LCID_buffer_with_data = false;
-    mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
-    mac->scheduling_info.lc_sched_info[i].Bj = 0;
-  }
+void nr_ue_reset_sync_state(NR_UE_MAC_INST_t *mac)
+{
+  // reset synchornization status
+  mac->first_sync_frame = -1;
+  mac->state = UE_NOT_SYNC;
+  mac->ra.ra_state = RA_UE_IDLE;
 }
 
 NR_UE_MAC_INST_t *nr_l2_init_ue(int nb_inst)
@@ -144,14 +143,16 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
 {
   // MAC reset according to 38.321 Section 5.12
 
-  nr_ue_mac_default_configs(nr_mac);
-
   // initialize Bj for each logical channel to zero
-  for (int i = 0; i < NR_MAX_NUM_LCID; i++)
+  // TODO reset also other status variables of LC, is this ok?
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
     nr_mac->scheduling_info.lc_sched_info[i].Bj = 0;
+    nr_mac->scheduling_info.lc_sched_info[i].LCID_buffer_with_data = false;
+    nr_mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
+  }
 
-  // stop all running timers
-  // TODO
+  // TODO stop all running timers
+  nr_timer_stop(&nr_mac->ra.contention_resolution_timer);
 
   // consider all timeAlignmentTimers as expired and perform the corresponding actions in clause 5.2
   // TODO
@@ -171,10 +172,16 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   free_and_zero(nr_mac->ra.Msg3_buffer);
 
   // cancel any triggered Scheduling Request procedure
-  // Done in default config
+  nr_mac->scheduling_info.SR_COUNTER = 0;
+  nr_mac->scheduling_info.SR_pending = 0;
+  nr_mac->scheduling_info.sr_ProhibitTimer = 0;
+  nr_mac->scheduling_info.sr_ProhibitTimer_Running = 0;
+  nr_mac->scheduling_info.sr_id = -1; // invalid init value
 
   // cancel any triggered Buffer Status Reporting procedure
-  // Done in default config
+  nr_mac->scheduling_info.periodicBSR_SF = NR_MAC_UE_BSR_TIMER_NOT_RUNNING;
+  nr_mac->scheduling_info.retxBSR_SF = NR_MAC_UE_BSR_TIMER_NOT_RUNNING;
+  nr_mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
 
   // cancel any triggered Power Headroom Reporting procedure
   // TODO PHR not implemented yet
@@ -194,12 +201,24 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   // TODO beam failure procedure not implemented
 }
 
-void release_mac_configuration(NR_UE_MAC_INST_t *mac)
+void release_mac_configuration(NR_UE_MAC_INST_t *mac,
+                               NR_UE_MAC_reset_cause_t cause)
 {
-  asn1cFreeStruc(asn_DEF_NR_MIB, mac->mib);
-  asn1cFreeStruc(asn_DEF_NR_SI_SchedulingInfo, mac->si_SchedulingInfo);
-  asn1cFreeStruc(asn_DEF_NR_TDD_UL_DL_ConfigCommon, mac->tdd_UL_DL_ConfigurationCommon);
   NR_UE_ServingCell_Info_t *sc = &mac->sc_info;
+  // if cause is Re-establishment, release spCellConfig only
+  if (cause == GO_TO_IDLE) {
+    asn1cFreeStruc(asn_DEF_NR_MIB, mac->mib);
+    asn1cFreeStruc(asn_DEF_NR_SearchSpace, mac->search_space_zero);
+    asn1cFreeStruc(asn_DEF_NR_ControlResourceSet, mac->coreset0);
+    asn1cFreeStruc(asn_DEF_NR_SI_SchedulingInfo, mac->si_SchedulingInfo);
+    asn1cFreeStruc(asn_DEF_NR_TDD_UL_DL_ConfigCommon, mac->tdd_UL_DL_ConfigurationCommon);
+    for (int i = 0; i < mac->lc_ordered_list.count; i++) {
+      nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
+      asn_sequence_del(&mac->lc_ordered_list, i, 0);
+      free(lc_info);
+    }
+  }
+
   asn1cFreeStruc(asn_DEF_NR_CrossCarrierSchedulingConfig, sc->crossCarrierSchedulingConfig);
   asn1cFreeStruc(asn_DEF_NR_SRS_CarrierSwitching, sc->carrierSwitching);
   asn1cFreeStruc(asn_DEF_NR_UplinkConfig, sc->supplementaryUplink);
@@ -218,19 +237,34 @@ void release_mac_configuration(NR_UE_MAC_INST_t *mac)
   mac->current_DL_BWP = NULL;
   mac->current_UL_BWP = NULL;
 
-  for (int i = 0; i < mac->dl_BWPs.count; i++)
-    release_dl_BWP(mac, i);
-  for (int i = 0; i < mac->ul_BWPs.count; i++)
-    release_ul_BWP(mac, i);
-
-  asn1cFreeStruc(asn_DEF_NR_SearchSpace, mac->search_space_zero);
-  asn1cFreeStruc(asn_DEF_NR_ControlResourceSet, mac->coreset0);
-
-  for (int i = 0; i < mac->lc_ordered_list.count; i++) {
-    nr_lcordered_info_t *lc_info = mac->lc_ordered_list.array[i];
-    asn_sequence_del(&mac->lc_ordered_list, i, 0);
-    free(lc_info);
+  // in case of re-establishment we don't need to release initial BWP config common
+  int first_bwp_rel = 0; // first BWP to release
+  if (cause == RE_ESTABLISHMENT) {
+    first_bwp_rel = 1;
+    // release dedicated BWP0 config
+    NR_UE_DL_BWP_t *bwp = mac->dl_BWPs.array[0];
+    NR_BWP_PDCCH_t *pdcch = &mac->config_BWP_PDCCH[0];
+    for (int i = 0; pdcch->list_Coreset.count; i++)
+      asn_sequence_del(&pdcch->list_Coreset, i, 1);
+    for (int i = 0; pdcch->list_SS.count; i++)
+      asn_sequence_del(&pdcch->list_SS, i, 1);
+    asn1cFreeStruc(asn_DEF_NR_PDSCH_Config, bwp->pdsch_Config);
+    NR_UE_UL_BWP_t *ubwp = mac->ul_BWPs.array[0];
+    asn1cFreeStruc(asn_DEF_NR_PUCCH_Config, ubwp->pucch_Config);
+    asn1cFreeStruc(asn_DEF_NR_SRS_Config, ubwp->srs_Config);
+    asn1cFreeStruc(asn_DEF_NR_PUSCH_Config, ubwp->pusch_Config);
+    mac->current_DL_BWP = bwp;
+    mac->current_UL_BWP = ubwp;
+    mac->sc_info.initial_dl_BWPSize = bwp->BWPSize;
+    mac->sc_info.initial_dl_BWPStart = bwp->BWPStart;
+    mac->sc_info.initial_ul_BWPSize = ubwp->BWPSize;
+    mac->sc_info.initial_ul_BWPStart = ubwp->BWPStart;
   }
+
+  for (int i = first_bwp_rel; i < mac->dl_BWPs.count; i++)
+    release_dl_BWP(mac, i);
+  for (int i = first_bwp_rel; i < mac->ul_BWPs.count; i++)
+    release_ul_BWP(mac, i);
 
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->csirs_measurements, 0, sizeof(mac->csirs_measurements));

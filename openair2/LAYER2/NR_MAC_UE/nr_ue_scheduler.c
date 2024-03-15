@@ -553,6 +553,9 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->bwp_start = current_UL_BWP->BWPStart;
     pusch_config_pdu->bwp_size = current_UL_BWP->BWPSize;
 
+    pusch_config_pdu->start_symbol_index = tda_info->startSymbolIndex;
+    pusch_config_pdu->nr_of_symbols = tda_info->nrOfSymbols;
+
     /* Transform precoding */
     pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, dci_format, 0);
 
@@ -636,9 +639,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       LOG_E(NR_MAC, "can't nr_ue_process_dci_freq_dom_resource_assignment()\n");
       return -1;
     }
-
-    pusch_config_pdu->start_symbol_index = tda_info->startSymbolIndex;
-    pusch_config_pdu->nr_of_symbols = tda_info->nrOfSymbols;
 
     /* FREQ_HOPPING_FLAG */
     if ((pusch_Config!=NULL) && (pusch_Config->frequencyHopping!=NULL) && (pusch_Config->resourceAllocation != NR_PUSCH_Config__resourceAllocation_resourceAllocationType0)){

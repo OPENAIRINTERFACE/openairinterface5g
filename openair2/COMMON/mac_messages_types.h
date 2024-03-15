@@ -76,7 +76,8 @@ typedef struct NRRrcMacRaInd_s {
 } NRRrcMacRaInd;
 
 typedef struct NRRrcMacMsg3Ind_s {
-  uint16_t  rnti;
+  uint16_t rnti;
+  int gnb_id;
 } NRRrcMacMsg3Ind;
 
 typedef struct RrcMacInSyncInd_s {
@@ -118,6 +119,8 @@ typedef struct NRRrcMacBcchDataInd_s {
   bool      is_bch;
   uint8_t   rsrq;
   uint8_t   rsrp;
+  uint32_t  phycellid;
+  long      ssb_arfcn;
 } NRRrcMacBcchDataInd;
 
 typedef struct NRRrcMacSBcchDataInd_s {
