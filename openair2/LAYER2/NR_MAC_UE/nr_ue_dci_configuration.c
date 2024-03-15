@@ -444,18 +444,12 @@ bool monitior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
       for (int i = 0; i < duration; i++) {
         if (((frame * slots_per_frame + slot - offset - i) % period) == 0) {
           int N = mac->ssb_list[bwp_id].nb_tx_ssb;
-          int K = 0; // k_th transmitted SSB
-          for (int i = 0; i < mac->mib_ssb; i++) {
-            if(mac->ssb_list[bwp_id].tx_ssb[i].transmitted)
-              K++;
-          }
+	  int K = mac->ssb_list->nb_ssb_per_index[mac->mib_ssb];
+	  
           // numbering current frame and slot in terms of monitoring occasions in window
           int current_monitor_occasion = ((abs_slot - mac->si_window_start) % period) +
                                          (duration * (abs_slot - mac->si_window_start) / period);
-          if (current_monitor_occasion % N == K)
-            return true;
-          else
-           return false;
+          return current_monitor_occasion % N == K;
         }
       }
     }
