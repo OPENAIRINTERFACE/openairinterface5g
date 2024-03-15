@@ -1160,14 +1160,6 @@ static void rrc_handle_RRCSetupRequest(gNB_RRC_INST *rrc,
            rrcSetupRequest->ue_Identity.choice.randomValue.buf,
            rrcSetupRequest->ue_Identity.choice.randomValue.size);
 
-    /* if there is already a registered UE (with another RNTI) with this random_value,
-     * the current one must be removed from MAC/PHY (zombie UE)
-     */
-    if ((ue_context_p = rrc_gNB_ue_context_random_exist(rrc, random_value))) {
-      LOG_W(NR_RRC, "new UE rnti (coming with random value) is already there, removing UE %x from MAC/PHY\n", msg->crnti);
-      AssertFatal(false, "not implemented\n");
-    }
-
     ue_context_p = rrc_gNB_create_ue_context(assoc_id, msg->crnti, rrc, random_value, msg->gNB_DU_ue_id);
   } else if (NR_InitialUE_Identity_PR_ng_5G_S_TMSI_Part1 == rrcSetupRequest->ue_Identity.present) {
     /* <5G-S-TMSI> = <AMF Set ID><AMF Pointer><5G-TMSI> 48-bit */
