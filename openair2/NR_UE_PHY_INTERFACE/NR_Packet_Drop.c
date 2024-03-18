@@ -121,8 +121,7 @@ bool should_drop_transport_block(int slot, uint16_t rnti)
 
   /* We want to avoid dropping setup messages because this would be pathological. */
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-  if (mac->ra.ra_state < RA_SUCCEEDED)
-  {
+  if (mac->ra.ra_state < nrRA_SUCCEEDED) {
     LOG_D(NR_MAC, "Not dropping because MAC state: %d", mac->ra.ra_state);
     return false;
   }

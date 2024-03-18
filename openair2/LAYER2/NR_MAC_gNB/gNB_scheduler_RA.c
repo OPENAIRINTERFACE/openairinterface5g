@@ -574,7 +574,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
 
     NR_RA_t *ra = &cc->ra[i];
-    if (ra->state != RA_IDLE)
+    if (ra->ra_state != nrRA_gNB_IDLE)
       continue;
 
     pr_found = 0;
@@ -648,21 +648,26 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     LOG_D(NR_MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
 
     int loop = 0;
+    bool exist_connected_ue, exist_in_pending_ra_ue;
     if (ra->rnti == 0) { // This condition allows for the usage of a preconfigured rnti for the CFRA
+      rnti_t trial = 0;
       do {
         // 3GPP TS 38.321 version 15.13.0 Section 7.1 Table 7.1-1: RNTI values
-        ra->rnti = (taus() % 0xffef) + 1;
+        while (trial < 1 || trial > 0xffef)
+          trial = (taus() % 0xffef) + 1;
+        exist_connected_ue = find_nr_UE(&nr_mac->UE_info, trial) != NULL;
+        exist_in_pending_ra_ue = find_nr_RA_id(module_idP, CC_id, trial) != -1;
         loop++;
-      } while (loop != 100
-               && !((find_nr_UE(&nr_mac->UE_info, ra->rnti) == NULL) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
-                    && ra->rnti >= 0x1 && ra->rnti <= 0xffef));
+      } while (loop < 100 && (exist_connected_ue || exist_in_pending_ra_ue) );
       if (loop == 100) {
-        LOG_E(NR_MAC, "[RAPROC] initialisation random access aborted\n");
-        abort();
+	LOG_E(NR_MAC, "[RAPROC] initialisation random access: no more available RNTIs for new UE\n");
+	NR_SCHED_UNLOCK(&nr_mac->sched_lock);
+	return;
       }
+      ra->rnti = trial;
     }
 
-    ra->state = Msg2;
+    ra->ra_state = nrRA_Msg2;
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
     ra->beam_id = cc->ssb_index[beam_index];
@@ -887,7 +892,7 @@ static void nr_generate_Msg3_retransmission(module_id_t module_idP,
         ra->UL_BWP.scs);
 
     // reset state to wait msg3
-    ra->state = WAIT_Msg3;
+    ra->ra_state = nrRA_WAIT_Msg3;
     ra->Msg3_frame = sched_frame;
     ra->Msg3_slot = sched_slot;
 
@@ -951,7 +956,7 @@ static void nr_get_Msg3alloc(module_id_t module_id,
           NrOfSymbols <= Msg3maxsymb) {
         ra->Msg3_tda_id = i;
         ra->msg3_startsymb = StartSymbolIndex;
-        ra->msg3_nrsymb = NrOfSymbols;
+        ra->msg3_nbSymb = NrOfSymbols;
         ra->Msg3_slot = temp_slot;
         break;
       }
@@ -1134,13 +1139,13 @@ static void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_f
   NR_UE_UL_BWP_t *ul_bwp = &ra->UL_BWP;
   NR_UE_ServingCell_Info_t *sc_info = &ra->sc_info;
 
-  if (ra->state == RA_IDLE) {
+  if (ra->ra_state == nrRA_gNB_IDLE) {
     LOG_W(NR_MAC,"RA is not active for RA %X. skipping msg3 scheduling\n", ra->rnti);
     return;
   }
 
   const int scs = ul_bwp->scs;
-  const uint16_t mask = SL_to_bitmap(ra->msg3_startsymb, ra->msg3_nrsymb);
+  const uint16_t mask = SL_to_bitmap(ra->msg3_startsymb, ra->msg3_nbSymb);
   int buffer_index = ul_buffer_index(ra->Msg3_frame, ra->Msg3_slot, scs, mac->vrb_map_UL_size);
   uint16_t *vrb_map_UL = &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[buffer_index * MAX_BWP_SIZE];
   for (int i = 0; i < ra->msg3_nb_rb; ++i) {
@@ -1309,8 +1314,15 @@ static void nr_generate_Msg2(module_id_t module_idP,
     pdsch_pdu_rel15->precodingAndBeamforming.prgs_list[0].pm_idx = 0;
     pdsch_pdu_rel15->precodingAndBeamforming.prgs_list[0].dig_bf_interface_list[0].beam_idx = 0;
 
-    LOG_A(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg2 DCI, rnti 0x%x, state %d, CoreSetType %d\n",
-          module_idP, CC_id, frameP, slotP, ra->RA_rnti, ra->state,pdcch_pdu_rel15->CoreSetType);
+    LOG_A(NR_MAC,
+          "[gNB %d][RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg2 DCI, rnti 0x%x, state %d, CoreSetType %d\n",
+          module_idP,
+          CC_id,
+          frameP,
+          slotP,
+          ra->RA_rnti,
+          ra->ra_state,
+          pdcch_pdu_rel15->CoreSetType);
 
     // SCF222: PDU index incremented for each PDSCH PDU sent in TX control message. This is used to associate control
     // information to data and is reset every slot.
@@ -1483,8 +1495,14 @@ static void nr_generate_Msg2(module_id_t module_idP,
       vrb_map[BWPStart + rb + rbStart] |= SL_to_bitmap(tda_info.startSymbolIndex, tda_info.nrOfSymbols);
     }
 
-    ra->state = WAIT_Msg3;
-    LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: rnti %04x RA state %d\n", module_idP, frameP, slotP, ra->rnti, ra->state);
+    ra->ra_state = nrRA_WAIT_Msg3;
+    LOG_D(NR_MAC,
+          "[gNB %d][RAPROC] Frame %d, Subframe %d: rnti %04x RA state %s\n",
+          module_idP,
+          frameP,
+          slotP,
+          ra->rnti,
+          nrra_text[ra->ra_state]);
   }
 }
 
@@ -1933,7 +1951,7 @@ static void nr_generate_Msg4(module_id_t module_idP,
       vrb_map[BWPStart + rb + rbStart] |= SL_to_bitmap(msg4_tda.startSymbolIndex, msg4_tda.nrOfSymbols);
     }
 
-    ra->state = WAIT_Msg4_ACK;
+    ra->ra_state = nrRA_WAIT_Msg4_ACK;
     LOG_I(NR_MAC,"UE %04x Generate msg4: feedback at %4d.%2d, payload %d bytes, next state WAIT_Msg4_ACK\n", ra->rnti, pucch->frame, pucch->ul_slot, harq->tb_size);
   }
 }
@@ -1971,7 +1989,7 @@ static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, s
       }
     } else {
       LOG_I(NR_MAC, "(UE %04x) Received Nack of RA-Msg4. Preparing retransmission!\n", ra->rnti);
-      ra->state = Msg4;
+      ra->ra_state = nrRA_Msg4;
     }
   }
 }
@@ -1981,7 +1999,7 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t
   /* we assume that this function is mutex-protected from outside */
   NR_SCHED_ENSURE_LOCKED(&RC.nrmac[module_idP]->sched_lock);
   LOG_D(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra->rnti);
-  ra->state = RA_IDLE;
+  ra->ra_state = nrRA_gNB_IDLE;
   ra->timing_offset = 0;
   ra->RRC_timer = 20;
   ra->msg3_round = 0;
@@ -2122,10 +2140,10 @@ void nr_schedule_RA(module_id_t module_idP,
     NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
     for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
       NR_RA_t *ra = &cc->ra[i];
-      LOG_D(NR_MAC, "RA[state:%d]\n", ra->state);
+      LOG_D(NR_MAC, "RA[state:%d]\n", ra->ra_state);
 
       // Check RA Contention Resolution timer
-      if (ra->state >= WAIT_Msg3) {
+      if (ra->ra_state >= nrRA_WAIT_Msg3) {
         ra->contention_resolution_timer--;
         if (ra->contention_resolution_timer < 0) {
           LOG_W(NR_MAC, "(%d.%d) RA Contention Resolution timer expired for UE 0x%04x, RA procedure failed...\n", frameP, slotP, ra->rnti);
@@ -2135,19 +2153,19 @@ void nr_schedule_RA(module_id_t module_idP,
         }
       }
 
-      switch (ra->state) {
-        case Msg2:
+      switch (ra->ra_state) {
+        case nrRA_Msg2:
           nr_generate_Msg2(module_idP, CC_id, frameP, slotP, ra, DL_req, TX_req);
           break;
-        case Msg3_retransmission:
+        case nrRA_Msg3_retransmission:
           nr_generate_Msg3_retransmission(module_idP, CC_id, frameP, slotP, ra, ul_dci_req);
           break;
-        case Msg3_dcch_dtch:
+        case nrRA_Msg3_dcch_dtch:
           /* fallthrough */
-        case Msg4:
+        case nrRA_Msg4:
           nr_generate_Msg4(module_idP, CC_id, frameP, slotP, ra, DL_req, TX_req);
           break;
-        case WAIT_Msg4_ACK:
+        case nrRA_WAIT_Msg4_ACK:
           nr_check_Msg4_Ack(module_idP, CC_id, frameP, slotP, ra);
           break;
         default:

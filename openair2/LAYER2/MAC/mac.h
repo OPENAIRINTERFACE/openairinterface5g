@@ -505,7 +505,9 @@ typedef struct {
 } __attribute__ ((__packed__)) ULDCH_PDU;
 
 /*!\brief RA process state*/
-typedef enum { IDLE = 0, MSG2, WAITMSG3, MSG4, WAITMSG4ACK, MSGCRNTI, MSGCRNTI_ACK } RA_state;
+typedef enum { IDLE = 0, MSG2, WAITMSG3, MSG4, WAITMSG4ACK, MSGCRNTI, MSGCRNTI_ACK } eRA_state;
+static const char *const era_text[] = {"IDLE", "Ms2", "WAITMSG3", "WAITMSG4ACK", "MSGCRNTI", "MSGCRNTIACK"};
+
 /*!\brief  UE DLSCH scheduling states*/
 typedef enum { S_DL_NONE = 0, S_DL_SCHEDULED } UE_DLSCH_STATUS;
 /*!\brief  scheduler mode */
@@ -1032,7 +1034,7 @@ typedef struct {
 /*! \brief eNB template for the Random access information */
 typedef struct {
   /// Flag to indicate this process is active
-  RA_state state;
+  eRA_state eRA_state;
   /// Subframe where preamble was received
   uint8_t preamble_subframe;
   /// Subframe where Msg2 is to be sent
