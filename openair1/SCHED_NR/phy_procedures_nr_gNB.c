@@ -45,26 +45,25 @@
 
 extern uint8_t nfapi_mode;
 
-void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu) {
-
-  NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
+void nr_common_signal_procedures(PHY_VARS_gNB *gNB,int frame,int slot, nfapi_nr_dl_tti_ssb_pdu ssb_pdu)
+{
+  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   c16_t **txdataF = gNB->common_vars.txdataF;
-  uint8_t ssb_index, n_hf;
-  uint16_t ssb_start_symbol;
+  uint8_t n_hf;
   int txdataF_offset = slot*fp->samples_per_slot_wCP;
-  uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
+  uint16_t slots_per_hf = (fp->slots_per_frame) >> 1;
 
   if (slot<slots_per_hf)
     n_hf=0;
   else
     n_hf=1;
 
-  ssb_index = ssb_pdu.ssb_pdu_rel15.SsbBlockIndex;
-  LOG_D(PHY,"common_signal_procedures: frame %d, slot %d ssb index %d\n",frame,slot,ssb_index);
+  uint8_t ssb_index = ssb_pdu.ssb_pdu_rel15.SsbBlockIndex;
+  LOG_D(PHY,"common_signal_procedures: frame %d, slot %d ssb index %d\n", frame, slot, ssb_index);
 
-  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp,ssb_index); // computing the starting symbol for current ssb
-  ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
+  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp, ssb_index); // computing the starting symbol for current ssb
+  uint16_t ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
 
   // Setting the first subcarrier
   // 3GPP TS 38.211 sections 7.4.3.1 and 4.4.4.2
@@ -77,6 +76,27 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   const int sc_offset =
       (fp->freq_range == nr_FR1) ? ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset >> scs : ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset;
   fp->ssb_start_subcarrier = (12 * prb_offset + sc_offset);
+
+  if (fp->print_ue_help_cmdline_log && get_softmodem_params()->sa) {
+    fp->print_ue_help_cmdline_log = false;
+    if (fp->dl_CarrierFreq != fp->ul_CarrierFreq)
+      LOG_A(PHY,
+            "Command line parameters for the UE: -C %lu --CO %lu -r %d --numerology %d --band %d --ssb %d\n",
+            fp->dl_CarrierFreq,
+            fp->dl_CarrierFreq - fp->ul_CarrierFreq,
+            fp->N_RB_DL,
+            scs,
+            fp->nr_band,
+            fp->ssb_start_subcarrier);
+    else
+      LOG_A(PHY,
+            "Command line parameters for the UE: -C %lu -r %d --numerology %d --band %d --ssb %d\n",
+            fp->dl_CarrierFreq,
+            fp->N_RB_DL,
+            scs,
+            fp->nr_band,
+            fp->ssb_start_subcarrier);
+  }
   LOG_D(PHY,
         "ssbOffsetPointA %d SSB SsbSubcarrierOffset %d  prb_offset %d sc_offset %d scs %d ssb_start_subcarrier %d\n",
         ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA,
