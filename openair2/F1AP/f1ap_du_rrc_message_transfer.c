@@ -50,7 +50,6 @@
 #include "asn1_msg.h"
 #include "intertask_interface.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
@@ -83,7 +82,6 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id
     /* strange: it is not named OLD_GNB_DU_UE... */
     old_gNB_DU_ue_id_stack = ie->value.choice.GNB_DU_UE_F1AP_ID_1;
     old_gNB_DU_ue_id = &old_gNB_DU_ue_id_stack;
-    gtpv1u_update_ue_id(getCxt(instance)->gtpInst, old_gNB_DU_ue_id_stack, du_ue_f1ap_id);
   }
 
   /* mandatory */
