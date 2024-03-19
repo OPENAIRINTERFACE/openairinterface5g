@@ -109,6 +109,14 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
   }
 }
 
+static uint32_t get_ssb_arfcn(NR_DL_FRAME_PARMS *frame_parms)
+{
+  uint32_t band_size_hz = frame_parms->N_RB_DL * 12 * frame_parms->subcarrier_spacing;
+  int ssb_center_sc = frame_parms->ssb_start_subcarrier + 120; // ssb is 20 PRBs -> 240 sub-carriers
+  uint64_t ssb_freq = frame_parms->dl_CarrierFreq - (band_size_hz / 2) + frame_parms->subcarrier_spacing * ssb_center_sc;
+  return to_nrarfcn(frame_parms->nr_band, ssb_freq, frame_parms->numerology_index, band_size_hz);
+}
+
 void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            uint8_t pdu_type,
                            PHY_VARS_NR_UE *ue,
@@ -168,6 +176,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
           ssb_pdu->cell_id = frame_parms->Nid_cell;
           ssb_pdu->ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
           ssb_pdu->rsrp_dBm = ue->measurements.ssb_rsrp_dBm[frame_parms->ssb_index];
+          ssb_pdu->arfcn = get_ssb_arfcn(frame_parms);
           ssb_pdu->radiolink_monitoring = RLM_in_sync; // TODO to be removed from here
           ssb_pdu->decoded_pdu = true;
         }
@@ -384,7 +393,6 @@ static int nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
                    dl_ch_estimates,
                    &ue->frame_parms,
                    (ue->frame_parms.ssb_index)&7,
-                   SISO,
                    &result,
                    rxdataF);
 

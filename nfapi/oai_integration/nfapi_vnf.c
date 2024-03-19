@@ -39,6 +39,7 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "openair2/LAYER2/MAC/mac.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "executables/lte-softmodem.h"
 #include "openair1/PHY/defs_gNB.h"
@@ -46,7 +47,6 @@
 #include "common/ran_context.h"
 #include "openair2/PHY_INTERFACE/queue_t.h"
 #include "gnb_ind_vars.h"
-#include "LAYER2/MAC/mac.h"
 
 #define TEST
 

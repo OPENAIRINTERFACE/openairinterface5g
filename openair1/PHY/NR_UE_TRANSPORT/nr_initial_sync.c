@@ -153,15 +153,7 @@ int nr_pbch_detection(const UE_nr_rxtx_proc_t *proc,
 
     stop_meas(&ue->dlsch_channel_estimation_stats);
     fapiPbch_t result = {0};
-    ret = nr_rx_pbch(ue,
-                     proc,
-                     estimateSz,
-                     dl_ch_estimates,
-                     frame_parms,
-                     temp_ptr->i_ssb,
-                     SISO,
-                     &result,
-                     rxdataF);
+    ret = nr_rx_pbch(ue, proc, estimateSz, dl_ch_estimates, frame_parms, temp_ptr->i_ssb, &result, rxdataF);
 
     if (DUMP_PBCH_CH_ESTIMATES && (ret == 0)) {
       write_output("pbch_ch_estimates.m", "pbch_ch_estimates", dl_ch_estimates, frame_parms->nb_antennas_rx*estimateSz, 1, 1);

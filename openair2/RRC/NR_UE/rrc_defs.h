@@ -56,6 +56,9 @@
 #include "NR_UE-NR-Capability.h"
 #include "NR_SL-PreconfigurationNR-r16.h"
 #include "NR_MasterInformationBlockSidelink.h"
+#include "NR_ReestablishmentCause.h"
+#include "NR_MeasurementReport.h"
+#include "NR_VarMeasReport.h"
 
 #include "RRC/NR/nr_rrc_common.h"
 #include "as_message.h"
@@ -65,6 +68,7 @@
 #define MAX_MEAS_OBJ 7
 #define MAX_MEAS_CONFIG 7
 #define MAX_MEAS_ID 7
+#define MAX_QUANTITY_CONFIG 2
 
 typedef uint32_t channel_t;
 
@@ -85,8 +89,6 @@ typedef enum Rrc_State_NR_e {
   RRC_STATE_INACTIVE_NR,
   RRC_STATE_CONNECTED_NR,
   RRC_STATE_DETACH_NR,
-  RRC_STATE_FIRST_NR = RRC_STATE_IDLE_NR,
-  RRC_STATE_LAST_NR = RRC_STATE_CONNECTED_NR,
 } Rrc_State_NR_t;
 
 typedef enum requested_SI_List_e {
@@ -155,6 +157,7 @@ typedef struct NR_UE_Timers_Constants_s {
   NR_timer_t T311;
   NR_timer_t T319;
   NR_timer_t T320;
+  NR_timer_t T321;
   NR_timer_t T325;
   NR_timer_t T390;
   // counters
@@ -175,8 +178,9 @@ typedef enum { RB_NOT_PRESENT, RB_ESTABLISHED, RB_SUSPENDED } NR_RB_status_t;
 typedef struct rrcPerNB {
   NR_MeasObjectToAddMod_t *MeasObj[MAX_MEAS_OBJ];
   NR_ReportConfigToAddMod_t *ReportConfig[MAX_MEAS_CONFIG];
-  NR_QuantityConfig_t *QuantityConfig;
+  NR_QuantityConfigNR_t *QuantityConfig[MAX_QUANTITY_CONFIG];
   NR_MeasIdToAddMod_t *MeasId[MAX_MEAS_ID];
+  NR_VarMeasReport_t *MeasReport[MAX_MEAS_ID];
   NR_MeasGapConfig_t *measGapConfig;
   NR_UE_RRC_SI_INFO SInfo;
   NR_RSRP_Range_t s_measure;
@@ -187,10 +191,14 @@ typedef struct NR_UE_RRC_INST_s {
   rrcPerNB_t perNB[NB_CNX_UE];
 
   rnti_t rnti;
+  uint32_t phyCellID;
+  long arfcn_ssb;
 
   OAI_NR_UECapability_t UECap;
   NR_UE_Timers_Constants_t timers_and_constants;
+
   RA_trigger_t ra_trigger;
+  NR_ReestablishmentCause_t reestablishment_cause;
   plmn_t plmnID;
 
   NR_BWP_Id_t dl_bwp_id;

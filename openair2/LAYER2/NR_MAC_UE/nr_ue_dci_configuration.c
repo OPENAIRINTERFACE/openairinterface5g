@@ -160,7 +160,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
     rel15->coreset.pdcch_dmrs_scrambling_id = mac->physCellId;
   }
 
-  rel15->num_dci_options = (mac->ra.ra_state == WAIT_RAR || rnti_type == TYPE_SI_RNTI_) ? 1 : 2;
+  rel15->num_dci_options = (mac->ra.ra_state == nrRA_WAIT_RAR || rnti_type == TYPE_SI_RNTI_) ? 1 : 2;
 
   if (ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
     if (ss->searchSpaceType->choice.ue_Specific->dci_Formats ==
@@ -406,11 +406,11 @@ bool is_ss_monitor_occasion(const int frame, const int slot, const int slots_per
   return monitor;
 }
 
-bool monitior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
-                               const NR_SearchSpace_t *ss,
-                               const int slots_per_frame,
-                               const int frame,
-                               const int slot)
+bool monitor_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
+                              const NR_SearchSpace_t *ss,
+                              const int slots_per_frame,
+                              const int frame,
+                              const int slot)
 {
   const struct NR_SI_SchedulingInfo *si_SchedulingInfo = mac->si_SchedulingInfo;
   // 5.2.2.3.2 in 331
@@ -444,18 +444,12 @@ bool monitior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
       for (int i = 0; i < duration; i++) {
         if (((frame * slots_per_frame + slot - offset - i) % period) == 0) {
           int N = mac->ssb_list[bwp_id].nb_tx_ssb;
-          int K = 0; // k_th transmitted SSB
-          for (int i = 0; i < mac->mib_ssb; i++) {
-            if(mac->ssb_list[bwp_id].tx_ssb[i].transmitted)
-              K++;
-          }
+	  int K = mac->ssb_list->nb_ssb_per_index[mac->mib_ssb];
+	  
           // numbering current frame and slot in terms of monitoring occasions in window
           int current_monitor_occasion = ((abs_slot - mac->si_window_start) % period) +
                                          (duration * (abs_slot - mac->si_window_start) / period);
-          if (current_monitor_occasion % N == K)
-            return true;
-          else
-           return false;
+          return current_monitor_occasion % N == K;
         }
       }
     }
@@ -508,20 +502,18 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
     // are same as PDCCH monitoring occasions for SIB1
     const NR_SearchSpace_t *ss = pdcch_config->otherSI_SS ? pdcch_config->otherSI_SS : mac->search_space_zero;
     // TODO configure SI-window
-    if (monitior_dci_for_other_SI(mac, ss, slots_per_frame, frame, slot)) {
+    if (monitor_dci_for_other_SI(mac, ss, slots_per_frame, frame, slot)) {
       LOG_D(NR_MAC_DCI, "Monitoring DCI for other SIs in frame %d slot %d\n", frame, slot);
       config_dci_pdu(mac, dl_config, TYPE_SI_RNTI_, slot, ss);
     }
   }
-  if (mac->state == UE_PERFORMING_RA &&
-      mac->ra.ra_state >= WAIT_RAR) {
+  if (mac->state == UE_PERFORMING_RA && mac->ra.ra_state >= nrRA_WAIT_RAR) {
     // if RA is ongoing use RA search space
     if (is_ss_monitor_occasion(frame, slot, slots_per_frame, pdcch_config->ra_SS)) {
-      int rnti_type = mac->ra.ra_state == WAIT_RAR ? TYPE_RA_RNTI_ : TYPE_TC_RNTI_;
+      int rnti_type = mac->ra.ra_state == nrRA_WAIT_RAR ? TYPE_RA_RNTI_ : TYPE_TC_RNTI_;
       config_dci_pdu(mac, dl_config, rnti_type, slot, pdcch_config->ra_SS);
     }
-  }
-  else if (mac->state == UE_CONNECTED) {
+  } else if (mac->state == UE_CONNECTED) {
     for (int i = 0; i < pdcch_config->list_SS.count; i++) {
       NR_SearchSpace_t *ss = pdcch_config->list_SS.array[i];
       if (is_ss_monitor_occasion(frame, slot, slots_per_frame, ss))

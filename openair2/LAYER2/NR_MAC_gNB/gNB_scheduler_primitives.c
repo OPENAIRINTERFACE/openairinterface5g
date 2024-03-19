@@ -2000,15 +2000,12 @@ NR_UE_info_t *find_nr_UE(NR_UEs_t *UEs, rnti_t rntiP)
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP)
 {
-  NR_RA_t *ra = &RC.nrmac[mod_idP]->common_channels[CC_idP].ra[0];
+  NR_RA_t *ra = RC.nrmac[mod_idP]->common_channels[CC_idP].ra;
 
   for (int RA_id = 0; RA_id < NR_NB_RA_PROC_MAX; RA_id++) {
-    LOG_D(NR_MAC, "Checking RA_id %d for %x : state %d\n",
-          RA_id,
-          rntiP,
-          ra[RA_id].state);
+    LOG_D(NR_MAC, "Checking RA_id %d for %x : state %s\n", RA_id, rntiP, nrra_text[ra[RA_id].ra_state]);
 
-    if (ra[RA_id].state != RA_IDLE && ra[RA_id].rnti == rntiP)
+    if (ra[RA_id].ra_state != nrRA_gNB_IDLE && ra[RA_id].rnti == rntiP)
       return RA_id;
   }
 

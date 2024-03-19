@@ -37,25 +37,82 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
-bool DURecvCb(protocol_ctxt_t *ctxt_pP,
-              const srb_flag_t srb_flagP,
-              const rb_id_t rb_idP,
-              const mui_t muiP,
-              const confirm_t confirmP,
-              const sdu_size_t sdu_buffer_sizeP,
-              unsigned char *const sdu_buffer_pP,
-              const pdcp_transmission_mode_t modeP,
-              const uint32_t *sourceL2Id,
-              const uint32_t *destinationL2Id)
+static void f1ap_read_drb_qos_param(const F1AP_QoSFlowLevelQoSParameters_t *asn1_qos, f1ap_qos_flow_level_qos_parameters_t *drb_qos)
 {
-  // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
-  uint8_t *sdu = malloc16(sdu_buffer_sizeP);
-  memcpy(sdu, sdu_buffer_pP, sdu_buffer_sizeP);
-  du_rlc_data_req(ctxt_pP, srb_flagP, false, rb_idP, muiP, confirmP, sdu_buffer_sizeP, sdu);
-  return true;
+  f1ap_qos_characteristics_t *drb_qos_char = &drb_qos->qos_characteristics;
+  const F1AP_QoS_Characteristics_t *dRB_QoS_Char = &asn1_qos->qoS_Characteristics;
+
+  if (dRB_QoS_Char->present == F1AP_QoS_Characteristics_PR_non_Dynamic_5QI) {
+    drb_qos_char->qos_type = non_dynamic;
+    drb_qos_char->non_dynamic.fiveqi = dRB_QoS_Char->choice.non_Dynamic_5QI->fiveQI;
+    drb_qos_char->non_dynamic.qos_priority_level = (dRB_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel != NULL)
+                                                       ? *dRB_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel
+                                                       : -1;
+  } else {
+    drb_qos_char->qos_type = dynamic;
+    drb_qos_char->dynamic.fiveqi =
+        (dRB_QoS_Char->choice.dynamic_5QI->fiveQI != NULL) ? *dRB_QoS_Char->choice.dynamic_5QI->fiveQI : -1;
+    drb_qos_char->dynamic.qos_priority_level = dRB_QoS_Char->choice.dynamic_5QI->qoSPriorityLevel;
+    drb_qos_char->dynamic.packet_delay_budget = dRB_QoS_Char->choice.dynamic_5QI->packetDelayBudget;
+    drb_qos_char->dynamic.packet_error_rate.per_scalar = dRB_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Scalar;
+    drb_qos_char->dynamic.packet_error_rate.per_exponent = dRB_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Exponent;
+  }
+
+  /* nGRANallocationRetentionPriority */
+  drb_qos->alloc_reten_priority.priority_level = asn1_qos->nGRANallocationRetentionPriority.priorityLevel;
+  drb_qos->alloc_reten_priority.preemption_vulnerability = asn1_qos->nGRANallocationRetentionPriority.pre_emptionVulnerability;
+  drb_qos->alloc_reten_priority.preemption_capability = asn1_qos->nGRANallocationRetentionPriority.pre_emptionVulnerability;
+}
+
+static void f1ap_read_flows_mapped(const F1AP_Flows_Mapped_To_DRB_List_t *asn1_flows_mapped, f1ap_flows_mapped_to_drb_t *flows_mapped, int n)
+{
+  for (int k = 0; k < n; k++) {
+    f1ap_flows_mapped_to_drb_t *flows_mapped_to_drb = flows_mapped + k;
+    const F1AP_Flows_Mapped_To_DRB_Item_t *flows_Mapped_To_Drb = asn1_flows_mapped->list.array[0] + k;
+
+    flows_mapped_to_drb->qfi = flows_Mapped_To_Drb->qoSFlowIdentifier;
+
+    /* QoS-Flow-Level-QoS-Parameters */
+    {
+      f1ap_qos_flow_level_qos_parameters_t *flow_qos = &flows_mapped_to_drb->qos_params;
+      const F1AP_QoSFlowLevelQoSParameters_t *Flow_QoS = &flows_Mapped_To_Drb->qoSFlowLevelQoSParameters;
+
+      /* QoS Characteristics*/
+      f1ap_qos_characteristics_t *flow_qos_char = &flow_qos->qos_characteristics;
+      const F1AP_QoS_Characteristics_t *Flow_QoS_Char = &Flow_QoS->qoS_Characteristics;
+
+      if (Flow_QoS_Char->present == F1AP_QoS_Characteristics_PR_non_Dynamic_5QI) {
+        flow_qos_char->qos_type = non_dynamic;
+        flow_qos_char->non_dynamic.fiveqi = Flow_QoS_Char->choice.non_Dynamic_5QI->fiveQI;
+        flow_qos_char->non_dynamic.qos_priority_level = (Flow_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel != NULL)
+                                                            ? *Flow_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel
+                                                            : -1;
+      } else {
+        flow_qos_char->qos_type = dynamic;
+        flow_qos_char->dynamic.fiveqi =
+            (Flow_QoS_Char->choice.dynamic_5QI->fiveQI != NULL) ? *Flow_QoS_Char->choice.dynamic_5QI->fiveQI : -1;
+        flow_qos_char->dynamic.qos_priority_level = Flow_QoS_Char->choice.dynamic_5QI->qoSPriorityLevel;
+        flow_qos_char->dynamic.packet_delay_budget = Flow_QoS_Char->choice.dynamic_5QI->packetDelayBudget;
+        flow_qos_char->dynamic.packet_error_rate.per_scalar = Flow_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Scalar;
+        flow_qos_char->dynamic.packet_error_rate.per_exponent = Flow_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Exponent;
+      }
+
+      /* nGRANallocationRetentionPriority */
+      flow_qos->alloc_reten_priority.priority_level = Flow_QoS->nGRANallocationRetentionPriority.priorityLevel;
+      flow_qos->alloc_reten_priority.preemption_vulnerability = Flow_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
+      flow_qos->alloc_reten_priority.preemption_capability = Flow_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
+    }
+  }
+}
+
+static void f1ap_read_drb_nssai(const F1AP_SNSSAI_t *asn1_nssai, nssai_t *nssai)
+{
+  OCTET_STRING_TO_INT8(&asn1_nssai->sST, nssai->sst);
+  nssai->sd = 0xffffff;
+  if (asn1_nssai->sD != NULL)
+    memcpy((uint8_t *)&nssai->sd, asn1_nssai->sD->buf, 3);
 }
 
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
@@ -158,6 +215,36 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_i
         default:
           drb_p->rlc_mode = RLC_MODE_TM;
           break;
+      }
+
+      if (drbs_tobesetup_item_p->qoSInformation.present == F1AP_QoSInformation_PR_eUTRANQoS) {
+        AssertFatal(false, "Decode of eUTRANQoS is not implemented yet");
+      } // EUTRAN QoS Information
+      else {
+        /* 12.1.2 DRB_Information */
+        if (drbs_tobesetup_item_p->qoSInformation.present == F1AP_QoSInformation_PR_choice_extension) {
+          F1AP_QoSInformation_ExtIEs_t *ie =
+              (F1AP_QoSInformation_ExtIEs_t *)drbs_tobesetup_item_p->qoSInformation.choice.choice_extension;
+          if (ie->id == F1AP_ProtocolIE_ID_id_DRB_Information && ie->criticality == F1AP_Criticality_reject
+              && ie->value.present == F1AP_QoSInformation_ExtIEs__value_PR_DRB_Information) {
+
+            const F1AP_DRB_Information_t *dRB_Info = &ie->value.choice.DRB_Information;
+            f1ap_drb_information_t *drb_info = &drb_p->drb_info;
+
+            /* QoS-Flow-Level-QoS-Parameters */
+            /* QoS Characteristics*/
+            f1ap_read_drb_qos_param(&dRB_Info->dRB_QoS, &drb_info->drb_qos);
+
+            // 12.1.2.4 flows_Mapped_To_DRB_List
+            drb_info->flows_to_be_setup_length = dRB_Info->flows_Mapped_To_DRB_List.list.count;
+            drb_info->flows_mapped_to_drb = calloc(drb_info->flows_to_be_setup_length, sizeof(f1ap_flows_mapped_to_drb_t));
+            AssertFatal(drb_info->flows_mapped_to_drb, "could not allocate memory for drb_p->drb_info.flows_mapped_to_drb\n");
+            f1ap_read_flows_mapped(&dRB_Info->flows_Mapped_To_DRB_List, drb_info->flows_mapped_to_drb, drb_info->flows_to_be_setup_length);
+
+            /* S-NSSAI */
+            f1ap_read_drb_nssai(&dRB_Info->sNSSAI, &drb_p->nssai);
+          }
+        }
       }
     }
   }
@@ -305,6 +392,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_context_set
     ie7->criticality                    = F1AP_Criticality_ignore;
     ie7->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_DRBs_Setup_List;
     for (int i=0;  i< resp->drbs_to_be_setup_length; i++) {
+      f1ap_drb_to_be_setup_t *drb = &resp->drbs_to_be_setup[i];
       //
       asn1cSequenceAdd(ie7->value.choice.DRBs_Setup_List.list,
           F1AP_DRBs_Setup_ItemIEs_t, drbs_setup_item_ies);
@@ -315,14 +403,17 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_context_set
       /* ADD */
       F1AP_DRBs_Setup_Item_t *drbs_setup_item=&drbs_setup_item_ies->value.choice.DRBs_Setup_Item;
       /* dRBID */
-      drbs_setup_item->dRBID = resp->drbs_to_be_setup[i].drb_id;
+      drbs_setup_item->dRBID = drb->drb_id;
 
       /* OPTIONAL */
       /* lCID */
       //drbs_setup_item.lCID = (F1AP_LCID_t *)calloc(1, sizeof(F1AP_LCID_t));
       //drbs_setup_item.lCID = 1L;
 
-      for (int j=0;  j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++) {
+      for (int j = 0;  j < drb->up_dl_tnl_length; j++) {
+        const f1ap_up_tnl_t *tnl = &drb->up_dl_tnl[j];
+        DevAssert(tnl->teid > 0);
+
         /* ADD */
         asn1cSequenceAdd(drbs_setup_item->dLUPTNLInformation_ToBeSetup_List.list,
                        F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);
@@ -330,12 +421,9 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_context_set
         /* gTPTunnel */
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
         /* transportLayerAddress */
-        struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(0)->net_config.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
-        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
-            &gTPTunnel->transportLayerAddress);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(tnl->tl_address, &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
-        INT32_TO_OCTET_STRING(resp->drbs_to_be_setup[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
+        INT32_TO_OCTET_STRING(tnl->teid, &gTPTunnel->gTP_TEID);
       } // for j
     } // for i
 
@@ -772,16 +860,6 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(sctp_assoc_t assoc_id, f1ap_ue_context_r
   return 0;
 }
 
-static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, char *DUaddr, uint16_t DUport)
-{
-  openAddr_t tmp = {0};
-  strncpy(tmp.originHost, DUaddr, sizeof(tmp.originHost)-1);
-  strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
-  sprintf(tmp.originService, "%d", DUport);
-  sprintf(tmp.destinationService, "%d", CUport);
-  return gtpv1Init(tmp);
-}
-
 int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_UEContextModificationRequest_t    *container;
@@ -853,27 +931,6 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
        // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
       drb_p->up_ul_tnl[0].port = getCxt(instance)->net_config.CUport;
 
-      extern instance_t DUuniqInstance;
-      if (DUuniqInstance == 0) {
-        char gtp_tunnel_ip_address[32];
-        snprintf(gtp_tunnel_ip_address,
-                 sizeof(gtp_tunnel_ip_address),
-                 "%d.%d.%d.%d",
-                 drb_p->up_ul_tnl[0].tl_address & 0xff,
-                 (drb_p->up_ul_tnl[0].tl_address >> 8) & 0xff,
-                 (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
-                 (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
-        getCxt(instance)->gtpInst = du_create_gtpu_instance_to_cu(gtp_tunnel_ip_address,
-                                                                  getCxt(instance)->net_config.CUport,
-                                                                  getCxt(instance)->net_config.DU_f1_ip_address.ipv4_address,
-                                                                  getCxt(instance)->net_config.DUport);
-        AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
-        // Fixme: fully inconsistent instances management
-        // dirty global var is a bad fix
-        extern instance_t legacyInstanceMapping;
-        legacyInstanceMapping = DUuniqInstance = getCxt(instance)->gtpInst;
-      }
-
       switch (drbs_tobesetupmod_item_p->rLCMode) {
       case F1AP_RLCMode_rlc_am:
         drb_p->rlc_mode = RLC_MODE_AM;
@@ -894,101 +951,22 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
               (F1AP_QoSInformation_ExtIEs_t *)drbs_tobesetupmod_item_p->qoSInformation.choice.choice_extension;
           if (ie->id == F1AP_ProtocolIE_ID_id_DRB_Information && ie->criticality == F1AP_Criticality_reject
               && ie->value.present == F1AP_QoSInformation_ExtIEs__value_PR_DRB_Information) {
-            F1AP_DRB_Information_t *dRB_Info = &ie->value.choice.DRB_Information;
-            f1ap_drb_information_t *drb_info = &f1ap_ue_context_modification_req->drbs_to_be_setup->drb_info;
 
-            /* 12.1.2.1 dRB_QoS */
-            {
-              /* QoS-Flow-Level-QoS-Parameters */
-              f1ap_qos_flow_level_qos_parameters_t *drb_qos = &drb_info->drb_qos;
-              F1AP_QoSFlowLevelQoSParameters_t *dRB_QoS = &dRB_Info->dRB_QoS;
-              {
-                /* QoS Characteristics*/
-                f1ap_qos_characteristics_t *drb_qos_char = &drb_qos->qos_characteristics;
-                F1AP_QoS_Characteristics_t *dRB_QoS_Char = &dRB_QoS->qoS_Characteristics;
+            const F1AP_DRB_Information_t *dRB_Info = &ie->value.choice.DRB_Information;
+            f1ap_drb_information_t *drb_info = &drb_p->drb_info;
 
-                if (dRB_QoS_Char->present == F1AP_QoS_Characteristics_PR_non_Dynamic_5QI) {
-                  drb_qos_char->qos_type = non_dynamic;
-                  drb_qos_char->non_dynamic.fiveqi = dRB_QoS_Char->choice.non_Dynamic_5QI->fiveQI;
-                  drb_qos_char->non_dynamic.qos_priority_level = (dRB_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel != NULL)
-                                                                     ? *dRB_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel
-                                                                     : -1;
-                } else {
-                  drb_qos_char->qos_type = dynamic;
-                  drb_qos_char->dynamic.fiveqi =
-                      (dRB_QoS_Char->choice.dynamic_5QI->fiveQI != NULL) ? *dRB_QoS_Char->choice.dynamic_5QI->fiveQI : -1;
-                  drb_qos_char->dynamic.qos_priority_level = dRB_QoS_Char->choice.dynamic_5QI->qoSPriorityLevel;
-                  drb_qos_char->dynamic.packet_delay_budget = dRB_QoS_Char->choice.dynamic_5QI->packetDelayBudget;
-                  drb_qos_char->dynamic.packet_error_rate.per_scalar = dRB_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Scalar;
-                  drb_qos_char->dynamic.packet_error_rate.per_exponent =
-                      dRB_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Exponent;
-                }
-              }
-
-              /* nGRANallocationRetentionPriority */
-              drb_qos->alloc_reten_priority.priority_level = dRB_QoS->nGRANallocationRetentionPriority.priorityLevel;
-              drb_qos->alloc_reten_priority.preemption_vulnerability =
-                  dRB_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
-              drb_qos->alloc_reten_priority.preemption_capability =
-                  dRB_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
-            } // dRB_QoS
+            /* QoS-Flow-Level-QoS-Parameters */
+            /* QoS Characteristics*/
+            f1ap_read_drb_qos_param(&dRB_Info->dRB_QoS, &drb_info->drb_qos);
 
             // 12.1.2.4 flows_Mapped_To_DRB_List
             drb_info->flows_to_be_setup_length = dRB_Info->flows_Mapped_To_DRB_List.list.count;
             drb_info->flows_mapped_to_drb = calloc(drb_info->flows_to_be_setup_length, sizeof(f1ap_flows_mapped_to_drb_t));
             AssertFatal(drb_info->flows_mapped_to_drb, "could not allocate memory for drb_p->drb_info.flows_mapped_to_drb\n");
-
-            for (int k = 0; k < drb_p->drb_info.flows_to_be_setup_length; k++) {
-              f1ap_flows_mapped_to_drb_t *flows_mapped_to_drb = drb_info->flows_mapped_to_drb + k;
-              F1AP_Flows_Mapped_To_DRB_Item_t *flows_Mapped_To_Drb = dRB_Info->flows_Mapped_To_DRB_List.list.array[0] + k;
-
-              flows_mapped_to_drb->qfi = flows_Mapped_To_Drb->qoSFlowIdentifier;
-
-              /* QoS-Flow-Level-QoS-Parameters */
-              {
-                f1ap_qos_flow_level_qos_parameters_t *flow_qos = &flows_mapped_to_drb->qos_params;
-                F1AP_QoSFlowLevelQoSParameters_t *Flow_QoS = &flows_Mapped_To_Drb->qoSFlowLevelQoSParameters;
-
-                /* QoS Characteristics*/
-                {
-                  f1ap_qos_characteristics_t *flow_qos_char = &flow_qos->qos_characteristics;
-                  F1AP_QoS_Characteristics_t *Flow_QoS_Char = &Flow_QoS->qoS_Characteristics;
-
-                  if (Flow_QoS_Char->present == F1AP_QoS_Characteristics_PR_non_Dynamic_5QI) {
-                    flow_qos_char->qos_type = non_dynamic;
-                    flow_qos_char->non_dynamic.fiveqi = Flow_QoS_Char->choice.non_Dynamic_5QI->fiveQI;
-                    flow_qos_char->non_dynamic.qos_priority_level =
-                        (Flow_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel != NULL)
-                            ? *Flow_QoS_Char->choice.non_Dynamic_5QI->qoSPriorityLevel
-                            : -1;
-                  } else {
-                    flow_qos_char->qos_type = dynamic;
-                    flow_qos_char->dynamic.fiveqi =
-                        (Flow_QoS_Char->choice.dynamic_5QI->fiveQI != NULL) ? *Flow_QoS_Char->choice.dynamic_5QI->fiveQI : -1;
-                    flow_qos_char->dynamic.qos_priority_level = Flow_QoS_Char->choice.dynamic_5QI->qoSPriorityLevel;
-                    flow_qos_char->dynamic.packet_delay_budget = Flow_QoS_Char->choice.dynamic_5QI->packetDelayBudget;
-                    flow_qos_char->dynamic.packet_error_rate.per_scalar =
-                        Flow_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Scalar;
-                    flow_qos_char->dynamic.packet_error_rate.per_exponent =
-                        Flow_QoS_Char->choice.dynamic_5QI->packetErrorRate.pER_Exponent;
-                  }
-                }
-
-                /* nGRANallocationRetentionPriority */
-                flow_qos->alloc_reten_priority.priority_level = Flow_QoS->nGRANallocationRetentionPriority.priorityLevel;
-                flow_qos->alloc_reten_priority.preemption_vulnerability =
-                    Flow_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
-                flow_qos->alloc_reten_priority.preemption_capability =
-                    Flow_QoS->nGRANallocationRetentionPriority.pre_emptionVulnerability;
-              }
-            }
+            f1ap_read_flows_mapped(&dRB_Info->flows_Mapped_To_DRB_List, drb_info->flows_mapped_to_drb, drb_info->flows_to_be_setup_length);
 
             /* S-NSSAI */
-            OCTET_STRING_TO_INT8(&dRB_Info->sNSSAI.sST, drb_p->nssai.sst);
-            if (dRB_Info->sNSSAI.sD != NULL)
-              memcpy((uint8_t *)&drb_p->nssai.sd, dRB_Info->sNSSAI.sD->buf, 3);
-            else
-              drb_p->nssai.sd = 0xffffff;
+            f1ap_read_drb_nssai(&dRB_Info->sNSSAI, &drb_p->nssai);
           }
         }
       }
@@ -1008,7 +986,6 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t 
       DevAssert(tbrel->id == F1AP_ProtocolIE_ID_id_DRBs_ToBeReleased_Item);
       DevAssert(tbrel->value.present == F1AP_DRBs_ToBeReleased_ItemIEs__value_PR_DRBs_ToBeReleased_Item);
       f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id = tbrel->value.choice.DRBs_ToBeReleased_Item.dRBID;
-      newGtpuDeleteOneTunnel(0, f1ap_ue_context_modification_req->gNB_DU_ue_id, f1ap_ue_context_modification_req->drbs_to_be_released[i].rb_id);
     }
   }
 
@@ -1166,20 +1143,8 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_cont
       drbs_setupmod_item->dRBID = resp->drbs_to_be_setup[i].drb_id;
 
       for (int j=0;  j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++) {
-        f1ap_drb_to_be_setup_t *drb = &resp->drbs_to_be_setup[i];
-        transport_layer_addr_t tl_addr = {0};
-        memcpy(tl_addr.buffer, &drb->up_ul_tnl[0].tl_address, sizeof(drb->up_ul_tnl[0].tl_address));
-        tl_addr.length = sizeof(drb->up_ul_tnl[0].tl_address) * 8;
-        drb->up_dl_tnl[j].teid = newGtpuCreateTunnel(getCxt(0)->gtpInst,
-                                                     resp->gNB_DU_ue_id,
-                                                     drb->drb_id,
-                                                     drb->drb_id,
-                                                     drb->up_ul_tnl[j].teid,
-                                                     -1, // no qfi
-                                                     tl_addr,
-                                                     drb->up_ul_tnl[0].port,
-                                                     DURecvCb,
-                                                     NULL);
+        const f1ap_up_tnl_t *tnl = &resp->drbs_to_be_setup[i].up_dl_tnl[j];
+        DevAssert(tnl->teid > 0);
 
         /* ADD */
         asn1cSequenceAdd(drbs_setupmod_item->dLUPTNLInformation_ToBeSetup_List.list,
@@ -1188,12 +1153,9 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(sctp_assoc_t assoc_id, f1ap_ue_cont
         /* gTPTunnel */
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
         /* transportLayerAddress */
-        struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(0)->net_config.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
-        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
-          &gTPTunnel->transportLayerAddress);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(tnl->tl_address, &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
-        INT32_TO_OCTET_STRING(resp->drbs_to_be_setup[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
+        INT32_TO_OCTET_STRING(tnl->teid, &gTPTunnel->gTP_TEID);
       } // for j
     } // for i
   }

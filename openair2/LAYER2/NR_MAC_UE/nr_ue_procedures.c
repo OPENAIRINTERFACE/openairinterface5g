@@ -178,7 +178,7 @@ int get_rnti_type(const NR_UE_MAC_INST_t *mac, const uint16_t rnti)
 
   if (rnti == ra->ra_rnti) {
     rnti_type = TYPE_RA_RNTI_;
-  } else if (rnti == ra->t_crnti && (ra->ra_state == WAIT_RAR || ra->ra_state == WAIT_CONTENTION_RESOLUTION)) {
+  } else if (rnti == ra->t_crnti && (ra->ra_state == nrRA_WAIT_RAR || ra->ra_state == nrRA_WAIT_CONTENTION_RESOLUTION)) {
     rnti_type = TYPE_TC_RNTI_;
   } else if (rnti == mac->crnti) {
     rnti_type = TYPE_C_RNTI_;
@@ -264,7 +264,7 @@ int8_t nr_ue_decode_BCCH_DL_SCH(NR_UE_MAC_INST_t *mac,
 {
   if(ack_nack) {
     LOG_D(NR_MAC, "Decoding NR-BCCH-DL-SCH-Message (SIB1 or SI)\n");
-    nr_mac_rrc_data_ind_ue(mac->ue_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
+    nr_mac_rrc_data_ind_ue(mac->ue_id, cc_id, gNB_index, 0, 0, 0, mac->physCellId, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
     mac->get_sib1 = false;
     mac->get_otherSI = false;
   }
@@ -3504,7 +3504,7 @@ void nr_ue_process_mac_pdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_i
         // MAC SDU: 6 bytes (UE Contention Resolution Identity)
         mac_len = 6;
 
-        if(ra->ra_state == WAIT_CONTENTION_RESOLUTION) {
+        if (ra->ra_state == nrRA_WAIT_CONTENTION_RESOLUTION) {
           LOG_I(MAC, "[UE %d][RAPROC] Frame %d : received contention resolution identity: 0x%02x%02x%02x%02x%02x%02x Terminating RA procedure\n",
                 mac->ue_id,
                 frameP,
@@ -3530,7 +3530,7 @@ void nr_ue_process_mac_pdu(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_i
           } else if (!ra_success){
             // TODO: Handle failure of RA procedure @ MAC layer
             //  nr_ra_failed(module_idP, CC_id, prach_resources, frameP, slot); // prach_resources is a PHY structure
-            ra->ra_state = RA_UE_IDLE;
+            ra->ra_state = nrRA_UE_IDLE;
             ra->RA_active = 0;
           }
         }
@@ -3609,8 +3609,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
           pdu, mac_ce);
   }
 
-  if (crnti && (!get_softmodem_params()->sa && get_softmodem_params()->do_ra && mac->ra.ra_state != RA_SUCCEEDED)) {
-
+  if (crnti && (!get_softmodem_params()->sa && get_softmodem_params()->do_ra && mac->ra.ra_state != nrRA_SUCCEEDED)) {
     LOG_D(NR_MAC, "In %s: generating C-RNTI MAC CE with C-RNTI %x\n", __FUNCTION__, (*crnti));
 
     // MAC CE fixed subheader
@@ -3625,7 +3624,6 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
     mac_ce_size = sizeof(uint16_t);
     mac_ce += mac_ce_size;
     mac_ce_len += mac_ce_size + sizeof(NR_MAC_SUBHEADER_FIXED);
-
   }
 
   if (truncated_bsr) {
@@ -3774,7 +3772,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 // - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
 static void nr_ue_process_rar(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *dl_info, int pdu_id)
 {
-  frame_t frame  = dl_info->frame;
+  frame_t frame = dl_info->frame;
   int slot = dl_info->slot;
 
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack == 0) {
@@ -3976,7 +3974,7 @@ static void nr_ue_process_rar(NR_UE_MAC_INST_t *mac, nr_downlink_indication_t *d
       if (!ra->cfra) {
         ra->t_crnti = rar->TCRNTI_2 + (rar->TCRNTI_1 << 8);
         rnti = ra->t_crnti;
-        nr_mac_rrc_msg3_ind(mac->ue_id, rnti);
+        nr_mac_rrc_msg3_ind(mac->ue_id, rnti, dl_info->gNB_index);
       }
       fapi_nr_ul_config_request_pdu_t *pdu = lockGet_ul_config(mac, frame_tx, slot_tx, FAPI_NR_UL_CONFIG_TYPE_PUSCH);
       if (!pdu)

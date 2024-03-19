@@ -427,18 +427,18 @@ static void modlist_ss(NR_SearchSpace_t *source, NR_SearchSpace_t *target)
 {
   target->searchSpaceId = source->searchSpaceId;
   if (source->controlResourceSetId)
-    UPDATE_MAC_IE(target->controlResourceSetId, source->controlResourceSetId, NR_ControlResourceSetId_t);
+    UPDATE_IE(target->controlResourceSetId, source->controlResourceSetId, NR_ControlResourceSetId_t);
   if (source->monitoringSlotPeriodicityAndOffset)
-    UPDATE_MAC_IE(target->monitoringSlotPeriodicityAndOffset,
-                source->monitoringSlotPeriodicityAndOffset,
-                struct NR_SearchSpace__monitoringSlotPeriodicityAndOffset);
-  UPDATE_MAC_IE(target->duration, source->duration, long);
+    UPDATE_IE(target->monitoringSlotPeriodicityAndOffset,
+              source->monitoringSlotPeriodicityAndOffset,
+              struct NR_SearchSpace__monitoringSlotPeriodicityAndOffset);
+  UPDATE_IE(target->duration, source->duration, long);
   if (source->monitoringSymbolsWithinSlot)
-    UPDATE_MAC_IE(target->monitoringSymbolsWithinSlot, source->monitoringSymbolsWithinSlot, BIT_STRING_t);
+    UPDATE_IE(target->monitoringSymbolsWithinSlot, source->monitoringSymbolsWithinSlot, BIT_STRING_t);
   if (source->nrofCandidates)
-    UPDATE_MAC_IE(target->nrofCandidates, source->nrofCandidates, struct NR_SearchSpace__nrofCandidates);
+    UPDATE_IE(target->nrofCandidates, source->nrofCandidates, struct NR_SearchSpace__nrofCandidates);
   if (source->searchSpaceType)
-    UPDATE_MAC_IE(target->searchSpaceType, source->searchSpaceType, struct NR_SearchSpace__searchSpaceType);
+    UPDATE_IE(target->searchSpaceType, source->searchSpaceType, struct NR_SearchSpace__searchSpaceType);
 }
 
 static NR_SearchSpace_t *get_common_search_space(const NR_UE_MAC_INST_t *mac,
@@ -493,7 +493,7 @@ static void configure_common_ss_coreset(const NR_UE_MAC_INST_t *mac,
             get_common_search_space(mac, pdcch_ConfigCommon->commonSearchSpaceList, pdcch, *pdcch_ConfigCommon->pagingSearchSpace);
     }
 
-    UPDATE_MAC_IE(pdcch->commonControlResourceSet, pdcch_ConfigCommon->commonControlResourceSet, NR_ControlResourceSet_t);
+    UPDATE_IE(pdcch->commonControlResourceSet, pdcch_ConfigCommon->commonControlResourceSet, NR_ControlResourceSet_t);
   }
 }
 
@@ -516,15 +516,15 @@ static void modlist_coreset(NR_ControlResourceSet_t *source, NR_ControlResourceS
     target->cce_REG_MappingType.choice.interleaved->reg_BundleSize = source->cce_REG_MappingType.choice.interleaved->reg_BundleSize;
     target->cce_REG_MappingType.choice.interleaved->interleaverSize =
         source->cce_REG_MappingType.choice.interleaved->interleaverSize;
-    UPDATE_MAC_IE(target->cce_REG_MappingType.choice.interleaved->shiftIndex,
-                  source->cce_REG_MappingType.choice.interleaved->shiftIndex,
-                  long);
+    UPDATE_IE(target->cce_REG_MappingType.choice.interleaved->shiftIndex,
+              source->cce_REG_MappingType.choice.interleaved->shiftIndex,
+              long);
   } else {
     free(shiftIndex);
     target->cce_REG_MappingType = source->cce_REG_MappingType;
   }
-  UPDATE_MAC_IE(target->tci_PresentInDCI, source->tci_PresentInDCI, long);
-  UPDATE_MAC_IE(target->pdcch_DMRS_ScramblingID, source->pdcch_DMRS_ScramblingID, long);
+  UPDATE_IE(target->tci_PresentInDCI, source->tci_PresentInDCI, long);
+  UPDATE_IE(target->pdcch_DMRS_ScramblingID, source->pdcch_DMRS_ScramblingID, long);
   // TCI States
   if (source->tci_StatesPDCCH_ToReleaseList) {
     for (int i = 0; i < source->tci_StatesPDCCH_ToReleaseList->list.count; i++) {
@@ -553,9 +553,9 @@ static void modlist_coreset(NR_ControlResourceSet_t *source, NR_ControlResourceS
           ASN_SEQUENCE_ADD(&target->tci_StatesPDCCH_ToAddList->list, source->tci_StatesPDCCH_ToAddList->list.array[i]);
       }
     } else
-      UPDATE_MAC_IE(target->tci_StatesPDCCH_ToAddList,
-                    source->tci_StatesPDCCH_ToAddList,
-                    struct NR_ControlResourceSet__tci_StatesPDCCH_ToAddList);
+      UPDATE_IE(target->tci_StatesPDCCH_ToAddList,
+                source->tci_StatesPDCCH_ToAddList,
+                struct NR_ControlResourceSet__tci_StatesPDCCH_ToAddList);
   }
   // end TCI States
 }
@@ -812,14 +812,14 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
 
 static void setup_puschpowercontrol(NR_PUSCH_PowerControl_t *source, NR_PUSCH_PowerControl_t *target)
 {
-  UPDATE_MAC_IE(target->tpc_Accumulation, source->tpc_Accumulation, long);
-  UPDATE_MAC_IE(target->msg3_Alpha, source->msg3_Alpha, NR_Alpha_t);
+  UPDATE_IE(target->tpc_Accumulation, source->tpc_Accumulation, long);
+  UPDATE_IE(target->msg3_Alpha, source->msg3_Alpha, NR_Alpha_t);
   if (source->p0_NominalWithoutGrant)
-    UPDATE_MAC_IE(target->p0_NominalWithoutGrant, source->p0_NominalWithoutGrant, long);
+    UPDATE_IE(target->p0_NominalWithoutGrant, source->p0_NominalWithoutGrant, long);
   if (source->p0_AlphaSets)
-    UPDATE_MAC_IE(target->p0_AlphaSets, source->p0_AlphaSets, struct NR_PUSCH_PowerControl__p0_AlphaSets);
-  UPDATE_MAC_IE(target->twoPUSCH_PC_AdjustmentStates, source->twoPUSCH_PC_AdjustmentStates, long);
-  UPDATE_MAC_IE(target->deltaMCS, source->deltaMCS, long);
+    UPDATE_IE(target->p0_AlphaSets, source->p0_AlphaSets, struct NR_PUSCH_PowerControl__p0_AlphaSets);
+  UPDATE_IE(target->twoPUSCH_PC_AdjustmentStates, source->twoPUSCH_PC_AdjustmentStates, long);
+  UPDATE_IE(target->deltaMCS, source->deltaMCS, long);
   if (source->pathlossReferenceRSToReleaseList) {
     RELEASE_IE_FROMLIST(source->pathlossReferenceRSToReleaseList,
                         target->pathlossReferenceRSToAddModList,
@@ -850,8 +850,8 @@ static void setup_puschpowercontrol(NR_PUSCH_PowerControl_t *source, NR_PUSCH_Po
 
 static void setup_puschconfig(NR_PUSCH_Config_t *source, NR_PUSCH_Config_t *target)
 {
-  UPDATE_MAC_IE(target->dataScramblingIdentityPUSCH, source->dataScramblingIdentityPUSCH, long);
-  UPDATE_MAC_IE(target->txConfig, source->txConfig, long);
+  UPDATE_IE(target->dataScramblingIdentityPUSCH, source->dataScramblingIdentityPUSCH, long);
+  UPDATE_IE(target->txConfig, source->txConfig, long);
   if (source->dmrs_UplinkForPUSCH_MappingTypeA)
     HANDLE_SETUPRELEASE_IE(target->dmrs_UplinkForPUSCH_MappingTypeA,
                            source->dmrs_UplinkForPUSCH_MappingTypeA,
@@ -867,25 +867,25 @@ static void setup_puschconfig(NR_PUSCH_Config_t *source, NR_PUSCH_Config_t *targ
       target->pusch_PowerControl = calloc(1, sizeof(*target->pusch_PowerControl));
     setup_puschpowercontrol(source->pusch_PowerControl, target->pusch_PowerControl);
   }
-  UPDATE_MAC_IE(target->frequencyHopping, source->frequencyHopping, long);
+  UPDATE_IE(target->frequencyHopping, source->frequencyHopping, long);
   if (source->frequencyHoppingOffsetLists)
-    UPDATE_MAC_IE(target->frequencyHoppingOffsetLists,
-                  source->frequencyHoppingOffsetLists,
-                  struct NR_PUSCH_Config__frequencyHoppingOffsetLists);
+    UPDATE_IE(target->frequencyHoppingOffsetLists,
+              source->frequencyHoppingOffsetLists,
+              struct NR_PUSCH_Config__frequencyHoppingOffsetLists);
   target->resourceAllocation = source->resourceAllocation;
   if (source->pusch_TimeDomainAllocationList)
     HANDLE_SETUPRELEASE_IE(target->pusch_TimeDomainAllocationList,
                            source->pusch_TimeDomainAllocationList,
                            NR_PUSCH_TimeDomainResourceAllocationList_t,
                            asn_DEF_NR_SetupRelease_PUSCH_TimeDomainResourceAllocationList);
-  UPDATE_MAC_IE(target->pusch_AggregationFactor, source->pusch_AggregationFactor, long);
-  UPDATE_MAC_IE(target->mcs_Table, source->mcs_Table, long);
-  UPDATE_MAC_IE(target->mcs_TableTransformPrecoder, source->mcs_TableTransformPrecoder, long);
-  UPDATE_MAC_IE(target->transformPrecoder, source->transformPrecoder, long);
-  UPDATE_MAC_IE(target->codebookSubset, source->codebookSubset, long);
-  UPDATE_MAC_IE(target->maxRank, source->maxRank, long);
-  UPDATE_MAC_IE(target->rbg_Size, source->rbg_Size, long);
-  UPDATE_MAC_IE(target->tp_pi2BPSK, source->tp_pi2BPSK, long);
+  UPDATE_IE(target->pusch_AggregationFactor, source->pusch_AggregationFactor, long);
+  UPDATE_IE(target->mcs_Table, source->mcs_Table, long);
+  UPDATE_IE(target->mcs_TableTransformPrecoder, source->mcs_TableTransformPrecoder, long);
+  UPDATE_IE(target->transformPrecoder, source->transformPrecoder, long);
+  UPDATE_IE(target->codebookSubset, source->codebookSubset, long);
+  UPDATE_IE(target->maxRank, source->maxRank, long);
+  UPDATE_IE(target->rbg_Size, source->rbg_Size, long);
+  UPDATE_IE(target->tp_pi2BPSK, source->tp_pi2BPSK, long);
   if (source->uci_OnPUSCH) {
     if (source->uci_OnPUSCH->present == NR_SetupRelease_UCI_OnPUSCH_PR_release)
       asn1cFreeStruc(asn_DEF_NR_UCI_OnPUSCH, target->uci_OnPUSCH);
@@ -893,9 +893,9 @@ static void setup_puschconfig(NR_PUSCH_Config_t *source, NR_PUSCH_Config_t *targ
       if (target->uci_OnPUSCH) {
         target->uci_OnPUSCH->choice.setup->scaling = source->uci_OnPUSCH->choice.setup->scaling;
         if (source->uci_OnPUSCH->choice.setup->betaOffsets)
-          UPDATE_MAC_IE(target->uci_OnPUSCH->choice.setup->betaOffsets,
-                        source->uci_OnPUSCH->choice.setup->betaOffsets,
-                        struct NR_UCI_OnPUSCH__betaOffsets);
+          UPDATE_IE(target->uci_OnPUSCH->choice.setup->betaOffsets,
+                    source->uci_OnPUSCH->choice.setup->betaOffsets,
+                    struct NR_UCI_OnPUSCH__betaOffsets);
       }
     }
   }
@@ -903,7 +903,7 @@ static void setup_puschconfig(NR_PUSCH_Config_t *source, NR_PUSCH_Config_t *targ
 
 static void setup_pdschconfig(NR_PDSCH_Config_t *source, NR_PDSCH_Config_t *target)
 {
-  UPDATE_MAC_IE(target->dataScramblingIdentityPDSCH, source->dataScramblingIdentityPDSCH, long);
+  UPDATE_IE(target->dataScramblingIdentityPDSCH, source->dataScramblingIdentityPDSCH, long);
   if (source->dmrs_DownlinkForPDSCH_MappingTypeA)
     HANDLE_SETUPRELEASE_IE(target->dmrs_DownlinkForPDSCH_MappingTypeA,
                            source->dmrs_DownlinkForPDSCH_MappingTypeA,
@@ -929,14 +929,14 @@ static void setup_pdschconfig(NR_PDSCH_Config_t *source, NR_PDSCH_Config_t *targ
                        NR_TCI_State_t);
   }
   // end TCI States
-  UPDATE_MAC_IE(target->vrb_ToPRB_Interleaver, source->vrb_ToPRB_Interleaver, long);
+  UPDATE_IE(target->vrb_ToPRB_Interleaver, source->vrb_ToPRB_Interleaver, long);
   target->resourceAllocation = source->resourceAllocation;
   if (source->pdsch_TimeDomainAllocationList)
     HANDLE_SETUPRELEASE_IE(target->pdsch_TimeDomainAllocationList,
                            source->pdsch_TimeDomainAllocationList,
                            NR_PDSCH_TimeDomainResourceAllocationList_t,
                            asn_DEF_NR_SetupRelease_PDSCH_TimeDomainResourceAllocationList);
-  UPDATE_MAC_IE(target->pdsch_AggregationFactor, source->pdsch_AggregationFactor, long);
+  UPDATE_IE(target->pdsch_AggregationFactor, source->pdsch_AggregationFactor, long);
   // rateMatchPattern
   if (source->rateMatchPatternToReleaseList) {
     RELEASE_IE_FROMLIST(source->rateMatchPatternToReleaseList,
@@ -952,12 +952,12 @@ static void setup_pdschconfig(NR_PDSCH_Config_t *source, NR_PDSCH_Config_t *targ
                        NR_RateMatchPattern_t);
   }
   // end rateMatchPattern
-  UPDATE_MAC_IE(target->rateMatchPatternGroup1, source->rateMatchPatternGroup1, NR_RateMatchPatternGroup_t);
-  UPDATE_MAC_IE(target->rateMatchPatternGroup2, source->rateMatchPatternGroup2, NR_RateMatchPatternGroup_t);
+  UPDATE_IE(target->rateMatchPatternGroup1, source->rateMatchPatternGroup1, NR_RateMatchPatternGroup_t);
+  UPDATE_IE(target->rateMatchPatternGroup2, source->rateMatchPatternGroup2, NR_RateMatchPatternGroup_t);
   target->rbg_Size = source->rbg_Size;
-  UPDATE_MAC_IE(target->mcs_Table, source->mcs_Table, long);
-  UPDATE_MAC_IE(target->maxNrofCodeWordsScheduledByDCI, source->maxNrofCodeWordsScheduledByDCI, long);
-  UPDATE_MAC_NP_IE(target->prb_BundlingType, source->prb_BundlingType, struct NR_PDSCH_Config__prb_BundlingType);
+  UPDATE_IE(target->mcs_Table, source->mcs_Table, long);
+  UPDATE_IE(target->maxNrofCodeWordsScheduledByDCI, source->maxNrofCodeWordsScheduledByDCI, long);
+  UPDATE_NP_IE(target->prb_BundlingType, source->prb_BundlingType, struct NR_PDSCH_Config__prb_BundlingType);
   AssertFatal(source->zp_CSI_RS_ResourceToAddModList == NULL, "Not handled\n");
   AssertFatal(source->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList == NULL, "Not handled\n");
   AssertFatal(source->sp_ZP_CSI_RS_ResourceSetsToAddModList == NULL, "Not handled\n");
@@ -968,11 +968,11 @@ static void setup_sr_resource(NR_SchedulingRequestResourceConfig_t *target, NR_S
   target->schedulingRequestResourceId = source->schedulingRequestResourceId;
   target->schedulingRequestID = source->schedulingRequestID;
   if (source->periodicityAndOffset)
-    UPDATE_MAC_IE(target->periodicityAndOffset,
-                  source->periodicityAndOffset,
-                  struct NR_SchedulingRequestResourceConfig__periodicityAndOffset);
+    UPDATE_IE(target->periodicityAndOffset,
+              source->periodicityAndOffset,
+              struct NR_SchedulingRequestResourceConfig__periodicityAndOffset);
   if (source->resource)
-    UPDATE_MAC_IE(target->resource, source->resource, NR_PUCCH_ResourceId_t);
+    UPDATE_IE(target->resource, source->resource, NR_PUCCH_ResourceId_t);
 }
 
 static void setup_pucchconfig(NR_PUCCH_Config_t *source, NR_PUCCH_Config_t *target)
@@ -1043,11 +1043,11 @@ static void setup_pucchconfig(NR_PUCCH_Config_t *source, NR_PUCCH_Config_t *targ
   }
 
   if (source->multi_CSI_PUCCH_ResourceList)
-    UPDATE_MAC_IE(target->multi_CSI_PUCCH_ResourceList,
-                  source->multi_CSI_PUCCH_ResourceList,
-                  struct NR_PUCCH_Config__multi_CSI_PUCCH_ResourceList);
+    UPDATE_IE(target->multi_CSI_PUCCH_ResourceList,
+              source->multi_CSI_PUCCH_ResourceList,
+              struct NR_PUCCH_Config__multi_CSI_PUCCH_ResourceList);
   if (source->dl_DataToUL_ACK)
-    UPDATE_MAC_IE(target->dl_DataToUL_ACK, source->dl_DataToUL_ACK, struct NR_PUCCH_Config__dl_DataToUL_ACK);
+    UPDATE_IE(target->dl_DataToUL_ACK, source->dl_DataToUL_ACK, struct NR_PUCCH_Config__dl_DataToUL_ACK);
   // PUCCH-SpatialRelationInfo
   if (source->spatialRelationInfoToAddModList) {
     if (!target->spatialRelationInfoToAddModList)
@@ -1066,20 +1066,20 @@ static void setup_pucchconfig(NR_PUCCH_Config_t *source, NR_PUCCH_Config_t *targ
   if (source->pucch_PowerControl) {
     if (!target->pucch_PowerControl)
       target->pucch_PowerControl = calloc(1, sizeof(*target->pucch_PowerControl));
-    UPDATE_MAC_IE(target->pucch_PowerControl->deltaF_PUCCH_f0, source->pucch_PowerControl->deltaF_PUCCH_f0, long);
-    UPDATE_MAC_IE(target->pucch_PowerControl->deltaF_PUCCH_f1, source->pucch_PowerControl->deltaF_PUCCH_f1, long);
-    UPDATE_MAC_IE(target->pucch_PowerControl->deltaF_PUCCH_f2, source->pucch_PowerControl->deltaF_PUCCH_f2, long);
-    UPDATE_MAC_IE(target->pucch_PowerControl->deltaF_PUCCH_f3, source->pucch_PowerControl->deltaF_PUCCH_f3, long);
-    UPDATE_MAC_IE(target->pucch_PowerControl->deltaF_PUCCH_f4, source->pucch_PowerControl->deltaF_PUCCH_f4, long);
+    UPDATE_IE(target->pucch_PowerControl->deltaF_PUCCH_f0, source->pucch_PowerControl->deltaF_PUCCH_f0, long);
+    UPDATE_IE(target->pucch_PowerControl->deltaF_PUCCH_f1, source->pucch_PowerControl->deltaF_PUCCH_f1, long);
+    UPDATE_IE(target->pucch_PowerControl->deltaF_PUCCH_f2, source->pucch_PowerControl->deltaF_PUCCH_f2, long);
+    UPDATE_IE(target->pucch_PowerControl->deltaF_PUCCH_f3, source->pucch_PowerControl->deltaF_PUCCH_f3, long);
+    UPDATE_IE(target->pucch_PowerControl->deltaF_PUCCH_f4, source->pucch_PowerControl->deltaF_PUCCH_f4, long);
     if (source->pucch_PowerControl->p0_Set)
-      UPDATE_MAC_IE(target->pucch_PowerControl->p0_Set, source->pucch_PowerControl->p0_Set, struct NR_PUCCH_PowerControl__p0_Set);
+      UPDATE_IE(target->pucch_PowerControl->p0_Set, source->pucch_PowerControl->p0_Set, struct NR_PUCCH_PowerControl__p0_Set);
     if (source->pucch_PowerControl->pathlossReferenceRSs)
-      UPDATE_MAC_IE(target->pucch_PowerControl->pathlossReferenceRSs,
-                    source->pucch_PowerControl->pathlossReferenceRSs,
-                    struct NR_PUCCH_PowerControl__pathlossReferenceRSs);
-    UPDATE_MAC_IE(target->pucch_PowerControl->twoPUCCH_PC_AdjustmentStates,
-                  source->pucch_PowerControl->twoPUCCH_PC_AdjustmentStates,
-                  long);
+      UPDATE_IE(target->pucch_PowerControl->pathlossReferenceRSs,
+                source->pucch_PowerControl->pathlossReferenceRSs,
+                struct NR_PUCCH_PowerControl__pathlossReferenceRSs);
+    UPDATE_IE(target->pucch_PowerControl->twoPUCCH_PC_AdjustmentStates,
+              source->pucch_PowerControl->twoPUCCH_PC_AdjustmentStates,
+              long);
   }
 }
 
@@ -1088,22 +1088,22 @@ static void handle_aperiodic_srs_type(struct NR_SRS_ResourceSet__resourceType__a
 {
   target->aperiodicSRS_ResourceTrigger = source->aperiodicSRS_ResourceTrigger;
   if (source->csi_RS)
-    UPDATE_MAC_IE(target->csi_RS, source->csi_RS, NR_NZP_CSI_RS_ResourceId_t);
-  UPDATE_MAC_IE(target->slotOffset, source->slotOffset, long);
+    UPDATE_IE(target->csi_RS, source->csi_RS, NR_NZP_CSI_RS_ResourceId_t);
+  UPDATE_IE(target->slotOffset, source->slotOffset, long);
   if (source->ext1 && source->ext1->aperiodicSRS_ResourceTriggerList)
-    UPDATE_MAC_IE(target->ext1->aperiodicSRS_ResourceTriggerList,
-                  source->ext1->aperiodicSRS_ResourceTriggerList,
-                  struct NR_SRS_ResourceSet__resourceType__aperiodic__ext1__aperiodicSRS_ResourceTriggerList);
+    UPDATE_IE(target->ext1->aperiodicSRS_ResourceTriggerList,
+              source->ext1->aperiodicSRS_ResourceTriggerList,
+              struct NR_SRS_ResourceSet__resourceType__aperiodic__ext1__aperiodicSRS_ResourceTriggerList);
 }
 
 static void setup_srsresourceset(NR_SRS_ResourceSet_t *target, NR_SRS_ResourceSet_t *source)
 {
   target->srs_ResourceSetId = source->srs_ResourceSetId;
   if (source->srs_ResourceIdList)
-    UPDATE_MAC_IE(target->srs_ResourceIdList, source->srs_ResourceIdList, struct NR_SRS_ResourceSet__srs_ResourceIdList);
+    UPDATE_IE(target->srs_ResourceIdList, source->srs_ResourceIdList, struct NR_SRS_ResourceSet__srs_ResourceIdList);
 
   if (target->resourceType.present != source->resourceType.present) {
-    UPDATE_MAC_NP_IE(target->resourceType, source->resourceType, struct NR_SRS_ResourceSet__resourceType);
+    UPDATE_NP_IE(target->resourceType, source->resourceType, struct NR_SRS_ResourceSet__resourceType);
   }
   else {
     switch (source->resourceType.present) {
@@ -1112,32 +1112,32 @@ static void setup_srsresourceset(NR_SRS_ResourceSet_t *target, NR_SRS_ResourceSe
         break;
       case NR_SRS_ResourceSet__resourceType_PR_periodic:
         if (source->resourceType.choice.periodic->associatedCSI_RS)
-          UPDATE_MAC_IE(target->resourceType.choice.periodic->associatedCSI_RS,
-                        source->resourceType.choice.periodic->associatedCSI_RS,
-                        NR_NZP_CSI_RS_ResourceId_t);
+          UPDATE_IE(target->resourceType.choice.periodic->associatedCSI_RS,
+                    source->resourceType.choice.periodic->associatedCSI_RS,
+                    NR_NZP_CSI_RS_ResourceId_t);
         break;
       case NR_SRS_ResourceSet__resourceType_PR_semi_persistent:
         if (source->resourceType.choice.semi_persistent->associatedCSI_RS)
-          UPDATE_MAC_IE(target->resourceType.choice.semi_persistent->associatedCSI_RS,
-                        source->resourceType.choice.semi_persistent->associatedCSI_RS,
-                        NR_NZP_CSI_RS_ResourceId_t);
+          UPDATE_IE(target->resourceType.choice.semi_persistent->associatedCSI_RS,
+                    source->resourceType.choice.semi_persistent->associatedCSI_RS,
+                    NR_NZP_CSI_RS_ResourceId_t);
         break;
       default:
         break;
     }
   }
   target->usage = source->usage;
-  UPDATE_MAC_IE(target->alpha, source->alpha, NR_Alpha_t);
+  UPDATE_IE(target->alpha, source->alpha, NR_Alpha_t);
   if (source->p0)
-    UPDATE_MAC_IE(target->p0, source->p0, long);
+    UPDATE_IE(target->p0, source->p0, long);
   if (source->pathlossReferenceRS)
-    UPDATE_MAC_IE(target->pathlossReferenceRS, source->pathlossReferenceRS, struct NR_PathlossReferenceRS_Config);
-  UPDATE_MAC_IE(target->srs_PowerControlAdjustmentStates, source->srs_PowerControlAdjustmentStates, long);
+    UPDATE_IE(target->pathlossReferenceRS, source->pathlossReferenceRS, struct NR_PathlossReferenceRS_Config);
+  UPDATE_IE(target->srs_PowerControlAdjustmentStates, source->srs_PowerControlAdjustmentStates, long);
 }
 
 static void setup_srsconfig(NR_SRS_Config_t *source, NR_SRS_Config_t *target)
 {
-  UPDATE_MAC_IE(target->tpc_Accumulation, source->tpc_Accumulation, long);
+  UPDATE_IE(target->tpc_Accumulation, source->tpc_Accumulation, long);
   // SRS-Resource
   if (source->srs_ResourceToAddModList) {
     if (!target->srs_ResourceToAddModList)
@@ -1297,9 +1297,9 @@ static void configure_common_BWP_dl(NR_UE_MAC_INST_t *mac, int bwp_id, NR_BWP_Do
     }
     if (dl_common->pdsch_ConfigCommon) {
       if (dl_common->pdsch_ConfigCommon->present == NR_SetupRelease_PDSCH_ConfigCommon_PR_setup)
-        UPDATE_MAC_IE(bwp->tdaList_Common,
-                      dl_common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList,
-                      NR_PDSCH_TimeDomainResourceAllocationList_t);
+        UPDATE_IE(bwp->tdaList_Common,
+                  dl_common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList,
+                  NR_PDSCH_TimeDomainResourceAllocationList_t);
       if (dl_common->pdsch_ConfigCommon->present == NR_SetupRelease_PDSCH_ConfigCommon_PR_release)
         asn1cFreeStruc(asn_DEF_NR_PDSCH_TimeDomainResourceAllocationList, bwp->tdaList_Common);
     }
@@ -1340,10 +1340,10 @@ static void configure_common_BWP_ul(NR_UE_MAC_INST_t *mac, int bwp_id, NR_BWP_Up
                                  asn_DEF_NR_PUCCH_ConfigCommon);
     if (ul_common->pusch_ConfigCommon) {
       if (ul_common->pusch_ConfigCommon->present == NR_SetupRelease_PUSCH_ConfigCommon_PR_setup) {
-        UPDATE_MAC_IE(bwp->tdaList_Common,
-                      ul_common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList,
-                      NR_PUSCH_TimeDomainResourceAllocationList_t);
-        UPDATE_MAC_IE(bwp->msg3_DeltaPreamble, ul_common->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble, long);
+        UPDATE_IE(bwp->tdaList_Common,
+                  ul_common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList,
+                  NR_PUSCH_TimeDomainResourceAllocationList_t);
+        UPDATE_IE(bwp->msg3_DeltaPreamble, ul_common->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble, long);
       }
       if (ul_common->pusch_ConfigCommon->present == NR_SetupRelease_PUSCH_ConfigCommon_PR_release) {
         asn1cFreeStruc(asn_DEF_NR_PUSCH_TimeDomainResourceAllocationList, bwp->tdaList_Common);
@@ -1355,21 +1355,40 @@ static void configure_common_BWP_ul(NR_UE_MAC_INST_t *mac, int bwp_id, NR_BWP_Up
 }
 
 void nr_rrc_mac_config_req_reset(module_id_t module_id,
-                                 NR_UE_MAC_reset_cause_t reset_cause)
+                                 NR_UE_MAC_reset_cause_t cause)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  reset_mac_inst(mac);
-  reset_ra(&mac->ra);
-  release_mac_configuration(mac);
-  nr_ue_init_mac(mac);
 
-  // Sending to PHY a request to resync
-  // with no target cell ID
-  if (reset_cause != DETACH) {
-    mac->synch_request.Mod_id = module_id;
-    mac->synch_request.CC_id = 0;
-    mac->synch_request.synch_req.target_Nid_cell = -1;
-    mac->if_module->synch_request(&mac->synch_request);
+  switch (cause) {
+    case GO_TO_IDLE:
+      reset_ra(&mac->ra);
+      release_mac_configuration(mac, cause);
+      nr_ue_init_mac(mac);
+      nr_ue_mac_default_configs(mac);
+      // new sync but no target cell id -> -1
+      nr_ue_send_synch_request(mac, module_id, 0, -1);
+      break;
+    case DETACH:
+      reset_ra(&mac->ra);
+      reset_mac_inst(mac);
+      nr_ue_reset_sync_state(mac);
+      release_mac_configuration(mac, cause);
+      break;
+    case T300_EXPIRY:
+      reset_mac_inst(mac);
+      reset_ra(&mac->ra);
+      mac->state = UE_SYNC; // still in sync but need to restart RA
+      break;
+    case RE_ESTABLISHMENT:
+      reset_mac_inst(mac);
+      nr_ue_mac_default_configs(mac);
+      nr_ue_reset_sync_state(mac);
+      release_mac_configuration(mac, cause);
+      // new sync with old cell ID (re-establishment on the same cell)
+      nr_ue_send_synch_request(mac, module_id, 0, mac->physCellId);
+      break;
+    default:
+      AssertFatal(false, "Invalid MAC reset cause %d\n", cause);
   }
 }
 
@@ -1381,8 +1400,8 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   AssertFatal(scc, "SIB1 SCC should not be NULL\n");
 
-  UPDATE_MAC_IE(mac->tdd_UL_DL_ConfigurationCommon, scc->tdd_UL_DL_ConfigurationCommon, NR_TDD_UL_DL_ConfigCommon_t);
-  UPDATE_MAC_IE(mac->si_SchedulingInfo, si_SchedulingInfo, NR_SI_SchedulingInfo_t);
+  UPDATE_IE(mac->tdd_UL_DL_ConfigurationCommon, scc->tdd_UL_DL_ConfigurationCommon, NR_TDD_UL_DL_ConfigCommon_t);
+  UPDATE_IE(mac->si_SchedulingInfo, si_SchedulingInfo, NR_SI_SchedulingInfo_t);
 
   config_common_ue_sa(mac, scc, cc_idP);
   configure_common_BWP_dl(mac,
@@ -1421,7 +1440,7 @@ static void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
     AssertFatal(
         reconfigurationWithSync->rach_ConfigDedicated->present == NR_ReconfigurationWithSync__rach_ConfigDedicated_PR_uplink,
         "RACH on supplementaryUplink not supported\n");
-    UPDATE_MAC_IE(ra->rach_ConfigDedicated, reconfigurationWithSync->rach_ConfigDedicated->choice.uplink, NR_RACH_ConfigDedicated_t);
+    UPDATE_IE(ra->rach_ConfigDedicated, reconfigurationWithSync->rach_ConfigDedicated->choice.uplink, NR_RACH_ConfigDedicated_t);
   }
 
   if (reconfigurationWithSync->spCellConfigCommon) {
@@ -1429,7 +1448,7 @@ static void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
     if (scc->physCellId)
       mac->physCellId = *scc->physCellId;
     mac->dmrs_TypeA_Position = scc->dmrs_TypeA_Position;
-    UPDATE_MAC_IE(mac->tdd_UL_DL_ConfigurationCommon, scc->tdd_UL_DL_ConfigurationCommon, NR_TDD_UL_DL_ConfigCommon_t);
+    UPDATE_IE(mac->tdd_UL_DL_ConfigurationCommon, scc->tdd_UL_DL_ConfigurationCommon, NR_TDD_UL_DL_ConfigCommon_t);
     config_common_ue(mac, scc, cc_idP);
     if (scc->downlinkConfigCommon)
       configure_common_BWP_dl(mac,
@@ -1442,7 +1461,7 @@ static void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
   }
 
   mac->state = UE_NOT_SYNC;
-  ra->ra_state = RA_UE_IDLE;
+  ra->ra_state = nrRA_UE_IDLE;
   nr_ue_mac_default_configs(mac);
 
   if (!get_softmodem_params()->emulate_l1) {
@@ -1530,9 +1549,9 @@ static void configure_maccellgroup(NR_UE_MAC_INST_t *mac, const NR_MAC_CellGroup
 static void configure_csi_resourcemapping(NR_CSI_RS_ResourceMapping_t *target, NR_CSI_RS_ResourceMapping_t *source)
 {
   if (target->frequencyDomainAllocation.present != source->frequencyDomainAllocation.present) {
-    UPDATE_MAC_NP_IE(target->frequencyDomainAllocation,
-                     source->frequencyDomainAllocation,
-                     struct NR_CSI_RS_ResourceMapping__frequencyDomainAllocation);
+    UPDATE_NP_IE(target->frequencyDomainAllocation,
+                 source->frequencyDomainAllocation,
+                 struct NR_CSI_RS_ResourceMapping__frequencyDomainAllocation);
   }
   else {
     switch (source->frequencyDomainAllocation.present) {
@@ -1578,7 +1597,7 @@ static void configure_csi_resourcemapping(NR_CSI_RS_ResourceMapping_t *target, N
   }
   target->nrofPorts = source->nrofPorts;
   target->firstOFDMSymbolInTimeDomain = source->firstOFDMSymbolInTimeDomain;
-  UPDATE_MAC_IE(target->firstOFDMSymbolInTimeDomain2, source->firstOFDMSymbolInTimeDomain2, long);
+  UPDATE_IE(target->firstOFDMSymbolInTimeDomain2, source->firstOFDMSymbolInTimeDomain2, long);
   target->cdm_Type = source->cdm_Type;
   target->density = source->density;
   target->freqBand = source->freqBand;
@@ -1588,24 +1607,24 @@ static void configure_csirs_resource(NR_NZP_CSI_RS_Resource_t *target, NR_NZP_CS
 {
   configure_csi_resourcemapping(&target->resourceMapping, &source->resourceMapping);
   target->powerControlOffset = source->powerControlOffset;
-  UPDATE_MAC_IE(target->powerControlOffsetSS, source->powerControlOffsetSS, long);
+  UPDATE_IE(target->powerControlOffsetSS, source->powerControlOffsetSS, long);
   target->scramblingID = source->scramblingID;
   if (source->periodicityAndOffset)
-    UPDATE_MAC_IE(target->periodicityAndOffset, source->periodicityAndOffset, NR_CSI_ResourcePeriodicityAndOffset_t);
+    UPDATE_IE(target->periodicityAndOffset, source->periodicityAndOffset, NR_CSI_ResourcePeriodicityAndOffset_t);
   if (source->qcl_InfoPeriodicCSI_RS)
-    UPDATE_MAC_IE(target->qcl_InfoPeriodicCSI_RS, source->qcl_InfoPeriodicCSI_RS, NR_TCI_StateId_t);
+    UPDATE_IE(target->qcl_InfoPeriodicCSI_RS, source->qcl_InfoPeriodicCSI_RS, NR_TCI_StateId_t);
 }
 
 static void configure_csiim_resource(NR_CSI_IM_Resource_t *target, NR_CSI_IM_Resource_t *source)
 {
   if (source->csi_IM_ResourceElementPattern)
-    UPDATE_MAC_IE(target->csi_IM_ResourceElementPattern,
-                  source->csi_IM_ResourceElementPattern,
-                  struct NR_CSI_IM_Resource__csi_IM_ResourceElementPattern);
+    UPDATE_IE(target->csi_IM_ResourceElementPattern,
+              source->csi_IM_ResourceElementPattern,
+              struct NR_CSI_IM_Resource__csi_IM_ResourceElementPattern);
   if (source->freqBand)
-    UPDATE_MAC_IE(target->freqBand, source->freqBand, NR_CSI_FrequencyOccupation_t);
+    UPDATE_IE(target->freqBand, source->freqBand, NR_CSI_FrequencyOccupation_t);
   if (source->periodicityAndOffset)
-    UPDATE_MAC_IE(target->periodicityAndOffset, source->periodicityAndOffset, NR_CSI_ResourcePeriodicityAndOffset_t);
+    UPDATE_IE(target->periodicityAndOffset, source->periodicityAndOffset, NR_CSI_ResourcePeriodicityAndOffset_t);
 }
 
 static void configure_csiconfig(NR_UE_ServingCell_Info_t *sc_info, struct NR_SetupRelease_CSI_MeasConfig *csi_MeasConfig_sr)
@@ -1618,12 +1637,12 @@ static void configure_csiconfig(NR_UE_ServingCell_Info_t *sc_info, struct NR_Set
       break;
     case NR_SetupRelease_CSI_MeasConfig_PR_setup:
       if (!sc_info->csi_MeasConfig) { // setup
-        UPDATE_MAC_IE(sc_info->csi_MeasConfig, csi_MeasConfig_sr->choice.setup, NR_CSI_MeasConfig_t);
+        UPDATE_IE(sc_info->csi_MeasConfig, csi_MeasConfig_sr->choice.setup, NR_CSI_MeasConfig_t);
       } else { // modification
         NR_CSI_MeasConfig_t *target = sc_info->csi_MeasConfig;
         NR_CSI_MeasConfig_t *csi_MeasConfig = csi_MeasConfig_sr->choice.setup;
         if (csi_MeasConfig->reportTriggerSize)
-          UPDATE_MAC_IE(target->reportTriggerSize, csi_MeasConfig->reportTriggerSize, long);
+          UPDATE_IE(target->reportTriggerSize, csi_MeasConfig->reportTriggerSize, long);
         if (csi_MeasConfig->aperiodicTriggerStateList)
           HANDLE_SETUPRELEASE_DIRECT(sc_info->aperiodicTriggerStateList,
                                      csi_MeasConfig->aperiodicTriggerStateList,
@@ -1747,9 +1766,9 @@ static void configure_servingcell_info(NR_UE_ServingCell_Info_t *sc_info, NR_Ser
     configure_csiconfig(sc_info, scd->csi_MeasConfig);
 
   if (scd->supplementaryUplink)
-    UPDATE_MAC_IE(sc_info->supplementaryUplink, scd->supplementaryUplink, NR_UplinkConfig_t);
+    UPDATE_IE(sc_info->supplementaryUplink, scd->supplementaryUplink, NR_UplinkConfig_t);
   if (scd->crossCarrierSchedulingConfig)
-    UPDATE_MAC_IE(sc_info->crossCarrierSchedulingConfig, scd->crossCarrierSchedulingConfig, NR_CrossCarrierSchedulingConfig_t);
+    UPDATE_IE(sc_info->crossCarrierSchedulingConfig, scd->crossCarrierSchedulingConfig, NR_CrossCarrierSchedulingConfig_t);
   if (scd->pdsch_ServingCellConfig) {
     switch (scd->pdsch_ServingCellConfig->present) {
       case NR_SetupRelease_PDSCH_ServingCellConfig_PR_NOTHING:
@@ -1774,9 +1793,9 @@ static void configure_servingcell_info(NR_UE_ServingCell_Info_t *sc_info, NR_Ser
                                      pdsch_servingcellconfig->codeBlockGroupTransmission,
                                      NR_PDSCH_CodeBlockGroupTransmission_t,
                                      asn_DEF_NR_PDSCH_CodeBlockGroupTransmission);
-        UPDATE_MAC_IE(sc_info->xOverhead_PDSCH, pdsch_servingcellconfig->xOverhead, long);
+        UPDATE_IE(sc_info->xOverhead_PDSCH, pdsch_servingcellconfig->xOverhead, long);
         if (pdsch_servingcellconfig->ext1 && pdsch_servingcellconfig->ext1->maxMIMO_Layers)
-          UPDATE_MAC_IE(sc_info->maxMIMO_Layers_PDSCH, pdsch_servingcellconfig->ext1->maxMIMO_Layers, long);
+          UPDATE_IE(sc_info->maxMIMO_Layers_PDSCH, pdsch_servingcellconfig->ext1->maxMIMO_Layers, long);
         break;
       }
       default:
@@ -1806,10 +1825,10 @@ static void configure_servingcell_info(NR_UE_ServingCell_Info_t *sc_info, NR_Ser
         break;
       case NR_SetupRelease_PUSCH_ServingCellConfig_PR_setup: {
         NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig = scd->uplinkConfig->pusch_ServingCellConfig->choice.setup;
-        UPDATE_MAC_IE(sc_info->rateMatching_PUSCH, pusch_servingcellconfig->rateMatching, long);
-        UPDATE_MAC_IE(sc_info->xOverhead_PUSCH, pusch_servingcellconfig->xOverhead, long);
+        UPDATE_IE(sc_info->rateMatching_PUSCH, pusch_servingcellconfig->rateMatching, long);
+        UPDATE_IE(sc_info->xOverhead_PUSCH, pusch_servingcellconfig->xOverhead, long);
         if (pusch_servingcellconfig->ext1 && pusch_servingcellconfig->ext1->maxMIMO_Layers)
-          UPDATE_MAC_IE(sc_info->maxMIMO_Layers_PUSCH, pusch_servingcellconfig->ext1->maxMIMO_Layers, long);
+          UPDATE_IE(sc_info->maxMIMO_Layers_PUSCH, pusch_servingcellconfig->ext1->maxMIMO_Layers, long);
         if (pusch_servingcellconfig->codeBlockGroupTransmission)
           HANDLE_SETUPRELEASE_DIRECT(sc_info->pusch_CGB_Transmission,
                                      pusch_servingcellconfig->codeBlockGroupTransmission,

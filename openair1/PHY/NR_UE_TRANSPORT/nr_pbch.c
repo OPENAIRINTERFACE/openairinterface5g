@@ -361,7 +361,6 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                struct complex16 dl_ch_estimates[][estimateSz],
                NR_DL_FRAME_PARMS *frame_parms,
                uint8_t i_ssb,
-               MIMO_mode_t mimo_mode,
                fapiPbch_t *result,
                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
@@ -414,7 +413,7 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                     symbol_offset,
                     frame_parms);
 #ifdef DEBUG_PBCH
-    LOG_I(PHY,"[PHY] PBCH Symbol %d ofdm size %d\n",symbol, frame_parms->ofdm_symbol_size );
+    LOG_I(PHY,"[PHY] PBCH Symbol %d ofdm size %d\n",symbol, frame_parms->ofdm_symbol_size);
     LOG_I(PHY,"[PHY] PBCH starting channel_level\n");
 #endif
 
@@ -441,14 +440,6 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                          rxdataF_comp,
                          symbol);*/
 
-    /*
-        if (mimo_mode == ALAMOUTI) {
-          nr_pbch_alamouti(frame_parms,rxdataF_comp,symbol);
-        } else if (mimo_mode != SISO) {
-          LOG_I(PHY,"[PBCH][RX] Unsupported MIMO mode\n");
-          return(-1);
-        }
-    */
     int nb=symbol==2 ? 144 : 360;
     nr_pbch_quantize(pbch_e_rx+pbch_e_rx_idx,
 		     (short *)rxdataF_comp[0],

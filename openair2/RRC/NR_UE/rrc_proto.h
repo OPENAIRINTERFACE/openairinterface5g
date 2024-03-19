@@ -73,6 +73,8 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
                               const frame_t frame,
                               const int slot,
                               const rnti_t rnti,
+                              const uint32_t cellid,
+                              const long arfcn,
                               const channel_t channel,
                               const uint8_t* pduP,
                               const sdu_size_t pdu_len);
@@ -86,7 +88,8 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
                           NR_RRCRelease_t *RRCRelease);
 
 void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success);
-void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti);
+void nr_mac_rrc_msg3_ind(const module_id_t mod_id, const int rnti, int gnb_id);
+void set_rlf_sib1_timers_and_constants(NR_UE_Timers_Constants_t *tac, NR_SIB1_t *sib1);
 
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */

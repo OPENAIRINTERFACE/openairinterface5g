@@ -797,15 +797,7 @@ int main(int argc, char **argv)
 
         }
 	fapiPbch_t result;
-        ret = nr_rx_pbch(UE,
-                         &proc,
-                         estimateSz,
-                         dl_ch_estimates,
-                         frame_parms,
-                         ssb_index%8,
-                         SISO,
-                         &result,
-                         rxdataF);
+        ret = nr_rx_pbch(UE, &proc, estimateSz, dl_ch_estimates, frame_parms, ssb_index % 8, &result, rxdataF);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically

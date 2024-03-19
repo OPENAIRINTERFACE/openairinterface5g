@@ -1,3 +1,4 @@
+add_subdirectory(alg)
 add_subdirectory(ds)
 add_boolean_option(ENABLE_TELNETSRV OFF "Whether to build telnet support in modems" OFF)
 if(ENABLE_TELNETSRV)

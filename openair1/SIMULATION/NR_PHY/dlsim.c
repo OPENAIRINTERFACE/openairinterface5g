@@ -873,7 +873,7 @@ int main(int argc, char **argv)
   asn1cFreeStruc(asn_DEF_NR_CellGroupConfig, UE_CellGroup);
 
   UE_mac->state = UE_CONNECTED;
-  UE_mac->ra.ra_state = RA_SUCCEEDED;
+  UE_mac->ra.ra_state = nrRA_SUCCEEDED;
 
   nr_phy_data_t phy_data = {0};
   fapi_nr_dl_config_request_t dl_config = {.sfn = frame, .slot = slot};
