@@ -379,6 +379,7 @@ git checkout oran_e_maintenance_release_v1.0
 Apply the patch (available in `oai_folder/cmake_targets/tools/oran_fhi_integration_patches/E`):
 
 ```bash
+cd ~/phy
 git apply ~/openairinterface5g/cmake_targets/tools/oran_fhi_integration_patches/E/oaioran_E.patch
 ```
 
