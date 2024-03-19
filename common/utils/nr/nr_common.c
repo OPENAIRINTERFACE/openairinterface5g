@@ -391,7 +391,7 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, ui
   uint32_t nrarfcn;
   int i = get_nr_table_idx(nr_bandP, scs_index);
 
-  LOG_I(NR_MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n", nr_bandP, (long long unsigned int)dl_CarrierFreq,bw);
+  LOG_D(NR_MAC, "Searching for nr band %d DL Carrier frequency %llu bw %u\n", nr_bandP, (long long unsigned int)dl_CarrierFreq, bw);
 
   AssertFatal(dl_CarrierFreq_by_1k >= nr_bandtable[i].dl_min,
               "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
