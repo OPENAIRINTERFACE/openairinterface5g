@@ -54,17 +54,17 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
                    unsigned short nid)
 {
-  unsigned int n = 0, x1 = 0, x2 = 0, x2tmp0 = 0;
-  uint8_t reset;
   int pdcch_dmrs_init_length = (((ue->frame_parms.N_RB_DL << 1) * 3) >> 5) + 1;
-
   for (int ns = 0; ns < ue->frame_parms.slots_per_frame; ns++) {
     for (int l = 0; l < ue->frame_parms.symbols_per_slot; l++) {
-      reset = 1;
-      x2tmp0 = ((ue->frame_parms.symbols_per_slot * ns + l + 1) * ((nid << 1) + 1));
+      uint8_t reset = 1;
+      uint64_t x2tmp0 = ((ue->frame_parms.symbols_per_slot * ns + l + 1) * ((nid << 1) + 1));
       x2tmp0 <<= 17;
-      x2 = (x2tmp0 + (nid << 1)) % (1U << 31);  //cinit
-      for (n=0; n<pdcch_dmrs_init_length; n++) {
+      x2tmp0 += (nid << 1);
+      uint32_t x1 = 0;
+      uint32_t x2 = x2tmp0 % (1U << 31);  //cinit
+      LOG_D(PHY,"PDCCH DMRS slot %d, symb %d, Nid %d, x2 %x\n", ns, l, nid, x2);
+      for (int n = 0; n < pdcch_dmrs_init_length; n++) {
         ue->nr_gold_pdcch[0][ns][l][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }    
