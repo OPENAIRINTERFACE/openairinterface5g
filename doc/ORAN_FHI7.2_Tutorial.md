@@ -671,7 +671,7 @@ xRAN SRS reception is not supported.
 
 Run the `nr-softmodem` from the build directory:
 ```bash
-cd ~/openairinterface5g/ran_build/build
+cd ~/openairinterface5g/cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/oran.fh.band78.fr1.273PRB.conf --sa --reorder-thread-disable 1 --thread-pool <list of non isolated cpus>
 ```
 
