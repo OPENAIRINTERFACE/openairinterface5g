@@ -676,6 +676,8 @@ cd ~/openairinterface5g/cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/oran.fh.band78.fr1.273PRB.conf --sa --reorder-thread-disable 1 --thread-pool <list of non isolated cpus>
 ```
 
+**Warning**: Make sure that the config file you add after the `-O` option is adapted to your machine, especially to its isolated cores.
+
 **Note**: You may run OAI with O-RAN 7.2 Fronthaul without a RU attached (e.g. for benchmarking).
 In such case, you would generate artificial traffic by replacing the `--sa` option by the `--phy-test` option.
 
