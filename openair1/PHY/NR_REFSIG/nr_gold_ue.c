@@ -92,21 +92,19 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
   }
 }
 
-void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
-                        uint16_t N_n_scid,
-                        uint8_t n_scid)
+void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue, uint16_t N_n_scid, uint8_t n_scid)
 {
-  uint32_t x1 = 0, x2 = 0, n = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   uint32_t ****pusch_dmrs = ue->nr_gold_pusch_dmrs;
   int pusch_dmrs_init_length = ((fp->N_RB_UL * 12) >> 5) + 1;
-
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
     for (int symb = 0; symb < fp->symbols_per_slot; symb++) {
       int reset = 1;
-      x2 = ((1U << 17) * (fp->symbols_per_slot*slot + symb + 1) * ((N_n_scid << 1) + 1) + ((N_n_scid << 1) + n_scid));
-      LOG_D(PHY,"DMRS slot %d, symb %d x2 %x\n", slot, symb, x2);
-      for (n=0; n<pusch_dmrs_init_length; n++) {
+      uint32_t x1 = 0;
+      uint64_t t_x2 = ((1UL << 17) * (fp->symbols_per_slot*slot + symb + 1) * ((N_n_scid << 1) + 1) + ((N_n_scid << 1) + n_scid));
+      uint32_t x2 = t_x2 % (1U << 31);
+      LOG_D(PHY,"DMRS slot %d, symb %d, N_n_scid %d, n_scid %d, x2 %x\n", slot, symb, N_n_scid, n_scid, x2);
+      for (int n = 0; n < pusch_dmrs_init_length; n++) {
         pusch_dmrs[slot][symb][n_scid][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
