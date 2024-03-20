@@ -57,11 +57,12 @@ We have only verified LLS-C3 configuration in our lab, i.e.  using an external
 grandmaster, a switch as a boundary clock, and the gNB/DU and RU.  We haven't
 tested any RU without S-plane. Radio units we are testing/integrating:
 
-|Vendor     |Software Version |
-|-----------|-----------------|
-|VVDN LPRU  |03-v3.0.4        |
-|LiteON RU  |01.00.08/02.00.03|
-|Benetel 650|v0.8.1           |
+|Vendor           |Software Version |
+|-----------------|-----------------|
+|VVDN LPRU        |03-v3.0.4        |
+|LiteON RU        |01.00.08/02.00.03|
+|Benetel 650      |v0.8.1           |
+|Benetel 550 CAT-A|v0.8.1           |
 
 Tested libxran releases:
 
