@@ -1109,7 +1109,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     }
     free(uci_234->harq.harq_payload);
   }
-  if ((uci_234->pduBitmap >> 2) & 0x01) {
+  /* phy-test has hardcoded allocation, so no use to handle CSI reports */
+  if ((uci_234->pduBitmap >> 2) & 0x01 && !get_softmodem_params()->phy_test) {
     //API to parse the csi report and store it into sched_ctrl
     extract_pucch_csi_report(csi_MeasConfig, uci_234, frame, slot, UE, nrmac->common_channels->ServingCellConfigCommon);
     //TCI handling function
