@@ -1038,7 +1038,7 @@ static void rfsimulator_end(openair0_device *device) {
   for (int i = 0; i < MAX_FD_RFSIMU; i++) {
     buffer_t *b = &s->buf[i];
     if (b->conn_sock >= 0 )
-      close(b->conn_sock);
+      removeCirBuf(s, b->conn_sock);
   }
   close(s->epollfd);
 }
