@@ -319,7 +319,7 @@ int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue,
   @param sa current running mode
 */
 typedef struct {
-  bool cell_notdetected;
+  bool cell_detected;
   int rx_offset;
 } nr_initial_sync_t;
 nr_initial_sync_t nr_initial_sync(UE_nr_rxtx_proc_t *proc, PHY_VARS_NR_UE *phy_vars_ue, int n_frames, int sa);

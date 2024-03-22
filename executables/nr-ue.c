@@ -440,7 +440,7 @@ static void UE_synch(void *arg) {
       uint64_t dl_carrier, ul_carrier;
       nr_get_carrier_frequencies(UE, &dl_carrier, &ul_carrier);
       nr_initial_sync_t ret = nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa);
-      if (!ret.cell_notdetected) {
+      if (ret.cell_detected) {
         syncD->rx_offset = ret.rx_offset;
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset =
@@ -538,7 +538,7 @@ void processSlotTX(void *arg)
 {
   nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
   const UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
-  PHY_VARS_NR_UE    *UE   = rxtxD->UE;
+  PHY_VARS_NR_UE *UE = rxtxD->UE;
   nr_phy_data_tx_t phy_data = {0};
 
   if (UE->if_inst)

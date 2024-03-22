@@ -1358,7 +1358,6 @@ void nr_rrc_mac_config_req_reset(module_id_t module_id,
                                  NR_UE_MAC_reset_cause_t cause)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-
   switch (cause) {
     case GO_TO_IDLE:
       reset_ra(&mac->ra);

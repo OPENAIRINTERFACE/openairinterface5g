@@ -766,10 +766,10 @@ int main(int argc, char **argv)
       }
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-  nr_initial_sync_t ret = nr_initial_sync(&proc, UE, 1, 0);
-  printf("nr_initial_sync1 returns %d\n", ret.cell_notdetected);
-  if (ret.cell_notdetected)
-    n_errors++;
+        nr_initial_sync_t ret = nr_initial_sync(&proc, UE, 1, 0);
+        printf("nr_initial_sync1 returns %s\n", ret.cell_detected ? "cell detected" : "cell not detected");
+        if (!ret.cell_detected)
+          n_errors++;
       }
       else {
         UE_nr_rxtx_proc_t proc={0};

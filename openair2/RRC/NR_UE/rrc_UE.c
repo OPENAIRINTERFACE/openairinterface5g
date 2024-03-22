@@ -616,7 +616,7 @@ static void nr_rrc_handle_msg3_indication(NR_UE_RRC_INST_t *rrc, rnti_t rnti)
 {
   NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
   switch (rrc->ra_trigger) {
-    case INITIAL_ACCESS_FROM_RRC_IDLE:
+    case RRC_CONNECTION_SETUP:
       // After SIB1 is received, prepare RRCConnectionRequest
       rrc->rnti = rnti;
       // start timer T300
@@ -744,7 +744,7 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(NR_UE_RRC_INST_t *rrc,
         LOG_A(NR_RRC, "SIB1 decoded\n");
         nr_timer_start(&SI_info->sib1_timer);
         if (rrc->nrRrcState == RRC_STATE_IDLE_NR) {
-          rrc->ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
+          rrc->ra_trigger = RRC_CONNECTION_SETUP;
           // preparing RRC setup request payload in advance
           nr_rrc_ue_prepare_RRCSetupRequest(rrc);
         }
@@ -2221,6 +2221,9 @@ void nr_rrc_going_to_IDLE(NR_UE_RRC_INST_t *rrc,
 
 void handle_t300_expiry(NR_UE_RRC_INST_t *rrc)
 {
+  rrc->ra_trigger = RRC_CONNECTION_SETUP;
+  nr_rrc_ue_prepare_RRCSetupRequest(rrc);
+
   // reset MAC, release the MAC configuration
   NR_UE_MAC_reset_cause_t cause = T300_EXPIRY;
   nr_rrc_mac_config_req_reset(rrc->ue_id, cause);
