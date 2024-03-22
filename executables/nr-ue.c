@@ -767,7 +767,7 @@ void *UE_thread(void *arg)
   void *rxp[NB_ANTENNAS_RX];
   int start_rx_stream = 0;
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
-  AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
+  AssertFatal(0 == openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "Could not load the device\n");
   UE->rfdevice.host_type = RAU_HOST;
   UE->is_synchronized = 0;
   AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
@@ -784,13 +784,13 @@ void *UE_thread(void *arg)
   int timing_advance = UE->timing_advance;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
-  bool syncRunning=false;
+  bool syncRunning = false;
   const int nb_slot_frame = UE->frame_parms.slots_per_frame;
-  int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
+  int absolute_slot = 0, decoded_frame_rx = INT_MAX, trashed_frames = 0;
   int tx_wait_for_dlsch[NR_MAX_SLOTS_PER_FRAME];
 
   int num_ind_fifo = nb_slot_frame;
-  for(int i=0; i < num_ind_fifo; i++) {
+  for(int i = 0; i < num_ind_fifo; i++) {
     initNotifiedFIFO(UE->tx_resume_ind_fifo + i);
   }
   int shiftForNextFrame = 0;
@@ -801,8 +801,9 @@ void *UE_thread(void *arg)
       notifiedFIFO_elt_t *res=tryPullTpool(&nf,&(get_nrUE_params()->Tpool));
 
       if (res) {
-        syncRunning=false;
+        syncRunning = false;
         if (UE->is_synchronized) {
+          UE->synch_request.received_synch_request = 0;
           decoded_frame_rx = mac->mib_frame;
           LOG_A(PHY,
                 "UE synchronized! decoded_frame_rx=%d UE->init_sync_frame=%d trashed_frames=%d\n",
@@ -815,7 +816,7 @@ void *UE_thread(void *arg)
           intialSyncOffset = syncMsg->rx_offset;
         }
         delNotifiedFIFO_elt(res);
-        start_rx_stream=0;
+        start_rx_stream = 0;
       } else {
 	if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
 	  // For IQ recorder-player we force synchronization to happen in 280 ms
