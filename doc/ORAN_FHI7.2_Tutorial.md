@@ -57,11 +57,12 @@ We have only verified LLS-C3 configuration in our lab, i.e.  using an external
 grandmaster, a switch as a boundary clock, and the gNB/DU and RU.  We haven't
 tested any RU without S-plane. Radio units we are testing/integrating:
 
-|Vendor     |Software Version |
-|-----------|-----------------|
-|VVDN LPRU  |03-v3.0.4        |
-|LiteON RU  |01.00.08/02.00.03|
-|Benetel 650|v0.8.1           |
+|Vendor           |Software Version |
+|-----------------|-----------------|
+|VVDN LPRU        |03-v3.0.4        |
+|LiteON RU        |01.00.08/02.00.03|
+|Benetel 650      |v0.8.1           |
+|Benetel 550 CAT-A|v0.8.1           |
 
 Tested libxran releases:
 
@@ -202,6 +203,12 @@ network_transport       L2
 hybrid_e2e              0
 ```
 Probably you need to increase `tx_timestamp_timeout` to 50 or 100 for Intel E-810. You will see that in the logs of ptp.
+
+Create the configuration file for ptp4l (`/etc/sysconfig/ptp4l`)
+
+```
+OPTIONS="-f /etc/ptp4l.conf"
+```
 
 Create the configuration file for phc2sys (`/etc/sysconfig/phc2sys`)
 
@@ -373,6 +380,7 @@ git checkout oran_e_maintenance_release_v1.0
 Apply the patch (available in `oai_folder/cmake_targets/tools/oran_fhi_integration_patches/E`):
 
 ```bash
+cd ~/phy
 git apply ~/openairinterface5g/cmake_targets/tools/oran_fhi_integration_patches/E/oaioran_E.patch
 ```
 
@@ -628,7 +636,7 @@ Edit the sample OAI gNB configuration file and check following parameters:
   that is employed by the xRAN library (`xran_fh_init` and `xran_fh_config`
   structs in the code):
   * `dpdk_devices`: PCI addresses of NIC VFs binded to the DPDK (not the physical NIC but the VFs, use `lspci | grep Virtual`)
-  * `system_core`: absolute CPU core ID for DPDK control threads
+  * `system_core`: absolute CPU core ID for DPDK control threads, it should be an isolated core, in our environment we are using CPU 0
     (`rte_mp_handle`, `eal-intr-thread`, `iavf-event-thread`)
   * `io_core`: absolute CPU core ID for XRAN library, it should be an isolated core, in our environment we are using CPU 4
   * `worker_cores`: array of absolute CPU core IDs for XRAN library, they should be isolated cores, in our environment we are using CPU 2
@@ -664,9 +672,11 @@ xRAN SRS reception is not supported.
 
 Run the `nr-softmodem` from the build directory:
 ```bash
-cd ~/openairinterface5g/ran_build/build
-sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/oran.fh.band78.fr1.273PRB.conf --sa --reorder-thread-disable 1 --thread-pool <list of non isolated cpus>
+cd ~/openairinterface5g/cmake_targets/ran_build/build
+sudo ./nr-softmodem -O <configuration file> --sa --thread-pool <list of non isolated cpus>
 ```
+
+**Warning**: Make sure that the configuration file you add after the `-O` option is adapted to your machine, especially to its isolated cores.
 
 **Note**: You may run OAI with O-RAN 7.2 Fronthaul without a RU attached (e.g. for benchmarking).
 In such case, you would generate artificial traffic by replacing the `--sa` option by the `--phy-test` option.
