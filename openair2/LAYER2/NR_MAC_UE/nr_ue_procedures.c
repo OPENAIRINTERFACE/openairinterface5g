@@ -189,10 +189,8 @@ int get_rnti_type(const NR_UE_MAC_INST_t *mac, const uint16_t rnti)
   } else {
     AssertFatal(1 == 0, "Not identified/handled rnti %d \n", rnti);
   }
-
-    LOG_D(MAC, "Returning rnti_type %s \n", rnti_types(rnti_type));
-
-    return rnti_type;
+  LOG_D(MAC, "Returning rnti_type %s \n", rnti_types(rnti_type));
+  return rnti_type;
 }
 
 void nr_ue_decode_mib(NR_UE_MAC_INST_t *mac, int cc_id)
@@ -664,6 +662,13 @@ static int nr_ue_process_dci_dl_10(NR_UE_MAC_INST_t *mac,
   else
     dlsch_pdu->dlDmrsScramblingId = mac->physCellId;
 
+  if (get_rnti_type(mac, dci_ind->rnti) == TYPE_C_RNTI_
+      && dci_ind->ss_type != NR_SearchSpace__searchSpaceType_PR_common
+      && pdsch_config->dataScramblingIdentityPDSCH)
+    dlsch_pdu->dlDataScramblingId = *pdsch_config->dataScramblingIdentityPDSCH;
+  else
+    dlsch_pdu->dlDataScramblingId = mac->physCellId;
+
   /* dmrs symbol positions*/
   dlsch_pdu->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
                                             NR_DL_DCI_FORMAT_1_0,
@@ -974,6 +979,11 @@ static int nr_ue_process_dci_dl_11(NR_UE_MAC_INST_t *mac,
       LOG_E(MAC, "Invalid dmrs sequence initialization value %d\n", dci->dmrs_sequence_initialization.val);
       return -1;
   }
+
+  if (pdsch_Config->dataScramblingIdentityPDSCH)
+    dlsch_pdu->dlDataScramblingId = *pdsch_Config->dataScramblingIdentityPDSCH;
+  else
+    dlsch_pdu->dlDataScramblingId = mac->physCellId;
 
   dlsch_pdu->dmrsConfigType = dl_dmrs_config->dmrs_Type == NULL ? NFAPI_NR_DMRS_TYPE1 : NFAPI_NR_DMRS_TYPE2;
 

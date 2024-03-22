@@ -494,6 +494,7 @@ typedef struct {
   uint32_t tbslbrm;
   uint8_t nscid;
   uint16_t dlDmrsScramblingId;
+  uint16_t dlDataScramblingId;
   uint16_t pduBitmap;
   uint32_t k1_feedback;
   uint8_t ldpcBaseGraph;
