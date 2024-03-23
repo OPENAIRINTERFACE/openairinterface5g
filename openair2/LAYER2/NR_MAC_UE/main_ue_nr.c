@@ -72,6 +72,9 @@ void nr_ue_init_mac(NR_UE_MAC_INST_t *mac)
   mac->p_Max_alt = INT_MIN;
   reset_mac_inst(mac);
 
+  // need to inizialize because might not been setup (optional timer)
+  nr_timer_stop(&mac->scheduling_info.sr_DelayTimer);
+
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
   memset(mac->ssb_list, 0, sizeof(mac->ssb_list));
@@ -81,8 +84,13 @@ void nr_ue_init_mac(NR_UE_MAC_INST_t *mac)
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
 {
   // default values as defined in 38.331 sec 9.2.2
-  mac->scheduling_info.retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf80;
-  mac->scheduling_info.periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf10;
+
+  // sf80 default for retxBSR_Timer sf10 for periodicBSR_Timer
+  int mu = mac->current_UL_BWP ? mac->current_UL_BWP->scs : get_softmodem_params()->numerology;
+  int subframes_per_slot = nr_slots_per_frame[mu] / 10;
+  nr_timer_setup(&mac->scheduling_info.retxBSR_Timer, 80 * subframes_per_slot, 1); // 1 slot update rate
+  nr_timer_setup(&mac->scheduling_info.periodicBSR_Timer, 10 * subframes_per_slot, 1); // 1 slot update rate
+
   mac->scheduling_info.periodicPHR_Timer = NR_PHR_Config__phr_PeriodicTimer_sf10;
   mac->scheduling_info.prohibitPHR_Timer = NR_PHR_Config__phr_ProhibitTimer_sf10;
 }
@@ -144,13 +152,20 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   // initialize Bj for each logical channel to zero
   // TODO reset also other status variables of LC, is this ok?
   for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+    LOG_D(NR_MAC, "Applying default logical channel config for LCID %d\n", i);
     nr_mac->scheduling_info.lc_sched_info[i].Bj = 0;
     nr_mac->scheduling_info.lc_sched_info[i].LCID_buffer_with_data = false;
     nr_mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
   }
 
   // TODO stop all running timers
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+    nr_mac->scheduling_info.lc_sched_info[i].Bj = 0;
+    nr_timer_stop(&nr_mac->scheduling_info.lc_sched_info[i].Bj_timer);
+  }
   nr_timer_stop(&nr_mac->ra.contention_resolution_timer);
+  nr_timer_stop(&nr_mac->scheduling_info.sr_DelayTimer);
+  nr_timer_stop(&nr_mac->scheduling_info.retxBSR_Timer);
 
   // consider all timeAlignmentTimers as expired and perform the corresponding actions in clause 5.2
   // TODO
@@ -177,9 +192,7 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
   nr_mac->scheduling_info.sr_id = -1; // invalid init value
 
   // cancel any triggered Buffer Status Reporting procedure
-  nr_mac->scheduling_info.periodicBSR_SF = NR_MAC_UE_BSR_TIMER_NOT_RUNNING;
-  nr_mac->scheduling_info.retxBSR_SF = NR_MAC_UE_BSR_TIMER_NOT_RUNNING;
-  nr_mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
+  nr_mac->scheduling_info.BSR_reporting_active = NR_BSR_TRIGGER_NONE;
 
   // cancel any triggered Power Headroom Reporting procedure
   // TODO PHR not implemented yet

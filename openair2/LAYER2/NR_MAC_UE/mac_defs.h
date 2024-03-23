@@ -68,6 +68,13 @@
 // NR UE defs
 // ==========
 
+#define NR_BSR_TRIGGER_NONE      (0) /* No BSR Trigger */
+#define NR_BSR_TRIGGER_REGULAR   (1) /* For Regular and ReTxBSR Expiry Triggers */
+#define NR_BSR_TRIGGER_PERIODIC  (2) /* For BSR Periodic Timer Expiry Trigger */
+#define NR_BSR_TRIGGER_PADDING   (4) /* For Padding BSR Trigger */
+
+#define NR_INVALID_LCGID (NR_MAX_NUM_LCGID)
+
 #define MAX_NUM_BWP_UE 5
 #define NUM_SLOT_FRAME 10
 
@@ -185,6 +192,7 @@ typedef struct {
   long LCGID;
   // Bj bucket usage per lcid
   int32_t Bj;
+  NR_timer_t Bj_timer;
 } NR_LC_SCHEDULING_INFO;
 
 typedef struct {
@@ -200,18 +208,20 @@ typedef struct {
   NR_LC_SCHEDULING_INFO lc_sched_info[NR_MAX_NUM_LCID];
   // lcg scheduling info
   NR_LCG_SCHEDULING_INFO lcg_sched_info[NR_MAX_NUM_LCGID];
+  /// BSR report flag management
+  uint8_t BSR_reporting_active;
+  // LCID triggering BSR
+  NR_LogicalChannelIdentity_t regularBSR_trigger_lcid;
   /// SR pending as defined in 38.321
   uint8_t  SR_pending;
   /// SR_COUNTER as defined in 38.321
   uint16_t SR_COUNTER;
-  /// retxBSR-Timer, default value is sf2560
-  uint16_t retxBSR_Timer;
-  /// retxBSR_SF, number of subframe before triggering a regular BSR
-  uint16_t retxBSR_SF;
-  /// periodicBSR-Timer, default to infinity
-  uint16_t periodicBSR_Timer;
-  /// periodicBSR_SF, number of subframe before triggering a periodic BSR
-  uint16_t periodicBSR_SF;
+  // logicalChannelSR-DelayTimer
+  NR_timer_t sr_DelayTimer;
+  /// retxBSR-Timer
+  NR_timer_t retxBSR_Timer;
+  /// periodicBSR-Timer
+  NR_timer_t periodicBSR_Timer;
   /// default value is 0: not configured
   uint16_t sr_ProhibitTimer;
   /// sr ProhibitTime running
@@ -231,10 +241,6 @@ typedef struct {
   int16_t prohibitPHR_SF;
   ///DL Pathloss Change in db
   uint16_t PathlossChange_db;
-  /// default value is false
-  uint16_t extendedBSR_Sizes_r10;
-  /// default value is false
-  uint16_t extendedPHR_r10;
 } NR_UE_SCHEDULING_INFO;
 
 typedef enum {
@@ -441,9 +447,11 @@ typedef struct nr_lcordered_info_s {
   // logical channels ids ordered as per priority
   NR_LogicalChannelIdentity_t lcid;
   long priority;
-  long prioritisedBitRate;
+  uint32_t pbr; // in B/s (UINT_MAX = infinite)
   // Bucket size per lcid
   uint32_t bucket_size;
+  bool sr_DelayTimerApplied;
+  bool lc_SRMask;
 } nr_lcordered_info_t;
 
 
@@ -520,9 +528,6 @@ typedef struct NR_UE_MAC_INST_s {
   nr_ue_if_module_t       *if_module;
   nr_phy_config_t         phy_config;
   nr_synch_request_t      synch_request;
-
-  /// BSR report flag management
-  uint8_t BSR_reporting_active;
 
   // order lc info
   A_SEQUENCE_OF(nr_lcordered_info_t) lc_ordered_list;

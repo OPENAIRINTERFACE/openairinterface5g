@@ -2511,8 +2511,7 @@ int8_t nr_ue_get_SR(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slot)
       // release all pucch resource
       //mac->physicalConfigDedicated = NULL; // todo
       //mac->ul_active = 0; // todo
-      mac->BSR_reporting_active =
-        NR_BSR_TRIGGER_NONE;
+      si->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
       LOG_I(NR_MAC, "[UE %d] Release all SRs \n", mac->ue_id);
     }
     si->SR_pending = 0;

@@ -47,6 +47,7 @@ void nr_ue_init_mac(NR_UE_MAC_INST_t *mac);
 
 void send_srb0_rrc(int ue_id, const uint8_t *sdu, sdu_size_t sdu_len, void *data);
 void update_mac_timers(NR_UE_MAC_INST_t *mac);
+NR_LC_SCHEDULING_INFO *get_scheduling_info_from_lcid(NR_UE_MAC_INST_t *mac, NR_LogicalChannelIdentity_t lcid);
 
 /**\brief apply default configuration values in nr_mac instance
    \param mac           mac instance */
@@ -118,46 +119,6 @@ SDUs and generates header and forms the complete MAC SDU. \param[in]  mac pointe
 subframe number \param[in] slotP slot number
 */
 int8_t nr_ue_get_SR(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP);
-
-/*! \fn  nr_update_bsr
-   \brief get the rlc stats and update the bsr level for each lcid
-\param[in] mac pointer to UE MAC instance
-\param[in] frameP Frame index
-\param[in] slotP number
-\param[in] gNB_index
-*/
-bool nr_update_bsr(NR_UE_MAC_INST_t *mac, frame_t frameP, slot_t slotP, uint8_t gNB_index);
-
-/*! \fn  nr_locate_BsrIndexByBufferSize (int *table, int size, int value)
-   \brief locate the BSR level in the table as defined in 38.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.
-\param[in] *table Pointer to BSR table
-\param[in] size Size of the table
-\param[in] value Value of the buffer
-\return the index in the BSR_LEVEL table
-*/
-uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size,
-                                    int value);
-
-/*! \fn  int nr_get_pbr(long prioritizedbitrate)
-   \brief get the rate in kbps from the rate configured by the higher layer
-\param[in]  prioritizedbitrate
-\return the rate in kbps
-*/
-uint32_t nr_get_pbr(long prioritizedbitrate);
-
-/*! \fn  int nr_get_sf_periodicBSRTimer(uint8_t periodicBSR_Timer)
-   \brief get the number of subframe from the periodic BSR timer configured by the higher layers
-\param[in] periodicBSR_Timer timer for periodic BSR
-\return the number of subframe
-*/
-int nr_get_sf_periodicBSRTimer(uint8_t bucketSize);
-
-/*! \fn  int nr_get_sf_retxBSRTimer(uint8_t retxBSR_Timer)
-   \brief get the number of subframe form the bucket size duration configured by the higher layer
-\param[in]  retxBSR_Timer timer for regular BSR
-\return the time in sf
-*/
-int nr_get_sf_retxBSRTimer(uint8_t retxBSR_Timer);
 
 int8_t nr_ue_process_dci(NR_UE_MAC_INST_t *mac,
                          int cc_id,
