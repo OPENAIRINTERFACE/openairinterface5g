@@ -502,6 +502,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                         dci_pdu_rel15_t *dci,
                         RAR_grant_t *rar_grant,
                         uint16_t rnti,
+                        int ss_type,
                         const nr_dci_format_t dci_format)
 {
   uint16_t l_prime_mask = 0;
@@ -513,10 +514,10 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   // Common configuration
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
-  pusch_config_pdu->pdu_bit_map      = PUSCH_PDU_BITMAP_PUSCH_DATA;
-  pusch_config_pdu->nrOfLayers       = 1;
-  pusch_config_pdu->Tpmi             = 0;
-  pusch_config_pdu->rnti             = rnti;
+  pusch_config_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
+  pusch_config_pdu->nrOfLayers = 1;
+  pusch_config_pdu->Tpmi = 0;
+  pusch_config_pdu->rnti = rnti;
 
   pusch_dmrs_AdditionalPosition_t add_pos = pusch_dmrs_pos2;
   int dmrslength = 1;
@@ -625,16 +626,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, dci_format, 0);
 
     /*DCI format-related configuration*/
-    int target_ss;
     if (dci_format == NR_UL_DCI_FORMAT_0_0) {
-      target_ss = NR_SearchSpace__searchSpaceType_PR_common;
       if ((pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) &&
           pusch_config_pdu->nr_of_symbols < 3)
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
       else
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
     } else if (dci_format == NR_UL_DCI_FORMAT_0_1) {
-      target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
       ul_layers_config(mac, pusch_config_pdu, dci, dci_format);
       ul_ports_config(mac, &dmrslength, pusch_config_pdu, dci, dci_format);
     } else {
@@ -652,6 +650,12 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     pusch_config_pdu->scid = 0;
+    pusch_config_pdu->data_scrambling_id = mac->physCellId;
+    if (pusch_Config->dataScramblingIdentityPUSCH
+        && rnti_type == TYPE_C_RNTI_
+        && !(dci_format == NR_UL_DCI_FORMAT_0_0 && ss_type == NR_SearchSpace__searchSpaceType_PR_common))
+      pusch_config_pdu->data_scrambling_id = *pusch_Config->dataScramblingIdentityPUSCH;
+
     pusch_config_pdu->ul_dmrs_scrambling_id = mac->physCellId;
     if (dci_format == NR_UL_DCI_FORMAT_0_1)
       pusch_config_pdu->scid = dci->dmrs_sequence_initialization.val;
@@ -706,7 +710,9 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     /* FREQ_HOPPING_FLAG */
-    if ((pusch_Config!=NULL) && (pusch_Config->frequencyHopping!=NULL) && (pusch_Config->resourceAllocation != NR_PUSCH_Config__resourceAllocation_resourceAllocationType0)){
+    if ((pusch_Config != NULL)
+        && (pusch_Config->frequencyHopping != NULL)
+        && (pusch_Config->resourceAllocation != NR_PUSCH_Config__resourceAllocation_resourceAllocationType0)) {
       pusch_config_pdu->frequency_hopping = dci->frequency_hopping_flag.val;
     }
 
@@ -714,17 +720,12 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->mcs_index = dci->mcs;
 
     /* MCS TABLE */
-    if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
-      pusch_config_pdu->mcs_table =
-          get_pusch_mcs_table(pusch_Config ? pusch_Config->mcs_Table : NULL, 0, dci_format, rnti_type, target_ss, false);
-    } else {
-      pusch_config_pdu->mcs_table = get_pusch_mcs_table(pusch_Config ? pusch_Config->mcs_TableTransformPrecoder : NULL,
-                                                        1,
-                                                        dci_format,
-                                                        rnti_type,
-                                                        target_ss,
-                                                        false);
-    }
+    pusch_config_pdu->mcs_table = get_pusch_mcs_table(pusch_Config ? pusch_Config->mcs_TableTransformPrecoder : NULL,
+                                                      pusch_config_pdu->transform_precoding != NR_PUSCH_Config__transformPrecoder_disabled,
+                                                      dci_format,
+                                                      rnti_type,
+                                                      ss_type,
+                                                      false);
 
     /* NDI */
     NR_UL_HARQ_INFO_t *harq = &mac->ul_harq_info[dci->harq_pid];

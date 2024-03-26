@@ -374,6 +374,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                         dci_pdu_rel15_t *dci,
                         RAR_grant_t *rar_grant,
                         uint16_t rnti,
+                        int ss_type,
                         const nr_dci_format_t dci_format);
 
 int nr_rrc_mac_config_req_sl_preconfig(module_id_t module_id,

@@ -691,7 +691,7 @@ static bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *
   nr_dlsch_unscrambling(llr[0],
                         dl_harq0->G,
                         0,
-                        ue->frame_parms.Nid_cell,
+                        dlsch[0].dlsch_config.dlDataScramblingId,
                         dlsch[0].rnti);
     
 
@@ -787,7 +787,7 @@ static bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *
     nr_dlsch_unscrambling(llr[1],
                           dl_harq1->G,
                           0,
-                          ue->frame_parms.Nid_cell,
+                          dlsch[1].dlsch_config.dlDataScramblingId,
                           dlsch[1].rnti);
     stop_meas(&ue->dlsch_unscrambling_stats);
 
