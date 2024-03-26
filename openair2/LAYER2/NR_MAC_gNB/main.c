@@ -45,7 +45,7 @@
 extern RAN_CONTEXT_t RC;
 
 
-#define MACSTATSSTRLEN 16000
+#define MACSTATSSTRLEN 36256
 
 void *nrmac_stats_thread(void *arg) {
 
