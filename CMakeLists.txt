@@ -1809,13 +1809,16 @@ target_link_libraries(lte-uesoftmodem PRIVATE
 
 # nr-softmodem
 ###################################################
-
+find_package(HDF5 REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(ZMQ REQUIRED IMPORTED_TARGET libzmq)
 add_executable(nr-softmodem
   ${rrc_h}
   ${nr_rrc_h}
   ${s1ap_h}
   ${OPENAIR_DIR}/executables/nr-gnb.c
   ${OPENAIR_DIR}/executables/nr-ru.c
+  ${OPENAIR_DIR}/executables/nr-ru-streamer.c
   ${OPENAIR_DIR}/executables/nr-softmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR_DIR}/radio/COMMON/common_lib.c
@@ -1848,6 +1851,8 @@ if(E2_AGENT)
   target_compile_definitions(nr-softmodem PRIVATE ${E2AP_VERSION} ${KPM_VERSION} E2_AGENT)
 endif()
 
+target_include_directories(nr-softmodem PRIVATE  ${HDF5_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})
+target_link_libraries(nr-softmodem PRIVATE ${HDF5_LIBRARIES} ${ZMQ_LIBRARIES})
 
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(nr-softmodem PRIVATE

@@ -69,6 +69,8 @@ static int DEFRUTPCORES[] = {-1,-1,-1,-1};
 #include <nfapi/oai_integration/vendor_ext.h>
 #include "executables/nr-softmodem-common.h"
 
+#include "nr-ru-streamer.h"
+
 static void NRRCconfig_RU(configmodule_interface_t *cfg);
 
 /*************************************************************/
@@ -615,6 +617,10 @@ static void rx_rf(RU_t *ru, int *frame, int *slot)
     rxs = ru->rfdevice.trx_read_func(&ru->rfdevice, &ts, rxp, samples_per_slot, nb);
   }
 
+  printf("Reading %d RX samples at TS %llu for frame.slot %d.%d (%p) with TS Offset %llu\n", samples_per_slot, (long long unsigned int)ts, *frame, *slot, rxp[0], (long long unsigned int)ru->ts_offset);
+  stream_rx_iq(ts, rxp, rxs, nb);
+
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
   proc->timestamp_rx = ts-ru->ts_offset;
 
@@ -783,6 +789,9 @@ void tx_rf(RU_t *ru, int frame,int slot, uint64_t timestamp)
           siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
       }
 
+      printf("nb_prefix_samples0 %d, nb_prefix_samples %d, ofdm_symbol_size %d, siglen %d, txsymb %d\n",
+             fp->nb_prefix_samples0, fp->nb_prefix_samples, fp->ofdm_symbol_size, siglen, txsymb);
+
       //+ ru->end_of_burst_delay;
       flags_burst = TX_BURST_END;
     } else if (slot_type == NR_DOWNLINK_SLOT) {
@@ -840,6 +849,21 @@ void tx_rf(RU_t *ru, int frame,int slot, uint64_t timestamp)
         siglen + sf_extension,
         txs,
         10 * log10((double)signal_energy(txp[0], siglen + sf_extension)));
+  printf("[TXPATH] RU %d tx_rf, writing to TS %llu with TS Offset %llu, %d.%d, unwrapped_frame %d, slot %d, flags %d, siglen+sf_extension %d, "
+         "returned %d, E %f\n",
+         ru->idx,
+         (long long unsigned int)(timestamp + ru->ts_offset - sf_extension),
+         (long long unsigned int)ru->ts_offset,
+         frame,
+         slot,
+         proc->frame_tx_unwrap,
+         slot,
+         flags,
+         siglen + sf_extension,
+         txs,
+         10 * log10((double)signal_energy(txp[0], siglen + sf_extension)));
+
+  stream_tx_iq(timestamp + ru->ts_offset - sf_extension, txp, siglen + sf_extension, nt);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0);
   // AssertFatal(txs == 0,"trx write function error %d\n", txs);
 }
@@ -990,6 +1014,36 @@ int setup_RU_buffers(RU_t *ru)
   }
 
   return(0);
+}
+
+void *ru_stats_thread(void *param) {
+  RU_t               *ru      = (RU_t *)param;
+  wait_sync("ru_stats_thread");
+
+  while (!oai_exit) {
+    sleep(1);
+
+    if (cpu_meas_enabled) {
+      if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx (all ports)",NULL,NULL);
+
+      if (ru->feptx_ofdm) {
+        print_meas(&ru->precoding_stats,(ru->half_slot_parallelization==0)?"feptx_prec (per port)":"feptx_prec (per port, half_slot)",NULL,NULL);
+        print_meas(&ru->ofdm_mod_stats,(ru->half_slot_parallelization==0)?"feptx_ofdm (per port)":"feptx_ofdm (per port, half_slot)",NULL,NULL);
+        print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
+        print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
+      }
+      print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
+      if (ru->if_south == REMOTE_IF5) print_meas(&ru->ifdevice.tx_fhaul,"tx_fhaul (IF5)",NULL,NULL); 
+      else print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
+
+      if (ru->fh_north_out) {
+        print_meas(&ru->compression,"compression",NULL,NULL);
+        print_meas(&ru->transport,"transport",NULL,NULL);
+      }
+    }
+  }
+
+  return(NULL);
 }
 
 void ru_tx_func(void *param)
@@ -1369,6 +1423,8 @@ void init_RU_proc(RU_t *ru) {
 
   if(emulate_rf)
     threadCreate( &proc->pthread_emulateRF, emulatedRF_thread, (void *)proc, "emulateRF", -1, OAI_PRIORITY_RT );
+  if (cpu_meas_enabled)
+    threadCreate(&ru->ru_stats_thread, ru_stats_thread, (void *)ru, "ru_stats", -1, OAI_PRIORITY_RT);
   LOG_I(PHY, "Initialized RU proc %d (%s,%s),\n", ru->idx, NB_functions[ru->function], NB_timing[ru->if_timing]);
 }
 
@@ -1397,6 +1453,11 @@ void kill_NR_RU_proc(int inst) {
   pthread_cond_broadcast(&proc->cond_fep[0]);
   pthread_mutex_unlock( &proc->mutex_fep[0] );
   pthread_join(proc->pthread_FH, NULL);
+
+  if (cpu_meas_enabled) {
+    LOG_D(PHY, "Joining ru_stats_thread\n");
+    pthread_join(ru->ru_stats_thread, NULL);
+  }
 
   // everything should be stopped now, we can safely stop the RF device
   if (ru->stop_rf == NULL) {
@@ -1668,6 +1729,10 @@ void init_NR_RU(configmodule_interface_t *cfg, char *rf_config_file)
   pthread_cond_init(&RC.ru_cond,NULL);
   // read in configuration file)
   NRRCconfig_RU(cfg);
+
+  // TODO ADD ANOTHER PORT FOR TX/RX
+  streamer_setup("tcp://127.0.0.1:55555", "tcp://127.0.0.1:55556");
+
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
 
@@ -1750,6 +1815,9 @@ void stop_RU(int nb_ru) {
     LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
     kill_NR_RU_proc(inst);
   }
+
+  
+  streamer_teardown();
 }
 
 
