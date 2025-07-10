@@ -74,7 +74,15 @@ static void *streamer_control_thread_func(void *arg) {
                     atomic_store(&g_stream_rx_sample_count, value);
                     LOG_I(HW, "[STREAMER] Command received: Set RX stream count to %d\n", value);
                     zmq_send(control_socket, "OK", 2, 0);
-                } else {
+                }
+                else if(strcmp(command, "all") == 0)
+                {
+                    atomic_store(&g_stream_rx_sample_count, value);
+                    atomic_store(&g_stream_tx_sample_count, value);
+                    LOG_I(HW, "[STREAMER] Command received: Set all stream count to %d\n", value);
+                    zmq_send(control_socket, "OK", 2, 0);
+                }
+                else {
                     LOG_W(HW, "[STREAMER] Received unknown control command: %s\n", command);
                     zmq_send(control_socket, "Error: Unknown command", 22, 0);
                 }
