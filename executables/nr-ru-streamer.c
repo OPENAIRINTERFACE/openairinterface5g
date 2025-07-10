@@ -14,7 +14,9 @@ atomic_int g_stream_rx_sample_count = 0;
 
 // ZeroMQ context and sockets
 static void *context = NULL;
-static void *publisher = NULL;
+static void *publisher_rx = NULL;
+static void *publisher_tx = NULL;
+
 static void *control_socket = NULL;
 
 // Control thread
@@ -90,7 +92,7 @@ static void *streamer_control_thread_func(void *arg) {
 }
 
 
-void streamer_setup(const char* pub_endpoint, const char* control_endpoint) {
+void streamer_setup(const char* pub_rx_endpoint, const char *pub_tx_endpoint, const char* control_endpoint) {
     if (context != NULL) {
         LOG_W(HW, "[STREAMER] ZeroMQ already initialized.\n");
         return;
@@ -99,18 +101,34 @@ void streamer_setup(const char* pub_endpoint, const char* control_endpoint) {
     context = zmq_ctx_new();
     assert(context);
 
-    // Setup publisher socket for IQ data
-    publisher = zmq_socket(context, ZMQ_PUB);
-    assert(publisher);
-    if (zmq_bind(publisher, pub_endpoint) != 0) {
-        LOG_E(HW, "[STREAMER] Failed to bind ZeroMQ publisher to %s: %s\n", pub_endpoint, zmq_strerror(errno));
-        zmq_close(publisher);
+    // Setup RX publisher socket for IQ data
+    publisher_rx = zmq_socket(context, ZMQ_PUB);
+    assert(publisher_rx);
+    if (zmq_bind(publisher_rx, pub_rx_endpoint) != 0) {
+        LOG_E(HW, "[STREAMER] Failed to bind RX ZeroMQ publisher to %s: %s\n", pub_rx_endpoint, zmq_strerror(errno));
+        zmq_close(publisher_rx);
         zmq_ctx_term(context);
-        publisher = NULL;
+        publisher_rx = NULL;
         context = NULL;
         return;
     }
-    LOG_I(HW, "[STREAMER] ZeroMQ Publisher initialized and bound to %s\n", pub_endpoint);
+    LOG_I(HW, "[STREAMER] ZeroMQ RX Publisher initialized and bound to %s\n", pub_rx_endpoint);
+
+
+    // Setup TX publisher socket for IQ data
+    publisher_tx = zmq_socket(context, ZMQ_PUB);
+    assert(publisher_tx);
+    
+    if(zmq_bind(publisher_tx, pub_tx_endpoint) != 0)
+    {
+        LOG_E(HW, "[STREAMER] Failed to bind ZeroMQ TX publisher to %s: %s\n", pub_tx_endpoint, zmq_strerror(errno));
+        zmq_close(publisher_tx);
+        zmq_ctx_term(context);
+        publisher_tx = NULL;
+        context = NULL;
+        return;
+    }
+    LOG_I(HW, "[STREAMER] ZeroMQ TX Publisher initialized and bound to %s\n", pub_tx_endpoint);
     
     // Setup control thread
     control_thread_running = true;
@@ -126,17 +144,23 @@ void streamer_setup(const char* pub_endpoint, const char* control_endpoint) {
 }
 
 
-// TODO: SHUTDOWN ALL PORTS PROPERLY
 void streamer_teardown(void) {
     // Signal the control thread to stop
     if (control_thread_running) {
         control_thread_running = false;
     }
 
-    if (publisher) {
-        LOG_I(HW, "[STREAMER] Closing ZeroMQ publisher socket.\n");
-        zmq_close(publisher);
-        publisher = NULL;
+    if (publisher_rx) {
+        LOG_I(HW, "[STREAMER] Closing ZeroMQ rx publisher socket.\n");
+        zmq_close(publisher_rx);
+        publisher_rx = NULL;
+    }
+
+    if(publisher_tx)
+    {
+        LOG_I(HW, "[STREAMER] Closing ZeroMQ tx publisher socket.\n");
+        zmq_close(publisher_tx);
+        publisher_tx = NULL;
     }
 
     if (context) {
@@ -147,25 +171,45 @@ void streamer_teardown(void) {
 }
 
 
-// TODO: publisher is bound to one port only.
 // Common function to send a multipart message.
 static void send_multipart_data(const char* topic, uint64_t timestamp, void **buffs, int num_samples, int num_antennas) {
-    if (!publisher) return;
     
-    // Part 1: Topic
-    zmq_send(publisher, topic, strlen(topic), ZMQ_SNDMORE);
-    
-    // Part 2: Timestamp
-    zmq_send(publisher, &timestamp, sizeof(uint64_t), ZMQ_SNDMORE);
-    
-    // Part 3...N: IQ data for each antenna
-    size_t data_size = num_samples * sizeof(int32_t); // sizeof(c16_t)
-    for (int i = 0; i < num_antennas; i++) {
-        zmq_send(publisher, buffs[i], data_size, (i == num_antennas - 1) ? 0 : ZMQ_SNDMORE);
+    if(strcmp(topic, "rx_stream"))
+    {
+        if(!publisher_rx) return;
+        // Part 1: Topic
+        zmq_send(publisher_rx, topic, strlen(topic), ZMQ_SNDMORE);
+        
+        // Part 2: Timestamp
+        zmq_send(publisher_rx, &timestamp, sizeof(uint64_t), ZMQ_SNDMORE);
+        
+        // Part 3...N: IQ data for each antenna
+        size_t data_size = num_samples * sizeof(int32_t); // sizeof(c16_t)
+        for (int i = 0; i < num_antennas; i++) {
+            zmq_send(publisher_rx, buffs[i], data_size, (i == num_antennas - 1) ? 0 : ZMQ_SNDMORE);
+        }
+
+
     }
+    else
+    {
+        if(!publisher_tx) return;
+        // Part 1: Topic
+        zmq_send(publisher_tx, topic, strlen(topic), ZMQ_SNDMORE);
+        
+        // Part 2: Timestamp
+        zmq_send(publisher_tx, &timestamp, sizeof(uint64_t), ZMQ_SNDMORE);
+        
+        // Part 3...N: IQ data for each antenna
+        size_t data_size = num_samples * sizeof(int32_t); // sizeof(c16_t)
+        for (int i = 0; i < num_antennas; i++) {
+            zmq_send(publisher_tx, buffs[i], data_size, (i == num_antennas - 1) ? 0 : ZMQ_SNDMORE);
+        }
+
+    }
+    
 }
 
-// TODO: publisher
 void stream_tx_iq(uint64_t timestamp, void **tx_buffs, int num_samples, int num_antennas) {
     int count = atomic_load(&g_stream_tx_sample_count);
     if (count == 0) return; // Streaming is off
@@ -178,7 +222,6 @@ void stream_tx_iq(uint64_t timestamp, void **tx_buffs, int num_samples, int num_
     }
 }
 
-// TODO: 
 void stream_rx_iq(uint64_t timestamp, void **rx_buffs, int num_samples, int num_antennas) {
     int count = atomic_load(&g_stream_rx_sample_count);
     if (count == 0) return; // Streaming is off

@@ -1730,8 +1730,7 @@ void init_NR_RU(configmodule_interface_t *cfg, char *rf_config_file)
   // read in configuration file)
   NRRCconfig_RU(cfg);
 
-  // TODO ADD ANOTHER PORT FOR TX/RX
-  streamer_setup("tcp://127.0.0.1:55555", "tcp://127.0.0.1:55556");
+  streamer_setup("tcp://127.0.0.1:55555", "tcp://127.0.0.1:55556", "tcp://127.0.0.1:55557");
 
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);

@@ -34,10 +34,11 @@ extern atomic_int g_stream_rx_sample_count;
  * thread to listen for control commands (like setting the number of samples to stream)
  * on the REP socket.
  *
- * @param pub_endpoint The endpoint for the publisher socket (e.g., "tcp://127.0.0.1:5555").
+ * @param pub_rx_endpoint The endpoint for the rx publisher socket (e.g., "tcp://127.0.0.1:5555").
+ * @param pub_tx_endpoint The endpoint for the tx publisher socket (e.g., "tcp://127.0.0.1:5555").
  * @param control_endpoint The endpoint for the control socket (e.g., "tcp://127.0.0.1:5556").
  */
-void streamer_setup(const char* pub_endpoint, const char* control_endpoint);
+void streamer_setup(const char* pub_rx_endpoint, const char *pub_tx_endpoint, const char* control_endpoint);
 
 /**
  * @brief Streams a buffer of TX samples if TX streaming is enabled.
