@@ -2712,9 +2712,17 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc,
                                       const plmn_id_t *plmn,
                                       uint64_t cellID,
                                       int tac,
-                                      const nr_mac_config_t *mac_config)
+                                      const nr_mac_config_t *mac_config,
+                                      int num_plmn,
+                                      const plmn_id_t *plmn_list)
 {
   AssertFatal(cellID < (1l << 36), "cellID must fit within 36 bits, but is %lu\n", cellID);
+
+  // LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR: num_plmn=%d\n", num_plmn);
+  // for (int i = 0; i < num_plmn; i++) {
+  //   LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR: plmn_list[%d] = %d.%d (mnc_digit_length=%d)\n", 
+  //         i, plmn_list[i].mcc, plmn_list[i].mnc, plmn_list[i].mnc_digit_length);
+  // }
 
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
   AssertFatal(sib1_message != NULL, "out of memory\n");
@@ -2736,21 +2744,22 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc,
   sib1->cellSelectionInfo->q_RxLevMin = -65;
 
   // cellAccessRelatedInfo
-  // TODO : Add support for more than one PLMN
-  int num_plmn = 1; // int num_plmn = configuration->num_plmn;
+  // Support multiple PLMNs
+  LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR: Creating SIB1 with %d PLMN(s)\n", num_plmn);
   asn1cSequenceAdd(sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list, struct NR_PLMN_IdentityInfo, nr_plmn_info);
   for (int i = 0; i < num_plmn; ++i) {
     asn1cSequenceAdd(nr_plmn_info->plmn_IdentityList.list, struct NR_PLMN_Identity, nr_plmn);
     asn1cCalloc(nr_plmn->mcc, mcc);
-    int confMcc = plmn->mcc;
+    int confMcc = plmn_list[i].mcc;
+    LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR: Adding PLMN[%d]: %d.%d\n", i, plmn_list[i].mcc, plmn_list[i].mnc);
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc0);
     *mcc0 = (confMcc / 100) % 10;
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc1);
     *mcc1 = (confMcc / 10) % 10;
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc2);
     *mcc2 = confMcc % 10;
-    int mnc = plmn->mnc;
-    if (plmn->mnc_digit_length == 3) {
+    int mnc = plmn_list[i].mnc;
+    if (plmn_list[i].mnc_digit_length == 3) {
       asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc0);
       *mnc0 = (mnc / 100) % 10;
     }
@@ -2759,6 +2768,34 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc,
     asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc2);
     *mnc2 = (mnc) % 10;
   }
+
+  // Print PLMN Identity List after assignment
+  // LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR after assignment: plmn_IdentityInfoList has %d PLMN(s)\n", 
+  //       sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.count);
+  // for (int i = 0; i < sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.count; i++) {
+  //   NR_PLMN_IdentityInfo_t *plmn_info = sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.array[i];
+  //   if (plmn_info && plmn_info->plmn_IdentityList.list.array && plmn_info->plmn_IdentityList.list.count > 0) {
+  //     for (int j = 0; j < plmn_info->plmn_IdentityList.list.count; j++) {
+  //       NR_PLMN_Identity_t *plmn_id = plmn_info->plmn_IdentityList.list.array[j];
+  //       if (plmn_id && plmn_id->mcc && plmn_id->mcc->list.count == 3) {
+  //         int mcc = (*plmn_id->mcc->list.array[0]) * 100 + 
+  //                   (*plmn_id->mcc->list.array[1]) * 10 + 
+  //                   (*plmn_id->mcc->list.array[2]);
+  //         int mnc = 0;
+  //         int mnc_len = plmn_id->mnc.list.count;
+  //         if (mnc_len == 2) {
+  //           mnc = (*plmn_id->mnc.list.array[0]) * 10 + (*plmn_id->mnc.list.array[1]);
+  //         } else if (mnc_len == 3) {
+  //           mnc = (*plmn_id->mnc.list.array[0]) * 100 + 
+  //                 (*plmn_id->mnc.list.array[1]) * 10 + 
+  //                 (*plmn_id->mnc.list.array[2]);
+  //         }
+  //         LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR after assignment:   PLMN_Info[%d] PLMN[%d]: %d.%d (mnc_len=%d)\n", 
+  //               i, j, mcc, mnc, mnc_len);
+  //       }
+  //     }
+  //   }
+  // }
 
   NR_CELL_ID_TO_BIT_STRING(cellID, &nr_plmn_info->cellIdentity);
   nr_plmn_info->cellReservedForOperatorUse = NR_PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
@@ -3020,6 +3057,31 @@ void free_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1)
 
 int encode_SIB_NR(NR_BCCH_DL_SCH_Message_t *sib, uint8_t *buffer, int max_buffer_size)
 {
+  // Print PLMN Identity List from SIB1
+  if (sib && sib->message.choice.c1 && sib->message.choice.c1->present == NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1) {
+    NR_SIB1_t *sib1 = sib->message.choice.c1->choice.systemInformationBlockType1;
+    if (sib1 && sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.array) {
+      LOG_I(NR_MAC, "[cyhtest] encode_SIB_NR: SIB1 plmn_IdentityInfoList has %d PLMN(s)\n", 
+            sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.count);
+      for (int i = 0; i < sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.count; i++) {
+        NR_PLMN_IdentityInfo_t *plmn_info = sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.array[i];
+        LOG_I(NR_MAC, "[cyhtest] encode_SIB_NR: plmn_IdentityInfoList.list.array[%d]->plmn_IdentityList.list.count=%d\n",
+          i, plmn_info->plmn_IdentityList.list.count);
+        for (int j = 0; j < plmn_info->plmn_IdentityList.list.count; j++) {
+          NR_PLMN_Identity_t *plmn_id = plmn_info->plmn_IdentityList.list.array[j];
+          LOG_I(NR_MAC, "[cyhtest] encode_SIB_NR: plmn_IdentityList.list.array[%d][%d] mcc=%02lx%02lx%02lx mnc=%02lx%02lx%02lx\n",
+            i, j,
+            plmn_id->mcc ? *plmn_id->mcc->list.array[0] : 0,
+            plmn_id->mcc ? *plmn_id->mcc->list.array[1] : 0,
+            plmn_id->mcc ? *plmn_id->mcc->list.array[2] : 0,
+            *plmn_id->mnc.list.array[0],
+            *plmn_id->mnc.list.array[1],
+            plmn_id->mnc.list.count > 2 ? *plmn_id->mnc.list.array[2] : 0);
+        }
+      }
+    }
+  }
+  
   AssertFatal(max_buffer_size <= NR_MAX_SIB_LENGTH / 8,
               "Maximum buffer size too large: 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the "
               "maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.\n");
