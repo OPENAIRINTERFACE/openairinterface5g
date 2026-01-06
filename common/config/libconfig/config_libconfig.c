@@ -541,7 +541,7 @@ int config_libconfig_getlist(configmodule_interface_t *cfg,
 
   if (listpath != NULL)
     free(listpath);
-  
+
   return status;
 }
 
