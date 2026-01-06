@@ -2718,12 +2718,6 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc,
 {
   AssertFatal(cellID < (1l << 36), "cellID must fit within 36 bits, but is %lu\n", cellID);
 
-  // LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR: num_plmn=%d\n", num_plmn);
-  // for (int i = 0; i < num_plmn; i++) {
-  //   LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR: plmn_list[%d] = %d.%d (mnc_digit_length=%d)\n", 
-  //         i, plmn_list[i].mcc, plmn_list[i].mnc, plmn_list[i].mnc_digit_length);
-  // }
-
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
   AssertFatal(sib1_message != NULL, "out of memory\n");
   sib1_message->message.present = NR_BCCH_DL_SCH_MessageType_PR_c1;
@@ -2768,34 +2762,6 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc,
     asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc2);
     *mnc2 = (mnc) % 10;
   }
-
-  // Print PLMN Identity List after assignment
-  // LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR after assignment: plmn_IdentityInfoList has %d PLMN(s)\n", 
-  //       sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.count);
-  // for (int i = 0; i < sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.count; i++) {
-  //   NR_PLMN_IdentityInfo_t *plmn_info = sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.array[i];
-  //   if (plmn_info && plmn_info->plmn_IdentityList.list.array && plmn_info->plmn_IdentityList.list.count > 0) {
-  //     for (int j = 0; j < plmn_info->plmn_IdentityList.list.count; j++) {
-  //       NR_PLMN_Identity_t *plmn_id = plmn_info->plmn_IdentityList.list.array[j];
-  //       if (plmn_id && plmn_id->mcc && plmn_id->mcc->list.count == 3) {
-  //         int mcc = (*plmn_id->mcc->list.array[0]) * 100 + 
-  //                   (*plmn_id->mcc->list.array[1]) * 10 + 
-  //                   (*plmn_id->mcc->list.array[2]);
-  //         int mnc = 0;
-  //         int mnc_len = plmn_id->mnc.list.count;
-  //         if (mnc_len == 2) {
-  //           mnc = (*plmn_id->mnc.list.array[0]) * 10 + (*plmn_id->mnc.list.array[1]);
-  //         } else if (mnc_len == 3) {
-  //           mnc = (*plmn_id->mnc.list.array[0]) * 100 + 
-  //                 (*plmn_id->mnc.list.array[1]) * 10 + 
-  //                 (*plmn_id->mnc.list.array[2]);
-  //         }
-  //         LOG_I(NR_RRC, "[cyhtest] get_SIB1_NR after assignment:   PLMN_Info[%d] PLMN[%d]: %d.%d (mnc_len=%d)\n", 
-  //               i, j, mcc, mnc, mnc_len);
-  //       }
-  //     }
-  //   }
-  // }
 
   NR_CELL_ID_TO_BIT_STRING(cellID, &nr_plmn_info->cellIdentity);
   nr_plmn_info->cellReservedForOperatorUse = NR_PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;

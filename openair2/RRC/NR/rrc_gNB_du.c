@@ -100,27 +100,6 @@ static bool rrc_gNB_plmn_matches(const gNB_RRC_INST *rrc, const f1ap_served_cell
 {
   const gNB_RrcConfigurationReq *conf = &rrc->configuration;
   
-  // Print conf PLMN list
-  LOG_I(NR_RRC, "[cyhtest] conf PLMN list: num_plmn=%d\n", conf->num_plmn);
-  for (int i = 0; i < conf->num_plmn; i++) {
-    LOG_I(NR_RRC, "[cyhtest] conf PLMN[%d]: mcc=%d, mnc=%d, mnc_digit_length=%d\n", 
-          i, conf->plmn[i].mcc, conf->plmn[i].mnc, conf->plmn[i].mnc_digit_length);
-  }
-  
-  // Print info PLMN
-  LOG_I(NR_RRC, "[cyhtest] info PLMN: mcc=%d, mnc=%d, mnc_digit_length=%d\n", 
-        info->plmn.mcc, info->plmn.mnc, info->plmn.mnc_digit_length);
-  
-  // Print info PLMN list if available
-  LOG_I(NR_RRC, "[cyhtest] info->num_plmn=%d\n", info->num_plmn); // todo 为什么这里是0 没拿到
-  if (info->num_plmn > 0) {
-    LOG_I(NR_RRC, "[cyhtest] info PLMN list: num_plmn=%d\n", info->num_plmn);
-    for (int i = 0; i < info->num_plmn; i++) {
-      LOG_I(NR_RRC, "[cyhtest] info plmn_list[%d]: mcc=%d, mnc=%d, mnc_digit_length=%d\n", 
-            i, info->plmn_list[i].mcc, info->plmn_list[i].mnc, info->plmn_list[i].mnc_digit_length);
-    }
-  }
-  
   return conf->num_plmn == 1 // F1 supports only one
          && conf->plmn[0].mcc == info->plmn.mcc && conf->plmn[0].mnc == info->plmn.mnc;
 }
@@ -333,7 +312,7 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
     return;
   }
   f1ap_served_cell_info_t *cell_info = &req->cell[0].info;
-  // 先注释掉CU DU的单个PLMN match
+  // I have to comment this single PLMN match between CU and DU to enable multiple PLMNs broadcasting
   // if (!rrc_gNB_plmn_matches(rrc, cell_info)) {
   //   LOG_E(NR_RRC,
   //         "PLMN mismatch: CU %03d.%0*d, DU %03d%0*d\n",

@@ -1084,27 +1084,12 @@ static int read_du_cell_info(configmodule_interface_t *cfg,
 
   // PLMN
   plmn_id_t p[PLMN_LIST_MAX_SIZE] = {0};
-  // todo plmn_list赋值 先找到源头，在源头打印，然后在这打印赋值
   uint8_t num_plmn = set_plmn_config(p, 0);
-  LOG_I(GNB_APP, "[cyhtest] read_du_cell_info: num_plmn = %d\n", num_plmn);
-  for (int i = 0; i < num_plmn; i++) {
-    LOG_I(GNB_APP, "[cyhtest] read_du_cell_info: p[%d] = %d.%d (mnc_digit_length=%d)\n", 
-          i, p[i].mcc, p[i].mnc, p[i].mnc_digit_length);
-  }
 
   // Copy PLMN list to info structure
   info->num_plmn = num_plmn;
   for (int i = 0; i < num_plmn; i++) {
     info->plmn_list[i] = p[i];
-    LOG_I(GNB_APP, "[cyhtest] read_du_cell_info: copied to info->plmn_list[%d] = %d.%d\n", 
-          i, info->plmn_list[i].mcc, info->plmn_list[i].mnc);
-  }
-  
-  // Print final info->plmn_list
-  LOG_I(GNB_APP, "[cyhtest] read_du_cell_info: Final info->num_plmn = %d\n", info->num_plmn);
-  for (int i = 0; i < info->num_plmn; i++) {
-    LOG_I(GNB_APP, "[cyhtest] read_du_cell_info: Final info->plmn_list[%d] = %d.%d (mnc_digit_length=%d)\n", 
-          i, info->plmn_list[i].mcc, info->plmn_list[i].mnc, info->plmn_list[i].mnc_digit_length);
   }
 
   info->plmn = p[0];
@@ -1693,17 +1678,6 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
     char *name = NULL;
     f1ap_served_cell_info_t info;
     read_du_cell_info(cfg, NODE_IS_DU(node_type), &gnb_id, &gnb_du_id, &name, &info, 1);
-
-    // // Print "Yuanhao" + info.plmn
-    // LOG_I(GNB_APP, "[cyhtest]: PLMN info - MCC=%d, MNC=%d, MNC_digit_length=%d\n",
-    //       info.plmn.mcc, info.plmn.mnc, info.plmn.mnc_digit_length);
-    
-    // // Print info.plmn_list and info.num_plmn
-    // LOG_I(GNB_APP, "[cyhtest]: info.num_plmn = %d\n", info.num_plmn);
-    // for (int i = 0; i < info.num_plmn; i++) {
-    //   LOG_I(GNB_APP, "[cyhtest]: info.plmn_list[%d] = %d.%d (mnc_digit_length=%d)\n", 
-    //         i, info.plmn_list[i].mcc, info.plmn_list[i].mnc, info.plmn_list[i].mnc_digit_length);
-    // }
 
     NR_COMMON_channels_t *cc = &RC.nrmac[0]->common_channels[0];
     cc->du_SIBs = fill_du_sibs(GNBParamList.paramarray[0]);
