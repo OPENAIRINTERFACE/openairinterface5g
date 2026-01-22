@@ -484,7 +484,75 @@ static void get_sib19_schedinfo(NR_UE_RRC_SI_INFO *SI_info, NR_SI_SchedulingInfo
 }
 
 static void nr_rrc_process_sib1(NR_UE_RRC_INST_t *rrc, NR_UE_RRC_SI_INFO *SI_info, NR_SIB1_t *sib1)
-{
+{  
+  // PLMN selection: match UE's IMSI with SIB1 PLMNs
+  nr_ue_nas_t *nas = get_ue_nas_info(rrc->ue_id);
+  if (nas && nas->uicc && nas->uicc->imsiStr && sib1 && sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.array) {
+    // Extract MCC/MNC from IMSI (imsiStr format: "MCCMNCMSIN", e.g., "208930000000003")
+    uint8_t ue_mcc[3], ue_mnc[3];
+    ue_mcc[0] = nas->uicc->imsiStr[0] - '0';
+    ue_mcc[1] = nas->uicc->imsiStr[1] - '0';
+    ue_mcc[2] = nas->uicc->imsiStr[2] - '0';
+    
+    int mnc_len = nas->uicc->nmc_size;
+    if (mnc_len == 2) {
+      ue_mnc[0] = 0xF;  // padding for 2-digit MNC
+      ue_mnc[1] = nas->uicc->imsiStr[3] - '0';
+      ue_mnc[2] = nas->uicc->imsiStr[4] - '0';
+    } else {  // mnc_len == 3
+      ue_mnc[0] = nas->uicc->imsiStr[3] - '0';
+      ue_mnc[1] = nas->uicc->imsiStr[4] - '0';
+      ue_mnc[2] = nas->uicc->imsiStr[5] - '0';
+    }
+    
+    // Search for matching PLMN in SIB1 list
+    bool plmn_matched = false;
+    for (int i = 0; i < sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.count && !plmn_matched; i++) {
+      NR_PLMN_IdentityInfo_t *plmn_info = sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.array[i];
+      for (int j = 0; j < plmn_info->plmn_IdentityList.list.count && !plmn_matched; j++) {
+        NR_PLMN_Identity_t *plmn_id = plmn_info->plmn_IdentityList.list.array[j];
+        
+        // Compare MCC
+        bool mcc_match = false;
+        if (plmn_id->mcc) {
+          mcc_match = (*plmn_id->mcc->list.array[0] == ue_mcc[0]) &&
+                      (*plmn_id->mcc->list.array[1] == ue_mcc[1]) &&
+                      (*plmn_id->mcc->list.array[2] == ue_mcc[2]);
+        }
+        
+        // Compare MNC
+        bool mnc_match = false;
+        if (mcc_match) {
+          if (plmn_id->mnc.list.count == 2) {
+            // SIB1 has 2-digit MNC
+            mnc_match = (mnc_len == 2) &&
+                        (*plmn_id->mnc.list.array[0] == ue_mnc[1]) &&
+                        (*plmn_id->mnc.list.array[1] == ue_mnc[2]);
+          } else if (plmn_id->mnc.list.count == 3) {
+            // SIB1 has 3-digit MNC
+            mnc_match = (mnc_len == 3) &&
+                        (*plmn_id->mnc.list.array[0] == ue_mnc[0]) &&
+                        (*plmn_id->mnc.list.array[1] == ue_mnc[1]) &&
+                        (*plmn_id->mnc.list.array[2] == ue_mnc[2]);
+          }
+        }
+        
+        if (mcc_match && mnc_match) {
+          // PLMN matched! Set selectedPLMN_Identity (1-based index)
+          rrc->selected_plmn_identity = j + 1;
+          plmn_matched = true;
+        }
+      }
+    }
+    
+    if (!plmn_matched) {
+      // Keep default value (will use first PLMN as fallback)
+      rrc->selected_plmn_identity = 1;
+    }
+  } else {
+    rrc->selected_plmn_identity = 1;
+  }
+  
   if(g_log->log_component[NR_RRC].level >= OAILOG_DEBUG)
     xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void *) sib1);
   LOG_A(NR_RRC, "SIB1 decoded\n");
@@ -1273,7 +1341,7 @@ NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int instance_id, int num_ant_
   NR_UE_RRC_INST_t *rrc = NR_UE_rrc_inst[instance_id];
   rrc->ue_id = instance_id;
   // fill UE-NR-Capability @ UE-CapabilityRAT-Container here.
-  rrc->selected_plmn_identity = 1;
+  rrc->selected_plmn_identity = 1; // Initial default value, will be updated in nr_rrc_process_sib1() based on IMSI matching
   rrc->ra_trigger = RA_NOT_RUNNING;
   rrc->dl_bwp_id = 0;
   rrc->ul_bwp_id = 0;
