@@ -172,8 +172,22 @@ static int get_stats(char *buf, int debug, telnet_printfunc_t prnt)
     prnt("      \"" TAC "\": %ld,\n", *cell_info->tac);
     prnt("      \"" MCC "\": \"%03d\",\n", cell_info->plmn.mcc);
     prnt("      \"" MNC "\": \"%0*d\",\n", cell_info->plmn.mnc_digit_length, cell_info->plmn.mnc);
-    prnt("      \"" SD  "\": %d,\n", cell_info->nssai[0].sd);
-    prnt("      \"" SST "\": %d\n", cell_info->nssai[0].sst);
+    prnt("      \"num_plmn\": %d,\n", cell_info->num_plmn);
+    prnt("      \"plmn_list\": [\n");
+    for (int i = 0; i < cell_info->num_plmn; i++) {
+      const f1ap_served_plmn_info_t *plmn_info = &cell_info->served_plmn_list[i];
+      prnt("        {\n");
+      prnt("          \"plmn\": \"%03d.%0*d\",\n", plmn_info->plmn.mcc, plmn_info->plmn.mnc_digit_length, plmn_info->plmn.mnc);
+      prnt("          \"num_slices\": %d,\n", plmn_info->num_nssai);
+      prnt("          \"slices\": [");
+      for (int s = 0; s < plmn_info->num_nssai; s++) {
+        prnt("{\"sst\": %d, \"sd\": %d}", plmn_info->nssai[s].sst, plmn_info->nssai[s].sd);
+        if (s < plmn_info->num_nssai - 1) prnt(", ");
+      }
+      prnt("]\n");
+      prnt("        }%s\n", i < cell_info->num_plmn - 1 ? "," : "");
+    }
+    prnt("      ]\n");
     prnt("    },\n");
     prnt("    \"device\": {\n");
     prnt("      \"gnbId\": %d,\n", sr->gNB_DU_id);
@@ -352,7 +366,8 @@ static int set_bwconfig(char *buf, int debug, telnet_printfunc_t prnt)
   mac->common_channels[0].mib = get_new_MIB_NR(scc);
 
   const f1ap_served_cell_info_t *info = &mac->f1_config.setup_req->cell[0].info;
-  nr_mac_configure_sib1(mac, &info->plmn, info->nr_cellid, *info->tac);
+  // Pass PLMN list from F1AP cell info (includes num_plmn and served_plmn_list)
+  nr_mac_configure_sib1(mac, &info->plmn, info->nr_cellid, *info->tac, info->num_plmn, info->served_plmn_list);
 
   prnt("OK\n");
   return 0;

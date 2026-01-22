@@ -57,11 +57,24 @@ bool eq_f1ap_cell_info(const f1ap_served_cell_info_t *a, const f1ap_served_cell_
     return false;
   if (a->tac)
     _F1_EQ_CHECK_INT(*a->tac, *b->tac);
-  _F1_EQ_CHECK_INT(a->num_ssi, b->num_ssi);
-  for (int i = 0; i < a->num_ssi; ++i) {
-    _F1_EQ_CHECK_INT(a->nssai[i].sst, b->nssai[i].sst);
-    _F1_EQ_CHECK_INT(a->nssai[i].sd, b->nssai[i].sd);
+
+  _F1_EQ_CHECK_INT(a->num_plmn, b->num_plmn);
+  for (int i = 0; i < a->num_plmn; ++i) {
+    // Compare PLMN
+    _F1_EQ_CHECK_INT(a->served_plmn_list[i].plmn.mcc, b->served_plmn_list[i].plmn.mcc);
+    _F1_EQ_CHECK_INT(a->served_plmn_list[i].plmn.mnc, b->served_plmn_list[i].plmn.mnc);
+    _F1_EQ_CHECK_INT(a->served_plmn_list[i].plmn.mnc_digit_length, b->served_plmn_list[i].plmn.mnc_digit_length);
+    
+    // Compare number of slices for this PLMN
+    _F1_EQ_CHECK_INT(a->served_plmn_list[i].num_nssai, b->served_plmn_list[i].num_nssai);
+    
+    // Compare each slice
+    for (int s = 0; s < a->served_plmn_list[i].num_nssai; ++s) {
+      _F1_EQ_CHECK_INT(a->served_plmn_list[i].nssai[s].sst, b->served_plmn_list[i].nssai[s].sst);
+      _F1_EQ_CHECK_INT(a->served_plmn_list[i].nssai[s].sd, b->served_plmn_list[i].nssai[s].sd);
+    }
   }
+  
   _F1_EQ_CHECK_INT(a->mode, b->mode);
   if (a->mode == F1AP_MODE_TDD) {
     /* TDD */

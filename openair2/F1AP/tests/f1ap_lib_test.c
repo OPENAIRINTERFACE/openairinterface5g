@@ -230,10 +230,18 @@ static void test_f1ap_setup_request(void)
       .plmn.mcc = 1,
       .plmn.mnc = 1,
       .plmn.mnc_digit_length = 3,
-      .num_ssi = 1,
-      .nssai[0].sst = 1,
-      .nssai[0].sd = 1,
       .tac = tac,
+      .num_plmn = 2,
+      .served_plmn_list[0].plmn = {.mcc = 460, .mnc = 11, .mnc_digit_length = 2},
+      .served_plmn_list[0].num_nssai = 1,
+      .served_plmn_list[0].nssai[0].sst = 1,
+      .served_plmn_list[0].nssai[0].sd = 0x010203,
+      .served_plmn_list[1].plmn = {.mcc = 208, .mnc = 93, .mnc_digit_length = 2},
+      .served_plmn_list[1].num_nssai = 2,
+      .served_plmn_list[1].nssai[0].sst = 1,
+      .served_plmn_list[1].nssai[0].sd = 0x010203, 
+      .served_plmn_list[1].nssai[1].sst = 1,
+      .served_plmn_list[1].nssai[1].sd = 0x112233,
   };
   // create message
   f1ap_setup_req_t orig = {
@@ -301,6 +309,8 @@ static void test_f1ap_setup_request(void)
   free_f1ap_setup_request(&cp);
   // free original message
   free_f1ap_setup_request(&orig);
+  
+  printf("test_f1ap_setup_request() successful\n");
 }
 
 /**
@@ -531,6 +541,11 @@ static void test_f1ap_du_configuration_update(void)
       .plmn.mnc = 1,
       .plmn.mnc_digit_length = 3,
       .tac = tac,
+      .num_plmn = 1,
+      .served_plmn_list[0].plmn = {.mcc = 1, .mnc = 1, .mnc_digit_length = 3},
+      .served_plmn_list[0].num_nssai = 1,
+      .served_plmn_list[0].nssai[0].sst = 1,
+      .served_plmn_list[0].nssai[0].sd = 0x010203,
   };
   char *mtc2_data = "mtc2";
   uint8_t *mtc2 = (void*)strdup(mtc2_data);
@@ -551,6 +566,11 @@ static void test_f1ap_du_configuration_update(void)
       .plmn.mcc = 2,
       .plmn.mnc = 2,
       .plmn.mnc_digit_length = 2,
+      .num_plmn = 1,
+      .served_plmn_list[0].plmn = {.mcc = 2, .mnc = 2, .mnc_digit_length = 2},
+      .served_plmn_list[0].num_nssai = 1,
+      .served_plmn_list[0].nssai[0].sst = 1,
+      .served_plmn_list[0].nssai[0].sd = 0x112233,
   };
   /* create message */
   f1ap_gnb_du_configuration_update_t orig = {

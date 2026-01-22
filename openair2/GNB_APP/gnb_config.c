@@ -1081,12 +1081,23 @@ static int read_du_cell_info(configmodule_interface_t *cfg,
 
   // PLMN
   plmn_id_t p[PLMN_LIST_MAX_SIZE] = {0};
-  set_plmn_config(p, 0);
+  uint8_t num_plmn = set_plmn_config(p, 0);
+
+  // Copy PLMN list to info structure
+  info->num_plmn = num_plmn;
+  for (int i = 0; i < num_plmn; i++) {
+    // populate served_plmn_list with PLMN and its slices
+    info->served_plmn_list[i].plmn = p[i];
+    info->served_plmn_list[i].num_nssai = set_snssai_config(
+        info->served_plmn_list[i].nssai,
+        MAX_NUM_SLICES,
+        0,  // gNB index (first gNB)
+        i   // PLMN index (current PLMN in loop)
+    );
+  }
+
   info->plmn = p[0];
   info->nr_cellid = (uint64_t) * (GNBParamList.paramarray[0][GNB_NRCELLID_IDX].u64ptr);
-
-  // SNSSAI
-  info->num_ssi = set_snssai_config(info->nssai, MAX_NUM_SLICES, 0, 0);
 
   return 1;
 }
@@ -1668,12 +1679,12 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
     char *name = NULL;
     f1ap_served_cell_info_t info;
     read_du_cell_info(cfg, NODE_IS_DU(node_type), &gnb_id, &gnb_du_id, &name, &info, 1);
-
+    
     NR_COMMON_channels_t *cc = &RC.nrmac[0]->common_channels[0];
     cc->du_SIBs = fill_du_sibs(GNBParamList.paramarray[0]);
 
     if (IS_SA_MODE(get_softmodem_params()))
-      nr_mac_configure_sib1(RC.nrmac[0], &info.plmn, info.nr_cellid, *info.tac);
+      nr_mac_configure_sib1(RC.nrmac[0], &info.plmn, info.nr_cellid, *info.tac, info.num_plmn, info.served_plmn_list);
     
     // read F1 Setup information from config and generated MIB/SIB1
     // and store it at MAC for sending later

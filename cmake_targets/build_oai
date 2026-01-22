@@ -184,25 +184,25 @@ function main() {
                 "Release")
                     CMAKE_BUILD_TYPE="Release"
                     echo_info "Will Compile without gdb symbols and with compiler optimization"
-                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Release"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
                     shift
                     ;;
                 "RelWithDebInfo")
                     CMAKE_BUILD_TYPE="RelWithDebInfo"
                     echo_info "Will Compile with gdb symbols"
-                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
                     shift
                     ;;
                 "MinSizeRel")
                     CMAKE_BUILD_TYPE="MinSizeRel"
                     echo_info "Will Compile for minimal exec size"
-                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=MinSizeRel"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
                     shift
                     ;;
                 "Debug" | *)
                     CMAKE_BUILD_TYPE="Debug"
                     echo_info "Will Compile with gdb symbols and disable compiler optimization"
-                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
                     if [ "$2" == "Debug" ] ; then
                         shift
                     fi
@@ -458,6 +458,11 @@ function main() {
 
     mkdir -p $DIR/$BUILD_DIR/build
     cd $DIR/$BUILD_DIR/build
+
+    # Ensure compile_commands.json is always generated for IDE support
+    if [[ ! "$CMAKE_CMD" =~ "-DCMAKE_EXPORT_COMPILE_COMMANDS" ]]; then
+      CMAKE_CMD="$CMAKE_CMD -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+    fi
 
     # for historical reasons we build in a subdirectory cmake_targets/XYZ/build,
     # e.g., cmake_targets/ran_build/build, hence the ../../..

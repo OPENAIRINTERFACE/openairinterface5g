@@ -3437,9 +3437,7 @@ void rrc_gNB_generate_UeContextSetupRequest(const gNB_RRC_INST *rrc,
   f1ap_ue_context_setup_req_t ue_context_setup_req = {
       .gNB_CU_ue_id = ue_p->rrc_ue_id,
       .gNB_DU_ue_id = du_ue_id,
-      .plmn.mcc = rrc->configuration.plmn[0].mcc,
-      .plmn.mnc = rrc->configuration.plmn[0].mnc,
-      .plmn.mnc_digit_length = rrc->configuration.plmn[0].mnc_digit_length,
+      .plmn = ue_p->serving_plmn,
       .nr_cellid = rrc->nr_cellid,
       .servCellIndex = 0, /* TODO: correct value? */
       .srbs_len = nb_srb,
