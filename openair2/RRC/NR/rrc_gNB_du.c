@@ -311,19 +311,22 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
     return;
   }
   f1ap_served_cell_info_t *cell_info = &req->cell[0].info;
-  if (!rrc_gNB_plmn_matches(rrc, cell_info)) {
-    LOG_E(NR_RRC,
-          "PLMN mismatch: CU %03d.%0*d, DU %03d%0*d\n",
-          rrc->configuration.plmn[0].mcc,
-          rrc->configuration.plmn[0].mnc_digit_length,
-          rrc->configuration.plmn[0].mnc,
-          cell_info->plmn.mcc,
-          cell_info->plmn.mnc_digit_length,
-          cell_info->plmn.mnc);
-    fail.cause = F1AP_CauseRadioNetwork_plmn_not_served_by_the_gNB_CU;
-    rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
-    return;
-  }
+  // will fix this later. todo as Robert said: we check that the CU
+  // serves all the PLMNs the DU serves (so basically, enforce that the PLMNs
+  // of the DU is a subset of the PLMNs of the CU).
+  // if (!rrc_gNB_plmn_matches(rrc, cell_info)) {
+  //   LOG_E(NR_RRC,
+  //         "PLMN mismatch: CU %03d.%0*d, DU %03d%0*d\n",
+  //         rrc->configuration.plmn[0].mcc,
+  //         rrc->configuration.plmn[0].mnc_digit_length,
+  //         rrc->configuration.plmn[0].mnc,
+  //         cell_info->plmn.mcc,
+  //         cell_info->plmn.mnc_digit_length,
+  //         cell_info->plmn.mnc);
+  //   fail.cause = F1AP_CauseRadioNetwork_plmn_not_served_by_the_gNB_CU;
+  //   rrc->mac_rrc.f1_setup_failure(assoc_id, &fail);
+  //   return;
+  // }
   nr_rrc_du_container_t *it = NULL;
   RB_FOREACH(it, rrc_du_tree, &rrc->dus) {
     if (it->setup_req->gNB_DU_id == req->gNB_DU_id) {
