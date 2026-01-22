@@ -25,6 +25,7 @@
 #include "openair3/UTILS/conversions.h"
 #include "common/utils/oai_asn1.h"
 #include "common/utils/utils.h"
+#include "common/utils/LOG/log.h"
 
 #include "f1ap_interface_management.h"
 #include "f1ap_lib_common.h"
@@ -481,11 +482,22 @@ static F1AP_Served_Cell_Information_t encode_served_cell_info(const f1ap_served_
     OCTET_STRING_fromBuf(netOrder, ((char *)&tac) + 1, 3);
   }
   // Served PLMNs 1..<maxnoofBPLMNs>
-  asn1cSequenceAdd(scell_info.servedPLMNs.list, F1AP_ServedPLMNs_Item_t, servedPLMN_item);
-  // PLMN Identity (M)
-  MCC_MNC_TO_PLMNID(c->plmn.mcc, c->plmn.mnc, c->plmn.mnc_digit_length, &servedPLMN_item->pLMN_Identity);
-  // NSSAIs (O)
-  servedPLMN_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *)write_slice_info(c->num_ssi, c->nssai);
+  for (int i = 0; i < c->num_plmn; i++) {
+    asn1cSequenceAdd(scell_info.servedPLMNs.list, F1AP_ServedPLMNs_Item_t, servedPLMN_item);
+    
+    // PLMN Identity (M) - from served_plmn_list
+    const f1ap_served_plmn_info_t *plmn_info = &c->served_plmn_list[i];
+    MCC_MNC_TO_PLMNID(plmn_info->plmn.mcc, 
+                      plmn_info->plmn.mnc, 
+                      plmn_info->plmn.mnc_digit_length,
+                      &servedPLMN_item->pLMN_Identity);
+    
+    // NSSAIs (O) - use this PLMN's independent slice list
+    servedPLMN_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *)
+                                      write_slice_info(plmn_info->num_nssai, 
+                                                       plmn_info->nssai);
+  }
+  
   // NR-Mode-Info (M)
   F1AP_NR_Mode_Info_t *nR_Mode_Info = &scell_info.nR_Mode_Info;
   if (c->mode == F1AP_MODE_FDD) { // FDD Info
@@ -532,8 +544,27 @@ static bool decode_served_cell_info(const F1AP_Served_Cell_Information_t *in, f1
   // NR PCI (M)
   info->nr_pci = in->nRPCI;
   // Served PLMNs (>= 1)
-  AssertError(in->servedPLMNs.list.count == 1, return false, "at least and only 1 PLMN must be present");
-  info->num_ssi = read_slice_info(in->servedPLMNs.list.array[0], info->nssai, 16);
+  AssertError(in->servedPLMNs.list.count > 0, return false, "at least 1 PLMN must be present");
+  AssertError(in->servedPLMNs.list.count <= F1AP_MAX_NB_PLMNS, return false,
+              "Too many PLMNs: %d (max %d)", in->servedPLMNs.list.count, F1AP_MAX_NB_PLMNS);
+  
+  info->num_plmn = in->servedPLMNs.list.count;
+  for (int i = 0; i < in->servedPLMNs.list.count; i++) {
+    const F1AP_ServedPLMNs_Item_t *plmn_item = in->servedPLMNs.list.array[i];
+    
+    // Decode PLMN Identity
+    PLMNID_TO_MCC_MNC(&plmn_item->pLMN_Identity,
+                      info->served_plmn_list[i].plmn.mcc,
+                      info->served_plmn_list[i].plmn.mnc,
+                      info->served_plmn_list[i].plmn.mnc_digit_length);
+    
+    // Decode this PLMN's slice list
+    info->served_plmn_list[i].num_nssai = 
+        read_slice_info(plmn_item, 
+                        info->served_plmn_list[i].nssai, 
+                        MAX_NUM_SLICES);
+  }
+  
   // FDD Info
   if (in->nR_Mode_Info.present == F1AP_NR_Mode_Info_PR_fDD) {
     info->mode = F1AP_MODE_FDD;
@@ -891,12 +922,13 @@ f1ap_served_cell_info_t copy_f1ap_served_cell_info(const f1ap_served_cell_info_t
     .plmn = src->plmn,
     .nr_cellid = src->nr_cellid,
     .nr_pci = src->nr_pci,
-    .num_ssi = src->num_ssi,
+    .num_plmn = src->num_plmn, 
     .mode = src->mode,
   };
 
-  for (int i = 0; i < src->num_ssi; ++i)
-    dst.nssai[i] = src->nssai[i];
+  for (int i = 0; i < src->num_plmn; ++i) {
+    dst.served_plmn_list[i] = src->served_plmn_list[i];
+  }
 
   if (src->mode == F1AP_MODE_TDD)
     dst.tdd = src->tdd;

@@ -85,6 +85,8 @@
 #define F1AP_MAX_NO_OF_INDIVIDUAL_CONNECTIONS_TO_RESET 65536
 /* 9.3.1.42 of 3GPP TS 38.473 - gNB-CU System Information */
 #define F1AP_MAX_NO_SIB_TYPES 32
+/* Maximum number of PLMNs that can be served by a cell */
+#define F1AP_MAX_NB_PLMNS 6
 
 typedef struct f1ap_net_config_t {
   char *CU_f1_ip_address;
@@ -123,6 +125,14 @@ typedef struct f1ap_tdd_info_t {
   f1ap_transmission_bandwidth_t tbw;
 } f1ap_tdd_info_t;
 
+/* PLMN information including its slice list
+ * Per 38.473 §9.3.1.10, each PLMN can have its own set of slices */
+typedef struct f1ap_served_plmn_info_t {
+  plmn_id_t plmn;
+  uint16_t num_nssai;
+  nssai_t nssai[MAX_NUM_SLICES];
+} f1ap_served_plmn_info_t;
+
 typedef struct f1ap_served_cell_info_t {
   // NR CGI
   plmn_id_t plmn;
@@ -134,9 +144,9 @@ typedef struct f1ap_served_cell_info_t {
   /* Tracking area code */
   uint32_t *tac;
 
-  // Number of slice support items (max 16, could be increased to as much as 1024)
-  uint16_t num_ssi;
-  nssai_t nssai[MAX_NUM_SLICES];
+  // PLMN list
+  uint16_t num_plmn;
+  f1ap_served_plmn_info_t served_plmn_list[F1AP_MAX_NB_PLMNS];
 
   f1ap_mode_t mode;
   union {
