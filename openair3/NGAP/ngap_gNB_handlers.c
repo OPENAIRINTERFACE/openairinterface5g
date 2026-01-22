@@ -296,7 +296,7 @@ static int ngap_gNB_handle_ng_setup_response(sctp_assoc_t assoc_id, uint32_t str
         new_slice_support_p->sD[1] = slice_support_item_p->s_NSSAI.sD->buf[1];
         new_slice_support_p->sD[2] = slice_support_item_p->s_NSSAI.sD->buf[2];
       }
-      NGAP_INFO("Supported slice (PLMN %d): SST=0x%02x SD=%d%d%d\n",
+      NGAP_INFO("Supported slice (PLMN %d): SST=%u SD=0x%02x%02x%02x\n",
                 i,
                 new_slice_support_p->sST,
                 new_slice_support_p->sD[0],
