@@ -677,6 +677,12 @@ nr_ue_nas_t *get_ue_nas_info(module_id_t module_id)
   AssertFatal(module_id < MAX_NUM_NR_UE_INST, "Invalid module_id %d\n", module_id);
   if (!nr_ue_nas[module_id].uicc) {
     nr_ue_nas[module_id].uicc = checkUicc(module_id);
+    // Print IMSI string from UICC after initialization
+    if (nr_ue_nas[module_id].uicc && nr_ue_nas[module_id].uicc->imsiStr) {
+      LOG_I(NAS, "[cyhtest] get_ue_nas_info: module_id=%d, imsiStr=%s\n", 
+            module_id, nr_ue_nas[module_id].uicc->imsiStr);
+    }
+    
     nr_ue_nas[module_id].UE_id = module_id;
   }
   return &nr_ue_nas[module_id];

@@ -25,3 +25,8 @@ nfapi_nr_interface_scf
 *.log
 *.out
 CMakeUserPresets.json
+
+# clangd LSP files
+.clangd
+.cache/
+compile_commands.json

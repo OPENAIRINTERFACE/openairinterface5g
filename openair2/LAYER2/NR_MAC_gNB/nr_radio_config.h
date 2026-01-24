@@ -84,7 +84,9 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc,
                                       const plmn_id_t *plmn,
                                       uint64_t cellID,
                                       int tac,
-                                      const nr_mac_config_t *mac_config);
+                                      const nr_mac_config_t *mac_config,
+                                      int num_plmn,
+                                      const plmn_id_t *plmn_list);
 void update_SIB1_NR_SI(NR_BCCH_DL_SCH_Message_t *sib1, int num_sibs, int sibs[num_sibs]);
 int encode_sysinfo_ie(NR_SystemInformation_IEs_t *sysInfo, uint8_t *buf, int len);
 void free_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1);

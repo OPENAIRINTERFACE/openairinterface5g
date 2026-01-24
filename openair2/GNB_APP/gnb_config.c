@@ -129,6 +129,9 @@ static uint8_t set_plmn_config(plmn_id_t *p, uint8_t idx)
     plmn->mcc = *PLMNParamList.paramarray[l][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
     plmn->mnc = *PLMNParamList.paramarray[l][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
     plmn->mnc_digit_length = *PLMNParamList.paramarray[l][GNB_MNC_DIGIT_LENGTH].u8ptr;
+
+    LOG_I(GNB_APP, "[cyhtest:set_plmn_config] set_plmn_config PLMN[%d]: mcc=%d, mnc=%d, mnc_digit_length=%d\n", l, plmn->mcc, plmn->mnc, plmn->mnc_digit_length);
+    
     AssertFatal((plmn->mnc_digit_length == 2) || (plmn->mnc_digit_length == 3), "BAD MNC DIGIT LENGTH %d", plmn->mnc_digit_length);
   }
   return num_plmn;
@@ -1081,7 +1084,14 @@ static int read_du_cell_info(configmodule_interface_t *cfg,
 
   // PLMN
   plmn_id_t p[PLMN_LIST_MAX_SIZE] = {0};
-  set_plmn_config(p, 0);
+  uint8_t num_plmn = set_plmn_config(p, 0);
+
+  // Copy PLMN list to info structure
+  info->num_plmn = num_plmn;
+  for (int i = 0; i < num_plmn; i++) {
+    info->plmn_list[i] = p[i];
+  }
+
   info->plmn = p[0];
   info->nr_cellid = (uint64_t) * (GNBParamList.paramarray[0][GNB_NRCELLID_IDX].u64ptr);
 
@@ -1673,7 +1683,7 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg)
     cc->du_SIBs = fill_du_sibs(GNBParamList.paramarray[0]);
 
     if (IS_SA_MODE(get_softmodem_params()))
-      nr_mac_configure_sib1(RC.nrmac[0], &info.plmn, info.nr_cellid, *info.tac);
+      nr_mac_configure_sib1(RC.nrmac[0], &info.plmn, info.nr_cellid, *info.tac, info.num_plmn, info.plmn_list);
     
     // read F1 Setup information from config and generated MIB/SIB1
     // and store it at MAC for sending later
