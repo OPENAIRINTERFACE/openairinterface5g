@@ -247,52 +247,6 @@ static void rx_rf(RU_t *ru, int *frame, int *slot)
   stop_meas(&ru->rx_fhaul);
 }
 
-static radio_tx_gpio_flag_t get_gpio_flags(RU_t *ru, int slot)
-{
-  radio_tx_gpio_flag_t flags_gpio = 0;
-  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  openair0_config_t *cfg0 = &ru->openair0_cfg;
-  bool analog_bf = ru->gNB_list[0]->common_vars.analog_bf;
-  uint16_t **beam_ids = ru->gNB_list[0]->common_vars.beam_id;
-
-  switch (cfg0->gpio_controller) {
-    case RU_GPIO_CONTROL_GENERIC:
-      // currently we switch beams at the beginning of a slot and we take the beam index of the first symbol of this slot
-      // we only send the beam to the gpio if the beam is different from the previous slot
-
-      if (analog_bf) {
-        int prev_slot = (slot - 1 + fp->slots_per_frame) % fp->slots_per_frame;
-        uint16_t prev_beam = beam_ids[prev_slot * fp->symbols_per_slot][0];
-        int beam = beam_ids[slot * fp->symbols_per_slot][0];
-        if (prev_beam != beam) {
-          flags_gpio = beam | TX_GPIO_CHANGE; // enable change of gpio
-          LOG_I(HW, "slot %d, beam %d\n", slot, beam_ids[slot * fp->symbols_per_slot][0]);
-        }
-      }
-      break;
-
-    case RU_GPIO_CONTROL_INTERDIGITAL: {
-      // the beam index is written in bits 8-10 of the flags
-      // bit 11 enables the gpio programming
-      int beam = 0;
-      if ((slot % 10 == 0) && analog_bf && (beam_ids[slot * fp->symbols_per_slot][0] < 64)) {
-        // beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 64;
-        beam = 1024; // hardcoded now for beam32 boresight
-        // beam = 127; //for the sake of trying beam63
-        LOG_D(HW, "slot %d, beam %d\n", slot, beam);
-      }
-      flags_gpio = beam | TX_GPIO_CHANGE;
-      // flags_gpio |= beam << 8; // MSB 8 bits are used for beam
-      LOG_D(HW, "slot %d, beam %d, flags_gpio %d\n", slot, beam, flags_gpio);
-      break;
-    }
-    default:
-      AssertFatal(false, "illegal GPIO controller %d\n", cfg0->gpio_controller);
-  }
-
-  return flags_gpio;
-}
-
 int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_symbol, int num_symbols)
 {
   RU_proc_t *proc = &ru->proc;
@@ -308,7 +262,6 @@ int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_s
   int sf_extension = 0;
   int siglen = get_samples_per_slot(slot, fp);
   radio_tx_burst_flag_t flags_burst = TX_BURST_INVALID;
-  radio_tx_gpio_flag_t flags_gpio = 0;
   int transmitted_symbols = num_symbols;
 
   if (cfg->cell_config.frame_duplex_type.value == TDD && !get_softmodem_params()->continuous_tx && !IS_SOFTMODEM_RFSIM) {
@@ -360,10 +313,7 @@ int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_s
     siglen = get_samples_symbol_duration(fp, slot, start_symbol, num_symbols);
   }
 
-  if (ru->openair0_cfg.gpio_controller != RU_GPIO_CONTROL_NONE)
-    flags_gpio = get_gpio_flags(ru, slot);
-
-  const int flags = flags_burst | (flags_gpio << 4);
+  const int flags = flags_burst;
   proc->first_tx = 0;
 
   int nt = ru->nb_tx;
@@ -396,10 +346,9 @@ int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_s
   return transmitted_symbols;
 }
 
-// Pushes the per-antenna analog beam IDs assigned to this slot's symbols down to the RF device,
-// one trx_set_beams() call per symbol at which the beam vector changes. Only relevant for devices
-// that need to be told about beams explicitly (e.g. rfsimulator); USRP GPIO-controlled beam
-// switching is handled separately via get_gpio_flags(), embedded directly in the TX burst flags.
+// Pushes the per-antenna split 8 analog beam IDs assigned to this slot's symbols down to
+// the RF device, one trx_set_beams() call per symbol at which the beam vector changes.
+// However, USRP GPIO-controlled beamforming currently only handles one beam.
 //
 // Only calls trx_set_beams() when the beam vector actually changes between symbols, to avoid
 // issuing redundant beam-switch commands to real hardware.
