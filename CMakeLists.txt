@@ -1219,6 +1219,7 @@ set (MAC_SRC
   ${MAC_DIR}/rar_tools.c
   #${MAC_DIR}/rar_tools_ue.c
   ${MAC_DIR}/eNB_scheduler.c
+  ${MAC_DIR}/scheduler_log.c
   ${MAC_DIR}/eNB_scheduler_dlsch.c
   ${MAC_DIR}/eNB_scheduler_ulsch.c
   ${MAC_DIR}/eNB_scheduler_mch.c

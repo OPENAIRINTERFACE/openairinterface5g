@@ -55,6 +55,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "lte-softmodem.h"
 #include "NB_IoT_interface.h"
 
+#include "openair2/LAYER2/MAC/scheduler_log.h"
+
 #if USING_GPROF
 #  include "sys/gmon.h"
 #endif
@@ -596,6 +598,7 @@ int main ( int argc, char **argv )
 
   pdcp_module_cleanup();
   terminate_opt();
+  scheduler_log_close();
   logClean();
   printf("Bye.\n");
   return 0;
