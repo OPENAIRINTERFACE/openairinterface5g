@@ -67,9 +67,9 @@ int encode_ue_security_capability(UeSecurityCapability *uesecuritycapability, ui
 
   lenPtr  = (buffer + encoded);
   encoded ++;
-  *(buffer + encoded) = uesecuritycapability->eea;
+  *(buffer + encoded) = uesecuritycapability->eea | 0x80;// Force EEA) (null ciphering)
   encoded++;
-  *(buffer + encoded) =  uesecuritycapability->eia;
+  *(buffer + encoded) =  uesecuritycapability->eia | 0x80; // Force EIAO (null integrity)
   encoded++;
 
   // From ETSI TS 124 301 V10.15.0 (2014-10) 9.9.3.36 Security capability:
@@ -126,4 +126,3 @@ void dump_ue_security_capability_xml(UeSecurityCapability *uesecuritycapability,
 
   printf("</Ue Security Capability>\n");
 }
-

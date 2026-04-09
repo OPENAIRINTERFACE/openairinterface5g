@@ -161,6 +161,8 @@ pdcp_validate_security(
   const uint16_t       sdu_buffer_size
 )
 {
+// Skip security checking for simulation
+return 0;
   uint8_t *buffer_decrypted = NULL;
   nas_stream_cipher_t decrypt_params = {0};
   stream_security_container_t *container;

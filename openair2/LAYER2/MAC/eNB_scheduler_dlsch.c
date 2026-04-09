@@ -711,21 +711,6 @@ void schedule_ue_spec(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       int TBS = get_TBS_DL(eNB_UE_stats->dlsch_mcs1, nb_rb);
       const uint32_t rbc = allocate_prbs_sub(nb_rb, N_RB_DL, N_RBG, ue_sched_ctrl->rballoc_sub_UE[CC_id]);
 
-      // DL Scheduler logging
-      if (scheduler_csv && nb_rb > 0)
-        fprintf(scheduler_csv,
-               "%ld,%d,%d,%x,DL,%d,%d,%d,%d,%d\n",
-               (long)(frameP * 10 + subframeP),
-               frameP,
-               subframeP,
-               rnti,
-               nb_rb,
-               eNB_UE_stats->dlsch_mcs1,
-               TBS,
-               ue_sched_ctrl->dl_cqi[0],
-               0);
-      fflush(scheduler_csv);
-
       // add the length for  all the control elements (timing adv, drx, etc) : header + payload
 
       if (ue_sched_ctrl->ta_timer)
@@ -853,6 +838,22 @@ void schedule_ue_spec(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
           //&& ((ue_sched_ctrl->dl_pow_off[CC_id] > 0 && mcs < 28) || (ue_sched_ctrl->dl_pow_off[CC_id] == 0 && mcs <= 15))) {
           mcs++;
           TBS = get_TBS_DL(mcs, nb_rb);
+        }
+
+        // DL Scheduler logging after mcs
+        if (scheduler_csv && nb_rb > 0) {
+          fprintf(scheduler_csv,
+                  "%ld,%d,%d,%x,DL,%d,%d,%d,%d,%d\n",
+                  (long)(frameP * 10 + subframeP),
+                  frameP,
+                  subframeP,
+                  rnti,
+                  nb_rb,
+                  mcs,
+                  TBS,
+                  ue_sched_ctrl->dl_cqi[0],
+                  0);
+          fflush(scheduler_csv);
         }
 
         LOG_D(MAC,

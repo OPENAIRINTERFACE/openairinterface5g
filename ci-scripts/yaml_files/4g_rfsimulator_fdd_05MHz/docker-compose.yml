@@ -92,6 +92,7 @@ services:
             HSS_REALM: openairinterface.org
             MME_FQDN: mme.openairinterface.org
             FEATURES: mme_oai
+            DIRECTORYD_HOST: 192.168.61.7   # point MME to directoryd
         volumes:
             - ./mme_fd.sprint.conf:/magma-mme/etc/mme_fd.conf.tmplt
             - ./mme.conf:/magma-mme/etc/mme.conf
@@ -192,6 +193,8 @@ services:
             USE_ADDITIONAL_OPTIONS: --rfsim --log_config.global_log_options level,nocolor,time
         volumes:
             - ../../conf_files/enb.band7.25prb.rfsim.conf:/opt/oai-enb/etc/enb.conf
+            - ../../../cmake_targets/ran_build/build/lte-softmodem:/opt/oai-enb/bin/lte-softmodem
+            - ../../../:/openairinterface5g
         healthcheck:
             test: /bin/bash -c "pgrep lte-softmodem"
             interval: 10s
@@ -214,6 +217,8 @@ services:
         volumes:
             - ../../conf_files/lteue.usim-ci.conf:/opt/oai-lte-ue/etc/ue_usim.conf
             - ../../conf_files/lteue.rfsim.conf:/opt/oai-lte-ue/etc/ue.conf
+            - ../../../cmake_targets/ran_build/build/lte-uesoftmodem:/opt/oai-lte-ue/bin/lte-uesoftmodem
+            - ../../../:/openairinterface5g
         healthcheck:
             test: /bin/bash -c "pgrep lte-uesoftmodem"
             interval: 10s

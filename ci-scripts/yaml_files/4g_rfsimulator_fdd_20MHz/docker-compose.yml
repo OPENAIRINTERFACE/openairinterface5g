@@ -192,6 +192,7 @@ services:
             USE_ADDITIONAL_OPTIONS: --rfsim --log_config.global_log_options level,nocolor,time
         volumes: 
             - ../../conf_files/enb.band7.100prb.rfsim.conf:/opt/oai-enb/etc/enb.conf
+            - ../../../cmake_targets/ran_build/build/lte-softmodem:/opt/oai-enb/bin/lte-softmodem
         healthcheck:
             test: /bin/bash -c "pgrep lte-softmodem"
             interval: 10s
