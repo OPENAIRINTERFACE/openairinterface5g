@@ -150,11 +150,9 @@ void nr_layer_precoder_simd(const int n_layers,
                             const int re_cnt,
                             c16_t *txdataF_precoded);
 
-void fft_shift(const c16_t *in,
-               uint32_t in_symb_sz,
-               uint16_t num_prb,
-               c16_t *out,
-               uint16_t fft_size_out,
-               uint16_t start_symb,
-               uint16_t num_symb);
+// FFT shift routines
+void fftshift(const c16_t *in, c16_t *out, int nbins, int fft_size);
+void fftshift_inplace(c16_t *in, int nbins, int fft_size);
+void fftshift_inverse(const c16_t *in, c16_t *out, int nbins, int fft_size);
+void fftshift_inverse_inplace(c16_t *in, int nbins, int fft_size);
 #endif

@@ -21,6 +21,7 @@ This section deals with basic functions for OFDM Modulation.
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "modulation_common.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "platform_types.h"
 //#define DEBUG_OFDM_MOD
 
 // Use 64-byte alignment for IDFT output buffer to ensure no
@@ -306,26 +307,49 @@ void apply_nr_rotation_TX(const NR_DL_FRAME_PARMS *fp,
     }
   }
 }
-                       
-/* Do FFT-shift for symbols in the provided in buffer and writes to out buffer. */
-void fft_shift(const c16_t *in,
-               uint32_t in_symb_sz,
-               uint16_t num_prb,
-               c16_t *out,
-               uint16_t fft_size_out,
-               uint16_t start_symb,
-               uint16_t num_symb)
+
+void fftshift(const c16_t *in, c16_t *out, int nbins, int fft_size)
 {
-  const int num_samp_half = num_prb * NR_NB_SC_PER_RB / 2;
-  const int first_carrier_offset = fft_size_out - num_samp_half;
-  for (int s = start_symb; s < start_symb + num_symb; s++) {
-    // Copy negative freq component
-    uint32_t out_offset = s * fft_size_out + first_carrier_offset;
-    uint32_t in_offset = s * in_symb_sz;
-    memcpy(out + out_offset, in + in_offset, num_samp_half * sizeof(int32_t));
-    // Copy positive freq component
-    out_offset = s * fft_size_out;
-    in_offset = s * in_symb_sz + num_samp_half;
-    memcpy(out + out_offset, in + in_offset, num_samp_half * sizeof(int32_t));
-  }
+  const int half = nbins / 2; // half bw
+  // negative-freq half -> front
+  memcpy(out, in + fft_size - half, half * sizeof(c16_t));
+  // dc + positive-freq half -> next
+  memcpy(out + half, in, half * sizeof(c16_t));
+}
+
+void fftshift_inplace(c16_t *in, int nbins, int fft_size)
+{
+  const int half = nbins / 2; // half bw
+
+  c16_t tmp[half]; // holds the negative half
+
+  // save negative bins (they sit at the tail: indices N-half .. N-1)
+  memcpy(tmp, in + fft_size - half, half * sizeof(c16_t));
+  // slide DC + positive (and trailing zeros) to the right by half
+  memmove(in + half, in, (fft_size - half) * sizeof(c16_t));
+  // place negative bins at the front
+  memcpy(in, tmp, half * sizeof(c16_t));
+}
+
+void fftshift_inverse(const c16_t *in, c16_t *out, int nbins, int fft_size)
+{
+  const int half = nbins / 2; // half bw
+  // negative-freq half -> back
+  memcpy(out + fft_size - half, in, half * sizeof(c16_t));
+  // dc + positive-freq half -> front
+  memcpy(out, in + half, half * sizeof(c16_t));
+}
+
+void fftshift_inverse_inplace(c16_t *in, int nbins, int fft_size)
+{
+  const int half = nbins / 2; // # negative-freq bins
+
+  c16_t tmp[half]; // holds the negative half
+
+  // save negative bins (they sit at the tail: indices N-half .. N-1)
+  memcpy(tmp, in, half * sizeof(c16_t));
+  // slide DC + positive (and trailing zeros) to the left by half
+  memmove(in, in + half, (fft_size - half) * sizeof(c16_t));
+  // place negative bins at the back
+  memcpy(in + fft_size - half, tmp, half * sizeof(c16_t));
 }

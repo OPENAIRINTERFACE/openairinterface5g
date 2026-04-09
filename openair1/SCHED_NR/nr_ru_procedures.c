@@ -8,6 +8,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "common/platform_types.h"
+#include "nr/nr_common.h"
 #include "sched_nr.h"
 #include "PHY/MODULATION/modulation_common.h"
 #include "PHY/MODULATION/nr_modulation.h"
@@ -190,15 +191,13 @@ void nr_feptx(void *arg)
 
   // If there is no digital beamforming we just need to copy the data to RU
   if (ru->config.dbt_config.num_dig_beams == 0 || ru->gNB_list[0]->common_vars.analog_bf) {
-    // FFT shift
+    // Inverse FFT shift
     const NR_DL_FRAME_PARMS *fp = &ru->gNB_list[0]->frame_parms;
-    fft_shift(ru->gNB_list[0]->common_vars.txdataF[aa],
-              fp->ofdm_symbol_size,
-              fp->N_RB_DL,
-              (c16_t *)ru->common.txdataF_BF[aa],
-              fp->ofdm_symbol_size,
-              startSymbol,
-              numSymbols);
+    for (uint s = startSymbol; s < startSymbol + numSymbols; s++)
+      fftshift_inverse(ru->gNB_list[0]->common_vars.txdataF[aa] + s * fp->ofdm_symbol_size,
+                       (c16_t *)ru->common.txdataF_BF[aa] + s * fp->ofdm_symbol_size,
+                       fp->N_RB_DL * NR_NB_SC_PER_RB,
+                       fp->ofdm_symbol_size);
   } else {
     AssertFatal(false, "This needs to be fixed by using appropriate beams from config\n");
   }
