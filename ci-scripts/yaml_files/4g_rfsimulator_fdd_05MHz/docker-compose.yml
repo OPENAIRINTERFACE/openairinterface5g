@@ -223,6 +223,29 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
+    oai_ue1:
+        image: ${REGISTRY-oaisoftwarealliance/}${LTEUE_IMG:-oai-lte-ue}:${TAG:-develop}
+        privileged: true
+        container_name: rfsim4g-oai-lte-ue1
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.31
+        environment:
+            TZ: Europe/Paris
+            ASAN_OPTIONS: detect_leaks=0
+            USE_ADDITIONAL_OPTIONS: --rfsim -C 2680000000 -r 25 --ue-rxgain 140 --ue-txgain 120
+              --rfsimulator.[0].serveraddr 192.168.61.20
+              --log_config.global_log_options level,nocolor,time
+        volumes:
+            - ../../conf_files/lteue.usim-ci-ue1.conf:/opt/oai-lte-ue/etc/ue_usim.conf
+            - ../../conf_files/lteue.rfsim.conf:/opt/oai-lte-ue/etc/ue.conf
+            - ../../../cmake_targets/ran_build/build/lte-uesoftmodem:/opt/oai-lte-ue/bin/lte-uesoftmodem
+            - ../../../:/openairinterface5g
+        healthcheck:
+            test: /bin/bash -c "pgrep lte-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
 networks:
     private_net:
