@@ -111,6 +111,15 @@ void init_timeshift_rotation(const int ofdm_symbol_size,
                              const uint ofdm_offset_divisor,
                              c16_t *timeshift_symbol_rotation);
 
+void apply_nr_rotation_symbol_fftshifted_RX(const int symbols_per_slot,
+                                            const int slots_per_subframe,
+                                            const c16_t *shift_rot,
+                                            c16_t *rxdataF,
+                                            const c16_t *rot,
+                                            const int nb_rb,
+                                            const int slot,
+                                            const int symbol);
+
 void apply_nr_rotation_symbol_RX(const int symbols_per_slot,
                                  const int slots_per_subframe,
                                  const c16_t *timeshift_symbol_rotation,

@@ -25,7 +25,6 @@
 #include "PHY/INIT/nr_phy_init.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
-#include "PHY/TOOLS/tools_defs.h"
 #include "PHY/defs_RU.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
@@ -178,25 +177,26 @@ static void rx_func(processingData_L1_t *info)
     while (spsc_q_get(&gNB->prach_l1rx_queue, &p, sizeof(p)))
       L1_nr_prach_procedures(gNB, &p, &UL_INFO.rach_ind);
 
-    //WA: comment rotation in tx/rx
+    // apply the rx signal rotation here
     if (gNB->phase_comp) {
-      //apply the rx signal rotation here
-      int soffset = (slot_rx % RU_RX_SLOT_DEPTH) * gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size;
       const NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+      const uint soffset = (slot_rx % RU_RX_SLOT_DEPTH) * fp->symbols_per_slot * fp->ofdm_symbol_size;
       for (int aa = 0; aa < fp->nb_antennas_rx; aa++) {
-        const uint max_symb = fp->Ncp == NR_EXTENDED ? 12 : 14;
-        for (int sym = 0; sym < max_symb; sym++)
-          apply_nr_rotation_symbol_RX(fp->symbols_per_slot,
-                                      fp->slots_per_subframe,
-                                      fp->timeshift_symbol_rotation,
-                                      fp->first_carrier_offset,
-                                      gNB->common_vars.rxdataF[aa] + soffset + sym * fp->ofdm_symbol_size,
-                                      fp->symbol_rotation[1],
-                                      fp->N_RB_UL,
-                                      slot_rx,
-                                      sym);
+        for (int sym = 0; sym < fp->symbols_per_slot; sym++) {
+          c16_t *this_symbol = gNB->common_vars.rxdataF[aa] + soffset + sym * fp->ofdm_symbol_size;
+          apply_nr_rotation_symbol_fftshifted_RX(fp->symbols_per_slot,
+                                                 fp->slots_per_subframe,
+                                                 fp->timeshift_symbol_rotation,
+                                                 this_symbol,
+                                                 fp->symbol_rotation[1],
+                                                 fp->N_RB_UL,
+                                                 slot_rx,
+                                                 sym);
+        }
       }
     }
+
+    // Call PHY Rx signal procedures
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx, &UL_INFO);
 
     // Call the scheduler
@@ -204,6 +204,7 @@ static void rx_func(processingData_L1_t *info)
     gNB->if_inst->NR_UL_indication(&UL_INFO);
     STOP_MEAS_FULL_SLOT(&gNB->ul_indication_stats, rx_slot_type, NR_UPLINK_SLOT);
 
+    // Signal the ru_thread on completion of using rxdataF in this slot
     notifiedFIFO_elt_t *res = newNotifiedFIFO_elt(sizeof(processingData_L1_t), 0, &gNB->L1_rx_out, NULL);
     processingData_L1_t *syncMsg = NotifiedFifoData(res);
     syncMsg->gNB = gNB;

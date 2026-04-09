@@ -142,18 +142,11 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB, int slot, int first_symb, int num_sy
     for (int rb = 0; rb < frame_parms->N_RB_UL; rb++) {
       if (rb_mask_ul[s][rb] == 0 && // check that rb was not used in this subframe
           !(I0_SKIP_DC && rb == frame_parms->N_RB_UL >> 1)) { // skip middle PRB because of artificial noise possibly created by FFT
-        int offset = offset0 + CIRCULAR_INC(frame_parms->first_carrier_offset, rb * NR_NB_SC_PER_RB, frame_parms->ofdm_symbol_size);
+        int offset = offset0 + rb * NR_NB_SC_PER_RB;
         nb_symb[rb]++;
         for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
           c16_t *ul_ch = &common_vars->rxdataF[aarx][offset];
-          int32_t signal_energy;
-          if (((frame_parms->N_RB_UL & 1) == 1) && (rb == (frame_parms->N_RB_UL >> 1))) {
-            signal_energy = signal_energy_nodc(ul_ch, 6);
-            ul_ch = &common_vars->rxdataF[aarx][offset0];
-            signal_energy += signal_energy_nodc(ul_ch, 6);
-          } else {
-            signal_energy = signal_energy_nodc(ul_ch, 12);
-          }
+          int32_t signal_energy = signal_energy_nodc(ul_ch, 12);
           // noise power per antenna/RB, symbols summed up
           tmp_n0_subband[aarx][rb] += signal_energy;
           LOG_D(NR_PHY,"slot %d symbol %d RB %d aarx %d n0_subband_power %d\n", slot, s, rb, aarx, signal_energy);
