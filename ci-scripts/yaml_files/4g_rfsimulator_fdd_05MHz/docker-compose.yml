@@ -92,7 +92,6 @@ services:
             HSS_REALM: openairinterface.org
             MME_FQDN: mme.openairinterface.org
             FEATURES: mme_oai
-            DIRECTORYD_HOST: 192.168.61.7   # point MME to directoryd
         volumes:
             - ./mme_fd.sprint.conf:/magma-mme/etc/mme_fd.conf.tmplt
             - ./mme.conf:/magma-mme/etc/mme.conf
