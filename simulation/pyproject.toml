@@ -1,0 +1,7 @@
+[project]
+name = "simulation"
+version = "0.1.0"
+description = "OAI 4G RFSim management tools — UE generator and traffic generator"
+readme = "README.md"
+requires-python = ">=3.10.2"
+dependencies = []
