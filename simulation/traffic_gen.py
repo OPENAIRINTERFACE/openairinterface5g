@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import signal
 import subprocess
 import sys
 import time
@@ -292,6 +293,18 @@ Examples:
     return parser.parse_args()
 
 
+# Clean up function when exit the traffic generation
+def cleanup(ues: list[UE]):
+    """Kill all iperf3 processes on exit — in containers and trf_gen."""
+    print("\n  Cleaning up iperf3 processes...")
+    for ue in ues:
+        docker_exec(ue.container, ["pkill", "-f", "iperf3"],
+                    detach=False, dry_run=False)
+    docker_exec(config.TRF_GEN_CONTAINER, ["pkill", "-f", "iperf3"],
+                detach=False, dry_run=False)
+    print("  ✓ Done")
+
+
 def main():
     args = parse_args()
 
@@ -300,6 +313,10 @@ def main():
         sys.exit(1)
 
     ues = [UE.from_index(i) for i in range(args.ues)]
+
+    # Register cleanup for Ctrl+C and normal exit
+    signal.signal(signal.SIGINT, lambda s, f: (cleanup(ues), sys.exit(0)))
+    signal.signal(signal.SIGTERM, lambda s, f: (cleanup(ues), sys.exit(0)))
 
     tag = " [DRY RUN]" if args.dry_run else ""
     print(f"""
