@@ -839,9 +839,9 @@ rrc_eNB_free_UE(
 void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, bool removeFlag) {
   eNB_MAC_INST                             *eNB_MAC = RC.mac[mod_id];
   pthread_mutex_lock(&lock_ue_freelist);
-  LOG_I(PHY, "adding ue %x in UE to free list, context flag: %d\n", rnti, removeFlag);
+  LOG_D(PHY, "adding ue %x in UE to free list, context flag: %d\n", rnti, removeFlag);
   int i;
-  for (i=0; i < sizeofArray(eNB_MAC->UE_free_ctrl); i++) 
+  for (i=0; i < sizeofArray(eNB_MAC->UE_free_ctrl); i++)
     if (eNB_MAC->UE_free_ctrl[i].rnti == 0)
       break;
   if (i==sizeofArray(eNB_MAC->UE_free_ctrl)) {
@@ -858,7 +858,7 @@ void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, bool removeFlag) {
         .rnti = rnti;
     eNB_MAC->UE_release_req.ue_release_request_body.number_of_TLVs++;
   } else {
-    LOG_E(PHY, "fapi List of UE to release is full\n");
+    LOG_D(PHY, "fapi List of UE to release is full\n");
   }
 
   pthread_mutex_unlock(&lock_ue_freelist);
@@ -935,7 +935,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
       }
     }
 
-    LOG_I(RRC, "[release_UE_in_freeList] remove UE %x from freeList ra context: %d\n", rnti, eNB_MAC->UE_free_ctrl[ue_num].raFlag);
+    LOG_D(RRC, "[release_UE_in_freeList] remove UE %x from freeList ra context: %d\n", rnti, eNB_MAC->UE_free_ctrl[ue_num].raFlag);
     eNB_MAC->UE_free_ctrl[ue_num].rnti = 0;
   }
   pthread_mutex_unlock(&lock_ue_freelist);
@@ -2863,7 +2863,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     if (rrc_inst->nr_scg_ssb_freq > 2016666) //FR2
       MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz120;
     else
-      MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz30;      
+      MeasObj2->measObject.choice.measObjectNR_r15.rs_ConfigSSB_r15.subcarrierSpacingSSB_r15 = LTE_RS_ConfigSSB_NR_r15__subcarrierSpacingSSB_r15_kHz30;
     MeasObj2->measObject.choice.measObjectNR_r15.quantityConfigSet_r15 = 1;
     MeasObj2->measObject.choice.measObjectNR_r15.ext1 = calloc(1, sizeof(struct LTE_MeasObjectNR_r15__ext1));
 
@@ -2876,7 +2876,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
     MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->present = LTE_MeasObjectNR_r15__ext1__bandNR_r15_PR_setup;
     if (rrc_inst->nr_scg_ssb_freq > 2016666) //FR2
       MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 261;
-    else 
+    else
       MeasObj2->measObject.choice.measObjectNR_r15.ext1->bandNR_r15->choice.setup = 78;
 
     asn1cSeqAdd(&MeasObj_list->list, MeasObj2);

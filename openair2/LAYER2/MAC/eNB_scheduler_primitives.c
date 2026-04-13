@@ -2235,7 +2235,7 @@ rrc_mac_remove_ue(module_id_t mod_idP,
   int pCC_id = -1;
 
   if (UE_id == -1) {
-    LOG_W(MAC,"rrc_mac_remove_ue: UE %x not found\n",
+    LOG_D(MAC,"rrc_mac_remove_ue: UE %x not found\n",
           rntiP);
     return 0;
   }
