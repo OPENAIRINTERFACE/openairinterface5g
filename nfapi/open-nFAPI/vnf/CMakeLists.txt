@@ -2,7 +2,9 @@
 
 add_library(nfapi_vnf_lib
         src/vnf.c
-        src/vnf_interface.c
+        src/vnf_interface_common.c
+        src/vnf_interface_lte.c
+        src/vnf_interface_nr.c
         src/vnf_p7.c
         src/vnf_p7_interface.c)
 target_link_libraries(nfapi_vnf_lib PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
