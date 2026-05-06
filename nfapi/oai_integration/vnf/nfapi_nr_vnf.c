@@ -905,7 +905,7 @@ int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req)
   nfapi_vnf_p7_config_t *p7_config = get_p7_nr_vnf_config();
   dl_config_req->header.message_id= NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
 
-  bool retval = nfapi_vnf_p7_nr_dl_config_req(p7_config, dl_config_req);
+  bool retval = nfapi_vnf_p7_dl_tti_req(p7_config, dl_config_req);
 
   dl_config_req->dl_tti_request_body.nPDUs                        = 0;
   dl_config_req->dl_tti_request_body.nGroup                       = 0;
