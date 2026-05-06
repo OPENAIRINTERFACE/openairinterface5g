@@ -13,7 +13,7 @@ target_include_directories(nfapi_socket_lib PUBLIC include/)
 # the socket transport into nfapi_vnf.c alongside the Aerial one. Every consumer that needs
 # ENABLE_SOCKET declares it itself.
 target_compile_definitions(nfapi_socket_lib PRIVATE ENABLE_SOCKET)
-target_link_libraries(nfapi_socket_lib PRIVATE nfapi_nr_lib nfapi_user_lib)
+target_link_libraries(nfapi_socket_lib PRIVATE nfapi_nr_lib nfapi_nr_user_lib)
 target_link_libraries(nfapi_socket_lib PRIVATE log_headers)
 target_link_libraries(nfapi_socket_lib PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 target_link_libraries(nfapi_socket_lib PRIVATE nr_fapi_p5 nr_fapi_p7)

@@ -16,7 +16,6 @@
 #include <unistd.h>
 #include <common/platform_constants.h>
 #include <sys/wait.h>
-#include "vnf/nfapi_lte_vnf.h"
 #include "vnf/nfapi_nr_vnf.h"
 
 #include <rte_log.h>
