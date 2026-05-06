@@ -15,7 +15,8 @@
 #include <errno.h>
 
 #include "vnf_p7.h"
-#include "nfapi_vnf.h"
+#include "vnf/nfapi_lte_vnf.h"
+#include "vnf/nfapi_nr_vnf.h"
 
 #include "common/ran_context.h"
 

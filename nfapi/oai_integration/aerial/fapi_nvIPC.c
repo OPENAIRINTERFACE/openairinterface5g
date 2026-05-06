@@ -24,7 +24,7 @@
 #include <sys/queue.h>
 #include <sys/epoll.h>
 #include "fapi_nvIPC.h"
-#include <nfapi_vnf.h>
+#include "vnf/nfapi_nr_vnf.h"
 #include <nr_fapi_p5.h>
 #include <nr_fapi_p7_utils.h>
 #include "nfapi_interface.h"
@@ -48,14 +48,14 @@ static int cpu_large_buf_size = 0;
 void nvIPC_Stop()
 {
   LOG_I(NR_MAC, "Received STOP.indication\n");
-  ((vnf_t *)get_config())->terminate = true;
+  ((vnf_t *)get_nr_config())->terminate = true;
 }
 
 void nvIPC_send_stop_request()
 {
   nfapi_nr_stop_request_scf_t req = {.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST, .header.phy_id = 0};
   LOG_I(NR_MAC, "Sending NFAPI STOP.request\n");
-  nfapi_nr_vnf_stop_req(get_config(), get_config()->pnf_list->p5_idx, &req);
+  nfapi_nr_vnf_stop_req(get_nr_config(), get_nr_config()->pnf_list->p5_idx, &req);
 }
 
 
@@ -75,7 +75,7 @@ static int ipc_handle_rx_msg(nv_ipc_msg_t *msg)
   uint8_t *end = msg->msg_buf + msg->msg_len;
 
   // unpack FAPI messages and handle them
-  nfapi_vnf_config_t * vnf_config = get_config();
+  nfapi_vnf_config_t * vnf_config = get_nr_config();
   if (vnf_config != 0) {
     // first, unpack the header
     fapi_message_header_t fapi_msg;
@@ -92,7 +92,7 @@ static int ipc_handle_rx_msg(nv_ipc_msg_t *msg)
     uint8_t phy_id = msg->cell_id;
     AssertFatal(phy_id < NFAPI_PHY_MAX, "phy_id %d exceeds NFAPI_PHY_MAX %d\n", phy_id, NFAPI_PHY_MAX);
     ((uint8_t *)msg->msg_buf)[1] = phy_id;
-   vnf_p7_t *vnf_p7_config = (vnf_p7_t *)((vnf_info *)vnf_config->user_data)->p7_vnfs->config;
+   vnf_p7_t *vnf_p7_config = get_p7_nr_vnf();
     switch (fapi_msg.message_id) {
       case NFAPI_NR_PHY_MSG_TYPE_PARAM_RESPONSE ... NFAPI_NR_PHY_MSG_TYPE_ERROR_INDICATION:
         vnf_nr_handle_p4_p5_message(msg->msg_buf, msg->msg_len, msg->cell_id, vnf_config);
@@ -342,7 +342,7 @@ void *epoll_recv_task(void *arg)
   // Simulate one PARAM.response per configured PHY to trigger a CONFIG.request
   // for each cell.  aerial_params is populated by nvIPC_Init before this thread starts.
   // TODO receive the phy_id, maybe receive this PARAM.response dummy as an argument
-  nfapi_vnf_config_t *vnf_config = get_config();
+  nfapi_vnf_config_t * vnf_config = get_nr_config();
   for (int i = 0; i < aerial_params.num_phys; i++) {
     nfapi_nr_param_response_scf_t resp_msg = {.header.message_id = NFAPI_NR_PHY_MSG_TYPE_PARAM_RESPONSE,
                                              .header.phy_id = i};
@@ -427,11 +427,11 @@ int nvIPC_Init(nvipc_params_t nvipc_params_s)
 
 int oai_fapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req)
 {
-  nfapi_vnf_p7_config_t *p7_config = get_p7_vnf_config();
+  nfapi_vnf_p7_config_t *p7_config = get_p7_nr_vnf_config();
 
   ul_tti_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST;
 
-  bool retval = p7_config->send_p7_msg(get_p7_vnf(), &ul_tti_req->header);
+  bool retval = p7_config->send_p7_msg(get_p7_nr_vnf(), &ul_tti_req->header);
 
   if (!retval) {
     LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
@@ -447,10 +447,10 @@ int oai_fapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req)
 
 int oai_fapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req)
 {
-  nfapi_vnf_p7_config_t *p7_config = get_p7_vnf_config();
+  nfapi_vnf_p7_config_t *p7_config = get_p7_nr_vnf_config();
   ul_dci_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UL_DCI_REQUEST;
 
-  bool retval = p7_config->send_p7_msg(get_p7_vnf(), &ul_dci_req->header);
+  bool retval = p7_config->send_p7_msg(get_p7_nr_vnf(), &ul_dci_req->header);
   if (!retval) {
     LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
   } else {
@@ -461,10 +461,10 @@ int oai_fapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req)
 
 int oai_fapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req)
 {
-  nfapi_vnf_p7_config_t *p7_config = get_p7_vnf_config();
+  nfapi_vnf_p7_config_t *p7_config = get_p7_nr_vnf_config();
   tx_data_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST;
 
-  bool retval = p7_config->send_p7_msg(get_p7_vnf(), &tx_data_req->header);
+  bool retval = p7_config->send_p7_msg(get_p7_nr_vnf(), &tx_data_req->header);
   if (!retval) {
     LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
   } else {
@@ -476,10 +476,10 @@ int oai_fapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req)
 
 int oai_fapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 {
-  nfapi_vnf_p7_config_t *p7_config = get_p7_vnf_config();
+  nfapi_vnf_p7_config_t *p7_config = get_p7_nr_vnf_config();
   dl_config_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
 
-  bool retval = p7_config->send_p7_msg(get_p7_vnf(), &dl_config_req->header);
+  bool retval = p7_config->send_p7_msg(get_p7_nr_vnf(), &dl_config_req->header);
   dl_config_req->dl_tti_request_body.nPDUs = 0;
   dl_config_req->dl_tti_request_body.nGroup = 0;
 
@@ -491,11 +491,11 @@ int oai_fapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 
 int oai_fapi_send_end_request(uint32_t frame, uint32_t slot, uint8_t phy_id)
 {
-  nfapi_vnf_p7_config_t *p7_config = get_p7_vnf_config();
+  nfapi_vnf_p7_config_t *p7_config = get_p7_nr_vnf_config();
   nfapi_nr_slot_indication_scf_t nr_slot_resp = {
       .header.message_id = 0x8F, .header.phy_id = phy_id, .sfn = frame, .slot = slot};
 
-  bool retval = p7_config->send_p7_msg(get_p7_vnf(), &nr_slot_resp.header);
+  bool retval = p7_config->send_p7_msg(get_p7_nr_vnf(), &nr_slot_resp.header);
   if (!retval) {
     LOG_E(PHY, "%s() Problem sending retval:%d\n", __FUNCTION__, retval);
   }

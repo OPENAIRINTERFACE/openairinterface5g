@@ -23,7 +23,7 @@
 #include "PHY/phy_extern.h"
 #include "PHY/INIT/phy_init.h"
 #include "radio/ETHERNET/ethernet_lib.h"
-#include "nfapi_vnf.h"
+#include "vnf/nfapi_lte_vnf.h"
 #include "nfapi_pnf.h"
 #include "executables/lte-softmodem.h"
 #include "L1_paramdef.h"

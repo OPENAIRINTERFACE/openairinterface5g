@@ -11,7 +11,8 @@ endif()
 add_library(nfapi_user_lib
         nfapi.c
         nfapi_pnf.c
-        nfapi_vnf.c
+        vnf/nfapi_lte_vnf.c
+        vnf/nfapi_nr_vnf.c
         gnb_ind_vars.c)
 if(OAI_WLS)
     target_compile_definitions(nfapi_user_lib PRIVATE ENABLE_WLS)

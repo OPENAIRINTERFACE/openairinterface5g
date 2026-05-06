@@ -16,7 +16,8 @@
 #include <unistd.h>
 #include <common/platform_constants.h>
 #include <sys/wait.h>
-#include "nfapi_vnf.h"
+#include "vnf/nfapi_lte_vnf.h"
+#include "vnf/nfapi_nr_vnf.h"
 
 #include <rte_log.h>
 
@@ -296,7 +297,7 @@ static int vnf_wls_init()
 
 void wls_vnf_stop()
 {
-  vnf_p7_t *p7_vnf = get_p7_vnf();
+  vnf_p7_t *p7_vnf = get_p7_nr_vnf();
   _vnf->terminate = 1;
   p7_vnf->terminate = 1;
   rte_eal_cleanup();
@@ -306,8 +307,8 @@ void wls_vnf_send_stop_request()
 {
   PWLS_MAC_CTX pWls = wls_mac_get_ctx();
   nfapi_nr_stop_request_scf_t req = {.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST, .header.phy_id = 0};
-  vnf_p7_t *p7_vnf = get_p7_vnf();
-  nfapi_vnf_config_t * config = get_config();
+  vnf_p7_t *p7_vnf = get_p7_nr_vnf();
+  nfapi_vnf_config_t * config = get_nr_config();
   if (p7_vnf == NULL || pWls->hWls == NULL) {
     nfapi_nr_stop_indication_scf_t msg;
     msg.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_INDICATION;
@@ -341,11 +342,11 @@ static void procPhyMessages(uint32_t msg_size, void *msg_buf, uint16_t msg_id)
     case NFAPI_NR_PHY_MSG_TYPE_CONFIG_RESPONSE:
     case NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE:
     case NFAPI_NR_PHY_MSG_TYPE_STOP_INDICATION:
-      vnf_nr_handle_p4_p5_message(msg_buf, msg_size, 0, get_config());
+      vnf_nr_handle_p4_p5_message(msg_buf, msg_size, 0, get_nr_config());
       break;
 
     case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST ... NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION: {
-      vnf_nr_handle_p7_message(msg_buf, msg_size + NFAPI_NR_P7_HEADER_LENGTH, get_p7_vnf());
+      vnf_nr_handle_p7_message(msg_buf, msg_size + NFAPI_NR_P7_HEADER_LENGTH, get_p7_nr_vnf());
       break;
     }
     default:
@@ -355,7 +356,7 @@ static void procPhyMessages(uint32_t msg_size, void *msg_buf, uint16_t msg_id)
 
 int wls_fapi_nr_vnf_start(nfapi_vnf_config_t *cfg)
 {
-  nfapi_vnf_config_t * config = get_config();
+  nfapi_vnf_config_t * config = get_nr_config();
   config = cfg;
 
   if (config == 0) {

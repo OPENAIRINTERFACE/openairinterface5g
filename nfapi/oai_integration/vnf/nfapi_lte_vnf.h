@@ -2,8 +2,9 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-#ifndef NFAPI_VNF_H_
-#define NFAPI_VNF_H_
+#ifndef NFAPI_LTE_VNF_H_
+#define NFAPI_LTE_VNF_H_
+#include <common_lib.h>
 
 #include "nfapi_vnf_interface.h"
 typedef struct {
@@ -129,9 +130,4 @@ typedef struct {
 } vnf_info;
 
 void configure_nfapi_vnf(char *vnf_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
-void configure_nr_nfapi_vnf(const char *vnf_addr, uint16_t vnf_p5_port, uint16_t vnf_p7_port);
-void stop_nr_nfapi_vnf();
-nfapi_vnf_config_t *get_config();
-vnf_p7_t *get_p7_vnf();
-nfapi_vnf_p7_config_t *get_p7_vnf_config();
-#endif /* NFAPI_VNF_H_ */
+#endif /* NFAPI_LTE_VNF_H_ */

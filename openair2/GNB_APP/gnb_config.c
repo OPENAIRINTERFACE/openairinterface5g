@@ -40,7 +40,7 @@
 #include "F1AP_CauseRadioNetwork.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "nfapi_pnf.h"
-#include "nfapi_vnf.h"
+#include "vnf/nfapi_nr_vnf.h"
 #include "ngap_gNB.h"
 #include "ngap_messages_types.h"
 #include "nr_common.h"
