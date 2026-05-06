@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: LicenseRef-CSSL-1.0
 
 add_library(nfapi_vnf_lib
-        src/vnf.c
+        src/vnf_common.c
+        src/vnf_lte.c
+        src/vnf_nr.c
         src/vnf_interface_common.c
         src/vnf_interface_lte.c
         src/vnf_interface_nr.c

@@ -34,6 +34,8 @@ nfapi_vnf_phy_info_t* nfapi_vnf_phy_info_list_find(nfapi_vnf_config_t* config, u
 void nfapi_vnf_pnf_list_add(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* node);
 nfapi_vnf_pnf_info_t* nfapi_vnf_pnf_list_find(nfapi_vnf_config_t* config, int p5_idx);
 
+void vnf_handle_vendor_extension(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config_t *config, int p5_idx, uint16_t message_id);
+
 void vnf_nr_handle_p4_p5_message(void *pRecvMsg, int recvMsgLen, int p5_idx, nfapi_vnf_config_t* config);
 
 #endif // _VNF_H_
