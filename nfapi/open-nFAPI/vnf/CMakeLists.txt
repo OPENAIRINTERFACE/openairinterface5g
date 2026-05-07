@@ -7,7 +7,9 @@ add_library(nfapi_vnf_lib
         src/vnf_interface_common.c
         src/vnf_interface_lte.c
         src/vnf_interface_nr.c
-        src/vnf_p7.c
+        src/vnf_p7_common.c
+        src/vnf_p7_lte.c
+        src/vnf_p7_nr.c
         src/vnf_p7_interface_common.c
         src/vnf_p7_interface_lte.c
         src/vnf_p7_interface_nr.c)
