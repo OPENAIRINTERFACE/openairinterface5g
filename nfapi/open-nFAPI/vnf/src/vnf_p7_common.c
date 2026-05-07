@@ -244,6 +244,39 @@ void vnf_p7_rx_reassembly_queue_remove_old_msgs(vnf_p7_t* vnf_p7, vnf_p7_rx_reas
 	}
 }
 
+uint32_t get_slot_time(uint32_t now_hr, uint32_t slot_start_hr)
+{
+	if(now_hr < slot_start_hr)
+	{
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "now is earlier than start of slot\n");
+		return 0;
+	}
+	else
+	{
+		uint32_t now_us = TIMEHR_USEC(now_hr);
+		uint32_t slot_start_us = TIMEHR_USEC(slot_start_hr);
+
+		// if the us have wrapped adjust for it
+		if(now_hr < slot_start_us)
+		{
+			now_us += 1000000;
+		}
+
+		return now_us - slot_start_us;
+	}
+}
+
+uint32_t calculate_transmit_timestamp(int mu, uint16_t sfn, uint16_t slot, uint32_t slot_start_time_hr)
+{
+	uint32_t now_time_hr = vnf_get_current_time_hr();
+
+	uint32_t slot_time_us = get_slot_time(now_time_hr, slot_start_time_hr);
+
+	uint32_t tt = NFAPI_SFNSLOT2DEC(mu, sfn, slot) * NFAPI_SLOTLEN(mu) + slot_time_us;
+
+	return tt;
+}
+
 uint32_t vnf_get_current_time_hr()
 {
 	struct timeval now;

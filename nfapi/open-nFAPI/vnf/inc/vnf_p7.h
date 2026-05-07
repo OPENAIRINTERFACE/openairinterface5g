@@ -127,6 +127,7 @@ void vnf_p7_free(vnf_p7_t* vnf_p7, void* ptr);
 void vnf_p7_codec_free(vnf_p7_t* vnf_p7, void* ptr);
 void vnf_p7_rx_reassembly_queue_remove_msg(vnf_p7_t* vnf_p7, vnf_p7_rx_reassembly_queue_t* queue, vnf_p7_rx_message_t* msg);
 void vnf_p7_rx_reassembly_queue_remove_old_msgs(vnf_p7_t* vnf_p7, vnf_p7_rx_reassembly_queue_t* queue, uint32_t delta);
+uint32_t get_slot_time(uint32_t now_hr, uint32_t slot_start_hr);
 uint32_t calculate_transmit_timestamp(int mu, uint16_t sfn, uint16_t slot, uint32_t slot_start_time_hr);
 
 
