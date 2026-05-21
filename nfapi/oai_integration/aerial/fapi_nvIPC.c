@@ -190,6 +190,126 @@ void release_msg(nv_ipc_msg_t *send_msg)
   ipc->tx_release(ipc, send_msg);
 }
 
+static uint16_t read_le16_u8(const uint8_t *p)
+{
+  return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
+}
+
+static uint32_t read_le32_u8(const uint8_t *p)
+{
+  return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+
+static void write_le16_u8(uint8_t *p, uint16_t v)
+{
+  p[0] = (uint8_t)(v & 0xff);
+  p[1] = (uint8_t)((v >> 8) & 0xff);
+}
+
+static void write_le32_u8(uint8_t *p, uint32_t v)
+{
+  p[0] = (uint8_t)(v & 0xff);
+  p[1] = (uint8_t)((v >> 8) & 0xff);
+  p[2] = (uint8_t)((v >> 16) & 0xff);
+  p[3] = (uint8_t)((v >> 24) & 0xff);
+}
+
+static uint32_t align4_u32(uint32_t v)
+{
+  return (v + 3u) & ~3u;
+}
+
+static bool widen_config_request_tlv_lengths_for_aerial(uint8_t *buf, uint32_t *msg_len, uint32_t buf_cap)
+{
+  enum { FAPI_HEADER_LEN = 8, CONFIG_NUM_TLVS_OFFSET = 8, CONFIG_TLV_START_OFFSET = 9, TLV16_HEADER_LEN = 4, TLV32_HEADER_LEN = 6 };
+
+  if (buf == NULL || msg_len == NULL || *msg_len < CONFIG_TLV_START_OFFSET) {
+    return false;
+  }
+
+  const uint32_t old_len = *msg_len;
+  const uint8_t advertised_tlv_count = buf[CONFIG_NUM_TLVS_OFFSET];
+  uint32_t tlv_offsets[256];
+  uint16_t tlv_lengths[256];
+  uint8_t tlv_count = 0;
+  uint32_t src_off = CONFIG_TLV_START_OFFSET;
+
+  while (src_off < old_len) {
+    if (tlv_count == UINT8_MAX) {
+      LOG_E(NFAPI_VNF, "CONFIG.request TLV16 parse found more than 255 TLVs old_len=%u\n", old_len);
+      return false;
+    }
+    if (src_off + TLV16_HEADER_LEN > old_len) {
+      LOG_E(NFAPI_VNF, "CONFIG.request TLV16 parse failed at tlv=%u offset=%u old_len=%u\n", tlv_count, src_off, old_len);
+      return false;
+    }
+    const uint16_t value_len = read_le16_u8(buf + src_off + 2);
+    const uint32_t padded_value_len = align4_u32(value_len);
+    if (src_off + TLV16_HEADER_LEN + padded_value_len > old_len) {
+      LOG_E(NFAPI_VNF,
+            "CONFIG.request TLV16 length overflow at tlv=%u tag=0x%04x len=%u offset=%u old_len=%u\n",
+            tlv_count,
+            read_le16_u8(buf + src_off),
+            value_len,
+            src_off,
+            old_len);
+      return false;
+    }
+    tlv_offsets[tlv_count] = src_off;
+    tlv_lengths[tlv_count] = value_len;
+    src_off += TLV16_HEADER_LEN + padded_value_len;
+    tlv_count++;
+  }
+
+  if (advertised_tlv_count != tlv_count) {
+    LOG_W(NFAPI_VNF,
+          "CONFIG.request TLV count corrected before Aerial conversion: advertised=%u actual=%u msg_len=%u\n",
+          advertised_tlv_count,
+          tlv_count,
+          old_len);
+    buf[CONFIG_NUM_TLVS_OFFSET] = tlv_count;
+  }
+
+  const uint32_t growth = 2u * tlv_count;
+  const uint32_t new_len = old_len + growth;
+  if (new_len > buf_cap) {
+    LOG_E(NFAPI_VNF, "CONFIG.request TLV32 conversion needs %u bytes, CPU_MSG buffer has %u\n", new_len, buf_cap);
+    return false;
+  }
+
+  /* Aerial 26-1 cuPHY is built with SCF_FAPI_10_04, where scf_fapi_tl_t is
+   * tag:u16 + length:u32.  OAI's pack_nr_tlv()/hand-coded CONFIG TLVs still
+   * serialize tag:u16 + length:u16.  Convert only this L2->L1 CONFIG.request
+   * boundary in-place, working backwards so overlapping memmove is safe. */
+  for (int32_t i = (int32_t)tlv_count - 1; i >= 0; --i) {
+    const uint32_t old_tlv_off = tlv_offsets[i];
+    const uint32_t new_tlv_off = old_tlv_off + (2u * (uint32_t)i);
+    const uint16_t tag = read_le16_u8(buf + old_tlv_off);
+    const uint16_t value_len = tlv_lengths[i];
+    const uint32_t padded_value_len = align4_u32(value_len);
+
+    memmove(buf + new_tlv_off + TLV32_HEADER_LEN, buf + old_tlv_off + TLV16_HEADER_LEN, padded_value_len);
+    write_le16_u8(buf + new_tlv_off, tag);
+    write_le32_u8(buf + new_tlv_off + 2, value_len);
+  }
+
+  const uint32_t old_body_len = read_le32_u8(buf + 4);
+  if (old_body_len + FAPI_HEADER_LEN != old_len) {
+    LOG_W(NFAPI_VNF, "CONFIG.request body length mismatch before TLV32 conversion: body=%u msg_len=%u\n", old_body_len, old_len);
+  }
+  const uint32_t new_body_len = new_len - FAPI_HEADER_LEN;
+  write_le32_u8(buf + 4, new_body_len);
+  *msg_len = new_len;
+  LOG_I(NFAPI_VNF,
+        "CONFIG.request TLV32 conversion: tlvs=%u old_len=%u new_len=%u body_len=%u->%u\n",
+        tlv_count,
+        old_len,
+        new_len,
+        old_body_len,
+        new_body_len);
+  return true;
+}
+
 bool send_nvipc_msg(nv_ipc_msg_t *send_msg)
 {
   int send_retval = ipc->tx_send_msg(ipc, send_msg);
@@ -244,8 +364,21 @@ bool aerial_nr_send_p5_message(vnf_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_messa
       release_msg(&send_msg);
       return false;
     }
-    // Set the length
-    send_msg.msg_len = packedMessageLengthFAPI + 8; // adding 8 to account for the size of the FAPI header
+    // fapi_nr_p5_message_pack() returns the complete packed FAPI message length,
+    // including the 8-byte FAPI header.  Passing +8 makes cuPHY see an
+    // over-long nvIPC message and reject CONFIG.request length validation.
+    send_msg.msg_len = packedMessageLengthFAPI;
+
+    if (msg->message_id == NFAPI_NR_PHY_MSG_TYPE_CONFIG_REQUEST) {
+      uint32_t converted_len = (uint32_t)send_msg.msg_len;
+      if (!widen_config_request_tlv_lengths_for_aerial((uint8_t *)send_msg.msg_buf, &converted_len, (uint32_t)get_cpu_msg_buf_size())) {
+        LOG_E(NFAPI_VNF, "Failed to convert CONFIG.request TLV lengths for Aerial SCF_FAPI_10_04\n");
+        release_msg(&send_msg);
+        return false;
+      }
+      send_msg.msg_len = (int)converted_len;
+      packedMessageLengthFAPI = (int)converted_len;
+    }
 
     if (has_separate_dbt_payload) {
       AssertFatal(send_msg.data_buf != NULL, "CONFIG.request DBT path: data buffer is NULL\n");
