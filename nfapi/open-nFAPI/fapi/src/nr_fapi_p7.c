@@ -441,6 +441,12 @@ uint8_t pack_dl_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end)
   nfapi_nr_dl_tti_request_t *pNfapiMsg = (nfapi_nr_dl_tti_request_t *)msg;
 
   if (!(push16(pNfapiMsg->SFN, ppWritePackedMsg, end) && push16(pNfapiMsg->Slot, ppWritePackedMsg, end)
+#ifdef ENABLE_AERIAL
+        /* Aerial 26-1 cuPHY is built with ENABLE_CONFORMANCE_TM_PDSCH_PDCCH,
+         * so scf_fapi_dl_tti_req_t carries a testMode byte between slot and
+         * num_pdus. OAI normal scheduling is not a conformance test mode. */
+        && push8(0, ppWritePackedMsg, end)
+#endif
         && push8(pNfapiMsg->dl_tti_request_body.nPDUs, ppWritePackedMsg, end)
         && push8(pNfapiMsg->dl_tti_request_body.nGroup, ppWritePackedMsg, end))) {
     return 0;
@@ -1503,6 +1509,10 @@ static uint8_t pack_tx_data_pdu_list_value(void *tlv, uint8_t **ppWritePackedMsg
 {
   nfapi_nr_pdu_t *value = (nfapi_nr_pdu_t *)tlv;
   if (!(push32(value->PDU_length, ppWritePackedMsg, end) && push16(value->PDU_index, ppWritePackedMsg, end)
+#ifdef ENABLE_AERIAL
+        /* SCF FAPI 10.04 TX_DATA PDU info adds cw_index after pdu_index. */
+        && push8(0, ppWritePackedMsg, end)
+#endif
         && push32(value->num_TLV, ppWritePackedMsg, end)))
     return 0;
 
@@ -1510,7 +1520,8 @@ static uint8_t pack_tx_data_pdu_list_value(void *tlv, uint8_t **ppWritePackedMsg
     if (!push16(value->TLVs[i].tag, ppWritePackedMsg, end))
       return 0;
 #ifdef ENABLE_AERIAL
-    if (!push16(value->TLVs[i].length, ppWritePackedMsg, end))
+    /* Aerial 26-1 cuPHY uses SCF_FAPI_10_04, where scf_fapi_tl_t.length is u32. */
+    if (!push32(value->TLVs[i].length, ppWritePackedMsg, end))
       return 0;
 #else
     if (!push32(value->TLVs[i].length, ppWritePackedMsg, end))
