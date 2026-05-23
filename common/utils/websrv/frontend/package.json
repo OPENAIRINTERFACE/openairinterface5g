@@ -12,7 +12,7 @@
     "@angular-slider/ngx-slider": "^2.0.4",
     "@angular/animations": "^14.1.0",
     "@angular/cdk": "^14.1.0",
-    "@angular/common": "^14.1.0",
+    "@angular/common": "^19.2.16",
     "@angular/compiler": "^14.1.0",
     "@angular/core": "^14.1.0",
     "@angular/flex-layout": "^14.0.0-beta.40",
@@ -22,14 +22,14 @@
     "@angular/platform-browser-dynamic": "^14.1.0",
     "@angular/router": "^14.1.0",
     "chart.js": "^3.8.2",
+    "json5": "^2.2.2",
     "loader-utils": "^3.2.1",
     "moment": "^2.29.3",
     "ng2-charts": "^4.0.0",
     "rxjs": "^6.6.6",
+    "tsconfig-paths": "^4.0.0",
     "tslib": "^2.0.0",
-    "zone.js": "^0.11.4",
-    "json5": "^2.2.2",
-    "tsconfig-paths": "^4.0.0"
+    "zone.js": "^0.11.4"
   },
   "devDependencies": {
     "@angular-devkit/architect": "^0.1401.0",
