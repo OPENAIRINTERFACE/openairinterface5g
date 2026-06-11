@@ -7,7 +7,7 @@
 #ifndef _VNF_P7_COMMON_H_
 #define _VNF_P7_COMMON_H_
 
-#include "nfapi_vnf_interface.h"
+#include "nfapi_vnf_interface_common.h"
 
 #define TIMEHR_SEC(_time_hr) ((uint32_t)(_time_hr) >> 20)
 #define TIMEHR_USEC(_time_hr) ((uint32_t)(_time_hr) & 0xFFFFF)

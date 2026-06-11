@@ -7,7 +7,7 @@
 #ifndef _VNF_LTE_H_
 #define _VNF_LTE_H_
 
-#include "nfapi_vnf_interface.h"
+#include "nfapi_lte_vnf_interface.h"
 
 typedef struct vnf_s {
   nfapi_vnf_config_t _public;
