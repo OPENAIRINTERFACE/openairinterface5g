@@ -5,7 +5,7 @@
 #ifndef SOCKET_VNF_H
 #define SOCKET_VNF_H
 #include "socket_common.h"
-#include "vnf_p7.h"
+#include "vnf_p7_nr.h"
 #include "vnf_nr.h"
 #include "nr_fapi_p5.h"
 #include "nr_nfapi_p7.h"

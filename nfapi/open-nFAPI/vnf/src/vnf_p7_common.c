@@ -16,7 +16,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "vnf_p7.h"
+#include "vnf_p7_common.h"
 
 void* vnf_p7_malloc(vnf_p7_t* vnf_p7, size_t size)
 {

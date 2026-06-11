@@ -5,7 +5,7 @@
  */
 
 #include "assertions.h"
-#include "vnf_p7.h"
+#include "vnf_p7_nr.h"
 
 bool nfapi_vnf_p7_dl_tti_req(nfapi_vnf_p7_config_t *config, nfapi_nr_dl_tti_request_t *req)
 {

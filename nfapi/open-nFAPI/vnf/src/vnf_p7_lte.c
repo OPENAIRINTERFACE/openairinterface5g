@@ -10,7 +10,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "vnf_p7.h"
+#include "vnf_p7_lte.h"
 
 #define SYNC_CYCLE_COUNT 2
 

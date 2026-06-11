@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "vnf_p7.h"
+#include "vnf_p7_lte.h"
 
 static struct timespec timespec_add(struct timespec lhs, struct timespec rhs)
 {

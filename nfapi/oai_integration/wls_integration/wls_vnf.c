@@ -3,7 +3,6 @@
  */
 #include "wls_vnf.h"
 
-#include "vnf_p7.h"
 #include "common/utils/LOG/log.h"
 #include "wls_lib.h"
 #include <rte_eal.h>

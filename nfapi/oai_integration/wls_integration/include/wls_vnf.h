@@ -6,6 +6,7 @@
 #define OPENAIRINTERFACE_WLS_VNF_H
 #include "nfapi_vnf_interface.h"
 #include "vnf_nr.h"
+#include "vnf_p7_nr.h"
 #include "wls_common.h"
 
 void *wls_fapi_vnf_nr_start_thread(void *ptr);

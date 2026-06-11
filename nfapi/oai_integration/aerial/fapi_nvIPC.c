@@ -30,7 +30,6 @@
 #include "nfapi_interface.h"
 #include "nfapi.h"
 #include "nfapi_nr_interface_scf.h"
-#include "nfapi/open-nFAPI/vnf/inc/vnf_p7.h"
 #include "system.h"
 #include "fapi_vnf_p7.h"
 

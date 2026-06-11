@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vnf_p7.h"
+#include "vnf_p7_common.h"
 
 nfapi_vnf_p7_config_t *nfapi_vnf_p7_config_create()
 {
