@@ -5,7 +5,7 @@
  */
 
 #include "assertions.h"
-#include "vnf.h"
+#include "vnf_common.h"
 
 int nfapi_nr_vnf_pnf_param_req(nfapi_vnf_config_t *config, int p5_idx, nfapi_nr_pnf_param_request_t *req)
 {

@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#include "vnf.h"
+#include "vnf_nr.h"
 #include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"
 #include "nfapi/oai_integration/vendor_ext.h"

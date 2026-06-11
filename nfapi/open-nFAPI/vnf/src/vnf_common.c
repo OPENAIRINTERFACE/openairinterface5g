@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "vnf.h"
+#include "vnf_common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
 void *vnf_malloc(nfapi_vnf_config_t *config, size_t size)

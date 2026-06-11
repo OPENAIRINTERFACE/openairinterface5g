@@ -11,8 +11,7 @@
 #include "nv_ipc.h"
 #include "nv_ipc_utils.h"
 #include "nvlog.h"
-#include "nfapi/open-nFAPI/vnf/public_inc/nfapi_vnf_interface.h"
-#include "vnf.h"
+#include "vnf_nr.h"
 #include "debug.h"
 
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"

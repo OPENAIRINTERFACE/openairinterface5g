@@ -17,7 +17,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "vnf.h"
+#include "vnf_common.h"
 
 nfapi_vnf_config_t *nfapi_vnf_config_create()
 {

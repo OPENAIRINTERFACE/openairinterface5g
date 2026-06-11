@@ -12,7 +12,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "vnf.h"
+#include "vnf_lte.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
 void vnf_handle_pnf_param_response(void *pRecvMsg, int recvMsgLen, nfapi_vnf_config_t *config, int p5_idx)

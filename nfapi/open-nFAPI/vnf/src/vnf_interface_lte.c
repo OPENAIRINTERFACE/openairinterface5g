@@ -17,7 +17,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "vnf.h"
+#include "vnf_lte.h"
 
 int nfapi_vnf_pnf_param_req(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_param_request_t *req)
 {
