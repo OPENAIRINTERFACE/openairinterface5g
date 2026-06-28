@@ -734,9 +734,16 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     ra->ra_state = nrRA_Msg2;
   }
 
-  LOG_A(NR_MAC, "%d.%d UE RA-RNTI %04x TC-RNTI %04x: initiating RA procedure\n", frame, slot, ra->RA_rnti, UE->rnti);
+  LOG_A(NR_MAC,
+        "%d.%d UE RA-RNTI %04x TC-RNTI %04x: initiating RA procedure for RAPID %u with TA %d units\n",
+        frame,
+        slot,
+        ra->RA_rnti,
+        UE->rnti,
+        preamble_index,
+        timing_offset);
 
-   // return current SSB order in the list of tranmitted SSBs
+  // return current SSB order in the list of tranmitted SSBs
   int n_ssb = ssb_index_from_prach(cell, frame, slot, preamble_index, freq_index, symbol);
   UE->UE_beam_index = get_beam_from_ssbidx(cell, cc->ssb_index[n_ssb]);
   LOG_I(NR_MAC, "UE %04x: Sync beam index %d\n", UE->rnti, UE->UE_beam_index);
@@ -1101,6 +1108,7 @@ static void nr_fill_rar(NR_UE_info_t *UE, uint8_t *dlsch_buffer, nfapi_nr_pusch_
   // TA command
   rar->TA1 = (uint8_t) (ra->timing_offset >> 5);    // 7 MSBs of timing advance
   rar->TA2 = (uint8_t) (ra->timing_offset & 0x1f);  // 5 LSBs of timing advance
+  const int rar_ta = rar->TA2 + (rar->TA1 << 5);
 
   // TC-RNTI
   rar->TCRNTI_1 = (uint8_t) (UE->rnti >> 8);        // 8 MSBs of rnti
@@ -1138,12 +1146,15 @@ static void nr_fill_rar(NR_UE_info_t *UE, uint8_t *dlsch_buffer, nfapi_nr_pusch_
   LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 #endif
   LOG_D(NR_MAC,
-        "In %s: Transmitted RAR with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d tpc_command %d csi_req %d t_crnti "
-        "%x \n",
+        "In %s: %d.%d transmitted RAR for RAPID %u with t_alloc %d f_alloc %d ta_command %d mcs %d freq_hopping %d "
+        "tpc_command %d csi_req %d t_crnti %x\n",
         __FUNCTION__,
+        ra->Msg2_frame,
+        ra->Msg2_slot,
+        ra->preamble_index,
         rar->UL_GRANT_3 & 0x0f,
         (rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12),
-        rar->TA2 + (rar->TA1 << 5),
+        rar_ta,
         rar->UL_GRANT_4 >> 4,
         rar->UL_GRANT_1 >> 2,
         ra->msg3_TPC,
@@ -1645,7 +1656,8 @@ static void nr_generate_Msg2(gNB_MAC_INST *nr_mac,
   // T_c according to 38.211 4.1
   float T_c_ns = 0.509;
   int numerology = ul_bwp->scs;
-  float rtt_ns = T_c_ns * 16 * 64 / (1 << numerology) * ra->timing_offset;
+  float ta_unit_ns = T_c_ns * 16 * 64 / (1 << numerology);
+  float rtt_ns = ta_unit_ns * ra->timing_offset;
   float distance_in_meters = (float) SPEED_OF_LIGHT * rtt_ns / 1000 / 1000 / 1000 / 2;
   LOG_A(NR_MAC,
         "UE %04x: %d.%d Generating RA-Msg2 DCI, RA RNTI 0x%x, state %d, preamble_index(RAPID) %d, "

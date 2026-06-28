@@ -600,11 +600,12 @@ rx_prach_out_t rx_nr_prach(const prach_item_t *in, int occasion)
     int preamble_shift2 = preamble_shift == 0 ? 0 : (preamble_shift << log2_ifft_size) / N_ZC;
 
     for (int i = 0; i < NCS2; i++) {
-      int lev = prach_ifft[preamble_shift2 + i];
-      int levdB = dB_fixed_times10(lev);
+      const int peak_bin = preamble_shift2 + i;
+      const int levdB = dB_fixed_times10(prach_ifft[peak_bin]);
       if (levdB > out.max_preamble_energy || (levdB == out.max_preamble_energy && out.max_preamble_delay > i)) {
         LOG_D(NR_PHY_RACH, "preamble_index %d, delay %d en %d dB > %d dB\n", preamble_index, i, levdB, out.max_preamble_energy);
         out.max_preamble_energy = levdB;
+        out.max_preamble_delay_raw = i;
         out.max_preamble_delay = i; // Note: This has to be normalized to the 30.72 Ms/s sampling rate
         out.max_preamble = preamble_index;
       }

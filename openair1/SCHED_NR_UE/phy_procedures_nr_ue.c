@@ -190,15 +190,24 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx)
     // = 16 * ofdm_symbol_size / 2048
     uint16_t bw_scaling = 16 * ofdm_symbol_size / 2048;
 
-    ue->timing_advance += (ue->ta_command - 31) * bw_scaling;
+    const int timing_advance_before = ue->timing_advance;
+    const int ta_delta_units = ue->ta_command - 31;
+    const int ta_delta_samples = ta_delta_units * bw_scaling;
+    ue->timing_advance += ta_delta_samples;
 
     LOG_D(PHY,
-          "[UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+          "[UE %d] %d.%d applied TA command %u: delta-TA-units %d, samples-per-unit %u, delta-samples %d, "
+          "timing-advance %d -> %d samples (N_TA_offset %d)\n",
           ue->Mod_id,
           frame_tx,
           slot_tx,
           ue->ta_command,
-          ue->timing_advance);
+          ta_delta_units,
+          bw_scaling,
+          ta_delta_samples,
+          timing_advance_before,
+          ue->timing_advance,
+          ue->N_TA_offset);
 
     ue->ta_frame = -1;
     ue->ta_slot = -1;
