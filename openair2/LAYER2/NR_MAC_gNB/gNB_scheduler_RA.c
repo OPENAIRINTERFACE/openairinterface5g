@@ -23,7 +23,57 @@
 
 #include <executables/softmodem-common.h>
 
-static const float ssb_per_rach_occasion[8] = {0.125, 0.25, 0.5, 1, 2, 4, 8};
+typedef struct {
+  bool checked; // Validator covers this RA case.
+  bool valid; // RAPID accepted, or case unchecked.
+  uint16_t num_valid_rapids; // Number of accepted consecutive RAPIDs.
+  const char *reason; // Static unchecked-case reason.
+} nr_rapid_check_t;
+
+static nr_rapid_check_t check_rapid_for_prach_occasion(nr_cell_sched_t *cell, uint16_t preamble_index)
+{
+  nr_rapid_check_t check = {
+      .checked = false,
+      .valid = true,
+      .num_valid_rapids = 0,
+      .reason = "unchecked",
+  };
+
+  NR_COMMON_channels_t *cc = &cell->common_channels;
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  NR_BWP_UplinkCommon_t *initialUplinkBWP = scc->uplinkConfigCommon->initialUplinkBWP;
+
+  if (initialUplinkBWP->ext1 && initialUplinkBWP->ext1->msgA_ConfigCommon_r16) {
+    check.reason = "msgA_not_checked";
+    return check;
+  }
+
+  NR_RACH_ConfigCommon_t *rach_ConfigCommon = initialUplinkBWP->rach_ConfigCommon->choice.setup;
+  ssb_ro_preambles_t ssb_ro = get_ssb_ro_preambles_4step(rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB);
+
+  /*
+   * First implementation validates the non-shared RO case. For shared ROs,
+   * preserve existing behavior until SSB/RO-specific RAPID partitioning is added.
+   */
+  if (ssb_ro.ssb_per_ro > 1) {
+    check.reason = "shared_ro_not_checked";
+    return check;
+  }
+
+  if (ssb_ro.preambles_per_ssb <= 0) {
+    check.reason = "invalid_cb_preambles";
+    return check;
+  }
+
+  const uint16_t total_ra_preambles =
+      rach_ConfigCommon->totalNumberOfRA_Preambles ? *rach_ConfigCommon->totalNumberOfRA_Preambles : MAX_NUM_NR_PRACH_PREAMBLES;
+  const uint16_t num_valid_rapids = min(ssb_ro.preambles_per_ssb, (int)total_ra_preambles);
+
+  check.checked = true;
+  check.num_valid_rapids = num_valid_rapids;
+  check.valid = preamble_index < num_valid_rapids;
+  return check;
+}
 
 static int16_t ssb_index_from_prach(nr_cell_sched_t *cell,
                                     frame_t frameP,
@@ -42,8 +92,9 @@ static int16_t ssb_index_from_prach(nr_cell_sched_t *cell,
   uint8_t total_RApreambles = MAX_NUM_NR_PRACH_PREAMBLES;
   if (rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
     total_RApreambles = *rach_ConfigCommon->totalNumberOfRA_Preambles;
-  
-  float  num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];	
+
+  ssb_ro_preambles_t ssb_ro = get_ssb_ro_preambles_4step(rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB);
+  float num_ssb_per_RO = ssb_ro.ssb_per_ro;
   uint16_t start_symbol_index = 0;
   uint8_t temp_start_symbol = 0;
   uint16_t RA_sfn_index = -1;
@@ -110,43 +161,14 @@ void find_SSB_and_RO_available(nr_cell_sched_t *cell)
   uint16_t unused_RA_occasion, repetition = 0;
   uint8_t num_active_ssb = 0;
 
-  struct NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB *ssb_perRACH_OccasionAndCB_PreamblesPerSSB = rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB;
-
-  switch (ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present) {
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth:
-      cc->cb_preambles_per_ssb = 4 * (ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneEighth + 1);
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneFourth:
-      cc->cb_preambles_per_ssb = 4 * (ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneFourth + 1);
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneHalf:
-      cc->cb_preambles_per_ssb = 4 * (ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.oneHalf + 1);
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one:
-      cc->cb_preambles_per_ssb = 4 * (ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.one + 1);
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_two:
-      cc->cb_preambles_per_ssb = 4 * (ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.two + 1);
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_four:
-      cc->cb_preambles_per_ssb = ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.four;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_eight:
-      cc->cb_preambles_per_ssb = ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.eight;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_sixteen:
-      cc->cb_preambles_per_ssb = ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.sixteen;
-      break;
-    default:
-      AssertFatal(1 == 0, "Unsupported ssb_perRACH_config %d\n", ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present);
-      break;
-  }
+  ssb_ro_preambles_t ssb_ro = get_ssb_ro_preambles_4step(rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB);
+  cc->cb_preambles_per_ssb = ssb_ro.preambles_per_ssb;
 
   // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
   frequency_range_t freq_range = get_freq_range_from_arfcn(scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   nr_prach_info_t prach_info =  get_nr_prach_occasion_info_from_index(config_index, freq_range, cc->frame_type);
 
-  float num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];	
+  float num_ssb_per_RO = ssb_ro.ssb_per_ro;
   uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
   uint64_t L_ssb = (((uint64_t) cfg->ssb_table.ssb_mask_list[0].ssb_mask.value) << 32) | cfg->ssb_table.ssb_mask_list[1].ssb_mask.value;
   cc->total_prach_occasions_per_config_period = prach_info.N_RA_sfn * prach_info.N_t_slot * prach_info.N_RA_slot * fdm;
@@ -362,6 +384,8 @@ void schedule_nr_prach(gNB_MAC_INST *gNB, nr_cell_sched_t *cell, frame_t frameP,
       NR_beam_alloc_t beam = {0};
       uint32_t N_t_slot = cc->prach_info.N_t_slot;
       uint32_t start_symb = cc->prach_info.start_symbol;
+      const float num_ssb_per_RO =
+          get_ssb_ro_preambles_4step(rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB).ssb_per_ro;
       for (int fdm_index = 0; fdm_index < fdm; fdm_index++) { // one structure per frequency domain occasion
         AssertFatal(UL_tti_req->n_pdus < sizeofArray(UL_tti_req->pdus_list), "Invalid UL_tti_req->n_pdus %d\n", UL_tti_req->n_pdus);
         nfapi_nr_ul_tti_request_number_of_pdus_t *newpdu = UL_tti_req->pdus_list + UL_tti_req->n_pdus;
@@ -381,7 +405,6 @@ void schedule_nr_prach(gNB_MAC_INST *gNB, nr_cell_sched_t *cell, frame_t frameP,
             continue;
 
           num_td_occ++;
-          float num_ssb_per_RO = ssb_per_rach_occasion[cfg->prach_config.ssb_per_rach.value];
           int beam_index = 0;
           if(num_ssb_per_RO <= 1) {
             // ordered ssb number
@@ -685,6 +708,44 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     LOG_W(NR_MAC, "random access with preamble %d: no pre-configured RA process found\n", preamble_index);
     NR_SCHED_UNLOCK(&nr_mac->sched_lock);
     return;
+  }
+
+  /*
+   * For unknown-UE four-step CBRA, reject RAPIDs outside the configured
+   * contention-based preamble set before allocating a TC-RNTI.
+   */
+  if (!UE) {
+    nr_rapid_check_t rapid_check = check_rapid_for_prach_occasion(cell, preamble_index);
+    if (!rapid_check.checked) {
+      LOG_D(NR_MAC,
+            "[RAPROC] %d.%d RAPID %u symbol %u freq-index %u not checked: %s\n",
+            frame,
+            slot,
+            preamble_index,
+            symbol,
+            freq_index,
+            rapid_check.reason);
+    } else if (!rapid_check.valid) {
+      LOG_W(NR_MAC,
+            "[RAPROC] %d.%d ignoring RAPID %u at symbol %u freq-index %u: outside valid CBRA range [0,%u)\n",
+            frame,
+            slot,
+            preamble_index,
+            symbol,
+            freq_index,
+            rapid_check.num_valid_rapids);
+      NR_SCHED_UNLOCK(&nr_mac->sched_lock);
+      return;
+    } else {
+      LOG_D(NR_MAC,
+            "[RAPROC] %d.%d RAPID %u symbol %u freq-index %u accepted in CBRA range [0,%u)\n",
+            frame,
+            slot,
+            preamble_index,
+            symbol,
+            freq_index,
+            rapid_check.num_valid_rapids);
+    }
   }
 
   if (!UE) {
