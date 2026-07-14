@@ -1212,6 +1212,44 @@ int gtpv1u_decode_error_indication(const uint8_t *msg_buf, uint32_t msg_buf_len,
   return 0;
 }
 
+/** @brief Send a GTP-U Error Indication message (7.3.1, TS 29.281) */
+static int gtpv1uSendErrorIndication(int h, const struct sockaddr_in *dst, teid_t teid_in_error)
+{
+  DevAssert(dst);
+
+  transport_layer_addr_t local_addr = {0};
+  pthread_mutex_lock(&globGtp.gtp_lock);
+  getInstRetInt(h);
+  if (inst->ipVersion != 4) {
+    pthread_mutex_unlock(&globGtp.gtp_lock);
+    LOG_W(GTPU, "[%d] Error Indication TX: IPv6 local address not supported\n", h);
+    return GTPNOK;
+  }
+  local_addr.length = GTPU_PEER_ADDRESS_IPV4_OCTETS * 8;
+  memcpy(local_addr.buffer, inst->foundAddr, inst->foundAddrLen);
+  pthread_mutex_unlock(&globGtp.gtp_lock);
+
+  const gtpv1u_error_indication_t indication = {.teid_i = teid_in_error, .gtpu_peer_address = local_addr};
+  uint8_t ie_body[32];
+  const int ie_len = gtpv1u_encode_error_indication(&indication, ie_body, sizeof ie_body);
+  if (ie_len < 0) {
+    LOG_E(GTPU, "[%d] Failed to encode GTP Error Indication TEID-I 0x%x\n", h, teid_in_error);
+    return GTPNOK;
+  }
+
+  gtpv1u_bearer_t bearer = create_bearer(h, dst, 0, 0);
+  const int rc = gtpv1uCreateAndSendMsg(&bearer, GTP_ERROR_INDICATION, ie_body, ie_len, true, false, NULL, 0);
+  if (rc == 0) {
+    LOG_W(GTPU,
+          "[%d] Sent GTP Error Indication TEID-I 0x%x to " IPV4_ADDR ":%u\n",
+          h,
+          teid_in_error,
+          IPV4_ADDR_FORMAT(dst->sin_addr.s_addr),
+          ntohs(dst->sin_port));
+  }
+  return rc;
+}
+
 /** @brief Handle incoming GTP-U Error Indication (7.3.1, TS 29.281).
  * Decodes mandatory IEs (Table 7.3.1-1: TEID-I 8.3, Peer Address 8.4). */
 static int Gtpv1uHandleError(int h, uint8_t *msgBuf, uint32_t msgBufLen, const struct sockaddr_in *addr)
@@ -1314,8 +1352,14 @@ static int Gtpv1uHandleGpdu(int h, uint8_t *msgBuf, uint32_t msgBufLen, const st
   auto tunnel = globGtp.te2ue_mapping.find(ntohl(msgHdr->teid));
 
   if (tunnel == globGtp.te2ue_mapping.end()) {
-    LOG_E(GTPU, "[%d] Received a incoming packet on unknown TEID (0x%x) Dropping!\n", h, ntohl(msgHdr->teid));
+    /* TS 29.281 §7.3.1: if no context exists for a received G-PDU, discard it
+     * if the TEID is not all zeros, also return Error Indication to the originator
+     * (see also TS 23.527 §5.2.1). */
+    const teid_t bad_teid = ntohl(msgHdr->teid);
     pthread_mutex_unlock(&globGtp.gtp_lock);
+    if (bad_teid != 0 && gtpv1uSendErrorIndication(h, addr, bad_teid) != 0)
+      LOG_E(GTPU, "[%d] Error Indication TX failed for unknown TEID (0x%x)\n", h, bad_teid);
+    LOG_E(GTPU, "[%d] Received a incoming packet on unknown TEID (0x%x) Dropping!\n", h, bad_teid);
     return GTPNOK;
   }
   ueidData_t uedata = tunnel->second;
