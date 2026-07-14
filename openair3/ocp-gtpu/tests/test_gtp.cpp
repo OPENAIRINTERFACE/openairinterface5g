@@ -535,6 +535,42 @@ TEST(gtp, error_indication_decode)
   EXPECT_EQ(indication.gtpu_peer_address.buffer[3], 1);
 }
 
+TEST(gtp, error_indication_encode)
+{
+  uint8_t ie[32] = {0};
+  const gtpv1u_error_indication_t in = {.teid_i = 0x12345678, .gtpu_peer_address = get_tl_addr(AF_INET, "10.0.0.1")};
+
+  const int encoded = gtpv1u_encode_error_indication(&in, ie, sizeof ie);
+  ASSERT_EQ(encoded, 1 + GTPU_TEID_I_VALUE_OCTETS + 1 + 2 + GTPU_PEER_ADDRESS_IPV4_OCTETS);
+  EXPECT_EQ(gtpv1u_encode_error_indication(&in, ie, 4), GTPNOK);
+
+  uint8_t buf[48] = {0};
+  const size_t ie_len = 12; /* TEID-I (TV IE) + GTP-U Peer Address (TLV) */
+  const size_t body_len = 4U + ie_len; /* optional 4-octet header block (S=1) + IEs */
+  const size_t len = 8U + body_len; /* mandatory 8-octet header + body */
+  uint8_t *p = buf;
+  *p++ = 0x32; /* Flags: version=1, PT=GTP, S=1 (TS 29.281 clause 5.1) */
+  *p++ = 26; /* Message Type: Error Indication */
+  *p++ = (body_len >> 8) & 0xff; /* Length (network byte order) */
+  *p++ = body_len & 0xff;
+  memset(p, 0, 4); /* TEID = 0 (TS 29.281 clause 5.1) */
+  p += 4;
+  memset(p, 0, 4); /* Optional block: Sequence Number, N-PDU Number, Next Extension Header Type */
+  p += 4;
+  memcpy(p, ie, ie_len); /* TEID-I (TV IE) + GTP-U Peer Address (TLV) */
+
+  gtpv1u_error_indication_t indication = {0};
+  EXPECT_EQ(gtpv1u_decode_error_indication(buf, len, &indication), 0);
+  EXPECT_EQ(indication.teid_i, in.teid_i);
+  EXPECT_EQ(indication.gtpu_peer_address.length, in.gtpu_peer_address.length);
+  EXPECT_EQ(memcmp(indication.gtpu_peer_address.buffer, in.gtpu_peer_address.buffer, in.gtpu_peer_address.length / 8), 0);
+
+  uint8_t ie_rt[32] = {0};
+  const int encoded_rt = gtpv1u_encode_error_indication(&indication, ie_rt, sizeof ie_rt);
+  ASSERT_EQ(encoded_rt, encoded);
+  EXPECT_EQ(memcmp(ie, ie_rt, encoded), 0);
+}
+
 /* ideas for tests:
  * - share IP addresses among two instances (e.g., F1-U/NG-U on same IP/port)
  * - support of IPv6

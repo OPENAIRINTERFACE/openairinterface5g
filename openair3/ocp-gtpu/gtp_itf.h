@@ -156,6 +156,7 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
   } gtpv1u_error_indication_t;
 
   int gtpv1u_decode_error_indication(const uint8_t *msg_buf, uint32_t msg_buf_len, gtpv1u_error_indication_t *out);
+  int gtpv1u_encode_error_indication(const gtpv1u_error_indication_t *indication, uint8_t *msg_buf, uint32_t msg_buf_cap);
 
 #ifdef __cplusplus
 }

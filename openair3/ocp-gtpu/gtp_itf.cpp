@@ -36,6 +36,7 @@ extern "C" {
 #define GTPU_HEADER_OPTIONAL_OCTETS (4) /* Sequence Number, N-PDU Number, Next Extension Header Type */
 /* TS 29.281 clause 8.1: IE Length field is 2 octets */
 #define GTPU_TLV_LENGTH_OCTETS (2)
+#define GTPU_IE_TYPE_OCTETS 1 /* clause 8.1 */
 
 #pragma pack(1)
 
@@ -1068,6 +1069,45 @@ static int gtpv1u_skip_gtpu_tlv_ie(const uint8_t *msg_buf, uint32_t msg_buf_len,
 
   *offset += ie_len;
   return 0;
+}
+
+/** @brief Encode Error Indication IEs (TS 29.281 Table 7.3.1-1)
+ *  @note GTP-U header is built by the caller
+ *  @return IEs length in octets */
+int gtpv1u_encode_error_indication(const gtpv1u_error_indication_t *indication, uint8_t *msg_buf, uint32_t msg_buf_cap)
+{
+  DevAssert(msg_buf);
+  DevAssert(indication);
+
+  if (indication->teid_i == 0)
+    return GTPNOK;
+
+  const uint16_t addr_octets = indication->gtpu_peer_address.length / 8;
+  if (addr_octets != GTPU_PEER_ADDRESS_IPV4_OCTETS && addr_octets != GTPU_PEER_ADDRESS_IPV6_OCTETS)
+    return GTPNOK;
+
+  /* TEID-I TV + Peer Address TLV */
+  const uint32_t ie_len = (GTPU_IE_TYPE_OCTETS + GTPU_TEID_I_VALUE_OCTETS)
+                          + (GTPU_IE_TYPE_OCTETS + GTPU_TLV_LENGTH_OCTETS + addr_octets);
+  if (msg_buf_cap < ie_len)
+    return GTPNOK;
+
+  uint8_t *p = msg_buf;
+
+  /* TEID-I (TV IE: Type + 4-octet value, no Length field) */
+  *p++ = GTPU_TEID_I;
+  const uint32_t teid_be = htonl(indication->teid_i);
+  memcpy(p, &teid_be, GTPU_TEID_I_VALUE_OCTETS);
+  p += GTPU_TEID_I_VALUE_OCTETS;
+
+  /* GTP-U Peer Address (TLV: Type + Length + address octets) */
+  *p++ = GTPU_PEER_ADDRESS;
+  const uint16_t addr_len_be = htons(addr_octets);
+  memcpy(p, &addr_len_be, GTPU_TLV_LENGTH_OCTETS);
+  p += GTPU_TLV_LENGTH_OCTETS;
+  memcpy(p, indication->gtpu_peer_address.buffer, addr_octets);
+
+  return ie_len; /* IEs length in octets */
 }
 
 /** @brief Decode a GTPv1-U Error Indication message (7.3.1, TS 29.281) */
