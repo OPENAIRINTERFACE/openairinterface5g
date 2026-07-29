@@ -2356,7 +2356,8 @@ nfapi_nr_pusch_pdu_t *prepare_pusch_pdu(nfapi_nr_ul_tti_request_t *future_ul_tti
     long *maxMIMO_Layers = UE->sc_info.maxMIMO_Layers_PUSCH;
     if (!maxMIMO_Layers && ul_bwp && ul_bwp->pusch_Config)
       maxMIMO_Layers = ul_bwp->pusch_Config->maxRank;
-    long lbrm_layers = maxMIMO_Layers ? *maxMIMO_Layers : ue_supported_ul_layers(UE->capability);
+    int id = UE->uecap_fs_ids.ul_feature_set_percc_id;
+    long lbrm_layers = maxMIMO_Layers ? *maxMIMO_Layers : ue_supported_ul_layers(UE->capability, id);
     AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
     pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ul_bwp->mcs_table, UE->sc_info.ul_bw_tbslbrm, lbrm_layers);
   }

@@ -826,13 +826,15 @@ int main(int argc, char *argv[])
   rnti_t rnti = 0x1234;
   int uid = 0;
   int ssb_index = 0;
-  NR_CellGroupConfig_t *secondaryCellGroup = get_default_secondaryCellGroup(scc, UE_Capability_nr, 0, 1, &conf, cell, uid, ssb_index);
-  secondaryCellGroup->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(rnti, uid, scc, frame);
+  const NR_feature_set_ids_t uecap_fs_ids = {.dl_feature_set_percc_id = 1,
+                                             .ul_feature_set_percc_id = 1};
+  NR_CellGroupConfig_t *scg = get_default_secondaryCellGroup(scc, UE_Capability_nr, &uecap_fs_ids, 0, 1, &conf, cell, uid, ssb_index);
+  scg->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(rnti, uid, scc, frame);
 
   NR_BCCH_BCH_Message_t *mib = get_new_MIB_NR(scc);
 
   // UE dedicated configuration
-  nr_mac_add_test_ue(nrmac, cell, rnti, secondaryCellGroup);
+  nr_mac_add_test_ue(nrmac, cell, rnti, scg);
   gNB->frame_parms.nb_antennas_tx = 1;
   gNB->frame_parms.nb_antennas_rx = n_rx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -856,7 +858,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < n_rx; ++i)
     rxdata[i] = calloc_or_fail(gNB->frame_parms.samples_per_frame, sizeof(**rxdata));
 
-  NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
+  NR_BWP_Uplink_t *ubwp = scg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
 
   // Configure channel model
   UE2gNB = new_channel_desc_scm(n_tx,

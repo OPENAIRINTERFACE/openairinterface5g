@@ -23,6 +23,7 @@
 /* MAC */
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "LAYER2/NR_MAC_COMMON/ue_capability_handler.h"
 #include "mac_defs_sl.h"
 
 /* RRC */
@@ -573,6 +574,7 @@ typedef struct NR_UE_MAC_INST_s {
   uint32_t uecap_maxMIMO_PDSCH_layers;
   uint32_t uecap_maxMIMO_PUSCH_layers_cb;
   uint32_t uecap_maxMIMO_PUSCH_layers_nocb;
+  NR_feature_set_ids_t uecap_fs_ids;
 
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon;

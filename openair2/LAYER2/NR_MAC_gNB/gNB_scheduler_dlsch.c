@@ -1298,7 +1298,7 @@ void post_process_dlsch(gNB_MAC_INST *nr_mac,
   // TODO: verify the case where maxMIMO_Layers is NULL, in which case
   //       in principle maxMIMO_layers should be given by the maximum number of layers
   //       for PDSCH supported by the UE for the serving cell (5.4.2.1 of 38.212)
-  long ue_supp_nl = ue_supported_dl_layers(scc, UE->capability);
+  long ue_supp_nl = ue_supported_dl_layers(scc, UE->capability, UE->uecap_fs_ids.dl_feature_set_percc_id);
   long maxMIMO_Layers = UE->sc_info.maxMIMO_Layers_PDSCH ? *UE->sc_info.maxMIMO_Layers_PDSCH : ue_supp_nl;
   if (maxMIMO_Layers < 1) {
     LOG_D(NR_MAC, "Both maxMIMO_Layers_PDSCH and UE supported layers are not present, defaulting to 1\n");

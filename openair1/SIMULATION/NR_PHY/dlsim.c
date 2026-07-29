@@ -848,9 +848,11 @@ int main(int argc, char **argv)
   rnti_t rnti = 0x1234;
   int uid = 0;
   int ssb_index = 0;
-  NR_CellGroupConfig_t *secondaryCellGroup = get_default_secondaryCellGroup(scc, UE_Capability_nr, 0, 1, &conf, cell, uid, ssb_index);
-  secondaryCellGroup->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(rnti, uid, scc, frame);
-  NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
+  const NR_feature_set_ids_t uecap_fs_ids = {.dl_feature_set_percc_id = 1,
+                                             .ul_feature_set_percc_id = 1};
+  NR_CellGroupConfig_t *scg = get_default_secondaryCellGroup(scc, UE_Capability_nr, &uecap_fs_ids, 0, 1, &conf, cell, uid, ssb_index);
+  scg->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(rnti, uid, scc, frame);
+  NR_BWP_Downlink_t *bwp = scg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
 
   if (alloc_type == PDSCH_TYPE0) {
     bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation = NR_PDSCH_Config__resourceAllocation_resourceAllocationType0;
@@ -876,14 +878,14 @@ int main(int argc, char **argv)
   }
 
   // UE dedicated configuration
-  nr_mac_add_test_ue(RC.nrmac[0], cell, rnti, secondaryCellGroup);
+  nr_mac_add_test_ue(gNB_mac, cell, rnti, scg);
   // reset preprocessor to the one of DLSIM after it has been set during
   // nr_mac_config_scc()
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   phy_init_nr_gNB(gNB);
   gNB->num_pdsch_symbols_per_thread = num_pdsch_symbols_per_thread;
   N_RB_DL = gNB->frame_parms.N_RB_DL;
-  NR_UE_info_t *UE_info = RC.nrmac[0]->UE_info.connected_ue_list[0];
+  NR_UE_info_t *UE_info = gNB_mac->UE_info.connected_ue_list[0];
 
   configure_UE_BWP(cell, scc, UE_info, false, NR_SearchSpace__searchSpaceType_PR_ue_Specific, -1, -1);
 
@@ -997,7 +999,7 @@ int main(int argc, char **argv)
   AssertFatal(input_fd==NULL,"Not ready for input signal file\n");
 
   // clone CellGroup to have a separate copy at UE
-  NR_CellGroupConfig_t *UE_CellGroup = clone_CellGroupConfig(secondaryCellGroup);
+  NR_CellGroupConfig_t *UE_CellGroup = clone_CellGroupConfig(scg);
 
   //Configure UE
   NR_BCCH_BCH_Message_t *mib = get_new_MIB_NR(scc);

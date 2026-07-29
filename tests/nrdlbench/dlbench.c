@@ -408,7 +408,8 @@ int main(int argc, char **argv)
   printf("Creating %d test UEs...\n", num_ues);
   for (int u = 0; u < num_ues; u++) {
     rnti_t rnti = 0x1234 + u;
-    NR_CellGroupConfig_t *cg = get_default_secondaryCellGroup(scc, NULL, 0, 1, &conf, cell, u, 0);
+    NR_feature_set_ids_t ids = {0};
+    NR_CellGroupConfig_t *cg = get_default_secondaryCellGroup(scc, NULL, &ids, 0, 1, &conf, cell, u, 0);
     cg->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(rnti, u, scc, 0);
 
     /* Add DRB 1 to CellGroup so nr_mac_add_test_ue registers LCID 4. Default is
