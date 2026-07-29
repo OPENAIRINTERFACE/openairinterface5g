@@ -70,6 +70,10 @@ static bool get_ids_from_fs_combination(const NR_UE_NR_Capability_t *cap, long f
 NR_feature_set_ids_t get_feature_set_ids(const NR_UE_NR_Capability_t *cap, int band, nr_rat_type_t type)
 {
   NR_feature_set_ids_t ids = {0};
+  if (!cap) {
+    LOG_W(NR_MAC, "Cannot handle feature set IDs without UE capabilities\n");
+    return ids;
+  }
   NR_BandCombinationList_t *bcl = cap->rf_Parameters.supportedBandCombinationList;
   if (!bcl || !cap->featureSetCombinations || !cap->featureSets)
     return ids;
@@ -83,12 +87,10 @@ NR_feature_set_ids_t get_feature_set_ids(const NR_UE_NR_Capability_t *cap, int b
           const NR_BandParameters_t *bp = bc->bandList.list.array[j];
           if (bp->present != NR_BandParameters_PR_nr || !bp->choice.nr || bp->choice.nr->bandNR != band)
             continue;
-
           bool dl_present_here = (bp->choice.nr->ca_BandwidthClassDL_NR != NULL);
           bool ul_present_here = (bp->choice.nr->ca_BandwidthClassUL_NR != NULL);
           if (!dl_present_here || !ul_present_here)
             continue; /* needs both DL UL on this CC; this position doesn't have it */
-
           if (get_ids_from_fs_combination(cap, bc->featureSetCombination, j, &ids))
             return ids;
         }
