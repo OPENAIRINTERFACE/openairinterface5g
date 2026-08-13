@@ -347,19 +347,48 @@ uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc)
   return bitmap;
 }
 
+typedef enum {
+  CSI_RS,
+  CSI_MEASUREMENTS,
+  SRS
+} nr_periodic_channel_t;
+
 static bool check_periodicity(int val, int ideal_period, const frame_structure_t *fs)
 {
   bool valid_periodicity_for_tdd_period = fs->frame_type == FDD ? true : (val % fs->numb_slots_period == 0);
   return (ideal_period < val + 1) && valid_periodicity_for_tdd_period;
 }
 
-static int set_ideal_period(const nr_cell_sched_t *cell, bool is_csi)
+static int set_ideal_period(const nr_cell_sched_t *cell, nr_periodic_channel_t channel_type)
 {
   const frame_structure_t *fs = &cell->frame_structure;
   const int nb_slots_per_period = fs->numb_slots_period;
   const int n_ul_slots_per_period = get_ul_slots_per_period(fs); // full UL + mixed with UL symbols
   // 2 reports per UE (RSRP and RI-PMI-CQI)
-  return is_csi ? MAX_MOBILES_PER_GNB * 2 * nb_slots_per_period / n_ul_slots_per_period : nb_slots_per_period * MAX_MOBILES_PER_GNB;
+  switch (channel_type) {
+    case SRS: {
+      int srs_periodicities[17] = {1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 64, 80, 160, 320, 640, 1280, 2560};
+      int srs_ideal_period = nb_slots_per_period * MAX_MOBILES_PER_GNB;
+      for (int i = 0; i < 17; i++) {
+        if (check_periodicity(srs_periodicities[i], srs_ideal_period, fs))
+          return srs_periodicities[i];
+      }
+      break;
+    }
+    case CSI_RS:
+    case CSI_MEASUREMENTS: {
+      int csi_periodicities[10] = {4, 5, 8, 10, 16, 20, 40, 80, 160, 320};
+      int csi_ideal_period = MAX_MOBILES_PER_GNB * 2 * nb_slots_per_period / n_ul_slots_per_period;
+      for (int i = 0; i < 10; i++) {
+        if (check_periodicity(csi_periodicities[i], csi_ideal_period, fs))
+          return csi_periodicities[i];
+      }
+      break;
+    }
+    default:
+      AssertFatal(false, "Invalid periodic channel type");
+  }
+  return 0;
 }
 
 static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0,
@@ -370,49 +399,41 @@ static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0,
   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
   // TODO ideal period to be set according to estimation by the gNB on how fast the channel changes
   AssertFatal(offset < ideal_period, "CSI-RS offset %d goes beyond the assumed period %d\n", offset, ideal_period);
-  if (check_periodicity(4, ideal_period, fs)) {
+  if (ideal_period == 4) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots4;
     nzpcsi0->periodicityAndOffset->choice.slots4 = offset;
-  }
-  else if (check_periodicity(5, ideal_period, fs)) {
+  } else if (ideal_period == 5) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots5;
     nzpcsi0->periodicityAndOffset->choice.slots5 = offset;
-  }
-  else if (check_periodicity(8, ideal_period, fs)) {
+  } else if (ideal_period == 8) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots8;
     nzpcsi0->periodicityAndOffset->choice.slots8 = offset;
-  }
-  else if (check_periodicity(10, ideal_period, fs)) {
+  } else if (ideal_period == 10) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots10;
     nzpcsi0->periodicityAndOffset->choice.slots10 = offset;
-  }
-  else if (check_periodicity(16, ideal_period, fs)) {
+  } else if (ideal_period == 16) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots16;
     nzpcsi0->periodicityAndOffset->choice.slots16 = offset;
-  }
-  else if (check_periodicity(20, ideal_period, fs)) {
+  } else if (ideal_period == 20) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots20;
     nzpcsi0->periodicityAndOffset->choice.slots20 = offset;
-  }
-  else if (check_periodicity(40, ideal_period, fs)) {
+  } else if (ideal_period == 40) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots40;
     nzpcsi0->periodicityAndOffset->choice.slots40 = offset;
-  }
-  else if (check_periodicity(80, ideal_period, fs)) {
+  } else if (ideal_period == 80) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots80;
     nzpcsi0->periodicityAndOffset->choice.slots80 = offset;
-  }
-  else if (check_periodicity(160, ideal_period, fs)) {
+  } else if (ideal_period == 160) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots160;
     nzpcsi0->periodicityAndOffset->choice.slots160 = offset;
-  }
-  else {
+  } else if (ideal_period == 320) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
     const int nb_dl_slots_period = get_full_dl_slots_per_period(fs); // full DL slots
     // checked for validity in verify_radio_configuration
     AssertFatal(offset / 320 < nb_dl_slots_period, "Cannot allocate CSI-RS for BWP %d. Not enough resources for CSI-RS\n", offset);
     nzpcsi0->periodicityAndOffset->choice.slots320 = (offset % 320) + (offset / 320);
-  }
+  } else
+    AssertFatal(false, "Invalid CSIRS period %d\n", ideal_period);
 }
 
 static NR_NZP_CSI_RS_Resource_t *get_nzp_csi_rs_resource(int id,
@@ -488,7 +509,7 @@ static NR_NZP_CSI_RS_Resource_t *get_nzp_csi_rs_resource(int id,
   nzpcsi->powerControlOffsetSS = calloc(1, sizeof(*nzpcsi->powerControlOffsetSS));
   *nzpcsi->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
   nzpcsi->scramblingID = scramblingID;
-  const int ideal_period = set_ideal_period(cell, true); // same periodicity as CSI measurement report
+  const int ideal_period = set_ideal_period(cell, CSI_RS); // same periodicity as CSI measurement report
   const frame_structure_t *fs = &cell->frame_structure;
   set_csirs_periodicity(nzpcsi, id, ideal_period, fs);
   nzpcsi->qcl_InfoPeriodicCSI_RS = calloc(1, sizeof(*nzpcsi->qcl_InfoPeriodicCSI_RS));
@@ -678,69 +699,56 @@ static struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(co
   int offset = get_ul_slot_offset(fs, uid, false); // only full UL slots for SRS
   // checked for validity in verify_radio_configuration
   AssertFatal(offset < 2560, "Cannot allocate SRS configuration for uid %d, not enough resources\n", uid);
-  const int ideal_period = set_ideal_period(cell,false);
+  const int ideal_period = set_ideal_period(cell, SRS);
 
   struct NR_SRS_Resource__resourceType__periodic *periodic_srs = calloc(1,sizeof(*periodic_srs));
-  if (check_periodicity(4, ideal_period, fs)) {
+  if (ideal_period == 4) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl4;
     periodic_srs->periodicityAndOffset_p.choice.sl4 = offset;
-  }
-  else if (check_periodicity(5, ideal_period, fs)) {
+  } else if (ideal_period == 5) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl5;
     periodic_srs->periodicityAndOffset_p.choice.sl5 = offset;
-  }
-  else if (check_periodicity(8, ideal_period, fs)) {
+  } else if (ideal_period == 8) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl8;
     periodic_srs->periodicityAndOffset_p.choice.sl8 = offset;
-  }
-  else if (check_periodicity(10, ideal_period, fs)) {
+  } else if (ideal_period == 10) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl10;
     periodic_srs->periodicityAndOffset_p.choice.sl10 = offset;
-  }
-  else if (check_periodicity(16, ideal_period, fs)) {
+  } else if (ideal_period == 16) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl16;
     periodic_srs->periodicityAndOffset_p.choice.sl16 = offset;
-  }
-  else if (check_periodicity(20, ideal_period, fs)) {
+  } else if (ideal_period == 20) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl20;
     periodic_srs->periodicityAndOffset_p.choice.sl20 = offset;
-  }
-  else if (check_periodicity(32, ideal_period, fs)) {
+  } else if (ideal_period == 32) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl32;
     periodic_srs->periodicityAndOffset_p.choice.sl32 = offset;
-  }
-  else if (check_periodicity(40, ideal_period, fs)) {
+  } else if (ideal_period == 40) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl40;
     periodic_srs->periodicityAndOffset_p.choice.sl40 = offset;
-  }
-  else if (check_periodicity(64, ideal_period, fs)) {
+  } else if (ideal_period == 64) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl64;
     periodic_srs->periodicityAndOffset_p.choice.sl64 = offset;
-  }
-  else if (check_periodicity(80, ideal_period, fs)) {
+  } else if (ideal_period == 80) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl80;
     periodic_srs->periodicityAndOffset_p.choice.sl80 = offset;
-  }
-  else if (check_periodicity(160, ideal_period, fs)) {
+  } else if (ideal_period == 160) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
     periodic_srs->periodicityAndOffset_p.choice.sl160 = offset;
-  }
-  else if (check_periodicity(320, ideal_period, fs)) {
+  } else if (ideal_period == 320) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl320;
     periodic_srs->periodicityAndOffset_p.choice.sl320 = offset;
-  }
-  else if (check_periodicity(640, ideal_period, fs)) {
+  } else if (ideal_period == 640) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl640;
     periodic_srs->periodicityAndOffset_p.choice.sl640 = offset;
-  }
-  else if (check_periodicity(1280, ideal_period, fs)) {
+  } else if (ideal_period == 1280) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl1280;
     periodic_srs->periodicityAndOffset_p.choice.sl1280 = offset;
-  }
-  else {
+  } else if (ideal_period == 2560) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl2560;
     periodic_srs->periodicityAndOffset_p.choice.sl2560 = offset;
-  }
+  } else
+    AssertFatal(false, "Invalid SRS periodicity %d\n", ideal_period);
   return periodic_srs;
 }
 
@@ -1976,7 +1984,7 @@ static void set_csi_meas_periodicity(const nr_cell_sched_t *cell,
                                      const nr_pdsch_AntennaPorts_t *antennaports,
                                      bool is_rsrp)
 {
-  const int ideal_period = set_ideal_period(cell, true);
+  const int ideal_period = set_ideal_period(cell, CSI_MEASUREMENTS);
   const int num_pucch2 = get_nb_pucch2_per_slot(scc, curr_bwp, antennaports);
   const int idx = (uid * 2 / num_pucch2) + is_rsrp;
   const frame_structure_t *fs = &cell->frame_structure;
@@ -1984,37 +1992,38 @@ static void set_csi_meas_periodicity(const nr_cell_sched_t *cell,
   LOG_D(NR_MAC, "set_csi_meas_periodicity: uid = %d, offset = %d, ideal_period = %d", uid, offset, ideal_period);
   // checked for validity in verify_radio_configuration
   AssertFatal(offset < 320, "Not enough UL slots to accomodate all possible UEs. Need to rework the implementation\n");
-  if (check_periodicity(4, ideal_period, fs)) {
+  if (ideal_period == 4) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots4;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots4 = offset;
-  } else if (check_periodicity(5, ideal_period, fs)) {
+  } else if (ideal_period == 5) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots5;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots5 = offset;
-  } else if (check_periodicity(8, ideal_period, fs)) {
+  } else if (ideal_period == 8) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots8;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots8 = offset;
-  } else if (check_periodicity(10, ideal_period, fs)) {
+  } else if (ideal_period == 10) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots10;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots10 = offset;
-  } else if (check_periodicity(16, ideal_period, fs)) {
+  } else if (ideal_period == 16) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots16;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots16 = offset;
-  } else if (check_periodicity(20, ideal_period, fs)) {
+  } else if (ideal_period == 20) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots20;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots20 = offset;
-  } else if (check_periodicity(40, ideal_period, fs)) {
+  } else if (ideal_period == 40) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots40;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots40 = offset;
-  } else if (check_periodicity(80, ideal_period, fs)) {
+  } else if (ideal_period == 80) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots80;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots80 = offset;
-  } else if (check_periodicity(160, ideal_period, fs)) {
+  } else if (ideal_period == 160) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots160;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots160 = offset;
-  } else {
+  } else if (ideal_period == 320) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
     csirep->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = offset;
-  }
+  } else
+    AssertFatal(false, "Invalid CSI measurements periodicity %d\n", ideal_period);
 }
 
 static NR_CodebookConfig_t *config_csi_codebook(const nr_pdsch_AntennaPorts_t *antennaports, const int max_layers)
