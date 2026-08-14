@@ -2875,6 +2875,46 @@ void reset_sc_info(NR_UE_ServingCell_Info_t *sc_info)
   sc_info->nrofHARQ_ProcessesForPUSCH_r17 = NULL;
 }
 
+static NR_sched_srs_t configure_sched_srs(const nr_cell_sched_t *cell, const NR_SRS_Config_t *srs_config, NR_sched_srs_t sched_srs)
+{
+  nr_srs_type_t srs_type = cell->radio_config.do_SRS;
+  NR_SRS_ResourceSet__resourceType_PR set_type = srs_type == PERIODIC_SRS ?
+                                                 NR_SRS_ResourceSet__resourceType_PR_periodic :
+                                                 NR_SRS_ResourceSet__resourceType_PR_aperiodic;
+
+  NR_SRS_ResourceSet_t *srs_resource_set = NULL;
+  for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
+    // Find resource set
+    if (srs_config->srs_ResourceSetToAddModList->list.array[rs]->resourceType.present == set_type) {
+      srs_resource_set = srs_config->srs_ResourceSetToAddModList->list.array[rs];
+      break;
+    }
+  }
+  AssertFatal(srs_resource_set, "Couldn't find %s SRS resource set\n", srs_type == PERIODIC_SRS ? "periodic" : "aperiodic");
+  sched_srs.usage = srs_resource_set->usage;
+  if (srs_type == APERIODIC_SRS) {
+    sched_srs.aperiodic_slotOffset = srs_resource_set->resourceType.choice.aperiodic->slotOffset;
+    sched_srs.aperiodic_ResourceTrigger = srs_resource_set->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger;
+  }
+
+  NR_SRS_Resource__resourceType_PR res_type = srs_type == PERIODIC_SRS ?
+                                              NR_SRS_Resource__resourceType_PR_periodic :
+                                              NR_SRS_Resource__resourceType_PR_aperiodic;
+
+  NR_SRS_Resource_t *srs_resource = NULL;
+  for (int r1 = 0; r1 < srs_resource_set->srs_ResourceIdList->list.count; r1++) {
+    for (int r2 = 0; r2 < srs_config->srs_ResourceToAddModList->list.count; r2++) {
+      if ((*srs_resource_set->srs_ResourceIdList->list.array[r1] ==
+          srs_config->srs_ResourceToAddModList->list.array[r2]->srs_ResourceId) &&
+          (srs_config->srs_ResourceToAddModList->list.array[r2]->resourceType.present == res_type))
+        srs_resource = srs_config->srs_ResourceToAddModList->list.array[r2];
+    }
+  }
+  AssertFatal(srs_resource, "Couldn't find %s SRS resource\n", srs_type == PERIODIC_SRS ? "periodic" : "aperiodic");
+  sched_srs.srs_resource = srs_resource;
+  return sched_srs;
+}
+
 // main function to configure parameters of current BWP
 void configure_UE_BWP(nr_cell_sched_t *cell,
                       NR_ServingCellConfigCommon_t *scc,
@@ -2955,6 +2995,9 @@ void configure_UE_BWP(nr_cell_sched_t *cell,
     UL_BWP->configuredGrantConfig = NULL;
   }
 
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  sched_ctrl->sched_srs = configure_sched_srs(cell, UL_BWP->srs_Config, sched_ctrl->sched_srs);
+
   // TDA lists
   if (DL_BWP->bwp_id > 0)
     DL_BWP->tdaList_Common = dl_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
@@ -3020,7 +3063,6 @@ void configure_UE_BWP(nr_cell_sched_t *cell,
   if (old_ul_bwp_id != UL_BWP->bwp_id)
     LOG_I(NR_MAC, "Switching to UL-BWP %li\n", UL_BWP->bwp_id);
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   // Reset required fields in sched_ctrl (e.g. ul_ri and tpmi)
   reset_sched_ctrl(sched_ctrl);
   if(!is_RA) {
@@ -3259,8 +3301,8 @@ bool add_connected_nr_ue(gNB_MAC_INST *nr_mac, NR_UE_info_t *UE)
   sched_ctrl->dl_max_mcs = 28; /* do not limit MCS for individual UEs */
   sched_ctrl->pdcch_cl_adjust = 0;
   if (UE->pcell->radio_config.do_SRS == APERIODIC_SRS) {
-    nr_timer_setup(&sched_ctrl->aperiodic_srs_trigger, 160, 1); // for now aperiodic hardcoded every 160 slots
-    nr_timer_start(&sched_ctrl->aperiodic_srs_trigger);
+    nr_timer_setup(&sched_ctrl->sched_srs.aperiodic_srs_timer, 160, 1); // for now aperiodic hardcoded every 160 slots
+    nr_timer_start(&sched_ctrl->sched_srs.aperiodic_srs_timer);
   }
   reset_srs_stats(UE);
 
@@ -3878,7 +3920,7 @@ void nr_mac_update_timers(gNB_MAC_INST *mac, nr_cell_sched_t *cell)
       nr_timer_stop(&sched_ctrl->tci_beam_switch);
       beam_switching_procedure(mac, cell, UE, sched_ctrl->UE_mac_ce_ctrl.tci_state_ind.tciStateId);
     }
-    nr_timer_tick(&sched_ctrl->aperiodic_srs_trigger);
+    nr_timer_tick(&sched_ctrl->sched_srs.aperiodic_srs_timer);
   }
 }
 

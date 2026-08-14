@@ -645,6 +645,14 @@ typedef struct nr_power_control {
   float tpc_in_flight; /// TPCs applied by UE but not yet in average SNR
 } nr_power_control_t;
 
+typedef struct {
+  long usage;
+  NR_SRS_Resource_t *srs_resource;
+  long *aperiodic_slotOffset;
+  long aperiodic_ResourceTrigger;
+  NR_timer_t aperiodic_srs_timer;
+} NR_sched_srs_t;
+
 /*! \brief scheduling control information set through an API */
 typedef struct {
   /// CCE index and aggregation, should be coherent with cce_list
@@ -728,9 +736,9 @@ typedef struct {
   /// "TransmissionActionIndicator" handling
   NR_timer_t transm_timeout;
 
+  NR_sched_srs_t sched_srs;
   /// sri, ul_ri and tpmi based on SRS
   nr_srs_feedback_t srs_feedback;
-  NR_timer_t aperiodic_srs_trigger;
 
   /// per-LC configuration
   seq_arr_t lc_config;
