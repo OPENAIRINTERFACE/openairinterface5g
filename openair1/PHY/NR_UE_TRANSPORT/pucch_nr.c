@@ -17,6 +17,8 @@
 #include "common/utils/LOG/log.h"
 #include "bits.h"
 #include "openair1/PHY/NR_REFSIG/nr_refsig.h"
+#include "PHY/MODULATION/nr_modulation.h"
+#include "nr_sequences_tables.h"
 
 #include "T.h"
 //#define NR_UNIT_TEST 1

@@ -18,6 +18,7 @@
 #include "PHY/phy_extern.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/nr_phy_common/inc/nr_phy_common.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/sse_intrin.h"
 #include "common/utils/nr/nr_common.h"
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>

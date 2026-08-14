@@ -2,9 +2,11 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-#include "PHY/nr_phy_common/inc/nr_phy_common.h"
+#include "PHY/nr_phy_common/inc/nr_phy_common_srs.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include "PHY/TOOLS/tools_defs.h"
+#include "log.h"
 
 #define SRS_PERIODICITY                 (17)
 static const uint16_t srs_periodicity[SRS_PERIODICITY] = {1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 64, 80, 160, 320, 640, 1280, 2560};

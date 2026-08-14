@@ -32,6 +32,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "executables/softmodem-common.h"
 #include "openair1/PHY/phy_vars_nr_ue.h"
+#include "PHY/nr_phy_common/inc/nr_sequences_tables.h"
 
 THREAD_STRUCT thread_struct;
 PHY_VARS_gNB *gNB;

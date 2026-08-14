@@ -22,6 +22,7 @@
 #include "common/utils/threadPool/notified_fifo.h"
 #include "position_interface.h"
 #include "nr_phy_common.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "common/utils/time_manager/time_manager.h"
 #include "log.h"
 
