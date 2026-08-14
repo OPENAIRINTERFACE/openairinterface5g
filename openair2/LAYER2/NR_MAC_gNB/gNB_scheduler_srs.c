@@ -593,53 +593,39 @@ static bool nr_fill_nfapi_srs(gNB_MAC_INST *nrmac,
 *
 *********************************************************************/
 void nr_schedule_periodic_srs(gNB_MAC_INST *nrmac, nr_cell_sched_t *cell, frame_t frame, int slot)
-{
+ {
+  if (!cell->periodic_srs_config.list)
+    return;
 
-  NR_UEs_t *UE_info = &nrmac->UE_info;
-
-  UE_iterator(UE_info->connected_ue_list, UE) {
-    if (UE->pcell != cell)
+  // we are scheduling SRS max_k2 slot in advance for the presence of SRS to be taken into account when scheduling PUSCH
+  const int n_slots_frame = cell->frame_structure.numb_slots_frame;
+  const int n_ahead = n_slots_frame - 1 + get_NTN_Koffset(cell->common_channels.ServingCellConfigCommon);
+  const int sched_slot = (slot + n_ahead) % n_slots_frame;
+  const int sched_frame = (frame + (slot + n_ahead) / n_slots_frame) % MAX_FRAME_NUMBER;
+  int abs_slot = sched_frame * n_slots_frame + sched_slot;
+  int idx = get_ul_period_idx_from_abs_slot(&cell->frame_structure, abs_slot, false, cell->periodic_srs_config.max_period);
+  if (idx < 0) // Not an UL slot
+    return;
+  for (int i = 0; i < cell->periodic_srs_config.max_ue_per_slot; i++) {
+    NR_UE_info_t *UE = *get_periodic_ue(&cell->periodic_srs_config, idx, i);
+    if (!UE || (!nr_mac_ue_is_active(UE) && !get_softmodem_params()->phy_test))
       continue;
-    NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
-
-    if (!nr_mac_ue_is_active(UE) && !get_softmodem_params()->phy_test) {
+    if (!UE->UE_sched_ctrl.sched_srs.srs_resource) // SRS resource not configured
       continue;
-    }
-
-    NR_SRS_Config_t *srs_config = current_BWP->srs_Config;
-    if (!srs_config)
-      continue;
-
-    NR_sched_srs_t *srs = &UE->UE_sched_ctrl.sched_srs;
-    if (!srs->srs_resource) // SRS resource not configured
-      continue;
-
-    // we are scheduling SRS max_k2 slot in advance for the presence of SRS to be taken into account when scheduling PUSCH
-    const int n_slots_frame = cell->frame_structure.numb_slots_frame;
-    const int n_ahead = n_slots_frame - 1 + get_NTN_Koffset(cell->common_channels.ServingCellConfigCommon);
-    const int sched_slot = (slot + n_ahead) % n_slots_frame;
-    const int sched_frame = (frame + (slot + n_ahead) / n_slots_frame) % MAX_FRAME_NUMBER;
-
-    const uint16_t period = srs_period[srs->srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
-    const uint16_t offset = get_nr_srs_offset(srs->srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
-
-    // Check if UE will transmit the SRS in this frame
-    if ((sched_frame * n_slots_frame + sched_slot - offset) % period != 0)
-      continue;
-    bool ret = nr_fill_nfapi_srs(nrmac, cell, UE, sched_frame, sched_slot, srs);
+    bool ret = nr_fill_nfapi_srs(nrmac, cell, UE, sched_frame, sched_slot, &UE->UE_sched_ctrl.sched_srs);
     AssertFatal(ret, "Cannot allocate periodic SRS\n");
     LOG_D(NR_MAC," %d.%d Scheduling SRS reception for %d.%d\n", frame, slot, sched_frame, sched_slot);
   }
 }
 
-bool nr_schedule_aperiodic_srs(gNB_MAC_INST *nrmac,nr_cell_sched_t *cell, NR_UE_info_t *UE, int sched_frame, int sched_slot, int k2, int sched_srs)
+bool nr_schedule_aperiodic_srs(gNB_MAC_INST *nrmac, nr_cell_sched_t *cell, NR_UE_info_t *UE, int sched_frame, int sched_slot, int k2, int sched_srs)
 {
   NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
   NR_SRS_Config_t *srs_config = current_BWP->srs_Config;
   AssertFatal(srs_config, "Attempting to schedule aperiodic SRS without SRS configuration\n");
 
   NR_sched_srs_t *srs = &UE->UE_sched_ctrl.sched_srs;
-  int offset = srs->aperiodic_slotOffset ? *srs->aperiodic_slotOffset : 0;
+  int offset = srs->aperiodic_sched.aperiodic_slotOffset ? *srs->aperiodic_sched.aperiodic_slotOffset : 0;
   if (offset != k2) {
     LOG_E(NR_MAC, "Aperiodic SRS offset %d for trigger state %d doesn't match with K2 %d\n", offset, sched_srs, k2);
     return false;
@@ -647,6 +633,6 @@ bool nr_schedule_aperiodic_srs(gNB_MAC_INST *nrmac,nr_cell_sched_t *cell, NR_UE_
   if (!nr_fill_nfapi_srs(nrmac, cell, UE, sched_frame, sched_slot, srs))
     return false;
   LOG_D(NR_MAC,"Scheduling aperiodic SRS reception for %d.%d\n", sched_frame, sched_slot);
-  nr_timer_start(&srs->aperiodic_srs_timer);  // restart the timer, we are scheduling aperiodic SRS
+  nr_timer_start(&srs->aperiodic_sched.aperiodic_srs_timer);  // restart the timer, we are scheduling aperiodic SRS
   return true;
 }

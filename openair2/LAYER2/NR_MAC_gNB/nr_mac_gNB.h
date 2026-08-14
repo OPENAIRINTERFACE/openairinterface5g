@@ -652,11 +652,22 @@ typedef struct nr_power_control {
 } nr_power_control_t;
 
 typedef struct {
-  long usage;
-  NR_SRS_Resource_t *srs_resource;
   long *aperiodic_slotOffset;
   long aperiodic_ResourceTrigger;
   NR_timer_t aperiodic_srs_timer;
+} NR_sched_aperiodic_srs_t;
+
+typedef struct {
+  int periodic_offset;
+} NR_sched_periodic_srs_t;
+
+typedef struct {
+  long usage;
+  NR_SRS_Resource_t *srs_resource;
+  union {
+    NR_sched_aperiodic_srs_t aperiodic_sched;
+    NR_sched_periodic_srs_t periodic_sched;
+  };
 } NR_sched_srs_t;
 
 /*! \brief scheduling control information set through an API */
@@ -1313,6 +1324,7 @@ typedef struct nr_cell_sched_s {
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[MAX_NUM_OF_SSB];
   bool first_MIB;
   NR_sched_pdsch_t sib1_pdsch[MAX_NUM_OF_SSB];
+  periodic_ue_sched_t periodic_srs_config;
 
   /// Dedicated UL TDA list, built from frame_structure at config time
   seq_arr_t ul_tda;

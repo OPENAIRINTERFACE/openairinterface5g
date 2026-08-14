@@ -762,7 +762,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     UE = get_new_nr_ue_inst(&nr_mac->UE_info.uid_allocator, rnti, NULL, cell);
     if (!add_new_UE_RA(nr_mac, UE)) {
       LOG_E(NR_MAC, "FAILURE: %4d.%2d initiating RA procedure for preamble index %d: no free RA process\n", frame, slot, preamble_index);
-      delete_nr_ue_data(UE, &nr_mac->UE_info.uid_allocator);
+      delete_nr_ue_data(nr_mac, UE);
       NR_SCHED_UNLOCK(&nr_mac->sched_lock);
       return;
     }
@@ -2186,7 +2186,7 @@ void nr_release_ra_UE(gNB_MAC_INST *mac, rnti_t rnti)
   NR_UEs_t *UE_info = &mac->UE_info;
   NR_UE_info_t *UE = remove_UE_from_list(NR_NB_RA_PROC_MAX, UE_info->access_ue_list, rnti);
   if (UE) {
-    delete_nr_ue_data(UE, &UE_info->uid_allocator);
+    delete_nr_ue_data(mac, UE);
   } else {
     LOG_W(NR_MAC,"Call to release RA UE with rnti %04x, but not existing\n", rnti);
   }
