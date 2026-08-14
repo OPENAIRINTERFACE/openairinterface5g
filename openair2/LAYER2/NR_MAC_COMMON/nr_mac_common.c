@@ -2342,8 +2342,8 @@ uint8_t get_K_ptrs(uint32_t nrb0, uint32_t nrb1, uint32_t N_RB)
 *
 *********************************************************************/
 
-uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset) {
-
+int get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset)
+{
   switch(periodicityAndOffset.present) {
     case NR_SRS_PeriodicityAndOffset_PR_sl1:
       return periodicityAndOffset.choice.sl1;
@@ -2380,10 +2380,11 @@ uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset) {
     case NR_SRS_PeriodicityAndOffset_PR_sl2560:
       return periodicityAndOffset.choice.sl2560;
     case NR_SRS_PeriodicityAndOffset_PR_NOTHING:
-      LOG_W(NR_MAC,"NR_SRS_PeriodicityAndOffset_PR_NOTHING\n");
-      return 0;
+      LOG_E(NR_MAC,"NR_SRS_PeriodicityAndOffset_PR_NOTHING\n");
+      return -1;
     default:
-      return 0;
+      LOG_E(NR_MAC, "Invalid SRS periodicityAndOffset\n");
+      return -1;
   }
 }
 

@@ -491,7 +491,9 @@ static void nr_configure_srs(gNB_MAC_INST *nrmac,
   srs_pdu->resource_type = srs_resource->resourceType.present - 1;
   if (srs_resource->resourceType.present == NR_SRS_Resource__resourceType_PR_periodic) {
     srs_pdu->t_srs = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
-    srs_pdu->t_offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
+    int offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
+    AssertFatal(offset >= 0, "Invalid SRS offset\n");
+    srs_pdu->t_offset = offset;
   }
 
   // TODO: This should be completed
