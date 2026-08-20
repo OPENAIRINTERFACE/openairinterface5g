@@ -885,6 +885,15 @@ void ue_context_modification_request(const f1ap_ue_context_mod_req_t *req)
     // we re-configure the BWP to apply the CellGroup and to use UE specific Search Space with DCIX1
     configure_UE_BWP(cell, scc, UE, false, NR_SearchSpace__searchSpaceType_PR_ue_Specific, -1, -1);
     nr_mac_clean_cellgroup(UE->CellGroup);
+
+    // Restore dedicated BWP if configure_UE_BWP() bumped the UE to BWP0 for RA
+    if (UE->pending_bwp_restore) {
+      UE->pending_bwp_restore = false;
+      int bwp_id = cell->radio_config.first_active_bwp;
+      LOG_A(NR_MAC, "UE %04x: Restoring dedicated BWP %d after RA parking on BWP0 by RRCReconfiguration(nr_mac_trigger_reconfiguration)\n", UE->rnti, bwp_id);
+      // BWP switch (beam arg = -1); UE->local_bwp_id is updated on UE Context Modification Confirm
+      nr_mac_trigger_reconfiguration(mac, cell, UE, bwp_id, -1);
+    }
   }
 
   if (ue_cap != NULL) {

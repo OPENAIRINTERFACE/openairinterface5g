@@ -3925,7 +3925,7 @@ NR_CellGroupConfig_t *update_cellGroupConfig_for_reconfig(NR_CellGroupConfig_t *
                                                                            bitmap,
                                                                            ssb_index);
 
-  if (new_bwp >= 0 && old_bwp > 0)
+  if (new_bwp >= 0)
     clean_bwp_structures(clone_cg->spCellConfig);
   return clone_cg;
 }
