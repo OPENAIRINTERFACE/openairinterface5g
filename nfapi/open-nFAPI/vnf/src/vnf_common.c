@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "vnf_common.h"
+#include "vnf_lte.h"
+#include "vnf_nr.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
 void *vnf_malloc(nfapi_vnf_config_t *config, size_t size)
@@ -75,6 +76,69 @@ void vnf_handle_vendor_extension(void *pRecvMsg,
                                   nfapi_vnf_config_t *config,
                                   int p5_idx,
                                   uint16_t message_id)
+{
+  NFAPI_TRACE(NFAPI_TRACE_INFO, "%s\n", __FUNCTION__);
+
+  if (config->allocate_p4_p5_vendor_ext && config->deallocate_p4_p5_vendor_ext) {
+    uint16_t msg_size;
+
+    nfapi_p4_p5_message_header_t *msg = config->allocate_p4_p5_vendor_ext(message_id, &msg_size);
+
+    if (msg) {
+      if (nfapi_p5_message_unpack(pRecvMsg, recvMsgLen, msg, msg_size, &config->codec_config) >= 0) {
+        if (config->vendor_ext)
+          config->vendor_ext(config, p5_idx, msg);
+      } else {
+        NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: Unpack message failed, ignoring\n", __FUNCTION__);
+      }
+
+      config->deallocate_p4_p5_vendor_ext(msg);
+    } else {
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate vendor extention structure\n");
+    }
+  }
+}
+
+void nfapi_nr_vnf_phy_info_list_add(nfapi_nr_vnf_config_t *config, nfapi_vnf_phy_info_t *info)
+{
+  info->next = config->phy_list;
+  config->phy_list = info;
+}
+
+nfapi_vnf_phy_info_t *nfapi_nr_vnf_phy_info_list_find(nfapi_nr_vnf_config_t *config, uint16_t phy_id)
+{
+  nfapi_vnf_phy_info_t *curr = config->phy_list;
+  while (curr != 0) {
+    if (curr->phy_id == phy_id)
+      return curr;
+    curr = curr->next;
+  }
+  return 0;
+}
+
+void nfapi_nr_vnf_pnf_list_add(nfapi_nr_vnf_config_t *config, nfapi_vnf_pnf_info_t *node)
+{
+  node->next = config->pnf_list;
+  config->pnf_list = node;
+}
+
+nfapi_vnf_pnf_info_t *nfapi_nr_vnf_pnf_list_find(nfapi_nr_vnf_config_t *config, int p5_idx)
+{
+  nfapi_vnf_pnf_info_t *curr = config->pnf_list;
+  while (curr != 0) {
+    if (curr->p5_idx == p5_idx)
+      return curr;
+    curr = curr->next;
+  }
+  NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s(): could not find P5 connection for p5_idx %d\n", __func__, p5_idx);
+  return 0;
+}
+
+void vnf_nr_handle_vendor_extension(void *pRecvMsg,
+                                     int recvMsgLen,
+                                     nfapi_nr_vnf_config_t *config,
+                                     int p5_idx,
+                                     uint16_t message_id)
 {
   NFAPI_TRACE(NFAPI_TRACE_INFO, "%s\n", __FUNCTION__);
 

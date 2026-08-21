@@ -16,14 +16,14 @@ void socket_stop_nfapi_p5_p7()
   get_nr_config()->pnf_disconnect_indication = NULL;
 }
 
-void socket_nfapi_send_stop_request(vnf_t *vnf)
+void socket_nfapi_send_stop_request(vnf_nr_t *vnf)
 {
   nfapi_nr_stop_request_scf_t req = {.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST, .header.phy_id = 0};
   nfapi_nr_vnf_stop_req(&vnf->_public, 0, &req);
   NFAPI_TRACE(NFAPI_TRACE_INFO, "Sent NFAPI STOP.request\n");
 }
 
-static bool send_p5_msg(vnf_t *vnf, nfapi_vnf_pnf_info_t *pnf, const void *msg, int len, uint8_t stream)
+static bool send_p5_msg(vnf_nr_t *vnf, nfapi_vnf_pnf_info_t *pnf, const void *msg, int len, uint8_t stream)
 {
   int result = socket_send_p5_msg(vnf->sctp, pnf->p5_sock, &pnf->p5_pnf_sockaddr, msg, len, stream);
 
@@ -38,9 +38,9 @@ static bool send_p5_msg(vnf_t *vnf, nfapi_vnf_pnf_info_t *pnf, const void *msg, 
   return result == len;
 }
 
-bool vnf_nr_send_p5_msg(vnf_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t *msg, uint32_t msg_len)
+bool vnf_nr_send_p5_msg(vnf_nr_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t *msg, uint32_t msg_len)
 {
-  nfapi_vnf_pnf_info_t *pnf = nfapi_vnf_pnf_list_find(&(vnf->_public), p5_idx);
+  nfapi_vnf_pnf_info_t *pnf = nfapi_nr_vnf_pnf_list_find(&(vnf->_public), p5_idx);
 
   if (pnf) {
     // pack the message for transmission
@@ -143,11 +143,11 @@ bool vnf_nr_send_p7_msg(vnf_p7_t *vnf_p7, nfapi_nr_p7_message_header_t *header)
   }
 }
 
-static int vnf_nr_read_dispatch_message(nfapi_vnf_config_t *config, nfapi_vnf_pnf_info_t *pnf)
+static int vnf_nr_read_dispatch_message(nfapi_nr_vnf_config_t *config, nfapi_vnf_pnf_info_t *pnf)
 {
   if (1) {
     int socket_connected = 1;
-    vnf_t *vnf = (vnf_t *)(config);
+    vnf_nr_t *vnf = (vnf_nr_t *)(config);
     // 1. Peek the message header
     // 2. If the message is larger than the stack buffer then create a dynamic buffer
     // 3. Read the buffer
@@ -274,7 +274,7 @@ static int vnf_nr_read_dispatch_message(nfapi_vnf_config_t *config, nfapi_vnf_pn
   }
 }
 
-static int nfapi_nr_vnf_p5_start(nfapi_vnf_config_t *config)
+static int nfapi_nr_vnf_p5_start(nfapi_nr_vnf_config_t *config)
 {
   // Verify that config is not null
   if (config == 0)
@@ -292,7 +292,7 @@ static int nfapi_nr_vnf_p5_start(nfapi_vnf_config_t *config)
   struct sctp_initmsg initMsg = {0};
   int noDelay;
 
-  vnf_t *vnf = (vnf_t *)(get_nr_config());
+  vnf_nr_t *vnf = (vnf_nr_t *)(get_nr_config());
 
   NFAPI_TRACE(NFAPI_TRACE_INFO, "Starting P5 VNF connection on port %u\n", config->vnf_p5_port);
 
@@ -453,7 +453,7 @@ static int nfapi_nr_vnf_p5_start(nfapi_vnf_config_t *config)
           pnf->p5_pnf_sockaddr = addr;
           pnf->connected = 1;
 
-          nfapi_vnf_pnf_list_add(config, pnf);
+          nfapi_nr_vnf_pnf_list_add(config, pnf);
 
           // Inform mac that a pnf connection has been established
           // todo : allow mac to 'accept' the connection. i.e. to
@@ -556,7 +556,7 @@ void vnf_start_p5_thread(void *ptr)
 {
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] VNF NFAPI thread - nfapi_vnf_start()%s\n", __FUNCTION__);
   pthread_setname_np(pthread_self(), "VNF");
-  nfapi_nr_vnf_p5_start((nfapi_vnf_config_t *)ptr);
+  nfapi_nr_vnf_p5_start((nfapi_nr_vnf_config_t *)ptr);
 }
 
 void vnf_nr_reassemble_p7_message(void *pRecvMsg, int recvMsgLen, vnf_p7_t *vnf_p7)

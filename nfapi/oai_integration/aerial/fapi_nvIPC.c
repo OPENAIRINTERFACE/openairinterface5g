@@ -47,7 +47,7 @@ static int cpu_large_buf_size = 0;
 void nvIPC_Stop()
 {
   LOG_I(NR_MAC, "Received STOP.indication\n");
-  ((vnf_t *)get_nr_config())->terminate = true;
+  ((vnf_nr_t *)get_nr_config())->terminate = true;
 }
 
 void nvIPC_send_stop_request()
@@ -74,7 +74,7 @@ static int ipc_handle_rx_msg(nv_ipc_msg_t *msg)
   uint8_t *end = msg->msg_buf + msg->msg_len;
 
   // unpack FAPI messages and handle them
-  nfapi_vnf_config_t * vnf_config = get_nr_config();
+  nfapi_nr_vnf_config_t * vnf_config = get_nr_config();
   if (vnf_config != 0) {
     // first, unpack the header
     fapi_message_header_t fapi_msg;
@@ -212,9 +212,9 @@ bool send_nvipc_msg(nv_ipc_msg_t *send_msg)
   return true;
 }
 
-bool aerial_nr_send_p5_message(vnf_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t *msg, uint32_t msg_len)
+bool aerial_nr_send_p5_message(vnf_nr_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t *msg, uint32_t msg_len)
 {
-  nfapi_vnf_pnf_info_t *pnf = nfapi_vnf_pnf_list_find(&(vnf->_public), p5_idx);
+  nfapi_vnf_pnf_info_t *pnf = nfapi_nr_vnf_pnf_list_find(&(vnf->_public), p5_idx);
 
   if (pnf) {
     // Create the message
@@ -341,13 +341,13 @@ void *epoll_recv_task(void *arg)
   // Simulate one PARAM.response per configured PHY to trigger a CONFIG.request
   // for each cell.  aerial_params is populated by nvIPC_Init before this thread starts.
   // TODO receive the phy_id, maybe receive this PARAM.response dummy as an argument
-  nfapi_vnf_config_t * vnf_config = get_nr_config();
+  nfapi_nr_vnf_config_t * vnf_config = get_nr_config();
   for (int i = 0; i < aerial_params.num_phys; i++) {
     nfapi_nr_param_response_scf_t resp_msg = {.header.message_id = NFAPI_NR_PHY_MSG_TYPE_PARAM_RESPONSE,
                                              .header.phy_id = i};
     vnf_config->nr_param_resp(vnf_config, i, &resp_msg);
   }
-  while (((vnf_t *)vnf_config)->terminate == false) {
+  while (((vnf_nr_t *)vnf_config)->terminate == false) {
     LOG_D(NFAPI_VNF, "%s: epoll_wait fd_rx=%d ...\n", __func__, ipc_rx_event_fd);
 
     int nfds;

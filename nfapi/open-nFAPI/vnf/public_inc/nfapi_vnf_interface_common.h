@@ -20,7 +20,6 @@
 extern "C" {
 #endif
 
-typedef struct vnf_s vnf_t;
 typedef struct vnf_p7_s vnf_p7_t;
 
 /*! The nfapi VNF phy configuration information
@@ -67,122 +66,6 @@ typedef struct nfapi_vnf_pnf_info
 	struct nfapi_vnf_pnf_info* next;
 
 } nfapi_vnf_pnf_info_t;
-
-typedef struct nfapi_vnf_config nfapi_vnf_config_t;
-
-/*! The nfapi VNF configuration information
- */
-typedef struct nfapi_vnf_config
-{
-	/*! A user define callback to override the default memory allocation */
-	void* (*malloc)(size_t size);
-	/*! A user define callback to override the default memory deallocation */
-	void (*free)(void*);
-
-	/*! The port the VNF P5 SCTP connection listens on
-	 *
-	 *  By default this will be set to 7701. However this can be changed if
-	 *  required.
-	 */
-	int vnf_p5_port;
-
-	// todo : for enabling ipv4/ipv6
-	int vnf_ipv4;
-	int vnf_ipv6;
-
-	/*! List of connected pnfs */
-	nfapi_vnf_pnf_info_t* pnf_list;
-
-	/*! List of configured phys */
-	nfapi_vnf_phy_info_t* phy_list;
-
-	/*! Configuration options for the p4 p5 pack unpack functions */
-	nfapi_p4_p5_codec_config_t codec_config;
-
-	/*! Optional user defined data that will be avaliable in the callbacks*/
-	void* user_data;
-
-	int (*pnf_nr_connection_indication)(nfapi_vnf_config_t* config, int p5_idx);
-	int (*pnf_connection_indication)(nfapi_vnf_config_t* config, int p5_idx);
-
-	int (*pnf_disconnect_indication)(nfapi_vnf_config_t* config, int p5_idx);
-
-	int (*pnf_nr_param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_param_response_t* resp);
-	int (*pnf_param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_response_t* resp);
-
-	int (*pnf_config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_config_response_t* resp);
-	int (*pnf_nr_config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_config_response_t* resp);
-
-	int (*pnf_start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_start_response_t* resp);
-	int (*pnf_nr_start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_pnf_start_response_t* resp);
-
-  int (*nr_stop_ind)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_stop_indication_scf_t* ind);
-
-	int (*pnf_stop_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_stop_response_t* resp);
-
-	int (*param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_response_t* resp);
-	int (*nr_param_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_param_response_scf_t* resp);
-
-	int (*nr_config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_config_response_scf_t* resp);
-	int (*config_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_config_response_t* resp);
-
-	int (*start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_start_response_t* resp);
-	int (*nr_start_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_start_response_scf_t* resp);
-
-	int (*nr_error_ind)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nr_error_indication_scf_t* ind);
-
-	int (*stop_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_stop_response_t* resp);
-
-	int (*measurement_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_measurement_response_t* resp);
-
-	int (*rssi_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_rssi_response_t* resp);
-	int (*rssi_ind)(nfapi_vnf_config_t* config, int p5_idx, nfapi_rssi_indication_t* ind);
-	int (*cell_search_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_cell_search_response_t* resp);
-	int (*cell_search_ind)(nfapi_vnf_config_t* config, int p5_idx, nfapi_cell_search_indication_t* ind);
-	int (*broadcast_detect_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_broadcast_detect_response_t* resp);
-	int (*broadcast_detect_ind)(nfapi_vnf_config_t* config, int p5_idx, nfapi_broadcast_detect_indication_t* ind);
-	int (*system_information_schedule_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_system_information_schedule_response_t* resp);
-	int (*system_information_schedule_ind)(nfapi_vnf_config_t* config, int p5_idx, nfapi_system_information_schedule_indication_t* ind);
-	int (*system_information_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_system_information_response_t* resp);
-	int (*system_information_ind)(nfapi_vnf_config_t* config, int p5_idx, nfapi_system_information_indication_t* ind);
-	int (*nmm_stop_resp)(nfapi_vnf_config_t* config, int p5_idx, nfapi_nmm_stop_response_t* resp);
-
-	int (*vendor_ext)(nfapi_vnf_config_t* config, int p5_idx, void* msg);
-
-	void* (*allocate_p4_p5_vendor_ext)(uint16_t message_id, uint16_t* msg_size);
-	void (*deallocate_p4_p5_vendor_ext)(void* header);
-
-  int (*pack_func)(void* pMessageBuf,
-                   uint32_t messageBufLen,
-                   void* pPackedBuf,
-                   uint32_t packedBufLen,
-                   nfapi_p4_p5_codec_config_t* config);
-
-  bool (*unpack_func)(void* pMessageBuf,
-                      uint32_t messageBufLen,
-                      void* pUnpackedBuf,
-                      uint32_t unpackedBufLen,
-                      nfapi_p4_p5_codec_config_t* config);
-
-  bool (*hdr_unpack_func)(void* pMessageBuf,
-                          uint32_t messageBufLen,
-                          void* pUnpackedBuf,
-                          uint32_t unpackedBufLen,
-                          nfapi_p4_p5_codec_config_t* config);
-
-  bool (*send_p5_msg)(vnf_t* vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t* msg, uint32_t msg_len);
-
-
-} nfapi_vnf_config_t;
-
-nfapi_vnf_config_t* nfapi_vnf_config_create(void);
-void nfapi_vnf_config_destory(nfapi_vnf_config_t* config);
-int nfapi_vnf_start(nfapi_vnf_config_t* config);
-int nfapi_vnf_stop(nfapi_vnf_config_t* config);
-int nfapi_vnf_allocate_phy(nfapi_vnf_config_t* config, int p5_idx, uint16_t* phy_id);
-int nfapi_vnf_vendor_extension(nfapi_vnf_config_t* config, int p5_idx, nfapi_p4_p5_message_header_t* msg);
-
-//-----------------------------------------------------------------------------
 
 /*! The nfapi VNF P7 connection information
  */
@@ -251,6 +134,9 @@ typedef struct nfapi_vnf_p7_config
 
   bool (*send_p7_msg)(vnf_p7_t* vnf_p7, nfapi_nr_p7_message_header_t* header);
 } nfapi_vnf_p7_config_t;
+
+typedef nfapi_vnf_p7_config_t nfapi_lte_vnf_p7_config_t;
+typedef nfapi_vnf_p7_config_t nfapi_nr_vnf_p7_config_t;
 
 nfapi_vnf_p7_config_t* nfapi_vnf_p7_config_create(void);
 void nfapi_vnf_p7_config_destory(nfapi_vnf_p7_config_t* config);

@@ -27,7 +27,7 @@ int get_cpu_data_buf_size();
 bool allocate_msg(nv_ipc_msg_t* send_msg);
 void release_msg(nv_ipc_msg_t* send_msg);
 bool send_nvipc_msg(nv_ipc_msg_t* send_msg);
-bool aerial_nr_send_p5_message(vnf_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t *msg, uint32_t msg_len);
+bool aerial_nr_send_p5_message(vnf_nr_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t *msg, uint32_t msg_len);
 int nvIPC_Init(nvipc_params_t nvipc_params_s);
 int oai_fapi_send_end_request(uint32_t frame, uint32_t slot, uint8_t PHY_id);
 int oai_fapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req);
