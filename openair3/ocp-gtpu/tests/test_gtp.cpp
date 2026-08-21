@@ -101,13 +101,13 @@ static void run_basic_test(uint32_t ue_id,
    * don't provide an address yet, hence "null_addr". Install the callback
    * specific to this test. */
   transport_layer_addr_t null_addr = {.length = 32};
-  teid_t t1 = newGtpuCreateTunnel(ep1, ue_id, pdu_id, pdu_id, -1, null_addr, callBack, callBackSDAP);
+  teid_t t1 = newGtpuCreateTunnel(ep1, ue_id, pdu_id, pdu_id, -1, null_addr, callBack, callBackSDAP, NULL);
 
   /* Create the sending end on ep2. We have ep1's address/TEID, so create the
    * remote endpoint. Don't provide a callback, as this is supposed to be
    * unidirectional. */
   transport_layer_addr_t tl_addr1 = get_tl_addr(AF_INET, ip1);
-  teid_t t2 = newGtpuCreateTunnel(ep2, ue_id, pdu_id, pdu_id, t1, tl_addr1, NULL, NULL);
+  teid_t t2 = newGtpuCreateTunnel(ep2, ue_id, pdu_id, pdu_id, t1, tl_addr1, NULL, NULL, NULL);
 
   EXPECT_NE(t1, t2); // cannot be the same TEIDs
 
@@ -230,10 +230,10 @@ static void run_multi_qos_flows_test(uint32_t ue_id, long pdu_id, const uint8_t 
   EXPECT_NE(ep1, ep2);
 
   transport_layer_addr_t null_addr = {.length = 32};
-  teid_t t1 = newGtpuCreateTunnel(ep1, ue_id, pdu_id, pdu_id, -1, null_addr, NULL, recv_multi_qfi_same_pdu);
+  teid_t t1 = newGtpuCreateTunnel(ep1, ue_id, pdu_id, pdu_id, -1, null_addr, NULL, recv_multi_qfi_same_pdu, NULL);
 
   transport_layer_addr_t tl_addr1 = get_tl_addr(AF_INET, ip1);
-  teid_t t2 = newGtpuCreateTunnel(ep2, ue_id, pdu_id, pdu_id, t1, tl_addr1, NULL, NULL);
+  teid_t t2 = newGtpuCreateTunnel(ep2, ue_id, pdu_id, pdu_id, t1, tl_addr1, NULL, NULL, NULL);
   EXPECT_NE(t1, t2);
 
   in_addr_t addr2 = get_addr(AF_INET, ip2);
@@ -360,9 +360,9 @@ TEST(gtp, nrup_ddds)
   ASSERT_GE(ep2, 1);
 
   transport_layer_addr_t null_addr = {.length = 32};
-  teid_t t1 = newGtpuCreateTunnel(ep1, ue_id, pdu_id, pdu_id, -1, null_addr, NULL, NULL);
+  teid_t t1 = newGtpuCreateTunnel(ep1, ue_id, pdu_id, pdu_id, -1, null_addr, NULL, NULL, NULL);
   transport_layer_addr_t tl_addr1 = get_tl_addr(AF_INET, ip1);
-  teid_t t2 = newGtpuCreateTunnel(ep2, ue_id, pdu_id, pdu_id, t1, tl_addr1, NULL, NULL);
+  teid_t t2 = newGtpuCreateTunnel(ep2, ue_id, pdu_id, pdu_id, t1, tl_addr1, NULL, NULL, NULL);
   in_addr_t addr2 = get_addr(AF_INET, ip2);
   GtpuUpdateTunnelOutgoingAddressAndTeid(ep1, ue_id, pdu_id, addr2, t2);
 

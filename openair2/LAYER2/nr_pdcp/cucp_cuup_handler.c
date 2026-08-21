@@ -87,6 +87,32 @@ static NR_DRB_ToAddMod_t *get_rrc_drb_to_addmod(const DRB_nGRAN_to_setup_t *drb,
   return ie;
 }
 
+static void cuup_release_pdu_session_up(uint32_t ue_id, int pdusession_id);
+
+/** @brief N3 GTP-U Error Indication callback (TS 29.281 clause 7.3.1)
+ * TS 23.527 clause 5.3.3.1: 5G-AN shall release PDU session resources immediately
+ * and initiate NGAP PDU Session Resource Notify. Release N3/F1-U/SDAP here, then
+ * signal CU-CP via Bearer Context Modification Required (TS 38.463 clause 8.3.3)
+ * through cuup_cucp_if (direct ITTI or E1AP). */
+static void n3_error_indication(const gtpv1u_error_indication_ind_t *ind)
+{
+  if (N3GTPUInst == NULL || ind->gtp_instance != *N3GTPUInst)
+    return; // Error Indication is for N3 only
+
+  cuup_release_pdu_session_up(ind->ue_id, ind->pdusession_id);
+
+  e1ap_bearer_mod_required_t req = {0};
+  req.gNB_cu_cp_ue_id = ind->ue_id;
+  req.gNB_cu_up_ue_id = ind->ue_id;
+  req.numPDUSessionsRem = 1;
+  req.pduSessionRem = calloc_or_fail(1, sizeof(*req.pduSessionRem));
+  req.pduSessionRem[0].sessionId = ind->pdusession_id;
+  req.pduSessionRem[0].cause.type = E1AP_CAUSE_TRANSPORT;
+  req.pduSessionRem[0].cause.value = E1AP_TRANSPORT_CAUSE_RESOURCE_UNAVAILABLE;
+  get_e1_if()->bearer_mod_required(&req);
+  free_e1ap_context_mod_required(&req);
+}
+
 /** @brief Fill and send request to create GTP-U tunnel (F1-U) */
 static UP_TL_information_t f1_drb_gtpu_create(const instance_t f1inst,
                                               const gtpv1u_gnb_create_tunnel_req_t *req)
@@ -96,7 +122,7 @@ static UP_TL_information_t f1_drb_gtpu_create(const instance_t f1inst,
   LOG_I(GTPU, "Incoming DRB %d / PDU Session %d - UL TEID %d\n", req->incoming_rb_id, req->pdusession_id, req->outgoing_teid);
 
   gtpv1u_gnb_create_tunnel_resp_t resp = {0};
-  int ret = gtpv1u_create_ngu_tunnel(f1inst, req, &resp, cu_f1u_data_req, NULL);
+  int ret = gtpv1u_create_ngu_tunnel(f1inst, req, &resp, cu_f1u_data_req, NULL, NULL);
   AssertFatal(ret >= 0, "Unable to create GTP-U tunnel for F1-U\n");
   AssertFatal(resp.gnb_addr.length == sizeof(in_addr_t),
               "GTP tunnel response address length %d does not match IPv4 size %zu\n",
@@ -124,7 +150,7 @@ static UP_TL_information_t n3_gtpu_create(const gtpv1u_gnb_create_tunnel_req_t *
   LOG_I(GTPU, "N3 GTP-U tunnel: PDUSession=%d/UL TEID=0x%08x\n", req->pdusession_id, req->outgoing_teid);
 
   gtpv1u_gnb_create_tunnel_resp_t resp = {0};
-  int ret = gtpv1u_create_ngu_tunnel(n3inst, req, &resp, nr_pdcp_data_req_drb, sdap_data_req);
+  int ret = gtpv1u_create_ngu_tunnel(n3inst, req, &resp, nr_pdcp_data_req_drb, sdap_data_req, n3_error_indication);
   AssertFatal(ret >= 0, "Unable to create GTP-U tunnel for N3\n");
   AssertFatal(resp.gnb_addr.length == sizeof(in_addr_t),
               "GTP tunnel response address length %d does not match IPv4 size %zu\n",
@@ -333,6 +359,14 @@ static void release_f1_drbs(uint32_t ue_id, int pdusession_id)
   }
 }
 
+/** @brief Release UP resources for one PDU session (N3, F1-U, SDAP) */
+static void cuup_release_pdu_session_up(uint32_t ue_id, int pdusession_id)
+{
+  release_gtpu_tunnel(ue_id, pdusession_id);
+  release_f1_drbs(ue_id, pdusession_id);
+  nr_sdap_delete_entity(ue_id, pdusession_id);
+}
+
 /**
  * @brief Fill Bearer Context Modification Response and send to callback
  */
@@ -502,9 +536,7 @@ void e1_bearer_context_modif(const e1ap_bearer_mod_req_t *req)
   for (int i = 0; i < req->numPDUSessionsRem; i++) {
     modif.pduSessionMod[req->numPDUSessionsMod + i].id = req->pduSessionRem[i].sessionId;
     modif.numPDUSessionsMod++;
-    release_gtpu_tunnel(req->gNB_cu_up_ue_id, req->pduSessionRem[i].sessionId);
-    release_f1_drbs(req->gNB_cu_up_ue_id, req->pduSessionRem[i].sessionId);
-    nr_sdap_delete_entity(req->gNB_cu_up_ue_id, req->pduSessionRem[i].sessionId);
+    cuup_release_pdu_session_up(req->gNB_cu_up_ue_id, req->pduSessionRem[i].sessionId);
   }
 
   get_e1_if()->bearer_modif_response(&modif);

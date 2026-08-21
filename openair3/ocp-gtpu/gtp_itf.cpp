@@ -133,6 +133,7 @@ typedef struct {
   gtpCallback callBack;
   teid_t outgoing_teid;
   gtpCallbackSDAP callBackSDAP;
+  gtpv1u_error_indication_cb_fn_t errorIndicationCallBack;
   /** PDU Session ID (1..255) */
   uint16_t pdusession_id;
 } ueidData_t;
@@ -693,7 +694,8 @@ teid_t newGtpuCreateTunnel(instance_t instance,
                            teid_t outgoing_teid,
                            transport_layer_addr_t remoteAddr,
                            gtpCallback callBack,
-                           gtpCallbackSDAP callBackSDAP)
+                           gtpCallbackSDAP callBackSDAP,
+                           gtpv1u_error_indication_cb_fn_t errorIndicationCallBack)
 {
   pthread_mutex_lock(&globGtp.gtp_lock);
   getInstRetInt(compatInst(instance));
@@ -716,6 +718,7 @@ teid_t newGtpuCreateTunnel(instance_t instance,
   globGtp.te2ue_mapping[incoming_teid].outgoing_teid = outgoing_teid;
   globGtp.te2ue_mapping[incoming_teid].callBack = callBack;
   globGtp.te2ue_mapping[incoming_teid].callBackSDAP = callBackSDAP;
+  globGtp.te2ue_mapping[incoming_teid].errorIndicationCallBack = errorIndicationCallBack;
   globGtp.te2ue_mapping[incoming_teid].pdusession_id = (uint8_t)outgoing_bearer_id;
 
   gtpv1u_bearer_t bearer = {
@@ -792,6 +795,7 @@ int gtpv1u_create_s1u_tunnel(instance_t instance,
                                       create_tunnel_req->sgw_S1u_teid[i],
                                       create_tunnel_req->sgw_addr[i],
                                       callBack,
+                                      NULL,
                                       NULL);
     create_tunnel_resp->status = 0;
     create_tunnel_resp->rnti = create_tunnel_req->rnti;
@@ -851,7 +855,8 @@ int gtpv1u_create_ngu_tunnel(const instance_t instance,
                              const gtpv1u_gnb_create_tunnel_req_t *const create_tunnel_req,
                              gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp,
                              gtpCallback callBack,
-                             gtpCallbackSDAP callBackSDAP)
+                             gtpCallbackSDAP callBackSDAP,
+                             gtpv1u_error_indication_cb_fn_t errorIndicationCallBack)
 {
   LOG_D(GTPU,
         "[%ld] Create tunnel for UE ID %lu, outgoing TEID 0x%x\n",
@@ -871,7 +876,8 @@ int gtpv1u_create_ngu_tunnel(const instance_t instance,
                                     create_tunnel_req->outgoing_teid,
                                     create_tunnel_req->dst_addr,
                                     callBack,
-                                    callBackSDAP);
+                                    callBackSDAP,
+                                    errorIndicationCallBack);
   /* Fill response */
   create_tunnel_resp->status = 0;
   create_tunnel_resp->ue_id = create_tunnel_req->ue_id;
@@ -1276,6 +1282,34 @@ static int Gtpv1uHandleError(int h, uint8_t *msgBuf, uint32_t msgBufLen, const s
         indication.teid_i,
         peer_str,
         IPV4_ADDR_FORMAT(addr->sin_addr.s_addr));
+
+  /* Invoke per-tunnel callback when TEID-I maps to te2ue_mapping (TS 23.527 §5.3.3.1). */
+  pthread_mutex_lock(&globGtp.gtp_lock);
+  const auto tunnel = globGtp.te2ue_mapping.find(indication.teid_i);
+  if (tunnel == globGtp.te2ue_mapping.end()) {
+    pthread_mutex_unlock(&globGtp.gtp_lock);
+    LOG_W(GTPU, "[%d] GTP Error Indication TEID-I 0x%x: no tunnel mapping, drop\n", h, indication.teid_i);
+    return 0;
+  }
+
+  gtpv1u_error_indication_ind_t ind = {
+      .gtp_instance = h,
+      .ue_id = tunnel->second.ue_id,
+      .incoming_rb_id = tunnel->second.incoming_rb_id,
+      .pdusession_id = tunnel->second.pdusession_id,
+      .teid_i = indication.teid_i,
+      .gtpu_peer_address = indication.gtpu_peer_address,
+      .udp_peer = addr->sin_addr.s_addr,
+      .udp_peer_valid = true,
+  };
+  gtpv1u_error_indication_cb_fn_t error_cb = tunnel->second.errorIndicationCallBack;
+  pthread_mutex_unlock(&globGtp.gtp_lock);
+
+  if (error_cb == nullptr) {
+    LOG_E(GTPU, "[%d] GTP Error Indication TEID-I 0x%x: no error indication callback, drop\n", h, indication.teid_i);
+    return -1;
+  }
+  error_cb(&ind);
 
   return 0;
 }

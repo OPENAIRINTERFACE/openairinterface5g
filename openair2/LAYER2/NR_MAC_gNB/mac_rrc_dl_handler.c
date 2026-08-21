@@ -70,7 +70,7 @@ static f1ap_up_tnl_t f1_drb_gtpu_create(const gtpv1u_gnb_create_tunnel_req_t *re
   instance_t f1inst = get_f1_gtp_instance();
   DevAssert(f1inst >= 0);
   gtpv1u_gnb_create_tunnel_resp_t resp = {0};
-  int ret = gtpv1u_create_ngu_tunnel(f1inst, req, &resp, DURecvCb, NULL);
+  int ret = gtpv1u_create_ngu_tunnel(f1inst, req, &resp, DURecvCb, NULL, NULL);
   AssertFatal(ret >= 0, "Unable to create GTP Tunnel for F1-U\n");
   AssertFatal(resp.gnb_addr.length == sizeof(in_addr_t),
               "GTP tunnel response address length %d does not match IPv4 size %zu\n",

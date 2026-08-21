@@ -15,6 +15,7 @@
 # define GTPU_HEADER_OVERHEAD_MAX 64
 
 #include "common/platform_types.h"
+#include "openair2/COMMON/gtpv1_u_messages_types.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,6 +65,20 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
                                   const bool      rqi,
                                   const int       pdusession_id);
 
+  /** @brief GTP callback payload (TS 23.527 clause 5.3.3.1) */
+  typedef struct gtpv1u_error_indication_ind_s {
+    instance_t gtp_instance;
+    ue_id_t ue_id;
+    uint16_t incoming_rb_id;
+    uint16_t pdusession_id;
+    teid_t teid_i;
+    transport_layer_addr_t gtpu_peer_address;
+    in_addr_t udp_peer;
+    bool udp_peer_valid;
+  } gtpv1u_error_indication_ind_t;
+
+  typedef void (*gtpv1u_error_indication_cb_fn_t)(const gtpv1u_error_indication_ind_t *ind);
+
   typedef struct openAddr_s {
     char originHost[HOST_NAME_MAX];
     char originService[HOST_NAME_MAX];
@@ -102,7 +117,8 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
                                const gtpv1u_gnb_create_tunnel_req_t *const create_tunnel_req_pP,
                                gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
                                gtpCallback callBack,
-                               gtpCallbackSDAP callBackSDAP);
+                               gtpCallbackSDAP callBackSDAP,
+                               gtpv1u_error_indication_cb_fn_t errorIndicationCallBack);
 
   int gtpv1u_update_ue_id(const instance_t instanceP, ue_id_t old_ue_id, ue_id_t new_ue_id);
 
@@ -114,7 +130,8 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
                              teid_t outgoing_teid,
                              transport_layer_addr_t remoteAddr,
                              gtpCallback callBack,
-                             gtpCallbackSDAP callBackSDAP);
+                             gtpCallbackSDAP callBackSDAP,
+                             gtpv1u_error_indication_cb_fn_t errorIndicationCallBack);
 
   void GtpuUpdateTunnelOutgoingAddressAndTeid(instance_t instance,
                                     ue_id_t ue_id,

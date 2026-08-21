@@ -338,7 +338,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, x2ap_ENDC_sgnb_addition_req_t *m, sctp_
         .dst_addr.length = 32,
       };
       gtpv1u_gnb_create_tunnel_resp_t resp = {0};
-      int ret = gtpv1u_create_ngu_tunnel(f1inst, &req, &resp, NULL, NULL);
+      int ret = gtpv1u_create_ngu_tunnel(f1inst, &req, &resp, NULL, NULL, NULL);
       AssertFatal(ret == 0, "gtpv1u_create_ngu_tunnel failed: ret %d\n", ret);
       AssertFatal(resp.gnb_addr.length == sizeof(in_addr_t),
                   "GTP tunnel response address length %d does not match IPv4 size %zu\n",
