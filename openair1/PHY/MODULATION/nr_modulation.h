@@ -150,6 +150,13 @@ void nr_layer_precoder_simd(const int n_layers,
                             const int re_cnt,
                             c16_t *txdataF_precoded);
 
+void nr_normal_prefix_mod(c16_t *txdataF,
+                          c16_t *txdata,
+                          uint8_t nsymb,
+                          const NR_DL_FRAME_PARMS *frame_parms,
+                          uint32_t slot,
+                          bool was_symbol_used[NR_SYMBOLS_PER_SLOT]);
+
 void fft_shift(const c16_t *in,
                uint32_t in_symb_sz,
                uint16_t num_prb,

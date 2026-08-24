@@ -13,7 +13,7 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/MODULATION/nr_modulation.h"
-#include "PHY/MODULATION/modulation_common.h"
+#include "PHY/MODULATION/phy_ofdm_mod.h"
 #include "common/utils/assertions.h"
 #include "common/utils/nr/nr_common.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"

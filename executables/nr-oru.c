@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "openair1/SCHED_NR/sched_nr.h"
-#include "openair1/PHY/MODULATION/modulation_common.h"
+#include "openair1/PHY/MODULATION/phy_ofdm_mod.h"
 #include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 
 #define CONFIG_SECTION_ORU "ORUs.[0]"
