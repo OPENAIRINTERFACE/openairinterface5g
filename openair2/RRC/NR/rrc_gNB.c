@@ -914,7 +914,7 @@ nr_rrc_reconfig_param_t get_RRCReconfiguration_params(gNB_RRC_INST *rrc, gNB_RRC
       LOG_D(NR_RRC, "Transfer NAS info with size %ld to RRCReconfiguration params\n", session->nas_pdu.len);
     }
     // Collect DRBs to release for PDU sessions marked for release
-    if (item->status == PDU_SESSION_STATUS_TORELEASE) {
+    if (item->status == PDU_SESSION_STATUS_TORELEASE || item->status == PDU_SESSION_STATUS_NOTIFYONRELEASE) {
       if (!params.drb_rel)
         params.drb_rel = calloc_or_fail(MAX_DRBS_PER_UE, sizeof(int));
       FOR_EACH_SEQ_ARR (drb_t *, drb, &UE->drbs) {
@@ -965,12 +965,15 @@ static void cuup_notify_reestablishment(gNB_RRC_INST *rrc, gNB_RRC_UE_t *ue_p);
   } while (0)
 
 /** @brief Set xid for all PDU sessions and derive RRC transaction action from
- * session statuses. At most one active status (NEW, TOMODIFY, TORELEASE) or reestablishment.
+ * session statuses. At most one active status (NEW, TOMODIFY, TORELEASE,
+ * NOTIFYONRELEASE) or reestablishment.
  * Status vs procedures (F1AP UE Context Setup/Modification Response only):
  * - NEW: Initial Context Setup or PDU Session Resource Setup Request;
  *   E1 then F1 Setup/Modification.
  * - TORELEASE: NGAP PDU Session Release Command -> E1 Bearer Context
  *   Modification (release) -> F1 Modification (release DRBs).
+ * - NOTIFYONRELEASE: N3 GTP-U Error Indication (TS 23.527) -> same teardown chain
+     (E1/F1) -> PDU Session Resource Notify.
  * - ESTABLISHED: Bystander when adding/releasing others.
  * - TOMODIFY: NGAP PDU Session Modify Request -> E1 Bearer Context
  *   Modification (if CU-UP) -> F1 Modification Response.
@@ -999,10 +1002,13 @@ static rrc_action_t rrc_gNB_action_from_pdusession_status(gNB_RRC_UE_t *ue_p,
     } else if (item->status == PDU_SESSION_STATUS_TORELEASE) {
       DevAssert(params->n_drb_rel > 0);
       ASSERT_PDU_ACTION_SINGLE(action, RRC_PDUSESSION_RELEASE);
-      LOG_I(NR_RRC,
-            "PDU Session Release: setting PDU Session status to TORELEASE for PDU Session %d \n",
-            item->param.pdusession_id);
+      LOG_I(NR_RRC, "PDU Session Release: setting PDU Session status to TORELEASE for PDU Session %d\n", item->param.pdusession_id);
       action = RRC_PDUSESSION_RELEASE;
+    } else if (item->status == PDU_SESSION_STATUS_NOTIFYONRELEASE) {
+      DevAssert(params->n_drb_rel > 0);
+      ASSERT_PDU_ACTION_SINGLE(action, RRC_PDUSESSION_RESOURCE_NOTIFY);
+      LOG_I(NR_RRC, "Released PDU Session %d to be notified (NOTIFYONRELEASE)\n", item->param.pdusession_id);
+      action = RRC_PDUSESSION_RESOURCE_NOTIFY;
     }
     /* ESTABLISHED and FAILED do not drive transaction action */
   }
@@ -2191,6 +2197,10 @@ static void handle_rrcReconfigurationComplete(gNB_RRC_INST *rrc, gNB_RRC_UE_t *U
       rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(rrc, UE, xid);
       reset_delayed_action(&UE->delayed_action);
     } break;
+    case RRC_PDUSESSION_RESOURCE_NOTIFY: {
+      rrc_gNB_send_NGAP_PDUSESSION_RESOURCE_NOTIFY(rrc, UE, xid);
+      reset_delayed_action(&UE->delayed_action);
+    } break;
     case RRC_PDUSESSION_ESTABLISH:
       if (UE->n_initial_pdu > 0) {
         /* PDU sessions through initial UE context setup */
@@ -3257,6 +3267,60 @@ static void rrc_send_f1_ue_context_modification_request(const gNB_RRC_INST *rrc,
         n_rel_drbs);
 }
 
+/** @brief Mark PDU sessions to remove and start local teardown.
+ * NGAP PDU Session Resource Notify is sent after RRCReconfigurationComplete. */
+static void rrc_gNB_trigger_pdu_session_notify_on_release(gNB_RRC_INST *rrc,
+                                                          gNB_RRC_UE_t *UE,
+                                                          const pdu_session_to_remove_t *rem,
+                                                          int n_rem)
+{
+  DevAssert(rrc);
+  DevAssert(UE);
+  DevAssert(rem || n_rem == 0);
+
+  f1ap_drb_to_release_t f1_drbs_rel[MAX_DRBS_PER_UE] = {0};
+  int n_f1_drbs_rel = 0;
+
+  for (int i = 0; i < n_rem; i++) {
+    rrc_pdu_session_param_t *pduSession = find_pduSession(&UE->pduSessions, rem[i].sessionId);
+    if (!pduSession) {
+      LOG_W(NR_RRC, "UE %u: Bearer Context Modification Required: PDU session %ld not found\n", UE->rrc_ue_id, rem[i].sessionId);
+      continue;
+    }
+    if (pduSession->status == PDU_SESSION_STATUS_NOTIFYONRELEASE) {
+      LOG_W(NR_RRC, "UE %u: PDU Session %d already set to be released\n", UE->rrc_ue_id, pduSession->param.pdusession_id);
+      continue;
+    }
+
+    const int pdusession_id = pduSession->param.pdusession_id;
+    int n_session_drbs = 0;
+    FOR_EACH_SEQ_ARR (drb_t *, drb, &UE->drbs) {
+      if (drb->pdusession_id != pdusession_id)
+        continue;
+      DevAssert(n_f1_drbs_rel < MAX_DRBS_PER_UE);
+      f1_drbs_rel[n_f1_drbs_rel++].id = drb->drb_id;
+      n_session_drbs++;
+    }
+    if (n_session_drbs == 0) {
+      LOG_E(NR_RRC, "UE %d: no DRBs to release for PDU session %d\n", UE->rrc_ue_id, pdusession_id);
+      continue;
+    }
+
+    LOG_I(NR_RRC, "UE %u: Bearer Context Modification Required: release PDU session %d\n", UE->rrc_ue_id, pdusession_id);
+    pduSession->status = PDU_SESSION_STATUS_NOTIFYONRELEASE;
+  }
+
+  if (n_f1_drbs_rel == 0)
+    return;
+  if (!UE->f1_ue_context_active) {
+    LOG_W(NR_RRC, "UE %d: DRB(s) to release but F1 UE context is not active\n", UE->rrc_ue_id);
+    return;
+  }
+
+  rrc_send_f1_ue_context_modification_request(rrc, UE, 0, NULL, n_f1_drbs_rel, f1_drbs_rel);
+  init_delayed_action(&UE->delayed_action);
+}
+
 /**
  * @brief E1AP Bearer Context Setup Response processing on CU-CP
 */
@@ -3475,6 +3539,30 @@ static void rrc_gNB_process_e1_bearer_context_modif_fail(const e1ap_bearer_conte
         fail->cause.value);
 }
 
+/** @brief E1AP Bearer Context Modification Required processing on CU-CP */
+static void rrc_gNB_process_e1_bearer_context_mod_required(sctp_assoc_t assoc_id, const e1ap_bearer_mod_required_t *req)
+{
+  DevAssert(req);
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, req->gNB_cu_cp_ue_id);
+  if (ue_context_p == NULL) {
+    LOG_E(NR_RRC, "No UE with CU-CP UE ID %d found (Bearer Context Modification Required)\n", req->gNB_cu_cp_ue_id);
+  } else if (ue_context_p->ue_context.amf_ue_ngap_id == 0) {
+    LOG_W(NR_RRC,
+          "UE %u: Bearer Context Modification Required but UE not NGAP-associated, skip release\n",
+          ue_context_p->ue_context.rrc_ue_id);
+  } else {
+    gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+    rrc_gNB_trigger_pdu_session_notify_on_release(rrc, UE, req->pduSessionRem, req->numPDUSessionsRem);
+  }
+
+  e1ap_bearer_mod_confirm_t conf = {
+      .gNB_cu_cp_ue_id = req->gNB_cu_cp_ue_id,
+      .gNB_cu_up_ue_id = req->gNB_cu_up_ue_id,
+  };
+  rrc->cucp_cuup.bearer_context_mod_confirm(assoc_id, &conf);
+}
+
 /**
  * @brief E1AP Bearer Context Release processing
  */
@@ -3550,6 +3638,8 @@ static const char *get_pdusession_status_text(pdu_session_status_t status)
     case PDU_SESSION_STATUS_TOMODIFY: return "to-modify";
     case PDU_SESSION_STATUS_FAILED: return "failed";
     case PDU_SESSION_STATUS_TORELEASE: return "to-release";
+    case PDU_SESSION_STATUS_NOTIFYONRELEASE:
+      return "notify-on-release";
     default: AssertFatal(false, "illegal PDU status code %d\n", status); return "illegal";
   }
   return "illegal";
@@ -3809,6 +3899,12 @@ void *rrc_gnb_task(void *args_p)
 
       case E1AP_BEARER_CONTEXT_MODIFICATION_FAIL:
         rrc_gNB_process_e1_bearer_context_modif_fail(&E1AP_BEARER_CONTEXT_MODIFICATION_FAIL(msg_p));
+        break;
+
+      case E1AP_BEARER_CONTEXT_MODIFICATION_REQUIRED:
+        rrc_gNB_process_e1_bearer_context_mod_required(msg_p->ittiMsgHeader.originInstance,
+                                                       &E1AP_BEARER_CONTEXT_MODIFICATION_REQUIRED(msg_p));
+        free_e1ap_context_mod_required(&E1AP_BEARER_CONTEXT_MODIFICATION_REQUIRED(msg_p));
         break;
 
       case E1AP_BEARER_CONTEXT_RELEASE_CPLT:

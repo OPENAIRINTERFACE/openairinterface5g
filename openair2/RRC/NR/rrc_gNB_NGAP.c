@@ -2003,6 +2003,44 @@ int rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(ngap_pdusession_release_comm
   return 0;
 }
 
+/** @brief Send NGAP PDU Session Resource Notify (TS 38.413 section 8.2.4) after local release
+ * (triggered by TS 23.527 clause 5.3.3.1) */
+void rrc_gNB_send_NGAP_PDUSESSION_RESOURCE_NOTIFY(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, uint8_t xid)
+{
+  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_GNB, rrc->module_id, NGAP_PDUSESSION_RESOURCE_NOTIFY);
+  ngap_pdusession_resource_notify_t *notify = &NGAP_PDUSESSION_RESOURCE_NOTIFY(msg_p);
+  notify->gNB_ue_ngap_id = UE->rrc_ue_id;
+
+  FOR_EACH_SEQ_ARR (rrc_pdu_session_param_t *, session, &UE->pduSessions) {
+    if (xid != session->xid || session->status != PDU_SESSION_STATUS_NOTIFYONRELEASE)
+      continue;
+    DevAssert(notify->nb_pdu_sessions_released < NR_MAX_NB_PDU_SESSIONS);
+    ngap_pdusession_notify_item_t *item = &notify->pdu_sessions[notify->nb_pdu_sessions_released++];
+    item->pdu_session_id = session->param.pdusession_id;
+    item->cause.type = NGAP_CAUSE_TRANSPORT;
+    item->cause.value = NGAP_CAUSE_TRANSPORT_RESOURCE_UNAVAILABLE;
+  }
+
+  if (notify->nb_pdu_sessions_released == 0) {
+    LOG_E(NR_RRC, "UE %u: PDU Session Resource Notify xid %u with no sessions\n", UE->rrc_ue_id, xid);
+    itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+    return;
+  }
+
+  const int n = notify->nb_pdu_sessions_released;
+  int released_ids[NR_MAX_NB_PDU_SESSIONS];
+  for (int i = 0; i < n; ++i)
+    released_ids[i] = notify->pdu_sessions[i].pdu_session_id;
+
+  LOG_I(NR_RRC, "NGAP PDU Session Resource Notify: rrc_ue_id %u nb_released %d\n", notify->gNB_ue_ngap_id, n);
+  itti_send_msg_to_task(TASK_NGAP, rrc->module_id, msg_p);
+  for (int i = 0; i < n; ++i)
+    rm_pduSession(&UE->pduSessions, &UE->drbs, released_ids[i]);
+
+  if (seq_arr_size(&UE->drbs) == 0 && UE->Srb[SRB2].Active)
+    rrc_gNB_cleanup_srb2_only_connected(rrc, UE);
+}
+
 /** @brief Handle NGAP Paging Indication from the AMF.
  *  For each TAI in the message, matches (PLMN + TAC) against the gNB configuration; on match,
  *  builds an F1AP Paging message and distributes it to all DUs that serve cells in that PLMN. */

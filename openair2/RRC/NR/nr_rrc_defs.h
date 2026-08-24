@@ -73,7 +73,8 @@ typedef enum pdu_session_satus_e {
   PDU_SESSION_STATUS_ESTABLISHED,
   PDU_SESSION_STATUS_TOMODIFY, // ENDC NSA
   PDU_SESSION_STATUS_FAILED,
-  PDU_SESSION_STATUS_TORELEASE, // to release DRB between eNB and UE
+  PDU_SESSION_STATUS_TORELEASE, // PDU Session Release
+  PDU_SESSION_STATUS_NOTIFYONRELEASE, // N3 GTP-U Error Indication triggers Resource Notify
 } pdu_session_status_t;
 
 typedef struct pdusession_s {
@@ -122,6 +123,7 @@ typedef enum {
   RRC_PDUSESSION_ESTABLISH,
   RRC_PDUSESSION_MODIFY,
   RRC_PDUSESSION_RELEASE,
+  RRC_PDUSESSION_RESOURCE_NOTIFY,
   RRC_UECAPABILITY_ENQUIRY,
 } rrc_action_t;
 
@@ -437,6 +439,7 @@ typedef struct nr_mac_rrc_dl_if_s {
 typedef struct cucp_cuup_if_s {
   cucp_cuup_bearer_context_setup_func_t bearer_context_setup;
   cucp_cuup_bearer_context_mod_func_t bearer_context_mod;
+  cucp_cuup_bearer_context_mod_confirm_func_t bearer_context_mod_confirm;
   cucp_cuup_bearer_context_release_func_t bearer_context_release;
 } cucp_cuup_if_t;
 

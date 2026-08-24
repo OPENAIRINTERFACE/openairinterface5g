@@ -451,7 +451,7 @@ int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_CONFIRM(sctp_assoc_t assoc_id, e
     free_e1ap_context_mod_confirm(&conf);
     return -1;
   }
-  LOG_I(E1AP, "Received Bearer Context Modification Confirm for CU-CP UE E1AP ID %u\n", conf.gNB_cu_cp_ue_id);
+  e1_bearer_context_mod_confirm(&conf);
   free_e1ap_context_mod_confirm(&conf);
   return 0;
 }

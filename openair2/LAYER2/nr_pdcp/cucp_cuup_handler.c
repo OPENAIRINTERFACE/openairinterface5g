@@ -574,6 +574,14 @@ void e1_bearer_release_cmd(const e1ap_bearer_release_cmd_t *cmd)
   get_e1_if()->bearer_release_complete(&cplt);
 }
 
+/** @brief Bearer Context Modification Confirm (TS 38.463 clause 8.3.3).
+ * UP teardown already done on Error Indication RX, Confirm is acknowledgement only. */
+void e1_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *conf)
+{
+  DevAssert(conf);
+  LOG_I(E1AP, "Received Bearer Context Modification Confirm for CU-CP UE E1AP ID %u\n", conf->gNB_cu_cp_ue_id);
+}
+
 void e1_reset(void)
 {
   /* we get the list of all UEs from the PDCP, which maintains a list */
