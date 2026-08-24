@@ -13,6 +13,7 @@ extern "C" {
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <netdb.h>
+#include <string.h>
 
 #include "common/platform_types.h"
 #include "common/utils/system.h"
@@ -30,6 +31,12 @@ extern "C" {
 #include "nrup_common.h"
 #include "nrup_dl_data_delivery_status.h"
 
+/* TS 29.281 clause 5.1 Figure 5.1-1 */
+#define GTPU_HEADER_MANDATORY_OCTETS (8) /* PN, S, E, spare, PT, version, msgType, teid */
+#define GTPU_HEADER_OPTIONAL_OCTETS (4) /* Sequence Number, N-PDU Number, Next Extension Header Type */
+/* TS 29.281 clause 8.1: IE Length field is 2 octets */
+#define GTPU_TLV_LENGTH_OCTETS (2)
+
 #pragma pack(1)
 
 typedef struct Gtpv1uMsgHeader {
@@ -43,6 +50,8 @@ typedef struct Gtpv1uMsgHeader {
   uint16_t msgLength;
   teid_t teid;
 } __attribute__((packed)) Gtpv1uMsgHeaderT;
+static_assert(sizeof(Gtpv1uMsgHeaderT) == GTPU_HEADER_MANDATORY_OCTETS,
+              "GTP-U header must be 8 octets (TS 29.281 5.1)");
 
 typedef struct Gtpv1uMsgHeaderOptFields {
   uint8_t seqNum1Oct;
@@ -67,14 +76,6 @@ typedef struct Gtpv1uExtHeader {
   PDUSessionContainerT pdusession_cntr;
   uint8_t NextExtHeaderType;
 } __attribute__((packed)) Gtpv1uExtHeaderT;
-
-  typedef struct Gtpv1Error {
-    Gtpv1uMsgHeaderT h;
-    uint8_t teid_data_i;
-    teid_t teid;
-    uint8_t addr_data_i;
-    uint16_t addr_len;
-  } __attribute__((packed)) Gtpv1uError;
 
 #pragma pack()
 
@@ -466,6 +467,29 @@ static void fillDlDeliveryStatusReport(gtpu_extension_header_t *ext,
       .highest_transmitted_nr_pdcp_sn = nr_pdcp_pdu_sn,
     }
   };
+}
+
+/** @brief GTP-U header length: mandatory octets plus optional E/S/PN fields when present
+ * (TS 29.281 clause 5.1).
+ * @return header length in bytes, or GTPNOK on failure */
+static int gtpv1u_header_len(const Gtpv1uMsgHeaderT *msg_hdr, uint32_t msg_buf_len)
+{
+  DevAssert(msg_hdr != NULL);
+  if (msg_buf_len < sizeof(*msg_hdr))
+    return GTPNOK;
+
+  unsigned int offset = sizeof(*msg_hdr);
+
+  /* if E, S, or PN is set then there are 4 more bytes of header */
+  if (msg_hdr->E || msg_hdr->S || msg_hdr->PN) {
+    if (offset + GTPU_HEADER_OPTIONAL_OCTETS > msg_buf_len) {
+      LOG_E(GTPU, "GTP-U header optional fields truncated (%u bytes available)\n", msg_buf_len);
+      return GTPNOK;
+    }
+    offset += GTPU_HEADER_OPTIONAL_OCTETS;
+  }
+
+  return offset;
 }
 
 static void gtpv1uEndTunnel(instance_t instance, gtpv1u_enb_end_marker_req_t *req)
@@ -1027,26 +1051,155 @@ static int Gtpv1uHandleEchoReq(int h, uint8_t *msgBuf, const struct sockaddr_in 
                                 0);
 }
 
-static int Gtpv1uHandleError(uint8_t *msgBuf, uint32_t msgBufLen)
+/** @brief Skip one TLV IE value from the current Length field offset
+ * @note TS 29.281 clause 8.1: TLV IE, where Length counts Value only */
+static int gtpv1u_skip_gtpu_tlv_ie(const uint8_t *msg_buf, uint32_t msg_buf_len, uint32_t *offset)
 {
-  if (msgBufLen < sizeof(Gtpv1uError))
-    LOG_E(GTPU, "Received GTP error indication with truncated size %u (mini size: %lu)\n", msgBufLen,sizeof(Gtpv1uError)+4);
-  Gtpv1uError *msg = ( Gtpv1uError *)msgBuf;
-  LOG_E(GTPU,
-        "Received GTP error indication: \n"
-        "   TEID 0x%x (must be 0 from TS 29.281)\n"
-        "   TV id for TEID 0x%x (must be 16)\n"
-        "   TEID in error 0x%x (should be a TEID we sent)\n"
-        "   TV id for GTP addr %u (should be 133)\n"
-        "   len for addr of UPF %u (should be IPv4 or IPv6 len)"
-        "   (TS 29.281 Sec 7.3.1 Error Handling not implemented)\n",
-        ntohl(msg->h.teid),
-        msg->teid_data_i,
-        ntohl(msg->teid),
-        msg->addr_data_i,
-        msg->addr_len);
-  int rc = GTPNOK;
-  return rc;
+  if (*offset + GTPU_TLV_LENGTH_OCTETS > msg_buf_len)
+    return GTPNOK;
+
+  uint16_t ie_len_be = 0; // TLV length (network byte order)
+  memcpy(&ie_len_be, msg_buf + *offset, sizeof ie_len_be);
+  const uint16_t ie_len = ntohs(ie_len_be);
+  *offset += GTPU_TLV_LENGTH_OCTETS;
+
+  if (*offset + ie_len > msg_buf_len)
+    return GTPNOK;
+
+  *offset += ie_len;
+  return 0;
+}
+
+/** @brief Decode a GTPv1-U Error Indication message (7.3.1, TS 29.281) */
+int gtpv1u_decode_error_indication(const uint8_t *msg_buf, uint32_t msg_buf_len, gtpv1u_error_indication_t *out)
+{
+  DevAssert(msg_buf);
+  DevAssert(out);
+
+  memset(out, 0, sizeof(*out));
+
+  if (msg_buf_len < sizeof(Gtpv1uMsgHeaderT))
+    return GTPNOK;
+
+  const Gtpv1uMsgHeaderT *msg_hdr = (const Gtpv1uMsgHeaderT *)msg_buf;
+
+  /* TS 29.281 clause 5.1: Error Indication should have S=1 and header TEID=0.
+   * Failed tunnel TEID is only in TEID Data I (clause 7.3.1 / 8.3). Some open-source
+   * UPFs deviate, accept with a warning for interoperability. */
+  if (!msg_hdr->S)
+    LOG_W(GTPU, "GTP Error Indication: S=0 (TS 29.281 clause 5.1 requires S=1)\n");
+  const teid_t hdr_teid = ntohl(msg_hdr->teid);
+  if (hdr_teid != 0)
+    LOG_W(GTPU, "GTP Error Indication: header TEID 0x%x non-zero (TS 29.281 clause 5.1 requires 0)\n", hdr_teid);
+
+  const int header_end = gtpv1u_header_len(msg_hdr, msg_buf_len);
+  if (header_end < 0)
+    return GTPNOK;
+
+  uint8_t prev_ie_type = 0;
+  uint32_t offset = header_end;
+
+  /* TS 29.281 clause 5.1: when E=1, extension headers (e.g. UDP Port §5.2.2.1)
+   * sit between the optional GTP-U header and Table 7.3.1-1 IEs. RX skips the chain. */
+  if (msg_hdr->E) {
+    uint8_t next_ext = msg_buf[offset - 1];
+    while (next_ext != NO_MORE_EXT_HDRS) {
+      if (offset >= msg_buf_len)
+        return GTPNOK;
+      const uint8_t ext_len = msg_buf[offset];
+      if (ext_len == 0 || offset + ext_len * EXT_HDR_LNTH_OCTET_UNITS > msg_buf_len)
+        return GTPNOK;
+      offset += ext_len * EXT_HDR_LNTH_OCTET_UNITS;
+      next_ext = msg_buf[offset - 1];
+    }
+  }
+
+  while (offset < msg_buf_len) {
+    const uint8_t ie_type = msg_buf[offset++];
+
+    /* Table 7.3.1-1: IE types increase with prescribed order, rejects duplicates and out-of-order IEs */
+    if (ie_type <= prev_ie_type)
+      return GTPNOK;
+    prev_ie_type = ie_type;
+
+    switch (ie_type) {
+      /* TS 29.281 clause 8.3: TEID-I is TV (Type + 4-octet value, no Length) */
+      case GTPU_TEID_I:
+        if (offset + GTPU_TEID_I_VALUE_OCTETS > msg_buf_len)
+          return GTPNOK;
+        {
+          uint32_t teid_be = 0;
+          memcpy(&teid_be, msg_buf + offset, sizeof teid_be);
+          out->teid_i = ntohl(teid_be);
+        }
+        offset += GTPU_TEID_I_VALUE_OCTETS;
+        break;
+
+      /* TS 29.281 clause 8.4: Peer Address is TLV (Type + 2-octet Length + address) */
+      case GTPU_PEER_ADDRESS: {
+        if (offset + GTPU_TLV_LENGTH_OCTETS > msg_buf_len)
+          return GTPNOK;
+        uint16_t addr_len_be = 0;
+        memcpy(&addr_len_be, msg_buf + offset, sizeof addr_len_be);
+        const uint16_t addr_len = ntohs(addr_len_be);
+        offset += GTPU_TLV_LENGTH_OCTETS;
+        if (addr_len != GTPU_PEER_ADDRESS_IPV4_OCTETS && addr_len != GTPU_PEER_ADDRESS_IPV6_OCTETS)
+          return GTPNOK;
+        if (offset + addr_len > msg_buf_len)
+          return GTPNOK;
+        memcpy(out->gtpu_peer_address.buffer, msg_buf + offset, addr_len);
+        out->gtpu_peer_address.length = addr_len * 8;
+        offset += addr_len;
+        break;
+      }
+
+      case GTPU_RECOVERY_TIME_STAMP:
+      case GTPU_PRIVATE_EXTENSION:
+        if (gtpv1u_skip_gtpu_tlv_ie(msg_buf, msg_buf_len, &offset) != 0)
+          return GTPNOK;
+        break;
+
+      default:
+        LOG_W(GTPU, "GTP Error Indication: unknown IE type %u at offset %u\n", ie_type, offset - 1);
+        return GTPNOK;
+    }
+  }
+
+  /* Table 7.3.1-1: TEID-I (8.3) and Peer Address (8.4) are mandatory */
+  if (out->teid_i == 0 || out->gtpu_peer_address.length == 0)
+    return GTPNOK;
+
+  return 0;
+}
+
+/** @brief Handle incoming GTP-U Error Indication (7.3.1, TS 29.281).
+ * Decodes mandatory IEs (Table 7.3.1-1: TEID-I 8.3, Peer Address 8.4). */
+static int Gtpv1uHandleError(int h, uint8_t *msgBuf, uint32_t msgBufLen, const struct sockaddr_in *addr)
+{
+  Gtpv1uMsgHeaderT *msgHdr = (Gtpv1uMsgHeaderT *)msgBuf;
+
+  if (msgHdr->version != 1 || msgHdr->PT != 1) {
+    LOG_E(GTPU, "[%d] Received a packet that is not GTP header\n", h);
+    return GTPNOK;
+  }
+
+  gtpv1u_error_indication_t indication = {0};
+  if (gtpv1u_decode_error_indication(msgBuf, msgBufLen, &indication) != 0) {
+    LOG_E(GTPU, "[%d] Received malformed GTP Error Indication (%u bytes)\n", h, msgBufLen);
+    return GTPNOK;
+  }
+
+  char peer_str[INET6_ADDRSTRLEN] = {0};
+  const int peer_family = (indication.gtpu_peer_address.length == GTPU_PEER_ADDRESS_IPV6_OCTETS * 8) ? AF_INET6 : AF_INET;
+  inet_ntop(peer_family, indication.gtpu_peer_address.buffer, peer_str, sizeof peer_str);
+  LOG_W(GTPU,
+        "[%d] GTP Error Indication TEID-I 0x%x GTP-U Peer Address %s UDP-from " IPV4_ADDR "\n",
+        h,
+        indication.teid_i,
+        peer_str,
+        IPV4_ADDR_FORMAT(addr->sin_addr.s_addr));
+
+  return 0;
 }
 
 static int Gtpv1uHandleSupportedExt()
@@ -1129,16 +1282,14 @@ static int Gtpv1uHandleGpdu(int h, uint8_t *msgBuf, uint32_t msgBufLen, const st
   pthread_mutex_unlock(&globGtp.gtp_lock);
 
   /* see TS 29.281 5.1 */
-  // Minimum length of GTP-U header if non of the optional fields are present
-  unsigned int offset = sizeof(Gtpv1uMsgHeaderT);
+  const int header_len = gtpv1u_header_len(msgHdr, msgBufLen);
+  if (header_len < 0)
+    return GTPNOK;
+  unsigned int offset = header_len;
 
   int8_t qfi = -1;
   bool rqi = false;
   uint32_t NR_PDCP_PDU_SN = 0;
-
-  /* if E, S, or PN is set then there are 4 more bytes of header */
-  if (msgHdr->E || msgHdr->S || msgHdr->PN)
-    offset += 4;
 
   if (msgHdr->E) {
     int next_extension_header_type = msgBuf[offset - 1];
@@ -1348,7 +1499,7 @@ static bool gtpv1uReceiveHandleMessage(int h, uint8_t buf[VLEN][BUFSIZE])
         break;
 
       case GTP_ERROR_INDICATION:
-        Gtpv1uHandleError(udpData, udpDataLen);
+        Gtpv1uHandleError(h, udpData, udpDataLen, &addr[i]);
         break;
 
       case GTP_SUPPORTED_EXTENSION_HEADER_INDICATION:

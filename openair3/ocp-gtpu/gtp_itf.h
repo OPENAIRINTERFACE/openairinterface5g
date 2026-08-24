@@ -138,6 +138,25 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
   int gtpv1Term(instance_t inst);
   void *gtpv1uTask(void *args);
 
+/* TS 29.281 Error Indication IEs */
+#define GTPU_TEID_I 16 /* Clause 8.3 */
+#define GTPU_PEER_ADDRESS 133 /* Clause 8.4 */
+#define GTPU_PRIVATE_EXTENSION 255 /* Clause 8.6 */
+#define GTPU_RECOVERY_TIME_STAMP 231 /* Clause 8.8 */
+#define GTPU_TEID_I_VALUE_OCTETS 4
+#define GTPU_PEER_ADDRESS_IPV4_OCTETS 4
+#define GTPU_PEER_ADDRESS_IPV6_OCTETS 16
+
+  /* TS 29.281 Table 7.3.1-1: Error Indication IEs */
+  typedef struct gtpv1u_error_indication_s {
+    // Tunnel Endpoint Identifier Data I (8.3 TS 29.281)
+    teid_t teid_i;
+    // GTPU Peer Address (8.4 TS 29.281)
+    transport_layer_addr_t gtpu_peer_address;
+  } gtpv1u_error_indication_t;
+
+  int gtpv1u_decode_error_indication(const uint8_t *msg_buf, uint32_t msg_buf_len, gtpv1u_error_indication_t *out);
+
 #ifdef __cplusplus
 }
 #endif

@@ -393,6 +393,148 @@ TEST(gtp, nrup_ddds)
   EXPECT_EQ(gtpv1Term(ep2), 0);
 }
 
+/** @brief Build a GTPv1-U Error Indication (omit an IE by leaving it zero) */
+static size_t build_error_indication(uint8_t *buf, size_t buf_cap, const gtpv1u_error_indication_t *in)
+{
+  const uint8_t peer_octets = in->gtpu_peer_address.length / 8;
+  /** TEID-I (TV): 1 type + 4 value = 5 bytes
+   * Peer Address (TLV): 1 type + 2 length + address octets */
+  const size_t teid_ie_len = (in->teid_i != 0) ? (1U + GTPU_TEID_I_VALUE_OCTETS) : 0U;
+  const size_t peer_ie_len = (peer_octets != 0) ? (1U + 2U + peer_octets) : 0U;
+  const size_t ie_len = teid_ie_len + peer_ie_len;
+  const size_t body_len = 4U + ie_len; /* optional header (S=1) + IEs */
+  const size_t total_len = 8U + body_len; /* mandatory header (8) + payload */
+
+  if (buf_cap < total_len || ie_len == 0)
+    return 0;
+
+  uint8_t *p = buf;
+
+  /* Mandatory GTP-U header (8 octets, TS 29.281 clause 5.1 Figure 5.1-1) */
+  *p++ = 0x32; /* TS 29.281 clause 5.1: S=1 for Error Indication */
+  *p++ = 26; /* Message Type: Error Indication (TS 29.281 Table 6.1-1) */
+  *p++ = (body_len >> 8) & 0xff; /* Length (network byte order) */
+  *p++ = body_len & 0xff;
+  memset(p, 0, 4); /* TEID = 0 (TS 29.281 clause 5.1) */
+  p += 4;
+
+  /* Optional GTP-U header fields (4 octets) */
+  memset(p, 0, 4); /* Sequence Number, N-PDU Number, Next Extension Header Type */
+  p += 4;
+
+  /* Message body: Error Indication IEs (TS 29.281 Table 7.3.1-1) */
+  /* TEID-I (TV IE: Type + 4-octet value) */
+  if (in->teid_i != 0) {
+    *p++ = GTPU_TEID_I;
+    uint32_t teid_be = htonl(in->teid_i);
+    memcpy(p, &teid_be, sizeof teid_be);
+    p += sizeof teid_be;
+  }
+
+  /* GTP-U Peer Address (TLV: Type + Length + address octets) */
+  if (peer_octets != 0) {
+    *p++ = GTPU_PEER_ADDRESS; /* Type */
+    *p++ = 0; /* Length (network byte order) */
+    *p++ = peer_octets; /* number of address octets */
+    memcpy(p, in->gtpu_peer_address.buffer, peer_octets);
+    p += peer_octets;
+  }
+
+  return total_len;
+}
+
+TEST(gtp, error_indication_decode)
+{
+  uint8_t buf[48] = {0};
+  gtpv1u_error_indication_t indication = {0};
+  gtpv1u_error_indication_t in = {0};
+  size_t len = 0;
+
+  in.gtpu_peer_address = get_tl_addr(AF_INET, "192.168.1.1");
+
+  /* valid mandatory IEs (TEID-I + GTP-U Peer Address) */
+  in.teid_i = 0x12345678;
+  len = build_error_indication(buf, sizeof buf, &in);
+  ASSERT_GT(len, 0U);
+  EXPECT_EQ(gtpv1u_decode_error_indication(buf, len, &indication), 0);
+  EXPECT_EQ(indication.teid_i, 0x12345678U);
+  EXPECT_EQ(indication.gtpu_peer_address.length, 32U);
+  EXPECT_EQ(indication.gtpu_peer_address.buffer[0], 192);
+  EXPECT_EQ(indication.gtpu_peer_address.buffer[3], 1);
+
+  /* truncation */
+  EXPECT_EQ(gtpv1u_decode_error_indication(buf, len - 2, &indication), GTPNOK);
+
+  /* missing mandatory IE (GTP-U Peer Address) */
+  in.teid_i = 0x12345678;
+  in.gtpu_peer_address.length = 0;
+  len = build_error_indication(buf, sizeof buf, &in);
+  ASSERT_GT(len, 0U);
+  EXPECT_EQ(gtpv1u_decode_error_indication(buf, len, &indication), GTPNOK);
+
+  /* missing mandatory IE (TEID-I) */
+  in.teid_i = 0;
+  in.gtpu_peer_address = get_tl_addr(AF_INET, "192.168.1.1");
+  len = build_error_indication(buf, sizeof buf, &in);
+  ASSERT_GT(len, 0U);
+  EXPECT_EQ(gtpv1u_decode_error_indication(buf, len, &indication), GTPNOK);
+
+  /* non-zero header TEID */
+  in.teid_i = 0x1;
+  len = build_error_indication(buf, sizeof buf, &in);
+  ASSERT_GT(len, 0U);
+  buf[7] = 1;
+  EXPECT_EQ(gtpv1u_decode_error_indication(buf, len, &indication), 0);
+  EXPECT_EQ(indication.teid_i, 0x1U);
+  EXPECT_EQ(indication.gtpu_peer_address.length, 32U);
+
+  /* S=0, 8-byte header (e.g. OAI CN5G UPF): warn and accept */
+  static const uint8_t ei_s0[] = {
+      0x30, 0x1a, 0x00, 0x0c, 0x00, 0x00, 0x00, 0x00, /* flags S=0, type 26, len 12, TEID 0 */
+      0x10, 0x00, 0x00, 0x00, 0x1e, /* TEID-I 0x1e */
+      0x85, 0x00, 0x04, 192,  168,  70,   129, /* Peer Address 192.168.70.129 */
+  };
+  EXPECT_EQ(gtpv1u_decode_error_indication(ei_s0, sizeof ei_s0, &indication), 0);
+  EXPECT_EQ(indication.teid_i, 0x1eU);
+  EXPECT_EQ(indication.gtpu_peer_address.length, 32U);
+  EXPECT_EQ(indication.gtpu_peer_address.buffer[0], 192);
+  EXPECT_EQ(indication.gtpu_peer_address.buffer[3], 129);
+
+  /* optional IE present (Recovery Time Stamp) */
+  in.teid_i = 0xdeadbeef;
+  len = build_error_indication(buf, sizeof buf, &in);
+  ASSERT_GT(len, 0U);
+  uint8_t *p = buf + len;
+  *p++ = GTPU_RECOVERY_TIME_STAMP;
+  *p++ = 0;
+  *p++ = 4;
+  *p++ = 0x12;
+  *p++ = 0x34;
+  *p++ = 0x56;
+  *p++ = 0x78;
+  const size_t total_len = p - buf;
+  buf[2] = ((total_len - 8) >> 8) & 0xff;
+  buf[3] = (total_len - 8) & 0xff;
+  EXPECT_EQ(gtpv1u_decode_error_indication(buf, total_len, &indication), 0);
+  EXPECT_EQ(indication.teid_i, 0xdeadbeefU);
+  EXPECT_EQ(indication.gtpu_peer_address.length, 32U);
+
+  /* E=1 + non-zero header TEID (Open5GS lab): extensions skipped, TEID-I used */
+  static const uint8_t ei_with_extensions[] = {
+      0x36, 0x1a, 0x00, 0x18, 0x00, 0x00, 0x2c, 0xdf, /* GTP-U: E=1, S=1, type 26, TEID 0x2cdf */
+      0x00, 0x00, 0x00, 0x85, /* optional header: Next Ext = PDU Session Container (0x85) */
+      0x01, 0x00, 0x01, 0x40, /* ext 0x85, Next Ext = UDP Port (0x40) */
+      0x01, 0x00, 0x00, 0x00, /* ext 0x40, Next Ext = none */
+      0x10, 0x00, 0x00, 0x2c, 0xdf, /* TEID-I (type 16) */
+      0x85, 0x00, 0x04, 192,  168,  71,   1, /* Peer Address (type 133), 192.168.71.1 */
+  };
+  EXPECT_EQ(gtpv1u_decode_error_indication(ei_with_extensions, sizeof ei_with_extensions, &indication), 0);
+  EXPECT_EQ(indication.teid_i, 0x2cdfU);
+  EXPECT_EQ(indication.gtpu_peer_address.length, 32U);
+  EXPECT_EQ(indication.gtpu_peer_address.buffer[0], 192);
+  EXPECT_EQ(indication.gtpu_peer_address.buffer[3], 1);
+}
+
 /* ideas for tests:
  * - share IP addresses among two instances (e.g., F1-U/NG-U on same IP/port)
  * - support of IPv6
