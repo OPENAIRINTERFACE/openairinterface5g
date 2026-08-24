@@ -252,15 +252,16 @@ static radio_tx_gpio_flag_t get_gpio_flags(RU_t *ru, int slot)
   radio_tx_gpio_flag_t flags_gpio = 0;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   openair0_config_t *cfg0 = &ru->openair0_cfg;
+  bool analog_bf = ru->gNB_list[0]->common_vars.analog_bf;
+  uint16_t **beam_ids = ru->gNB_list[0]->common_vars.beam_id;
 
   switch (cfg0->gpio_controller) {
     case RU_GPIO_CONTROL_GENERIC:
       // currently we switch beams at the beginning of a slot and we take the beam index of the first symbol of this slot
       // we only send the beam to the gpio if the beam is different from the previous slot
 
-      if (ru->common.beam_id) {
+      if (analog_bf) {
         int prev_slot = (slot - 1 + fp->slots_per_frame) % fp->slots_per_frame;
-        uint16_t **beam_ids = ru->common.beam_id;
         uint16_t prev_beam = beam_ids[prev_slot * fp->symbols_per_slot][0];
         int beam = beam_ids[slot * fp->symbols_per_slot][0];
         if (prev_beam != beam) {
@@ -274,7 +275,7 @@ static radio_tx_gpio_flag_t get_gpio_flags(RU_t *ru, int slot)
       // the beam index is written in bits 8-10 of the flags
       // bit 11 enables the gpio programming
       int beam = 0;
-      if ((slot % 10 == 0) && ru->common.beam_id && (ru->common.beam_id[slot * fp->symbols_per_slot][0] < 64)) {
+      if ((slot % 10 == 0) && analog_bf && (beam_ids[slot * fp->symbols_per_slot][0] < 64)) {
         // beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 64;
         beam = 1024; // hardcoded now for beam32 boresight
         // beam = 127; //for the sake of trying beam63
@@ -395,15 +396,10 @@ int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_s
   return transmitted_symbols;
 }
 
-// Pushes the per-antenna analog beam IDs assigned to this slot's symbols (ru->common.beam_id,
-// filled in from the gNB's precoding step) down to the RF device, one trx_set_beams() call per
-// symbol at which the beam vector changes. Only relevant for devices that need to be told about
-// beams explicitly (e.g. rfsimulator); USRP GPIO-controlled beam switching is handled separately
-// via get_gpio_flags(), embedded directly in the TX burst flags.
-//
-// Must run after nr_feptx_tp()/nr_feptx_prec() have copied this slot's beam_id from the gNB's
-// common_vars (done from ru_tx_func(), called below in tx_rf()) -- calling this any earlier reads
-// last frame's leftover beam_id instead of the one the MAC scheduler just picked for this slot.
+// Pushes the per-antenna analog beam IDs assigned to this slot's symbols down to the RF device,
+// one trx_set_beams() call per symbol at which the beam vector changes. Only relevant for devices
+// that need to be told about beams explicitly (e.g. rfsimulator); USRP GPIO-controlled beam
+// switching is handled separately via get_gpio_flags(), embedded directly in the TX burst flags.
 //
 // Only calls trx_set_beams() when the beam vector actually changes between symbols, to avoid
 // issuing redundant beam-switch commands to real hardware.
@@ -414,7 +410,7 @@ static void ctrl_rf(RU_t *ru, int frame, int slot, uint64_t timestamp)
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   int nb_tx = ru->nb_tx;
-  uint16_t **beam_id = ru->common.beam_id;
+  uint16_t **beam_id = ru->gNB_list[0]->common_vars.beam_id;
 
   uint16_t last_beams[nb_tx];
   memcpy(last_beams, beam_id[slot * fp->symbols_per_slot], nb_tx * sizeof(uint16_t));

@@ -151,15 +151,6 @@ void nr_feptx_prec(RU_t *ru, int frame_tx, int slot_tx)
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   start_meas(&ru->precoding_stats);
 
-  // Copy beam ID assigned to all ports in this slot
-  if (gNB->common_vars.analog_bf) {
-    for (int i = 0; i < fp->symbols_per_slot; i++) {
-      memcpy(ru->common.beam_id[slot_tx * fp->symbols_per_slot + i],
-             gNB->common_vars.beam_id[slot_tx * fp->symbols_per_slot + i],
-             (ru->nb_tx) * sizeof(**ru->common.beam_id));
-    }
-  }
-
   if (nr_slot_select(cfg,frame_tx,slot_tx) == NR_UPLINK_SLOT)
     return;
 
@@ -218,14 +209,6 @@ void nr_feptx_tp(RU_t *ru, int frame_tx, int slot)
 {
   nfapi_nr_config_request_scf_t *cfg = &ru->gNB_list[0]->gNB_config;
   const NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-
-  // Copy beam IDs for both TX and RX; ctrl_rf() is called for all types of slots when analog_bf is set.
-  if (ru->gNB_list[0]->common_vars.analog_bf) {
-    for (uint_fast16_t i = 0; i < fp->symbols_per_slot; i++)
-      memcpy(ru->common.beam_id[slot * fp->symbols_per_slot + i],
-             ru->gNB_list[0]->common_vars.beam_id[slot * fp->symbols_per_slot + i],
-             (ru->nb_tx) * sizeof(**ru->common.beam_id));
-  }
 
   if (nr_slot_select(cfg, frame_tx, slot) == NR_UPLINK_SLOT)
     return;

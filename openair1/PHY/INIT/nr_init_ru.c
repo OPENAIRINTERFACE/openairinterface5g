@@ -21,11 +21,6 @@ void nr_phy_init_RU(RU_t *ru)
   int nb_tx_streams = ru->nb_tx;
   int nb_rx_streams = ru->nb_rx;
   LOG_I(NR_PHY, "nb_tx_streams %d, nb_rx_streams %d\n", nb_tx_streams, nb_rx_streams);
-  const unsigned int num_symbols = fp->symbols_per_slot * fp->slots_per_frame;
-  ru->common.beam_id = malloc16_clear(num_symbols * sizeof(*ru->common.beam_id));
-  for (int i = 0; i < num_symbols; i++) {
-    ru->common.beam_id[i] = malloc16_clear(nb_tx_streams * sizeof(**ru->common.beam_id));
-  }
 
   if ((nb_tx_streams > fp->nb_antennas_tx) || (nb_rx_streams > fp->nb_antennas_rx))
     LOG_W(NR_PHY, "There could be unused baseband ports because of fewer logical ports.\n");
@@ -131,11 +126,6 @@ void nr_phy_free_RU(RU_t *ru)
     for (int i = 0; i < nb_rx_streams; i++)
       free_and_zero(ru->common.rxdataF[i]);
     free_and_zero(ru->common.rxdataF);
-
-    NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-    for (int i = 0; i < fp->symbols_per_slot * fp->slots_per_frame; ++i)
-      free_and_zero(ru->common.beam_id[i]);
-    free_and_zero(ru->common.beam_id);
   }
 
   PHY_VARS_gNB *gNB0 = ru->gNB_list[0];
