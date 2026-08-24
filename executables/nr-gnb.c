@@ -114,6 +114,12 @@ static void tx_func(processingData_L1tx_t *info)
     STOP_MEAS_FULL_SLOT(&info->gNB->phy_proc_tx, tx_slot_type, NR_DOWNLINK_SLOT);
   }
 
+  // beam API - fill TX and/or RX beam IDs
+  if (gNB->common_vars.analog_bf) {
+    if (ru->fh_south_ctrl)
+      ru->fh_south_ctrl(ru, frame_tx, slot_tx, info->timestamp_tx);
+  }
+
   if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT || get_softmodem_params()->continuous_tx || IS_SOFTMODEM_RFSIM) {
     if (ru->fh_south_out)
       ru->fh_south_out(ru, frame_tx, slot_tx, info->timestamp_tx);

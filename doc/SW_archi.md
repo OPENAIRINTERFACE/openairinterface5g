@@ -59,7 +59,7 @@ subgraph tx
         --> reorder{re order} --> reorder
         reorder --> feptx_prec/feptx_ofdm
         reorder --> L1_tx_free((L1_tx_free))
-        feptx_prec/feptx_ofdm --> fh_south_out
+        feptx_prec/feptx_ofdm --> fh_south_ctrl --> fh_south_out
     end 
     tx_func2 --> tx_reorder_thread
 end

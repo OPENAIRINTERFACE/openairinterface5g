@@ -478,6 +478,8 @@ typedef struct RU_t_s {
   void (*fh_south_in)(struct RU_t_s *ru, int *frame, int *subframe);
   /// function pointer to synchronous TX fronthaul function
   void (*fh_south_out)(struct RU_t_s *ru, int frame_tx, int tti_tx, uint64_t timestamp_tx);
+  /// NR function pointer for beam API
+  void (*fh_south_ctrl)(struct RU_t_s *ru, int frame, int slot, uint64_t timestamp);
   /// function pointer to synchronous RX fronthaul function (RRU)
   void (*fh_north_out)(struct RU_t_s *ru);
   /// function pointer to asynchronous fronthaul interface

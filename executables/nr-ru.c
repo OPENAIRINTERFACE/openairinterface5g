@@ -405,9 +405,6 @@ int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_s
 // issuing redundant beam-switch commands to real hardware.
 static void ctrl_rf(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
-  if (!ru->rfdevice.trx_set_beams || !ru->gNB_list[0]->common_vars.analog_bf)
-    return;
-
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   int nb_tx = ru->nb_tx;
   uint16_t **beam_id = ru->gNB_list[0]->common_vars.beam_id;
@@ -431,7 +428,6 @@ static void ctrl_rf(RU_t *ru, int frame, int slot, uint64_t timestamp)
 
 void tx_rf(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
-  ctrl_rf(ru, frame, slot, timestamp);
   tx_rf_symbols(ru, frame, slot, timestamp, 0, 14);
 }
 
@@ -672,6 +668,10 @@ void *ru_thread(void *param)
       t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_out");
       if (t != NULL)
         ru->fh_south_out = t;
+      // this is temporarily until the new split 7.2 API
+      t = ru->ifdevice.get_internal_parameter("fh_if4p5_ctrl");
+      if (t != NULL)
+        ru->fh_south_ctrl = t;
     }
 
     int cpu = sched_getcpu();
@@ -917,6 +917,7 @@ void set_function_spec_param(RU_t *ru)
       ru->nr_start_if = NULL; // no if interface
       ru->fh_south_in = rx_rf; // local synchronous RF RX
       ru->fh_south_out = tx_rf; // local synchronous RF TX
+      ru->fh_south_ctrl = ctrl_rf; // beam API
       ru->start_rf = start_rf; // need to start the local RF interface
       ru->stop_rf = stop_rf;
       ru->start_write_thread = start_write_thread; // starting RF TX in different thread

@@ -35,8 +35,8 @@ More detailed information about the xran callbacks can be taken from the xran
 documentation.
 
 During normal operation, OAI calls into the driver through functions
-`oran_fh_if4p5_south_in()` for PUSCH/PRACH and `oran_fh_if4p5_south_out()` for
-PDSCH.
+`oran_fh_if4p5_south_in()` for PUSCH/PRACH, `oran_fh_if4p5_south_out()` for
+PDSCH, and `oran_fh_if4p5_ctrl()` for CP UL/DL.
 
 For PDSCH, `oran_fh_if4p5_south_out()` calls `xran_fh_tx_send_slot()` that
 optionally compresses IQ data, then writes it into IQ buffers of xran.

@@ -32,7 +32,7 @@ flowchart TB
 
     subgraph tx_func
 
-        NR_slot_indication --> msg:resp_L1 --> phy_procedures_gNB_tx --> feptx_prec/feptx_ofdm --> fh_south_out
+        NR_slot_indication --> msg:resp_L1 --> phy_procedures_gNB_tx --> feptx_prec/feptx_ofdm --> fh_south_ctrl --> fh_south_out
         NR_slot_indication["run the scheduler:
           - monolithic: run_scheduler_monolithic()
           - nFAPI: send indication via pnf_send_slot_ind()"]
