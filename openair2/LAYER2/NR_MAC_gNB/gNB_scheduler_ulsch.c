@@ -2282,7 +2282,7 @@ nfapi_nr_pusch_pdu_t *prepare_pusch_pdu(nfapi_nr_ul_tti_request_t *future_ul_tti
                                         int harq_round,
                                         int fh,
                                         int rnti,
-                                        nr_beam_mode_t beam_mode)
+                                        const NR_beam_info_t *beam_info)
 {
   nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
@@ -2333,7 +2333,7 @@ nfapi_nr_pusch_pdu_t *prepare_pusch_pdu(nfapi_nr_ul_tti_request_t *future_ul_tti
   pusch_pdu->beamforming.prg_size = pusch_pdu->bwp_size;
   pusch_pdu->beamforming.dig_bf_interface = sched_pusch->ant_port_idx.numSpatialStreamIndices;
   memcpy(&pusch_pdu->param_v4, &sched_pusch->ant_port_idx, sizeof(pusch_pdu->param_v4));
-  const uint16_t fapi_beam_id = convert_to_fapi_beam(UE->UE_beam_index, beam_mode);
+  const uint16_t fapi_beam_id = convert_to_fapi_beam(UE->UE_beam_index, beam_info);
   for (int i = 0; i < sched_pusch->ant_port_idx.numSpatialStreamIndices;i++)
     pusch_pdu->beamforming.prgs_list[0].dig_bf_interface_list[i].beam_idx = fapi_beam_id;
   /* TRANSFORM PRECODING --------------------------------------------------------*/
@@ -2475,7 +2475,7 @@ void post_process_ulsch(gNB_MAC_INST *nr_mac,
                                                       cur_harq->round,
                                                       current_BWP->pusch_Config && current_BWP->pusch_Config->frequencyHopping,
                                                       UE->rnti,
-                                                      cell->beam_info.beam_mode);
+                                                      &cell->beam_info);
   req->n_pdus += 1;
 
   // Calculate the normalized tx_power for PHR
@@ -2543,7 +2543,7 @@ void post_process_ulsch(gNB_MAC_INST *nr_mac,
                                                    &sched_pusch->dci_ant_idx,
                                                    sched_ctrl->aggregation_level,
                                                    sched_ctrl->cce_index,
-                                                   convert_to_fapi_beam(UE->UE_beam_index, cell->beam_info.beam_mode),
+                                                   convert_to_fapi_beam(UE->UE_beam_index, &cell->beam_info),
                                                    UE->rnti);
   pdcch_pdu->numDlDci++;
 

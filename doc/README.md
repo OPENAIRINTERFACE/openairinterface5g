@@ -77,7 +77,7 @@ Legacy unmaintained files:
 - [L1 threads in NR-UE](./nr-ue-design.md)
 - [Information on gNB MAC](./MAC/mac-usage.md)
 - [Information on gNB RRC](./RRC/rrc-usage.md)
-- [Information on analog beamforming implementation](./analog_beamforming.md)
+- [Information on beamforming implementation](./beamforming.md)
 - [Information on the UE 5G NAS implementation](./5Gnas.md)
 - [Information on UL-MIMO](./UL_MIMO.md): UL-MIMO specific notes
 - [Information on NRPPA](./NRPPA/NRPPA-call-flow.md)

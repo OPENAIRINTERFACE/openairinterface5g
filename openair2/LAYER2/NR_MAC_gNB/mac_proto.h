@@ -223,7 +223,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t *pucch_pdu,
                         uint16_t O_ack,
                         uint8_t O_sr,
                         int r_pucch,
-                        nr_beam_mode_t mode,
+                        const NR_beam_info_t *beam_info,
                         uint16_t ant_port_idx,
                         uint16_t *ssi,
                         uint16_t num_ant);
@@ -336,7 +336,7 @@ nfapi_nr_pusch_pdu_t *prepare_pusch_pdu(nfapi_nr_ul_tti_request_t *future_ul_tti
                                         int harq_round,
                                         int fh,
                                         int rnti,
-                                        nr_beam_mode_t beam_mode);
+                                        const NR_beam_info_t *beam_info);
 nfapi_nr_dl_tti_pdsch_pdu_rel15_t *prepare_pdsch_pdu(nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu,
                                                      const nr_cell_sched_t *cell,
                                                      const NR_UE_info_t *UE,
@@ -519,7 +519,7 @@ uint64_t get_ssb_bitmap_and_len(const NR_ServingCellConfigCommon_t *scc, uint8_t
 void fill_beam_index_list(NR_ServingCellConfigCommon_t *scc, const nr_mac_config_t *config, nr_cell_sched_t *cell);
 int get_beam_from_ssbidx(nr_cell_sched_t *cell, int ssb_idx);
 int16_t get_allocated_beam(const NR_beam_info_t *beam_info, int frame, int slot, int slots_per_frame, int beam_number_in_period);
-uint16_t convert_to_fapi_beam(const uint16_t beam_idx, const nr_beam_mode_t mode);
+uint16_t convert_to_fapi_beam(const uint16_t beam_idx, const NR_beam_info_t *beam_info);
 NR_beam_alloc_t beam_allocation_procedure(NR_beam_info_t *beam_info, int frame, int slot, int16_t beam_index, int slots_per_frame);
 void reset_beam_status(NR_beam_info_t *beam_info, int frame, int slot, int16_t beam_index, int slots_per_frame, bool new_beam);
 int beam_selection_procedures(nr_cell_sched_t *cell, NR_UE_info_t *UE);
