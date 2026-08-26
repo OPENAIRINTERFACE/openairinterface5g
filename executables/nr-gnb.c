@@ -92,27 +92,31 @@ static void tx_func(processingData_L1tx_t *info)
   res->key = slot_rx;
   pushNotifiedFIFO(&gNB->resp_L1, res);
 
+  RU_t *ru = gNB->RU_list[0];
   int tx_slot_type = nr_slot_select(cfg, frame_tx, slot_tx);
-  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT || get_softmodem_params()->continuous_tx || IS_SOFTMODEM_RFSIM) {
+  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
     START_MEAS_FULL_SLOT(&info->gNB->phy_proc_tx, tx_slot_type, NR_DOWNLINK_SLOT);
     START_MEAS_FULL_SLOT(&info->gNB->gnb_tx_procedures_stats, tx_slot_type, NR_DOWNLINK_SLOT);
     phy_procedures_gNB_TX(info->gNB, &sched_response.DL_req, &sched_response.TX_req, &sched_response.UL_dci_req, frame_tx,slot_tx);
     STOP_MEAS_FULL_SLOT(&info->gNB->gnb_tx_procedures_stats, tx_slot_type, NR_DOWNLINK_SLOT);
 
-    PHY_VARS_gNB *gNB = info->gNB;
-    processingData_RU_t syncMsgRU;
-    syncMsgRU.frame_tx = frame_tx;
-    syncMsgRU.slot_tx = slot_tx;
-    syncMsgRU.ru = gNB->RU_list[0];
-    syncMsgRU.timestamp_tx = info->timestamp_tx;
-    LOG_D(PHY, "gNB: %d.%d : calling RU TX function\n", syncMsgRU.frame_tx, syncMsgRU.slot_tx);
-
     START_MEAS_FULL_SLOT(&info->gNB->ru_tx_func_stats, tx_slot_type, NR_DOWNLINK_SLOT);
 
-    ru_tx_func((void *)&syncMsgRU);
+    // split 7.2 precoding
+    if (ru->feptx_prec)
+      ru->feptx_prec(ru,frame_tx,slot_tx);
+
+    // split 8 precoding and IDFT
+    if (ru->feptx_ofdm)
+      ru->feptx_ofdm(ru, frame_tx, slot_tx);
 
     STOP_MEAS_FULL_SLOT(&info->gNB->ru_tx_func_stats, tx_slot_type, NR_DOWNLINK_SLOT);
     STOP_MEAS_FULL_SLOT(&info->gNB->phy_proc_tx, tx_slot_type, NR_DOWNLINK_SLOT);
+  }
+
+  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT || get_softmodem_params()->continuous_tx || IS_SOFTMODEM_RFSIM) {
+    if (ru->fh_south_out)
+      ru->fh_south_out(ru, frame_tx, slot_tx, info->timestamp_tx);
   }
 }
 

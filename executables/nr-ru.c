@@ -588,25 +588,6 @@ int setup_RU_buffers(RU_t *ru)
   return(0);
 }
 
-void ru_tx_func(void *param)
-{
-  processingData_RU_t *info = (processingData_RU_t *) param;
-  RU_t *ru = info->ru;
-  int frame_tx = info->frame_tx;
-  int slot_tx = info->slot_tx;
-
-  // do TX front-end processing if needed (precoding and/or IDFTs)
-  if (ru->feptx_prec)
-    ru->feptx_prec(ru,frame_tx,slot_tx);
-
-  // do OFDM with/without TX front-end processing  if needed
-  if (ru->feptx_ofdm)
-    ru->feptx_ofdm(ru, frame_tx, slot_tx);
-
-  if (ru->fh_south_out)
-    ru->fh_south_out(ru, frame_tx, slot_tx, info->timestamp_tx);
-}
-
 /* @brief wait for the next RX TTI to be free
  *
  * Certain radios, e.g., RFsim, can run faster than real-time. This might

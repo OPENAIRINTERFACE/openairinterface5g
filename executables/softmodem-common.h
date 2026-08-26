@@ -311,7 +311,6 @@ extern int usrp_tx_thread;
 extern int sf_ahead;
 extern int oai_exit;
 
-void ru_tx_func(void *param);
 void configure_ru(void *, void *arg);
 void configure_rru(void *, void *arg);
 struct timespec timespec_add(struct timespec lhs, struct timespec rhs);
