@@ -5,109 +5,81 @@
 #
 #   Required Python Version
 #     Python 3.x
-#
-#   Required Python Package
-#     pexpect
 #---------------------------------------------------------------------
-
-#-----------------------------------------------------------
-# Import Libs
-#-----------------------------------------------------------
-import sys		# arg
-import re		# reg
-import constants as CONST
 
 #-----------------------------------------------------------
 # Parsing Command Line Arguements
 #-----------------------------------------------------------
+import argparse
 
+def strToBool(s):
+    if s.lower() in ['true', 'yes', '1']:
+        return True
+    if s.lower() in ['false', 'no', '0', '']:
+        return False
+    raise argparse.ArgumentTypeError(f"cannot interpret '{s}' as boolean")
 
 def ArgsParse(argvs,CiTestObj,RAN,HTML,CONTAINERS,HELP,CLUSTER):
 
-    force_local = False
-    date_fmt = None
-    while len(argvs) > 1:
-        myArgv = argvs.pop(1)	# 0th is this file's name
+    p = argparse.ArgumentParser(description="OAI CI driver", ) #formatter_class?
+    p.add_argument('--local', '-l', action='store_true', default=False, help='Force local execution: rewrites the test xml script before running to always execute on localhost. Assumes images are available locally, will not remove any images and will run inside the current repo directory')
+    p.add_argument('--datefmt', '-f', help="date format to prepend to logs")
+    p.add_argument('--mode', '-m', help="One of: TesteNB, InitiateHtml, FinalizeHtml")
+    p.add_argument('--repository', '-r', default='', help="OAI RAN Repository URL")
+    p.add_argument('--ranAllowMerge', type=strToBool, default=False, help="Allow Merge Request (with target branch) (true or false)")
+    p.add_argument('--branch', '-b', default='', help="OAI RAN Repository Branch")
+    p.add_argument('--targetBranch', '-t', default='', help="Target Branch in case of a Merge Request")
+    p.add_argument('--workspace', '-w', default='', help="directory for workspaces on remote hosts")
+    p.add_argument('--XMLTestFile', '-x', action='append', default=[])
+    p.add_argument('--finalStatus', type=strToBool, default=False)
+    oc = p.add_argument_group(title="OpenShift", description="OC-specific parameters")
+    oc.add_argument('--OCUserName')
+    oc.add_argument('--OCPassword')
+    oc.add_argument('--OCProjectName')
+    oc.add_argument('--OCUrl')
+    oc.add_argument('--OCRegistry')
+    p.add_argument('--FlexRicTag')
 
-	    #--help
-        if re.match(r'^\-\-help$', myArgv, re.IGNORECASE):
-            HELP.GenericHelp(CONST.Version)
-            sys.exit(0)
-        if re.match(r'^\-\-local$', myArgv, re.IGNORECASE):
-            force_local = True
+    args = p.parse_args()
 
+    CiTestObj.repository = args.repository
+    RAN.repository = args.repository
+    HTML.repository = args.repository
+    CONTAINERS.repository = args.repository
+    CLUSTER.repository = args.repository
 
-	    #consider inline parameters
-        elif re.match(r'^\-\-datefmt=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-datefmt=(.+)$', myArgv, re.IGNORECASE)
-            date_fmt = matchReg.group(1)
-        elif re.match(r'^\-\-mode=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-mode=(.+)$', myArgv, re.IGNORECASE)
-            mode = matchReg.group(1)
-        elif re.match(r'^\-\-repository=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-repository=(.+)$', myArgv, re.IGNORECASE)
-            CiTestObj.repository = matchReg.group(1)
-            RAN.repository=matchReg.group(1)
-            HTML.repository=matchReg.group(1)
-            CONTAINERS.repository=matchReg.group(1)
-            CLUSTER.repository=matchReg.group(1)
-        elif re.match(r'^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-ranAllowMerge=(.+)$', myArgv, re.IGNORECASE)
-            doMerge = matchReg.group(1)
-            if ((doMerge == 'true') or (doMerge == 'True')):
-                RAN.merge=True
-                CONTAINERS.merge=True
-                CLUSTER.merge=True
-        elif re.match(r'^\-\-branch=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-branch=(.+)$', myArgv, re.IGNORECASE)
-            CiTestObj.branch = matchReg.group(1)
-            RAN.branch=matchReg.group(1)
-            HTML.branch=matchReg.group(1)
-            CONTAINERS.branch=matchReg.group(1)
-            CLUSTER.branch=matchReg.group(1)
-        elif re.match(r'^\-\-targetBranch=(.*)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-targetBranch=(.*)$', myArgv, re.IGNORECASE)
-            RAN.targetBranch=matchReg.group(1)
-            CONTAINERS.targetBranch=matchReg.group(1)
-            CLUSTER.targetBranch=matchReg.group(1)
-        elif re.match(r'^\-\-workspace=(.+)$|^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE):
-            if re.match(r'^\-\-workspace=(.+)$', myArgv, re.IGNORECASE):
-                matchReg = re.match(r'^\-\-workspace=(.+)$', myArgv, re.IGNORECASE)
-            else:
-                matchReg = re.match(r'^\-\-eNBSourceCodePath=(.+)$', myArgv, re.IGNORECASE)
-            RAN.workspace=matchReg.group(1)
-            CONTAINERS.workspace=matchReg.group(1)
-            CLUSTER.workspace=matchReg.group(1)
-        elif re.match(r'^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
-            CiTestObj.testXMLfiles.append(matchReg.group(1))
-            HTML.testXMLfiles.append(matchReg.group(1))
-            HTML.nbTestXMLfiles=HTML.nbTestXMLfiles+1
-        elif re.match(r'^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE)
-            finalStatus = matchReg.group(1)
-            if ((finalStatus == 'true') or (finalStatus == 'True')):
-                CiTestObj.finalStatus = True
-        elif re.match(r'^\-\-OCUserName=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-OCUserName=(.+)$', myArgv, re.IGNORECASE)
-            CLUSTER.OCUserName = matchReg.group(1)
-        elif re.match(r'^\-\-OCPassword=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-OCPassword=(.+)$', myArgv, re.IGNORECASE)
-            CLUSTER.OCPassword = matchReg.group(1)
-        elif re.match(r'^\-\-OCProjectName=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-OCProjectName=(.+)$', myArgv, re.IGNORECASE)
-            CLUSTER.OCProjectName = matchReg.group(1)
-        elif re.match(r'^\-\-OCUrl=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-OCUrl=(.+)$', myArgv, re.IGNORECASE)
-            CLUSTER.OCUrl = matchReg.group(1)
-        elif re.match(r'^\-\-OCRegistry=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-OCRegistry=(.+)$', myArgv, re.IGNORECASE)
-            CLUSTER.OCRegistry = matchReg.group(1)
-        elif re.match(r'^\-\-FlexRicTag=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match(r'^\-\-FlexRicTag=(.+)$', myArgv, re.IGNORECASE)
-            CONTAINERS.flexricTag = matchReg.group(1)
-        else:
-            HELP.GenericHelp(CONST.Version)
-            sys.exit('Invalid Parameter: ' + myArgv)
+    doMerge = args.ranAllowMerge
+    RAN.merge = args.ranAllowMerge
+    CONTAINERS.merge = args.ranAllowMerge
+    CLUSTER.merge = args.ranAllowMerge
 
-    return mode, force_local, date_fmt
+    CiTestObj.branch = args.branch
+    RAN.branch = args.branch
+    HTML.branch = args.branch
+    CONTAINERS.branch = args.branch
+    CLUSTER.branch = args.branch
+
+    RAN.targetBranch = args.targetBranch
+    CONTAINERS.targetBranch = args.targetBranch
+    CLUSTER.targetBranch = args.targetBranch
+
+    RAN.workspace = args.workspace
+    CONTAINERS.workspace = args.workspace
+    CLUSTER.workspace = args.workspace
+
+    CiTestObj.testXMLfiles = args.XMLTestFile
+    HTML.testXMLfiles = args.XMLTestFile
+    HTML.nbTestXMLfiles = len(args.XMLTestFile)
+
+    finalStatus = args.finalStatus
+    CiTestObj.finalStatus = args.finalStatus
+
+    CLUSTER.OCUserName = args.OCUserName
+    CLUSTER.OCPassword = args.OCPassword
+    CLUSTER.OCProjectName = args.OCProjectName
+    CLUSTER.OCUrl = args.OCUrl
+    CLUSTER.OCRegistry = args.OCRegistry
+
+    CONTAINERS.flexricTag = args.FlexRicTag
+
+    return args.mode, args.local, args.datefmt
