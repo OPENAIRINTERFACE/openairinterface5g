@@ -410,7 +410,7 @@ cd ~/openairinterface5g/
 ```bash
 git clone https://github.com/openairinterface/o-du-phy.git ~/phy
 cd ~/phy
-git checkout 11.1.6 # the tag points to the `main` branch which has all patches applied that are relevant for OAI integration; the tag matches the value of cmake variable `K_VERSION`
+git checkout 11.1.7 # the tag points to the `main` branch which has all patches applied that are relevant for OAI integration; the tag matches the value of cmake variable `K_VERSION`
 ```
 or use `xran_DOWNLOAD` option when compiling OAI gNB.
 

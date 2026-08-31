@@ -18,7 +18,7 @@ add_library(oran_fhlib_5g MODULE
             oran-init.c
 )
 
-set(K_VERSION 11.1.6)
+set(K_VERSION 11.1.7)
 
 add_boolean_option(xran_DOWNLOAD ON "Download and build xran library if not found in xran_LOCATION" OFF)
 
