@@ -13,7 +13,7 @@ import tempfile
 sys.path.append('./') # to find OAI imports below
 import cls_oai_html
 import cls_containerize
-from cls_ci_helper import TestCaseCtx
+from cls_ci_helper import GlobalTestCtx, TestCaseCtx
 import cls_cmd
 
 class TestBuild(unittest.TestCase):
@@ -24,8 +24,8 @@ class TestBuild(unittest.TestCase):
 		self._d = tempfile.mkdtemp()
 		logging.warning(f"temporary directory: {self._d}")
 		self.node = 'localhost'
-		self.cont.workspace = self._d
-		self.ctx = TestCaseCtx.Default(tempfile.mkdtemp())
+		g = GlobalTestCtx(repository='', workspace=self._d, branch='', merge=False, targetBranch='')
+		self.ctx = TestCaseCtx.Default(tempfile.mkdtemp(), g)
 
 	def tearDown(self):
 		logging.warning(f"removing directory contents")

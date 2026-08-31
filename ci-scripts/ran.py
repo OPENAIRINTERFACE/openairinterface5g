@@ -32,7 +32,6 @@ class RANManagement():
 
 	def __init__(self):
 		
-		self.workspace = ''
 		self.Initialize_eNB_args = ''
 		self.cmd_prefix = '' # prefix before {lte,nr}-softmodem
 
@@ -45,7 +44,7 @@ class RANManagement():
 			raise ValueError(f"{node=}")
 		logging.debug('Starting eNB/gNB on server: ' + node)
 
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		cmd = cls_cmd.getConnection(node)
 		
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
@@ -88,7 +87,7 @@ class RANManagement():
 
 	def TerminateeNB(self, ctx, node, HTML, to_analyze):
 		logging.debug('Stopping eNB/gNB on server: ' + node)
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		cmd = cls_cmd.getConnection(node)
 		ret = cmd.run('ps -aux | grep --color=never -e softmodem | grep -v grep')
 		result = re.search('-softmodem', ret.stdout)
@@ -123,7 +122,7 @@ class RANManagement():
 
 	def AnalyzeRTStats(self, HTML, node, ctx, thresholds):
 		logging.info(f'Analyzing realtime stats from server: {node}')
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 
 		logdir = f'{lSourcePath}/cmake_targets'
 		with cls_cmd.getConnection(node) as cmd:

@@ -48,15 +48,11 @@ def OC_logout(cmd):
 
 class Cluster:
 	def __init__(self):
-		self.workspace = ""
 		self.OCUserName = ""
 		self.OCPassword = ""
 		self.OCProjectName = ""
 		self.OCUrl = OCUrl
 		self.OCRegistry = OCRegistry
-		self.branch = ""
-		self.merge = False
-		self.targetBranch = ""
 		self.cmd = None
 
 	def _recreate_entitlements(self):
@@ -94,10 +90,10 @@ class Cluster:
 		logging.error(f'error while creating imagestreamtag: {ret.stdout}')
 		return False
 
-	def _start_build(self, name):
+	def _start_build(self, name, workspace):
 		# will return "immediately" but build runs in background
 		# if multiple builds are started at the same time, this can take some time, however
-		ret = self.cmd.run(f'oc start-build {name} --from-dir={self.workspace} --exclude=""')
+		ret = self.cmd.run(f'oc start-build {name} --from-dir={workspace} --exclude=""')
 		regres = re.search(r'build.build.openshift.io/(?P<jobname>[a-zA-Z0-9\-]+) started', ret.stdout)
 		if ret.returncode != 0 or ret.stdout.count('Uploading finished') != 1 or regres is None:
 			logging.error(f"error during oc start-build: {ret.stdout}")
@@ -140,7 +136,7 @@ class Cluster:
 			return -1
 		return int(result.group("size"))
 
-	def PullClusterImage(self, HTML, node, images, tag_prefix):
+	def PullClusterImage(self, ctx, HTML, node, images, tag_prefix):
 		logging.debug(f'Pull OC image {images} to server {node}')
 		with cls_cmd.getConnection(node) as cmd:
 			succeeded = OC_login(cmd, self.OCUserName, self.OCPassword, CI_OC_RAN_NAMESPACE)
@@ -153,7 +149,7 @@ class Cluster:
 				OC_logout(cmd)
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 				return False
-			tag = self.branch
+			tag = ctx.g.branch
 			registry = f'{self.OCRegistry}/{CI_OC_RAN_NAMESPACE}'
 			success, msg = cls_containerize.Containerize.Pull_Image(cmd, images, tag, tag_prefix, registry, None, None)
 			OC_logout(cmd)
@@ -170,9 +166,9 @@ class Cluster:
 		return (image, archiveArtifact(self.cmd, ctx, fn))
 
 	def BuildClusterImage(self, ctx, node, HTML):
-		if self.branch == '':
-			raise ValueError(f'Insufficient Parameter: branch {self.branch}')
-		lSourcePath = self.workspace
+		if ctx.g.branch == '':
+			raise ValueError(f'Insufficient Parameter: branch {ctx.g.branch}')
+		lSourcePath = ctx.g.workspace
 		if node == '' or lSourcePath == '':
 			raise ValueError('Insufficient Parameter: workspace missing')
 		ocUserName = self.OCUserName
@@ -194,22 +190,22 @@ class Cluster:
 
 		baseTag = 'develop'
 		forceBaseImageBuild = False
-		if self.merge: # merging MR branch into develop -> temporary image
-			branchName = self.branch.replace('/','-')
+		if ctx.g.merge: # merging MR branch into develop -> temporary image
+			branchName = ctx.g.branch.replace('/','-')
 			imageTag = f'{branchName}'
-			if self.targetBranch == 'develop':
+			if ctx.g.targetBranch == 'develop':
 				ret = self.cmd.run(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base.rhel9 | grep --colour=never -i INDEX')
 				result = re.search('index', ret.stdout)
 				if result is not None:
 					forceBaseImageBuild = True
 					baseTag = 'ci-temp'
 			# if the branch name contains integration_20xx_wyy, let rebuild ran-base
-			result = re.search('integration_20([0-9]{2})_w([0-9]{2})', self.branch)
+			result = re.search('integration_20([0-9]{2})_w([0-9]{2})', ctx.g.branch)
 			if not forceBaseImageBuild and result is not None:
 				forceBaseImageBuild = True
 				baseTag = 'ci-temp'
 		else:
-			imageTag = self.branch
+			imageTag = ctx.g.branch
 			forceBaseImageBuild = True
 
 		# logging to OC Cluster and then switch to corresponding project
@@ -235,7 +231,7 @@ class Cluster:
 		if forceBaseImageBuild:
 			self._recreate_is_tag('ran-base', baseTag, 'openshift/ran-base-is.yaml')
 			self._recreate_bc('ran-base', baseTag, 'openshift/ran-base-bc.yaml')
-			ranbase_job = self._start_build('ran-base')
+			ranbase_job = self._start_build('ran-base', lSourcePath)
 			status = ranbase_job is not None and self._wait_build_end([ranbase_job], 1000)
 			if not status: logging.error('failure during build of ran-base')
 			log_files.append(self._retrieveOCLog(ctx, ranbase_job, lSourcePath, 'ran-base'))
@@ -244,22 +240,22 @@ class Cluster:
 			self._recreate_is_tag('ran-build-fhi72', imageTag, 'openshift/ran-build-fhi72-is.yaml')
 			self._recreate_bc('ran-build-fhi72', imageTag, 'openshift/ran-build-fhi72-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.build.fhi72.rhel9')
-			ranbuildfhi72_job = self._start_build('ran-build-fhi72')
+			ranbuildfhi72_job = self._start_build('ran-build-fhi72', lSourcePath)
 
 			self._recreate_is_tag('oai-physim', imageTag, 'openshift/oai-physim-is.yaml')
 			self._recreate_bc('oai-physim', imageTag, 'openshift/oai-physim-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.phySim.rhel9')
-			physim_job = self._start_build('oai-physim')
+			physim_job = self._start_build('oai-physim', lSourcePath)
 
 			self._recreate_is_tag('ran-build', imageTag, 'openshift/ran-build-is.yaml')
 			self._recreate_bc('ran-build', imageTag, 'openshift/ran-build-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.build.rhel9')
-			ranbuild_job = self._start_build('ran-build')
+			ranbuild_job = self._start_build('ran-build', lSourcePath)
 
 			self._recreate_is_tag('oai-clang', imageTag, 'openshift/oai-clang-is.yaml')
 			self._recreate_bc('oai-clang', imageTag, 'openshift/oai-clang-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.clang.rhel9')
-			clang_job = self._start_build('oai-clang')
+			clang_job = self._start_build('oai-clang', lSourcePath)
 
 			wait = ranbuildfhi72_job is not None and ranbuild_job is not None and physim_job is not None and clang_job is not None and self._wait_build_end([ranbuildfhi72_job, ranbuild_job, physim_job, clang_job], 1200)
 			if not wait: logging.error('error during build of ranbuildfhi72_job or ranbuild_job or physim_job or clang_job')
@@ -275,25 +271,25 @@ class Cluster:
 			self._recreate_bc('oai-gnb-fhi72', imageTag, 'openshift/oai-gnb-fhi72-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.fhi72.rhel9')
 			self._retag_image_statement('ran-build-fhi72', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build-fhi72', imageTag, 'docker/Dockerfile.gNB.fhi72.rhel9')
-			gnb_fhi72_job = self._start_build('oai-gnb-fhi72')
+			gnb_fhi72_job = self._start_build('oai-gnb-fhi72', lSourcePath)
 
 			self._recreate_is_tag('oai-enb', imageTag, 'openshift/oai-enb-is.yaml')
 			self._recreate_bc('oai-enb', imageTag, 'openshift/oai-enb-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.eNB.rhel9')
 			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.eNB.rhel9')
-			enb_job = self._start_build('oai-enb')
+			enb_job = self._start_build('oai-enb', lSourcePath)
 
 			self._recreate_is_tag('oai-gnb', imageTag, 'openshift/oai-gnb-is.yaml')
 			self._recreate_bc('oai-gnb', imageTag, 'openshift/oai-gnb-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.rhel9')
 			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.gNB.rhel9')
-			gnb_job = self._start_build('oai-gnb')
+			gnb_job = self._start_build('oai-gnb', lSourcePath)
 
 			self._recreate_is_tag('oai-gnb-aw2s', imageTag, 'openshift/oai-gnb-aw2s-is.yaml')
 			self._recreate_bc('oai-gnb-aw2s', imageTag, 'openshift/oai-gnb-aw2s-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.aw2s.rhel9')
 			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.gNB.aw2s.rhel9')
-			gnb_aw2s_job = self._start_build('oai-gnb-aw2s')
+			gnb_aw2s_job = self._start_build('oai-gnb-aw2s', lSourcePath)
 
 			wait = gnb_fhi72_job is not None and enb_job is not None and gnb_job is not None and gnb_aw2s_job is not None and self._wait_build_end([gnb_fhi72_job, enb_job, gnb_job, gnb_aw2s_job], 800)
 			if not wait: logging.error('error during build of eNB/gNB')
@@ -309,19 +305,19 @@ class Cluster:
 			self._recreate_bc('oai-nr-cuup', imageTag, 'openshift/oai-nr-cuup-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.nr-cuup.rhel9')
 			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.nr-cuup.rhel9')
-			nr_cuup_job = self._start_build('oai-nr-cuup')
+			nr_cuup_job = self._start_build('oai-nr-cuup', lSourcePath)
 
 			self._recreate_is_tag('oai-lte-ue', imageTag, 'openshift/oai-lte-ue-is.yaml')
 			self._recreate_bc('oai-lte-ue', imageTag, 'openshift/oai-lte-ue-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.lteUE.rhel9')
 			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.lteUE.rhel9')
-			lteue_job = self._start_build('oai-lte-ue')
+			lteue_job = self._start_build('oai-lte-ue', lSourcePath)
 
 			self._recreate_is_tag('oai-nr-ue', imageTag, 'openshift/oai-nr-ue-is.yaml')
 			self._recreate_bc('oai-nr-ue', imageTag, 'openshift/oai-nr-ue-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.nrUE.rhel9')
 			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.nrUE.rhel9')
-			nrue_job = self._start_build('oai-nr-ue')
+			nrue_job = self._start_build('oai-nr-ue', lSourcePath)
 
 			wait = nr_cuup_job is not None and lteue_job is not None and nrue_job is not None and self._wait_build_end([nr_cuup_job, lteue_job, nrue_job], 800)
 			if not wait: logging.error('error during build of nr-cuup/lteUE/nrUE')

@@ -61,7 +61,7 @@ def ExecuteActionWithParam(action, ctx, node):
 		runtime_opt = test.findtext('runtime-opt') or ''
 		ctest_opt = test.findtext('ctest-opt') or ''
 		if action == 'Build_eNB':
-			success = cls_native.Native.Build(ctx, node, HTML, RAN.workspace, RAN.Build_eNB_args)
+			success = cls_native.Native.Build(ctx, node, HTML, ctx.g.workspace, RAN.Build_eNB_args)
 		elif action == 'Build_Image':
 			success = CONTAINERS.BuildImage(ctx, node, HTML)
 		elif action == 'Build_Cluster_Image':
@@ -137,16 +137,16 @@ def ExecuteActionWithParam(action, ctx, node):
 	elif action == 'Deploy_Run_OC_PhySim':
 		oc_release = test.findtext('oc_release')
 		script = "scripts/oc-deploy-physims.sh"
-		image_tag = CLUSTER.branch
-		options = f"oaicicd-core-for-ci-ran {oc_release} {image_tag} {CLUSTER.workspace}"
-		workdir = CLUSTER.workspace
+		image_tag = ctx.g.branch
+		options = f"oaicicd-core-for-ci-ran {oc_release} {image_tag} {ctx.g.workspace}"
+		workdir = ctx.g.workspace
 		success = cls_oaicitest.Deploy_Physim(ctx, HTML, node, workdir, script, options)
 
 	elif action == 'Build_Deploy_PhySim':
 		ctest_opt = test.findtext('ctest-opt') or ''
 		script = test.findtext('script')
-		options = f"{CONTAINERS.workspace} {ctest_opt}"
-		workdir = CONTAINERS.workspace
+		options = f"{ctx.g.workspace} {ctest_opt}"
+		workdir = ctx.g.workspace
 		success = cls_oaicitest.Deploy_Physim(ctx, HTML, node, workdir, script, options)
 
 	elif action == 'DeployCoreNetwork' or action == 'UndeployCoreNetwork':
@@ -158,7 +158,7 @@ def ExecuteActionWithParam(action, ctx, node):
 		script = test.findtext('script')
 		options = test.findtext('options')
 		if action == 'DeployWithScript':
-			deploymentTag = RAN.branch
+			deploymentTag = ctx.g.branch
 			success = cls_oaicitest.DeployWithScript(HTML, node, script, options, deploymentTag)
 		elif action == 'UndeployWithScript':
 			success = cls_oaicitest.UndeployWithScript(HTML, ctx, node, script, options)
@@ -167,7 +167,7 @@ def ExecuteActionWithParam(action, ctx, node):
 		CONTAINERS.yamlPath = test.findtext('yaml_path')
 		CONTAINERS.services = test.findtext('services')
 		CONTAINERS.num_attempts = int(test.findtext('num_attempts') or 1)
-		CONTAINERS.deploymentTag = CONTAINERS.branch
+		CONTAINERS.deploymentTag = ctx.g.branch
 		if action == 'Deploy_Object':
 			success = CONTAINERS.DeployObject(ctx, node, HTML)
 		elif action == 'Stop_Object':
@@ -185,14 +185,14 @@ def ExecuteActionWithParam(action, ctx, node):
 			if force_local:
 				# Do not create a working directory when running locally. Current repo directory will be used
 				return True
-			success = CONTAINERS.Create_Workspace(node, HTML)
+			success = cls_containerize.Containerize.Create_Workspace(ctx, node, HTML)
 
 	elif action == 'LicenceAndFormattingCheck':
-		success = SCA.StaticCodeAnalysis.LicenceAndFormattingCheck(ctx, node, HTML, RAN.workspace, RAN.branch, RAN.merge, RAN.targetBranch)
+		success = SCA.StaticCodeAnalysis.LicenceAndFormattingCheck(ctx, node, HTML)
 
 	elif action == 'Push_Local_Registry':
 		tag_prefix = test.findtext('tag_prefix') or ""
-		success = CONTAINERS.Push_Image_to_Local_Registry(node, HTML, tag_prefix)
+		success = cls_containerize.Containerize.Push_Image_to_Local_Registry(ctx, node, HTML, tag_prefix)
 
 	elif action == 'Pull_Local_Registry' or action == 'Clean_Test_Server_Images':
 		if force_local:
@@ -205,27 +205,27 @@ def ExecuteActionWithParam(action, ctx, node):
 		if len(images) == 1 and images[0] == "oai-flexric":
 			tag = CONTAINERS.flexricTag
 		if action == "Pull_Local_Registry":
-			success = CONTAINERS.Pull_Image_from_Registry(HTML, node, images, tag=tag, tag_prefix=tag_prefix)
+			success = cls_containerize.Containerize.Pull_Image_from_Registry(ctx, HTML, node, images, tag=tag, tag_prefix=tag_prefix)
 		if action == "Clean_Test_Server_Images":
-			success = CONTAINERS.Clean_Test_Server_Images(HTML, node, images, tag=tag)
+			success = cls_containerize.Containerize.Clean_Test_Server_Images(ctx, HTML, node, images, tag=tag)
 
 	elif action == 'Custom_Command':
 		command = test.findtext('command')
 		# Allow referencing repository workspace path in XML via %%workspace%%
-		command = command.replace("%%workspace%%", CONTAINERS.workspace)
+		command = command.replace("%%workspace%%", ctx.g.workspace)
 		success = cls_oaicitest.Custom_Command(HTML, node, command)
 
 	elif action == 'Custom_Script':
 		script = test.findtext('script')
 		args = test.findtext('args')
 		# Allow referencing repository workspace path in XML via %%workspace%%
-		script = script.replace("%%workspace%%", CONTAINERS.workspace)
+		script = script.replace("%%workspace%%", ctx.g.workspace)
 		success = cls_oaicitest.Custom_Script(HTML, node, script, args)
 
 	elif action == 'Pull_Cluster_Image':
 		tag_prefix = test.findtext('tag_prefix') or ""
 		images = test.findtext('images').split()
-		success = CLUSTER.PullClusterImage(HTML, node, images, tag_prefix=tag_prefix)
+		success = CLUSTER.PullClusterImage(ctx, HTML, node, images, tag_prefix=tag_prefix)
 
 	elif action == 'AnalyzeRTStats':
 		yaml = test.findtext('stats_cfg')
@@ -280,7 +280,7 @@ CLUSTER = cls_cluster.Cluster()
 import args_parse
 # Force local execution, move all execution targets to localhost
 force_local = False
-mode, force_local, date_fmt, final_status = args_parse.ArgsParse(sys.argv,RAN,HTML,CONTAINERS,CLUSTER)
+mode, force_local, date_fmt, final_status, g_ctx = args_parse.ArgsParse(sys.argv,HTML,CONTAINERS,CLUSTER)
 fmt = "%(levelname)8s: %(message)s"
 if date_fmt:
     fmt = "[%(asctime)s] %(levelname)s %(message)s"
@@ -311,7 +311,7 @@ if re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if foundCount != HTML.nbTestXMLfiles:
 		HTML.nbTestXMLfiles=foundCount
 	
-	HTML.CreateHtmlHeader()
+	HTML.CreateHtmlHeader(g_ctx.repository, g_ctx.branch)
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	logging.info('\u001B[1m  Creating HTML footer \u001B[0m')
@@ -322,8 +322,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	logging.info('\u001B[1m  Starting Scenario: ' + HTML.testXMLfiles[0] + '\u001B[0m')
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
-	if CONTAINERS.repository == '' or CONTAINERS.branch == '' or CONTAINERS.workspace == '':
-		sys.exit(f'Insufficient Parameters: {CONTAINERS.repository=}, {CONTAINERS.branch=}, {CONTAINERS.workspace=}')
+	if g_ctx.repository == '' or g_ctx.branch == '' or g_ctx.workspace == '':
+		sys.exit(f'Insufficient Parameters: {g_ctx.repository=}, {g_ctx.branch=}, {g_ctx.workspace=}')
 	#read test_case_list.xml file
 	# if no parameters for XML file, use default value
 	if (HTML.nbTestXMLfiles != 1):
@@ -360,7 +360,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 		if test_runner_abort:
 			task_set_succeeded = False
 		test_case_idx = f"{index:06d}"
-		ctx = TestCaseCtx(int(test_case_idx), logPath)
+		ctx = TestCaseCtx(int(test_case_idx), logPath, g_ctx)
 		HTML.testCaseIdx = test_case_idx
 		desc = test.findtext('desc')
 		node = test.findtext('node') if not force_local else 'localhost'

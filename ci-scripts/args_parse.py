@@ -11,6 +11,7 @@
 # Parsing Command Line Arguements
 #-----------------------------------------------------------
 import argparse
+from cls_ci_helper import GlobalTestCtx
 
 def strToBool(s):
     if s.lower() in ['true', 'yes', '1']:
@@ -19,7 +20,7 @@ def strToBool(s):
         return False
     raise argparse.ArgumentTypeError(f"cannot interpret '{s}' as boolean")
 
-def ArgsParse(argvs,RAN,HTML,CONTAINERS,CLUSTER):
+def ArgsParse(argvs,HTML,CONTAINERS,CLUSTER):
 
     p = argparse.ArgumentParser(description="OAI CI driver", ) #formatter_class?
     p.add_argument('--local', '-l', action='store_true', default=False, help='Force local execution: rewrites the test xml script before running to always execute on localhost. Assumes images are available locally, will not remove any images and will run inside the current repo directory')
@@ -42,23 +43,7 @@ def ArgsParse(argvs,RAN,HTML,CONTAINERS,CLUSTER):
 
     args = p.parse_args()
 
-    HTML.repository = args.repository
-    CONTAINERS.repository = args.repository
-
-    doMerge = args.ranAllowMerge
-    CONTAINERS.merge = args.ranAllowMerge
-    CLUSTER.merge = args.ranAllowMerge
-
-    HTML.branch = args.branch
-    CONTAINERS.branch = args.branch
-    CLUSTER.branch = args.branch
-
-    CONTAINERS.targetBranch = args.targetBranch
-    CLUSTER.targetBranch = args.targetBranch
-
-    RAN.workspace = args.workspace
-    CONTAINERS.workspace = args.workspace
-    CLUSTER.workspace = args.workspace
+    g = GlobalTestCtx(args.repository, args.workspace, args.branch, args.ranAllowMerge, args.targetBranch)
 
     HTML.testXMLfiles = args.XMLTestFile
     HTML.nbTestXMLfiles = len(args.XMLTestFile)
@@ -71,4 +56,4 @@ def ArgsParse(argvs,RAN,HTML,CONTAINERS,CLUSTER):
 
     CONTAINERS.flexricTag = args.FlexRicTag
 
-    return args.mode, args.local, args.datefmt, args.finalStatus
+    return args.mode, args.local, args.datefmt, args.finalStatus, g
