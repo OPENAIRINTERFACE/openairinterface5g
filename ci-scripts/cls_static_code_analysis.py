@@ -22,7 +22,6 @@ from pathlib import Path
 #-----------------------------------------------------------
 # OAI Testing modules
 #-----------------------------------------------------------
-import helpreadme as HELP
 import constants as CONST
 import cls_cmd
 from cls_ci_helper import archiveArtifact

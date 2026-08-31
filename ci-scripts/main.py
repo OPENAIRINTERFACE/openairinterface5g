@@ -16,7 +16,6 @@
 # Import Components
 #-----------------------------------------------------------
 
-import helpreadme as HELP
 import constants as CONST
 
 
@@ -307,7 +306,7 @@ CLUSTER = cls_cluster.Cluster()
 import args_parse
 # Force local execution, move all execution targets to localhost
 force_local = False
-mode, force_local, date_fmt = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,CONTAINERS,HELP,CLUSTER)
+mode, force_local, date_fmt = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,CONTAINERS,CLUSTER)
 fmt = "%(levelname)8s: %(message)s"
 if date_fmt:
     fmt = "[%(asctime)s] %(levelname)s %(message)s"
@@ -376,15 +375,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
 		if RAN.repository == '' or RAN.branch == '' or RAN.workspace == '':
-			HELP.GenericHelp(CONST.Version)
-			if RAN.repository == '':
-				HELP.GitSrvHelp(RAN.repository, RAN.branch, RAN.merge, RAN.targetBranch)
-			if RAN.workspace == '':
-				HELP.SrvHelp(RAN.workspace)
-			sys.exit('Insufficient Parameter')
+			sys.exit(f'Insufficient Parameters: {RAN.repository=}, {RAN.branch=}, {RAN.workspace=}')
 	else:
 		if CiTestObj.repository == '' or CiTestObj.branch == '':
-			HELP.GenericHelp(CONST.Version)
 			sys.exit('UE: Insufficient Parameter')
 
 	#read test_case_list.xml file
@@ -466,6 +459,5 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 elif re.match('^LoadParams$', mode, re.IGNORECASE):
 	pass
 else:
-	HELP.GenericHelp(CONST.Version)
-	sys.exit('Invalid mode')
+	sys.exit(f'Invalid mode {mode}')
 sys.exit(0)

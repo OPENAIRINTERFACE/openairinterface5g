@@ -17,7 +17,6 @@ import os
 
 import cls_oai_html
 import constants as CONST
-import helpreadme as HELP
 import cls_containerize
 import cls_cmd
 from cls_ci_helper import archiveArtifact
@@ -30,7 +29,6 @@ CI_OC_RAN_NAMESPACE = "oaicicd-ran"
 
 def OC_login(cmd, ocUserName, ocPassword, ocProjectName):
 	if ocUserName == '' or ocPassword == '' or ocProjectName == '':
-		HELP.GenericHelp(CONST.Version)
 		raise ValueError('Insufficient Parameter: no OC Credentials')
 	if OCRegistry.startswith("http") or OCRegistry.endswith("/"):
 		raise ValueError(f'ocRegistry {OCRegistry} should not start with http:// or https:// and not end on a slash /')
@@ -174,7 +172,6 @@ class Cluster:
 
 	def BuildClusterImage(self, ctx, node, HTML):
 		if self.repository == '' or self.branch == '':
-			HELP.GenericHelp(CONST.Version)
 			raise ValueError(f'Insufficient Parameter: repository {self.repository} branch {self.branch}')
 		lSourcePath = self.workspace
 		if node == '' or lSourcePath == '':
@@ -183,7 +180,6 @@ class Cluster:
 		ocPassword = self.OCPassword
 		ocProjectName = self.OCProjectName
 		if ocUserName == '' or ocPassword == '' or ocProjectName == '':
-			HELP.GenericHelp(CONST.Version)
 			raise ValueError('Insufficient Parameter: no OC Credentials')
 		if self.OCRegistry.startswith("http") or self.OCRegistry.endswith("/"):
 			raise ValueError(f'ocRegistry {self.OCRegistry} should not start with http:// or https:// and not end on a slash /')
