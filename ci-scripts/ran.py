@@ -32,20 +32,9 @@ class RANManagement():
 
 	def __init__(self):
 		
-		self.repository = ''
-		self.branch = ''
-		self.merge = False
-		self.targetBranch = ''
 		self.workspace = ''
 		self.Initialize_eNB_args = ''
-		self.imageKind = ''
-		self.eNBOptions = ['', '', '']
-		self.eNBstatuses = [-1, -1, -1]
-		self.runtime_stats= ''
 		self.cmd_prefix = '' # prefix before {lte,nr}-softmodem
-		self.node = ''
-		self.command = ''
-
 
 #-----------------------------------------------------------
 # RAN management functions
@@ -72,9 +61,6 @@ class RANManagement():
 		logfile = f'{lSourcePath}/cmake_targets/enb.log'
 		cmd.cd(f"{lSourcePath}/cmake_targets/") # important: set wd so nrL1_stats.log etc are logged here
 		cmd.run(f'sudo -E stdbuf -o0 {self.cmd_prefix} {lSourcePath}/cmake_targets/ran_build/build/nr-softmodem -O {lSourcePath}/{full_config_file} {extra_options} > {logfile} 2>&1 &')
-
-		if extra_options != '':
-			self.eNBOptions = extra_options
 
 		enbDidSync = False
 		for _ in range(10):

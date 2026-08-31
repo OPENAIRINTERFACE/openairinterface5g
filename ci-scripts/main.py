@@ -280,7 +280,7 @@ CLUSTER = cls_cluster.Cluster()
 import args_parse
 # Force local execution, move all execution targets to localhost
 force_local = False
-mode, force_local, date_fmt = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,CONTAINERS,CLUSTER)
+mode, force_local, date_fmt, final_status = args_parse.ArgsParse(sys.argv,RAN,HTML,CONTAINERS,CLUSTER)
 fmt = "%(levelname)8s: %(message)s"
 if date_fmt:
     fmt = "[%(asctime)s] %(levelname)s %(message)s"
@@ -296,8 +296,7 @@ if re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	count = 0
 	foundCount = 0
 	while (count < HTML.nbTestXMLfiles):
-		#xml_test_file = cwd + "/" + CiTestObj.testXMLfiles[count]
-		xml_test_file = sys.path[0] + "/" + CiTestObj.testXMLfiles[count]
+		xml_test_file = sys.path[0] + "/" + HTML.testXMLfiles[count]
 		if (os.path.isfile(xml_test_file)):
 			try:
 				xmlTree = ET.parse(xml_test_file)
@@ -318,22 +317,22 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m  Creating HTML footer \u001B[0m')
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 
-	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
+	HTML.CreateHtmlFooter(final_status)
 elif re.match('^TesteNB$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
-	logging.info('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
+	logging.info('\u001B[1m  Starting Scenario: ' + HTML.testXMLfiles[0] + '\u001B[0m')
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
-	if RAN.repository == '' or RAN.branch == '' or RAN.workspace == '':
-		sys.exit(f'Insufficient Parameters: {RAN.repository=}, {RAN.branch=}, {RAN.workspace=}')
+	if CONTAINERS.repository == '' or CONTAINERS.branch == '' or CONTAINERS.workspace == '':
+		sys.exit(f'Insufficient Parameters: {CONTAINERS.repository=}, {CONTAINERS.branch=}, {CONTAINERS.workspace=}')
 	#read test_case_list.xml file
 	# if no parameters for XML file, use default value
 	if (HTML.nbTestXMLfiles != 1):
 		xml_test_file = cwd + "/test_case_list.xml"
 	else:
-		xml_test_file = cwd + "/" + CiTestObj.testXMLfiles[0]
+		xml_test_file = cwd + "/" + HTML.testXMLfiles[0]
 
 	# directory where all log artifacts will be placed
-	logPath = f"{cwd}/../cmake_targets/log/{CiTestObj.testXMLfiles[0].split('/')[-1]}.d"
+	logPath = f"{cwd}/../cmake_targets/log/{HTML.testXMLfiles[0].split('/')[-1]}.d"
 	# we run from within ci-scripts, but the logPath is absolute, so replace
 	# the ci-scripts/..; if it does not exist, nothing will happen
 	logPath = logPath.replace(r'/ci-scripts/..', '')

@@ -19,7 +19,7 @@ def strToBool(s):
         return False
     raise argparse.ArgumentTypeError(f"cannot interpret '{s}' as boolean")
 
-def ArgsParse(argvs,CiTestObj,RAN,HTML,CONTAINERS,CLUSTER):
+def ArgsParse(argvs,RAN,HTML,CONTAINERS,CLUSTER):
 
     p = argparse.ArgumentParser(description="OAI CI driver", ) #formatter_class?
     p.add_argument('--local', '-l', action='store_true', default=False, help='Force local execution: rewrites the test xml script before running to always execute on localhost. Assumes images are available locally, will not remove any images and will run inside the current repo directory')
@@ -42,24 +42,17 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,CONTAINERS,CLUSTER):
 
     args = p.parse_args()
 
-    CiTestObj.repository = args.repository
-    RAN.repository = args.repository
     HTML.repository = args.repository
     CONTAINERS.repository = args.repository
-    CLUSTER.repository = args.repository
 
     doMerge = args.ranAllowMerge
-    RAN.merge = args.ranAllowMerge
     CONTAINERS.merge = args.ranAllowMerge
     CLUSTER.merge = args.ranAllowMerge
 
-    CiTestObj.branch = args.branch
-    RAN.branch = args.branch
     HTML.branch = args.branch
     CONTAINERS.branch = args.branch
     CLUSTER.branch = args.branch
 
-    RAN.targetBranch = args.targetBranch
     CONTAINERS.targetBranch = args.targetBranch
     CLUSTER.targetBranch = args.targetBranch
 
@@ -67,12 +60,8 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,CONTAINERS,CLUSTER):
     CONTAINERS.workspace = args.workspace
     CLUSTER.workspace = args.workspace
 
-    CiTestObj.testXMLfiles = args.XMLTestFile
     HTML.testXMLfiles = args.XMLTestFile
     HTML.nbTestXMLfiles = len(args.XMLTestFile)
-
-    finalStatus = args.finalStatus
-    CiTestObj.finalStatus = args.finalStatus
 
     CLUSTER.OCUserName = args.OCUserName
     CLUSTER.OCPassword = args.OCPassword
@@ -82,4 +71,4 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,CONTAINERS,CLUSTER):
 
     CONTAINERS.flexricTag = args.FlexRicTag
 
-    return args.mode, args.local, args.datefmt
+    return args.mode, args.local, args.datefmt, args.finalStatus

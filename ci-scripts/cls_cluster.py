@@ -54,7 +54,6 @@ class Cluster:
 		self.OCProjectName = ""
 		self.OCUrl = OCUrl
 		self.OCRegistry = OCRegistry
-		self.repository = ""
 		self.branch = ""
 		self.merge = False
 		self.targetBranch = ""
@@ -171,8 +170,8 @@ class Cluster:
 		return (image, archiveArtifact(self.cmd, ctx, fn))
 
 	def BuildClusterImage(self, ctx, node, HTML):
-		if self.repository == '' or self.branch == '':
-			raise ValueError(f'Insufficient Parameter: repository {self.repository} branch {self.branch}')
+		if self.branch == '':
+			raise ValueError(f'Insufficient Parameter: branch {self.branch}')
 		lSourcePath = self.workspace
 		if node == '' or lSourcePath == '':
 			raise ValueError('Insufficient Parameter: workspace missing')
