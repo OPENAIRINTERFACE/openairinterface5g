@@ -318,31 +318,7 @@ logging.basicConfig(level=logging.DEBUG, stream=sys.stdout, format=fmt, datefmt=
 #-----------------------------------------------------------
 cwd = os.getcwd()
 
-if re.match('^TerminateeNB$', mode, re.IGNORECASE):
-	logging.warning("Option TerminateeNB ignored")
-elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
-	logging.warning("Option TerminateHSS ignored")
-elif re.match('^TerminateMME$', mode, re.IGNORECASE):
-	logging.warning("Option TerminateMME ignored")
-elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
-	logging.warning("Option TerminateSPGW ignored")
-elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectBuild ignored")
-elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollecteNB ignored")
-elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectHSS ignored")
-elif re.match('^LogCollectMME$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectMME ignored")
-elif re.match('^LogCollectSPGW$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectSPGW ignored")
-elif re.match('^LogCollectPing$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectPing ignored")
-elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectIperf ignored")
-elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectOAIUE ignored")
-elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
+if re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	count = 0
 	foundCount = 0
 	while (count < HTML.nbTestXMLfiles):
@@ -369,17 +345,12 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
-elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
+elif re.match('^TesteNB$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	logging.info('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
-	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if RAN.repository == '' or RAN.branch == '' or RAN.workspace == '':
-			sys.exit(f'Insufficient Parameters: {RAN.repository=}, {RAN.branch=}, {RAN.workspace=}')
-	else:
-		if CiTestObj.repository == '' or CiTestObj.branch == '':
-			sys.exit('UE: Insufficient Parameter')
-
+	if RAN.repository == '' or RAN.branch == '' or RAN.workspace == '':
+		sys.exit(f'Insufficient Parameters: {RAN.repository=}, {RAN.branch=}, {RAN.workspace=}')
 	#read test_case_list.xml file
 	# if no parameters for XML file, use default value
 	if (HTML.nbTestXMLfiles != 1):
@@ -456,8 +427,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	else:
 		logging.info('\u001B[1;37;42mScenario passed\u001B[0m')
 		HTML.CreateHtmlTabFooter(True)
-elif re.match('^LoadParams$', mode, re.IGNORECASE):
-	pass
 else:
 	sys.exit(f'Invalid mode {mode}')
 sys.exit(0)
