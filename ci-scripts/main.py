@@ -319,6 +319,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	if g_ctx.repository == '' or g_ctx.branch == '' or g_ctx.workspace == '':
 		sys.exit(f'Insufficient Parameters: {g_ctx.repository=}, {g_ctx.branch=}, {g_ctx.workspace=}')
+	if HTML.nbTestXMLfiles != 1:
+		sys.exit(f'Only one XML file per TesteNB call supported')
 	#read test_case_list.xml file
 	# if no parameters for XML file, use default value
 	if (HTML.nbTestXMLfiles != 1):
@@ -326,8 +328,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 	else:
 		xml_test_file = cwd + "/" + HTML.testXMLfiles[0]
 
+	signal.signal(signal.SIGINT, receive_signal)
+	task_set_succeeded = True
+
 	# directory where all log artifacts will be placed
-	logPath = f"{cwd}/../cmake_targets/log/{HTML.testXMLfiles[0].split('/')[-1]}.d"
+	logPath = f"{cwd}/../cmake_targets/log/{xml_test_file.split('/')[-1]}.d"
 	# we run from within ci-scripts, but the logPath is absolute, so replace
 	# the ci-scripts/..; if it does not exist, nothing will happen
 	logPath = logPath.replace(r'/ci-scripts/..', '')
@@ -338,17 +343,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 
 	xmlTree = ET.parse(xml_test_file)
 	xmlRoot = xmlTree.getroot()
-
-	if (HTML.nbTestXMLfiles == 1):
-		HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
-		HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
 	all_tests=xmlRoot.findall('testCase')
 
-	signal.signal(signal.SIGINT, receive_signal)
-
+	HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
+	HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
 	HTML.CreateHtmlTabHeader()
-
-	task_set_succeeded = True
 	HTML.startTime=int(round(time.time() * 1000))
 
 	for index, test in enumerate(all_tests, start=1):
@@ -356,11 +355,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 			task_set_succeeded = False
 		test_case_idx = f"{index:06d}"
 		ctx = TestCaseCtx(int(test_case_idx), logPath, g_ctx)
-		HTML.testCaseIdx = test_case_idx
 		desc = test.findtext('desc')
 		node = test.findtext('node') if not force_local else 'localhost'
 		always_exec = test.findtext('always_exec') in ['True', 'true', 'Yes', 'yes']
 		may_fail = test.findtext('may_fail') in ['True', 'true', 'Yes', 'yes']
+		HTML.testCaseIdx = test_case_idx
 		HTML.desc = desc
 		action = test.findtext('class')
 		file = os.path.basename(xml_test_file)
