@@ -50,18 +50,17 @@ import traceback
 #-----------------------------------------------------------
 
 def ExecuteActionWithParam(action, ctx, node):
-	global RAN
 	global HTML
 	global CONTAINERS
 	global CLUSTER
 	if action == 'Build_eNB' or action == 'Build_Image' or action == "Build_Cluster_Image" or action == "Build_Run_Tests":
-		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
+		args = test.findtext('Build_eNB_args')
 		CONTAINERS.imageKind=test.findtext('kind')
 		dockerfile = test.findtext('dockerfile') or ''
 		runtime_opt = test.findtext('runtime-opt') or ''
 		ctest_opt = test.findtext('ctest-opt') or ''
 		if action == 'Build_eNB':
-			success = cls_native.Native.Build(ctx, node, HTML, ctx.g.workspace, RAN.Build_eNB_args)
+			success = cls_native.Native.Build(ctx, node, HTML, ctx.g.workspace, args)
 		elif action == 'Build_Image':
 			success = CONTAINERS.BuildImage(ctx, node, HTML)
 		elif action == 'Build_Cluster_Image':
@@ -70,10 +69,9 @@ def ExecuteActionWithParam(action, ctx, node):
 			success = CONTAINERS.BuildRunTests(ctx, node, dockerfile, runtime_opt, ctest_opt, HTML)
 
 	elif action == 'Initialize_eNB':
-		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
+		args = test.findtext('Initialize_eNB_args')
 		cmd_prefix = test.findtext('cmd_prefix')
-		if cmd_prefix is not None: RAN.cmd_prefix = cmd_prefix
-		success = RAN.InitializeeNB(ctx, node, HTML)
+		success = ran.RAN.InitializeeNB(ctx, node, HTML, args, cmd_prefix)
 
 	elif action == 'Terminate_eNB':
 		services = []
@@ -83,7 +81,7 @@ def ExecuteActionWithParam(action, ctx, node):
 			services = analysis.findtext("services", default="").split()
 			# service: individual services to analyze, in case they have whitespace
 			services = services + [s.text for s in analysis.findall("service")]
-		success = RAN.TerminateeNB(ctx, node, HTML, services)
+		success = ran.RAN.TerminateeNB(ctx, node, HTML, services)
 
 	elif action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Terminate_UE' or action == 'CheckStatusUE' or action == 'DataEnable_UE' or action == 'DataDisable_UE':
 		CiTestObj.ue_ids = test.findtext('id').split(' ')
@@ -229,7 +227,7 @@ def ExecuteActionWithParam(action, ctx, node):
 
 	elif action == 'AnalyzeRTStats':
 		yaml = test.findtext('stats_cfg')
-		success = RAN.AnalyzeRTStats(HTML, node, ctx, yaml)
+		success = ran.RAN.AnalyzeRTStats(HTML, node, ctx, yaml)
 
 	elif action == 'AnalyzeRTStats_Object':
 		yaml = test.findtext('stats_cfg')
@@ -268,7 +266,6 @@ mode = ''
 
 CiTestObj = cls_oaicitest.OaiCiTest()
  
-RAN = ran.RANManagement()
 HTML = cls_oai_html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
 CLUSTER = cls_cluster.Cluster()
