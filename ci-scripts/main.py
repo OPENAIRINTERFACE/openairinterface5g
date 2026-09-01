@@ -49,7 +49,7 @@ import traceback
 # General Functions
 #-----------------------------------------------------------
 
-def ExecuteActionWithParam(action, ctx, node):
+def ExecuteActionWithParam(action, ctx, node, oc):
 	global HTML
 	global CONTAINERS
 	global CLUSTER
@@ -64,7 +64,7 @@ def ExecuteActionWithParam(action, ctx, node):
 		elif action == 'Build_Image':
 			success = CONTAINERS.BuildImage(ctx, node, HTML)
 		elif action == 'Build_Cluster_Image':
-			success = CLUSTER.BuildClusterImage(ctx, node, HTML)
+			success = CLUSTER.BuildClusterImage(ctx, oc, node, HTML)
 		elif action == 'Build_Run_Tests':
 			success = CONTAINERS.BuildRunTests(ctx, node, dockerfile, runtime_opt, ctest_opt, HTML)
 
@@ -223,7 +223,7 @@ def ExecuteActionWithParam(action, ctx, node):
 	elif action == 'Pull_Cluster_Image':
 		tag_prefix = test.findtext('tag_prefix') or ""
 		images = test.findtext('images').split()
-		success = CLUSTER.PullClusterImage(ctx, HTML, node, images, tag_prefix=tag_prefix)
+		success = CLUSTER.PullClusterImage(ctx, oc, HTML, node, images, tag_prefix=tag_prefix)
 
 	elif action == 'AnalyzeRTStats':
 		yaml = test.findtext('stats_cfg')
@@ -277,7 +277,7 @@ CLUSTER = cls_cluster.Cluster()
 import args_parse
 # Force local execution, move all execution targets to localhost
 force_local = False
-mode, force_local, date_fmt, final_status, g_ctx = args_parse.ArgsParse(sys.argv,HTML,CONTAINERS,CLUSTER)
+mode, force_local, date_fmt, final_status, g_ctx, oc = args_parse.ArgsParse(sys.argv,HTML,CONTAINERS)
 fmt = "%(levelname)8s: %(message)s"
 if date_fmt:
     fmt = "[%(asctime)s] %(levelname)s %(message)s"
@@ -374,7 +374,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 			HTML.CreateHtmlTestRowQueue(msg, "SKIP", [])
 			continue
 		try:
-			test_succeeded = ExecuteActionWithParam(action, ctx, node)
+			test_succeeded = ExecuteActionWithParam(action, ctx, node, oc)
 			if not test_succeeded and may_fail:
 				logging.warning(f"test ID {test_case_idx} action {action} may or may not fail, proceeding despite error")
 			elif not test_succeeded:

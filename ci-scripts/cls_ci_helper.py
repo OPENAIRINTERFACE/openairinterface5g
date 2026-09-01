@@ -15,6 +15,11 @@ class GlobalTestCtx(NamedTuple):
     def Default(workspace=None):
         return GlobalTestCtx('', workspace if workspace is not None else os.getcwd(), '', False, '')
 
+class OcCtx(NamedTuple):
+    username: str
+    password: str
+    projectName: str
+
 class TestCaseCtx(NamedTuple):
     test_idx: int
     logPath: str

@@ -47,12 +47,6 @@ def OC_logout(cmd):
 	cmd.run(f'oc logout')
 
 class Cluster:
-	def __init__(self):
-		self.OCUserName = ""
-		self.OCPassword = ""
-		self.OCProjectName = ""
-		self.OCUrl = OCUrl
-		self.OCRegistry = OCRegistry
 
 	def _recreate_entitlements(cmd):
 		# recreating entitlements, don't care if deletion fails
@@ -135,21 +129,21 @@ class Cluster:
 			return -1
 		return int(result.group("size"))
 
-	def PullClusterImage(self, ctx, HTML, node, images, tag_prefix):
+	def PullClusterImage(self, ctx, oc, HTML, node, images, tag_prefix):
 		logging.debug(f'Pull OC image {images} to server {node}')
 		with cls_cmd.getConnection(node) as cmd:
-			succeeded = OC_login(cmd, self.OCUserName, self.OCPassword, CI_OC_RAN_NAMESPACE)
+			succeeded = OC_login(cmd, oc.username, oc.password, CI_OC_RAN_NAMESPACE)
 			if not succeeded:
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 				return False
-			ret = cmd.run(f'oc whoami -t | docker login -u oaicicd --password-stdin {self.OCRegistry}')
+			ret = cmd.run(f'oc whoami -t | docker login -u oaicicd --password-stdin {OCRegistry}')
 			if ret.returncode != 0:
 				logging.error(f'cannot authenticate at registry')
 				OC_logout(cmd)
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 				return False
 			tag = ctx.g.branch
-			registry = f'{self.OCRegistry}/{CI_OC_RAN_NAMESPACE}'
+			registry = f'{OCRegistry}/{CI_OC_RAN_NAMESPACE}'
 			success, msg = cls_containerize.Containerize.Pull_Image(cmd, images, tag, tag_prefix, registry, None, None)
 			OC_logout(cmd)
 		param = f"on node {node}"
@@ -164,19 +158,12 @@ class Cluster:
 		cmd.run(f'oc logs {job} &> {fn}')
 		return (image, archiveArtifact(cmd, ctx, fn))
 
-	def BuildClusterImage(self, ctx, node, HTML):
+	def BuildClusterImage(self, ctx, oc, node, HTML):
 		if ctx.g.branch == '':
 			raise ValueError(f'Insufficient Parameter: branch {ctx.g.branch}')
 		lSourcePath = ctx.g.workspace
 		if node == '' or lSourcePath == '':
 			raise ValueError('Insufficient Parameter: workspace missing')
-		ocUserName = self.OCUserName
-		ocPassword = self.OCPassword
-		ocProjectName = self.OCProjectName
-		if ocUserName == '' or ocPassword == '' or ocProjectName == '':
-			raise ValueError('Insufficient Parameter: no OC Credentials')
-		if self.OCRegistry.startswith("http") or self.OCRegistry.endswith("/"):
-			raise ValueError(f'ocRegistry {self.OCRegistry} should not start with http:// or https:// and not end on a slash /')
 
 		logging.debug(f'Building on cluster triggered from server: {node}')
 		cmd = cls_cmd.RemoteCmd(node)
@@ -208,7 +195,7 @@ class Cluster:
 			forceBaseImageBuild = True
 
 		# logging to OC Cluster and then switch to corresponding project
-		succeeded = OC_login(cmd, ocUserName, ocPassword, CI_OC_RAN_NAMESPACE)
+		succeeded = OC_login(cmd, oc.username, oc.password, CI_OC_RAN_NAMESPACE)
 		if not succeeded:
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 			cmd.close()

@@ -11,7 +11,7 @@
 # Parsing Command Line Arguements
 #-----------------------------------------------------------
 import argparse
-from cls_ci_helper import GlobalTestCtx
+from cls_ci_helper import GlobalTestCtx, OcCtx
 
 def strToBool(s):
     if s.lower() in ['true', 'yes', '1']:
@@ -20,7 +20,7 @@ def strToBool(s):
         return False
     raise argparse.ArgumentTypeError(f"cannot interpret '{s}' as boolean")
 
-def ArgsParse(argvs,HTML,CONTAINERS,CLUSTER):
+def ArgsParse(argvs,HTML,CONTAINERS):
 
     p = argparse.ArgumentParser(description="OAI CI driver", ) #formatter_class?
     p.add_argument('--local', '-l', action='store_true', default=False, help='Force local execution: rewrites the test xml script before running to always execute on localhost. Assumes images are available locally, will not remove any images and will run inside the current repo directory')
@@ -37,8 +37,6 @@ def ArgsParse(argvs,HTML,CONTAINERS,CLUSTER):
     oc.add_argument('--OCUserName')
     oc.add_argument('--OCPassword')
     oc.add_argument('--OCProjectName')
-    oc.add_argument('--OCUrl')
-    oc.add_argument('--OCRegistry')
     p.add_argument('--FlexRicTag')
 
     args = p.parse_args()
@@ -48,12 +46,8 @@ def ArgsParse(argvs,HTML,CONTAINERS,CLUSTER):
     HTML.testXMLfiles = args.XMLTestFile
     HTML.nbTestXMLfiles = len(args.XMLTestFile)
 
-    CLUSTER.OCUserName = args.OCUserName
-    CLUSTER.OCPassword = args.OCPassword
-    CLUSTER.OCProjectName = args.OCProjectName
-    CLUSTER.OCUrl = args.OCUrl
-    CLUSTER.OCRegistry = args.OCRegistry
+    oc = OcCtx(args.OCUserName, args.OCPassword, args.OCProjectName)
 
     CONTAINERS.flexricTag = args.FlexRicTag
 
-    return args.mode, args.local, args.datefmt, args.finalStatus, g
+    return args.mode, args.local, args.datefmt, args.finalStatus, g, oc
