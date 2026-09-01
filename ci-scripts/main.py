@@ -52,7 +52,6 @@ import traceback
 def ExecuteActionWithParam(action, ctx, node, oc):
 	global HTML
 	global CONTAINERS
-	global CLUSTER
 	if action == 'Build_eNB' or action == 'Build_Image' or action == "Build_Cluster_Image" or action == "Build_Run_Tests":
 		args = test.findtext('Build_eNB_args')
 		CONTAINERS.imageKind=test.findtext('kind')
@@ -64,7 +63,7 @@ def ExecuteActionWithParam(action, ctx, node, oc):
 		elif action == 'Build_Image':
 			success = CONTAINERS.BuildImage(ctx, node, HTML)
 		elif action == 'Build_Cluster_Image':
-			success = CLUSTER.BuildClusterImage(ctx, oc, node, HTML)
+			success = cls_cluster.Cluster.BuildClusterImage(ctx, oc, node, HTML)
 		elif action == 'Build_Run_Tests':
 			success = CONTAINERS.BuildRunTests(ctx, node, dockerfile, runtime_opt, ctest_opt, HTML)
 
@@ -223,7 +222,7 @@ def ExecuteActionWithParam(action, ctx, node, oc):
 	elif action == 'Pull_Cluster_Image':
 		tag_prefix = test.findtext('tag_prefix') or ""
 		images = test.findtext('images').split()
-		success = CLUSTER.PullClusterImage(ctx, oc, HTML, node, images, tag_prefix=tag_prefix)
+		success = cls_cluster.Cluster.PullClusterImage(ctx, oc, HTML, node, images, tag_prefix=tag_prefix)
 
 	elif action == 'AnalyzeRTStats':
 		yaml = test.findtext('stats_cfg')
@@ -268,7 +267,6 @@ CiTestObj = cls_oaicitest.OaiCiTest()
  
 HTML = cls_oai_html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
-CLUSTER = cls_cluster.Cluster()
 
 #-----------------------------------------------------------
 # Parsing Command Line Arguments

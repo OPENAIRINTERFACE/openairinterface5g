@@ -129,7 +129,7 @@ class Cluster:
 			return -1
 		return int(result.group("size"))
 
-	def PullClusterImage(self, ctx, oc, HTML, node, images, tag_prefix):
+	def PullClusterImage(ctx, oc, HTML, node, images, tag_prefix):
 		logging.debug(f'Pull OC image {images} to server {node}')
 		with cls_cmd.getConnection(node) as cmd:
 			succeeded = OC_login(cmd, oc.username, oc.password, CI_OC_RAN_NAMESPACE)
@@ -158,7 +158,7 @@ class Cluster:
 		cmd.run(f'oc logs {job} &> {fn}')
 		return (image, archiveArtifact(cmd, ctx, fn))
 
-	def BuildClusterImage(self, ctx, oc, node, HTML):
+	def BuildClusterImage(ctx, oc, node, HTML):
 		if ctx.g.branch == '':
 			raise ValueError(f'Insufficient Parameter: branch {ctx.g.branch}')
 		lSourcePath = ctx.g.workspace
