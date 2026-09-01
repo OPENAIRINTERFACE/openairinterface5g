@@ -49,16 +49,6 @@ import traceback
 # General Functions
 #-----------------------------------------------------------
 
-
-
-def CheckClassValidity(xml_class_list,action,id):
-	if action not in xml_class_list:
-		logging.error('test-case ' + id + ' has unlisted class ' + action + ' ##CHECK xml_class_list.yml')
-		resp=False
-	else:
-		resp=True
-	return resp
-
 def ExecuteActionWithParam(action, ctx, node):
 	global RAN
 	global HTML
@@ -248,8 +238,8 @@ def ExecuteActionWithParam(action, ctx, node):
 		success = CONTAINERS.AnalyzeRTStatsObject(HTML, node, ctx, yaml, service, stats_files)
 
 	else:
-		logging.warning(f"unknown action {action}, skip step")
-		success = True # by default, we skip the step and print a warning
+		logging.warning(f"unknown action {action}, CI run marked as failure")
+		success = False
 
 	return success
 
@@ -273,22 +263,6 @@ def ShowTestID(ctx, desc, file, line):
 #-----------------------------------------------------------
 # MAIN PART
 #-----------------------------------------------------------
-
-#loading xml action list from yaml
-import yaml
-xml_class_list_file='xml_class_list.yml'
-if (os.path.isfile(xml_class_list_file)):
-	yaml_file=xml_class_list_file
-elif (os.path.isfile('ci-scripts/'+xml_class_list_file)):
-	yaml_file='ci-scripts/'+xml_class_list_file
-else:
-	logging.error("XML action list yaml file cannot be found")
-	sys.exit("XML action list yaml file cannot be found")
-
-with open(yaml_file,'r') as f:
-    # The FullLoader parameter handles the conversion-$
-    #from YAML scalar values to Python dictionary format$
-    xml_class_list = yaml.load(f,Loader=yaml.FullLoader)
 
 mode = ''
 
@@ -395,9 +369,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 		may_fail = test.findtext('may_fail') in ['True', 'true', 'Yes', 'yes']
 		HTML.desc = desc
 		action = test.findtext('class')
-		if not CheckClassValidity(xml_class_list, action, test_case_idx):
-			task_set_succeeded = False
-			continue
 		file = os.path.basename(xml_test_file)
 		line = test.find('class').sourceline
 		ShowTestID(ctx, desc, file, line)
