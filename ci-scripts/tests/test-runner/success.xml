@@ -1,0 +1,30 @@
+<!-- SPDX-License-Identifier: LicenseRef-CSSL-1.0 -->
+
+<testCaseList>
+  <htmlTabRef>test2</htmlTabRef>
+  <htmlTabName>Manual testing Success</htmlTabName>
+  <htmlTabIcon>info-sign</htmlTabIcon>
+
+  <testCase>
+    <class>Custom_Command</class>
+    <desc>This succeed</desc>
+    <node>localhost</node>
+    <command>true</command>
+  </testCase>
+
+  <testCase>
+    <class>Custom_Command</class>
+    <desc>This may fail yet the end result is success</desc>
+    <may_fail>true</may_fail>
+    <node>localhost</node>
+    <command>false</command>
+  </testCase>
+
+  <testCase>
+    <class>Custom_Command</class>
+    <desc>This should succeed</desc>
+    <node>localhost</node>
+    <command>true</command>
+  </testCase>
+
+</testCaseList>
