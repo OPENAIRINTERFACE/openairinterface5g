@@ -395,6 +395,79 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 	else:
 		logging.info('\u001B[1;37;42mScenario passed\u001B[0m')
 		HTML.CreateHtmlTabFooter(True)
+elif mode == "all-in-one":
+	if g_ctx.repository == '' or g_ctx.branch == '' or g_ctx.workspace == '':
+		sys.exit(f'Insufficient Parameters: {g_ctx.repository=}, {g_ctx.branch=}, {g_ctx.workspace=}')
+	count = 0
+	foundCount = 0
+	while (count < HTML.nbTestXMLfiles):
+		xml_test_file = sys.path[0] + "/" + HTML.testXMLfiles[count]
+		if (os.path.isfile(xml_test_file)):
+			try:
+				xmlTree = ET.parse(xml_test_file)
+			except Exception as e:
+				print(f"Error: {e} while parsing file: {xml_test_file}.")
+			xmlRoot = xmlTree.getroot()
+			HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef'))
+			HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName'))
+			HTML.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon'))
+			foundCount += 1
+		count += 1
+	if foundCount != HTML.nbTestXMLfiles:
+		HTML.nbTestXMLfiles=foundCount
+
+	HTML.CreateHtmlHeader(g_ctx.repository, g_ctx.branch)
+
+	signal.signal(signal.SIGINT, receive_signal)
+
+	xmls = HTML.testXMLfiles
+
+	final_status = True
+	for xml in xmls:
+		logging.info('\u001B[1m----------------------------------------\u001B[0m')
+		logging.info(f'\u001B[1m  Starting Scenario: {xml}\u001B[0m')
+		logging.info('\u001B[1m----------------------------------------\u001B[0m')
+
+		xml_test_file = f"{cwd}/{xml}"
+
+		# directory where all log artifacts will be placed
+		logPath = f"{cwd}/../cmake_targets/log/{xml}.d"
+		# we run from within ci-scripts, but the logPath is absolute, so replace
+		# the ci-scripts/..; if it does not exist, nothing will happen
+		logPath = logPath.replace(r'/ci-scripts/..', '')
+		logging.info(f"placing all artifacts for this run in {logPath}/")
+		with cls_cmd.LocalCmd() as c:
+			c.run(f"rm -rf {logPath}")
+			c.run(f"mkdir -p {logPath}")
+
+		xmlTree = ET.parse(xml_test_file)
+		xmlRoot = xmlTree.getroot()
+		all_tests = xmlRoot.findall('testCase')
+
+		HTML.testXMLfiles = [xml]
+		HTML.nbTestXMLfiles = 1
+		HTML.htmlTabRefs = [xmlRoot.findtext('htmlTabRef')]
+		HTML.htmlTabNames = [xmlRoot.findtext('htmlTabName')]
+		HTML.htmlTabIcons = [xmlRoot.findtext('htmlTabIcon')]
+
+		# reset that we created a header (this "logic" makes no sense and will
+		# be removed once we removed the different modes)
+		HTML.htmlHeaderCreated = False
+		HTML.CreateHtmlTabHeader()
+		HTML.startTime=int(round(time.time() * 1000))
+
+		success = run_tests(g_ctx, logPath, HTML, all_tests)
+
+		HTML.htmlFooterCreated = False
+		if not success:
+			logging.error('\u001B[1;37;41mScenario failed\u001B[0m')
+			HTML.CreateHtmlTabFooter(False)
+			final_status = False
+		else:
+			logging.info('\u001B[1;37;42mScenario passed\u001B[0m')
+			HTML.CreateHtmlTabFooter(True)
+
+	HTML.CreateHtmlFooter(final_status)
 else:
 	sys.exit(f'Invalid mode {mode}')
 sys.exit(0)

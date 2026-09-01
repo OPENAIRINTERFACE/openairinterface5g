@@ -5,7 +5,6 @@ SHORT_COMMIT_SHA=$(git rev-parse --short=8 HEAD)
 COMMIT_SHA=$(git rev-parse HEAD)
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 REPO_PATH=$(dirname $(realpath $0))/../
-TESTCASE=$1
 
 if [ $# -eq 0 ]
   then
@@ -30,17 +29,13 @@ docker tag oai-nr-ue oai-ci/oai-nr-ue:${CURRENT_BRANCH}
 docker tag oai-gnb oai-ci/oai-gnb:${CURRENT_BRANCH}
 docker tag oai-nr-cuup oai-ci/oai-nr-cuup:${CURRENT_BRANCH}
 
-python3 main.py --mode=InitiateHtml --repository=NONE --branch=${CURRENT_BRANCH} \
-    --XMLTestFile=${TESTCASE} --local --datefmt="%H:%M:%S"
+TESTCASES="$@"
 
-python3 main.py --mode=TesteNB --repository=NONE --branch=${CURRENT_BRANCH} \
+python3 main.py --repository=NONE --branch=${CURRENT_BRANCH} \
     --ranAllowMerge=false \
     --targetBranch=NONE \
     --workspace=${REPO_PATH} \
-    --XMLTestFile=${TESTCASE} --local --datefmt="%H:%M:%S"
-RET=$?
+	--local --datefmt="%H:%M:%S" \
+    ${TESTCASES}
 
-[[ ${RET} -eq 0 ]] && STATUS=True || STATUS=False
-python3 main.py --mode=FinalizeHtml --finalStatus=${STATUS} --local --datefmt="%H:%M:%S"
-
-exit ${RET}
+exit $?
