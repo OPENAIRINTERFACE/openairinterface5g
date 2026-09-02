@@ -356,11 +356,4 @@ class Cluster:
 		else:
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
 
-		# TODO fix groovy script, remove the following.
-		# the groovy scripts expects all logs in
-		# <jenkins-workspace>/<pipeline>/ci-scripts, so copy it there
-		with cls_cmd.LocalCmd() as c:
-			c.run(f'mkdir -p {os.getcwd()}/test_log_{ctx.test_idx}/')
-			c.run(f'cp -r {ctx.logPath} {os.getcwd()}/test_log_{ctx.test_idx}/')
-
 		return status
