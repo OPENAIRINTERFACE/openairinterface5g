@@ -49,7 +49,7 @@ import traceback
 # General Functions
 #-----------------------------------------------------------
 
-def ExecuteActionWithParam(action, ctx, node, oc):
+def ExecuteActionWithParam(action, test, ctx, node, oc):
 	global HTML
 	global CONTAINERS
 	if action == 'Build_eNB' or action == 'Build_Image' or action == "Build_Cluster_Image" or action == "Build_Run_Tests":
@@ -257,6 +257,43 @@ def ShowTestID(ctx, desc, file, line):
     logging.info(f'\u001B[1m {desc}                                 \u001B[0m')
     logging.info(f'\u001B[1m----------------------------------------\u001B[0m')
 
+def run_tests(g_ctx, logPath, HTML, all_tests):
+	task_set_succeeded = True
+	for index, test in enumerate(all_tests, start=1):
+		if test_runner_abort:
+			task_set_succeeded = False
+		test_case_idx = f"{index:06d}"
+		ctx = TestCaseCtx(int(test_case_idx), logPath, g_ctx)
+		desc = test.findtext('desc')
+		node = test.findtext('node') if not force_local else 'localhost'
+		always_exec = test.findtext('always_exec') in ['True', 'true', 'Yes', 'yes']
+		may_fail = test.findtext('may_fail') in ['True', 'true', 'Yes', 'yes']
+		HTML.testCaseIdx = test_case_idx
+		HTML.desc = desc
+		action = test.findtext('class')
+		file = os.path.basename(xml_test_file)
+		line = test.find('class').sourceline
+		ShowTestID(ctx, desc, file, line)
+		if not task_set_succeeded and not always_exec:
+			msg = f"skipping test due to prior error"
+			logging.warning(msg)
+			HTML.CreateHtmlTestRowQueue(msg, "SKIP", [])
+			continue
+		try:
+			test_succeeded = ExecuteActionWithParam(action, test, ctx, node, oc)
+			if not test_succeeded and may_fail:
+				logging.warning(f"test ID {test_case_idx} action {action} may or may not fail, proceeding despite error")
+			elif not test_succeeded:
+				logging.error(f"test ID {test_case_idx} action {action} failed ({test_succeeded}), skipping next tests")
+				task_set_succeeded = False
+		except Exception as e:
+			s = traceback.format_exc()
+			logging.error(f'while running CI, an exception occurred:\n{s}')
+			HTML.CreateHtmlTestRowQueue("N/A", 'KO', [f"CI test code encountered an exception:\n{s}"])
+			task_set_succeeded = False
+			continue
+	return task_set_succeeded
+
 #-----------------------------------------------------------
 # MAIN PART
 #-----------------------------------------------------------
@@ -329,7 +366,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 		xml_test_file = cwd + "/" + HTML.testXMLfiles[0]
 
 	signal.signal(signal.SIGINT, receive_signal)
-	task_set_succeeded = True
 
 	# directory where all log artifacts will be placed
 	logPath = f"{cwd}/../cmake_targets/log/{xml_test_file.split('/')[-1]}.d"
@@ -350,41 +386,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 	HTML.CreateHtmlTabHeader()
 	HTML.startTime=int(round(time.time() * 1000))
 
-	for index, test in enumerate(all_tests, start=1):
-		if test_runner_abort:
-			task_set_succeeded = False
-		test_case_idx = f"{index:06d}"
-		ctx = TestCaseCtx(int(test_case_idx), logPath, g_ctx)
-		desc = test.findtext('desc')
-		node = test.findtext('node') if not force_local else 'localhost'
-		always_exec = test.findtext('always_exec') in ['True', 'true', 'Yes', 'yes']
-		may_fail = test.findtext('may_fail') in ['True', 'true', 'Yes', 'yes']
-		HTML.testCaseIdx = test_case_idx
-		HTML.desc = desc
-		action = test.findtext('class')
-		file = os.path.basename(xml_test_file)
-		line = test.find('class').sourceline
-		ShowTestID(ctx, desc, file, line)
-		if not task_set_succeeded and not always_exec:
-			msg = f"skipping test due to prior error"
-			logging.warning(msg)
-			HTML.CreateHtmlTestRowQueue(msg, "SKIP", [])
-			continue
-		try:
-			test_succeeded = ExecuteActionWithParam(action, ctx, node, oc)
-			if not test_succeeded and may_fail:
-				logging.warning(f"test ID {test_case_idx} action {action} may or may not fail, proceeding despite error")
-			elif not test_succeeded:
-				logging.error(f"test ID {test_case_idx} action {action} failed ({test_succeeded}), skipping next tests")
-				task_set_succeeded = False
-		except Exception as e:
-			s = traceback.format_exc()
-			logging.error(f'while running CI, an exception occurred:\n{s}')
-			HTML.CreateHtmlTestRowQueue("N/A", 'KO', [f"CI test code encountered an exception:\n{s}"])
-			task_set_succeeded = False
-			continue
+	success = run_tests(g_ctx, logPath, HTML, all_tests)
 
-	if not task_set_succeeded:
+	if not success:
 		logging.error('\u001B[1;37;41mScenario failed\u001B[0m')
 		HTML.CreateHtmlTabFooter(False)
 		sys.exit('Failed Scenario')
