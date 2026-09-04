@@ -43,3 +43,16 @@ endif()
 if (ENABLE_IMSCOPE OR ENABLE_IMSCOPE_RECORD)
   add_subdirectory(imscope)
 endif()
+
+add_library(PHY_TOOLS
+  file_output.c
+  dfts_load.c
+  log2_approx.c
+  cdot_prod.c
+  signal_energy.c
+  dB_routines.c
+  sqrt.c
+  get_sin_cos.c
+  oai_arith_operations.c
+)
+target_link_libraries(PHY_TOOLS PRIVATE shlib_loader)
