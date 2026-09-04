@@ -1160,8 +1160,6 @@ double compute_noise_variance(double txlev_sum,
 int32_t iSqrt(int32_t value);
 uint8_t log2_approx(uint32_t);
 uint8_t log2_approx64(unsigned long long int x);
-int16_t invSqrt(int16_t x);
-uint32_t angle(struct complex16 perrror);
 
 /// computes the number of factors 2 in x
 unsigned char factor2(unsigned int x);
