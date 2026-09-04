@@ -1028,7 +1028,7 @@ add_library(PHY_UE ${PHY_SRC_UE})
 target_link_libraries(PHY_UE PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs UTIL)
 
 add_library(PHY_NR_COMMON ${PHY_NR_SRC_COMMON})
-target_link_libraries(PHY_NR_COMMON PUBLIC UTIL)
+target_link_libraries(PHY_NR_COMMON PUBLIC UTIL crc_byte)
 
 if (ENABLE_LDPC_CUDA)
   find_package(CUDA REQUIRED)
