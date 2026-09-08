@@ -347,6 +347,5 @@ int sl_nr_ue_slot_select(const sl_nr_phy_config_request_t *cfg, int nr_slot, uin
 void nr_ue_sidelink_scheduler(nr_sidelink_indication_t *sl_ind, NR_UE_MAC_INST_t *mac);
 
 NR_SearchSpace_t *get_common_search_space(const NR_UE_MAC_INST_t *mac, const NR_SearchSpaceId_t ss_id);
-ssb_ro_preambles_t get_ssb_ro_preambles_4step(struct NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB *config);
 void update_pdcch_config(NR_UE_MAC_INST_t *mac);
 #endif

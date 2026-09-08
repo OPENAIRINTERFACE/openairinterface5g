@@ -3265,13 +3265,27 @@ static void handle_rar_reception(NR_UE_MAC_INST_t *mac, NR_MAC_RAR *rar, frame_t
   int ret = nr_ue_pusch_scheduler(mac, 1, frame, slot, &frame_tx, &slot_tx, tda_info.k2 + ntn_ue_koffset);
 
   // TA command
+  const int ta = rar->TA2 + (rar->TA1 << 5);
+  const bool ta_timer_active = nr_timer_is_active(&mac->time_alignment_timer);
   // if the timeAlignmentTimer associated with this TAG is not running
-  if (!nr_timer_is_active(&mac->time_alignment_timer)) {
-    const int ta = rar->TA2 + (rar->TA1 << 5);
+  if (!ta_timer_active)
     set_time_alignment(mac, ta, rar_ta, frame_tx, slot_tx);
-    LOG_W(MAC, "received TA command %d\n", 31 + ta);
-  }
   // else ignore the received Timing Advance Command
+  LOG_D(NR_MAC,
+        "[UE %d] RAR %d.%d RAPID %u absolute TA %d Msg3 %d.%d k2 %ld NTN K-offset %d "
+        "Msg3-scheduled %d timeAlignmentTimer %s TA-action %s\n",
+        mac->ue_id,
+        frame,
+        slot,
+        ra->ra_PreambleIndex,
+        ta,
+        frame_tx,
+        slot_tx,
+        tda_info.k2,
+        ntn_ue_koffset,
+        ret != -1,
+        ta_timer_active ? "active" : "inactive",
+        ta_timer_active ? "ignored" : "applied");
 
 #ifdef DEBUG_RAR
   LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);

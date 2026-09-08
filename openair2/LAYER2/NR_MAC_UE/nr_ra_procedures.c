@@ -166,49 +166,6 @@ static void select_preamble_group(NR_UE_MAC_INST_t *mac)
   // else if Msg3 is being retransmitted, we keep what used in first transmission of Msg3
 }
 
-ssb_ro_preambles_t get_ssb_ro_preambles_4step(struct NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB *config)
-{
-  ssb_ro_preambles_t ret = {0};
-  switch (config->present) {
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneEighth:
-      ret.ssb_per_ro = 0.125;
-      ret.preambles_per_ssb = (config->choice.oneEighth + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneFourth:
-      ret.ssb_per_ro = 0.25;
-      ret.preambles_per_ssb = (config->choice.oneFourth + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_oneHalf:
-      ret.ssb_per_ro = 0.5;
-      ret.preambles_per_ssb = (config->choice.oneHalf + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one:
-      ret.ssb_per_ro = 1;
-      ret.preambles_per_ssb = (config->choice.one + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_two:
-      ret.ssb_per_ro = 2;
-      ret.preambles_per_ssb = (config->choice.two + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_four:
-      ret.ssb_per_ro = 4;
-      ret.preambles_per_ssb = config->choice.four;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_eight:
-      ret.ssb_per_ro = 8;
-      ret.preambles_per_ssb = config->choice.eight;
-      break;
-    case NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_sixteen:
-      ret.ssb_per_ro = 16;
-      ret.preambles_per_ssb = config->choice.sixteen;
-      break;
-    default:
-      AssertFatal(false, "Invalid ssb_perRACH_OccasionAndCB_PreamblesPerSSB\n");
-  }
-  LOG_D(NR_MAC, "SSB per RO %f preambles per SSB %d\n", ret.ssb_per_ro, ret.preambles_per_ssb);
-  return ret;
-}
-
 static ssb_ro_preambles_t get_ssb_ro_preambles_2step(struct NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16 *config)
 {
   ssb_ro_preambles_t ret = {0};
