@@ -9,7 +9,7 @@
 #include "PHY/defs_gNB.h"
 #include "common/platform_types.h"
 #include "sched_nr.h"
-#include "PHY/MODULATION/modulation_common.h"
+#include "PHY/MODULATION/phy_ofdm_mod.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "openair1/PHY/defs_nr_common.h"
 #include "common/utils/LOG/log.h"

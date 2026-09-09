@@ -17,7 +17,7 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
-#include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/phy_ofdm_mod.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/INIT/nr_phy_init.h"
@@ -29,7 +29,6 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-#include "openair1/PHY/MODULATION/nr_modulation.h"
 #include <executables/softmodem-common.h>
 #include <executables/nr-uesoftmodem.h>
 #include "nfapi/oai_integration/vendor_ext.h"
