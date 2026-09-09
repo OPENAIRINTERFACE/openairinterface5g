@@ -2749,3 +2749,314 @@ void free_E1_bearer_context_mod_failure(const e1ap_bearer_context_mod_failure_t 
   UNUSED(msg);
   // do nothing
 }
+
+/* ============================================
+ *   E1AP Bearer Context Modification Required
+ * ============================================ */
+
+/** @brief Encode PDU Session Resource To Remove Item */
+static void e1_encode_pdu_session_to_remove_item(E1AP_PDU_Session_Resource_To_Remove_Item_t *out, const pdu_session_to_remove_t *in)
+{
+  // PDU Session ID (M)
+  out->pDU_Session_ID = in->sessionId;
+  // Cause (O) - PDU-Session-Resource-To-Remove-Item-ExtIEs id-Cause
+  if (in->cause.type != E1AP_CAUSE_NOTHING) {
+    E1AP_ProtocolExtensionContainer_4961P104_t *ext = calloc_or_fail(1, sizeof(*ext));
+    out->iE_Extensions = (struct E1AP_ProtocolExtensionContainer *)ext;
+    asn1cSequenceAdd(ext->list, E1AP_PDU_Session_Resource_To_Remove_Item_ExtIEs_t, ie);
+    ie->id = E1AP_ProtocolIE_ID_id_Cause;
+    ie->criticality = E1AP_Criticality_ignore;
+    ie->extensionValue.present = E1AP_PDU_Session_Resource_To_Remove_Item_ExtIEs__extensionValue_PR_Cause;
+    ie->extensionValue.choice.Cause = e1_encode_cause_ie(&in->cause);
+  }
+}
+
+/** @brief Decode PDU Session Resource To Remove Item */
+static bool e1_decode_pdu_session_to_remove_item(pdu_session_to_remove_t *out, const E1AP_PDU_Session_Resource_To_Remove_Item_t *in)
+{
+  *out = (pdu_session_to_remove_t){0};
+  // PDU Session ID (M)
+  out->sessionId = in->pDU_Session_ID;
+  // Cause (O)
+  if (in->iE_Extensions != NULL) {
+    const E1AP_ProtocolExtensionContainer_4961P104_t *ext = (const E1AP_ProtocolExtensionContainer_4961P104_t *)in->iE_Extensions;
+    for (int i = 0; i < ext->list.count; i++) {
+      const E1AP_PDU_Session_Resource_To_Remove_Item_ExtIEs_t *ie = ext->list.array[i];
+      AssertFatal(ie != NULL, "ext->list.array[i] shall not be null");
+      if (ie->id != E1AP_ProtocolIE_ID_id_Cause)
+        continue;
+      _EQ_CHECK_INT(ie->extensionValue.present, E1AP_PDU_Session_Resource_To_Remove_Item_ExtIEs__extensionValue_PR_Cause);
+      out->cause = e1_decode_cause_ie(&ie->extensionValue.choice.Cause);
+      break;
+    }
+  }
+  return true;
+}
+
+/** @brief Bearer Context Modification Required encoding (9.2.2.7, 3GPP TS 38.463)
+ *         gNB-CU-UP -> gNB-CU-CP */
+E1AP_E1AP_PDU_t *encode_E1_bearer_context_mod_required(const e1ap_bearer_mod_required_t *msg)
+{
+  E1AP_E1AP_PDU_t *pdu = calloc_or_fail(1, sizeof(*pdu));
+  pdu->present = E1AP_E1AP_PDU_PR_initiatingMessage;
+  asn1cCalloc(pdu->choice.initiatingMessage, type);
+  type->procedureCode = E1AP_ProcedureCode_id_bearerContextModificationRequired;
+  type->criticality = E1AP_Criticality_reject;
+  type->value.present = E1AP_InitiatingMessage__value_PR_BearerContextModificationRequired;
+  E1AP_BearerContextModificationRequired_t *out = &type->value.choice.BearerContextModificationRequired;
+
+  // gNB-CU-CP UE E1AP ID (M)
+  asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationRequiredIEs_t, ie1);
+  ie1->id = E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID;
+  ie1->criticality = E1AP_Criticality_reject;
+  ie1->value.present = E1AP_BearerContextModificationRequiredIEs__value_PR_GNB_CU_CP_UE_E1AP_ID;
+  ie1->value.choice.GNB_CU_CP_UE_E1AP_ID = msg->gNB_cu_cp_ue_id;
+
+  // gNB-CU-UP UE E1AP ID (M)
+  asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationRequiredIEs_t, ie2);
+  ie2->id = E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID;
+  ie2->criticality = E1AP_Criticality_reject;
+  ie2->value.present = E1AP_BearerContextModificationRequiredIEs__value_PR_GNB_CU_UP_UE_E1AP_ID;
+  ie2->value.choice.GNB_CU_UP_UE_E1AP_ID = msg->gNB_cu_up_ue_id;
+
+  // System Bearer Context Modification Required (M)
+  asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationRequiredIEs_t, ie3);
+  ie3->id = E1AP_ProtocolIE_ID_id_System_BearerContextModificationRequired;
+  ie3->criticality = E1AP_Criticality_reject;
+  ie3->value.present = E1AP_BearerContextModificationRequiredIEs__value_PR_System_BearerContextModificationRequired;
+  E1AP_System_BearerContextModificationRequired_t *sys = &ie3->value.choice.System_BearerContextModificationRequired;
+  sys->present = E1AP_System_BearerContextModificationRequired_PR_nG_RAN_BearerContextModificationRequired;
+  E1AP_ProtocolIE_Container_4932P33_t *msgNGRAN_list = calloc_or_fail(1, sizeof(*msgNGRAN_list));
+  sys->choice.nG_RAN_BearerContextModificationRequired = (struct E1AP_ProtocolIE_Container *)msgNGRAN_list;
+
+  // NG-RAN PDU Session Resource To Remove List (O)
+  if (msg->numPDUSessionsRem > 0 && msg->pduSessionRem != NULL) {
+    asn1cSequenceAdd(msgNGRAN_list->list, E1AP_NG_RAN_BearerContextModificationRequired_t, msgNGRAN);
+    msgNGRAN->id = E1AP_ProtocolIE_ID_id_PDU_Session_Resource_To_Remove_List;
+    msgNGRAN->criticality = E1AP_Criticality_reject;
+    msgNGRAN->value.present = E1AP_NG_RAN_BearerContextModificationRequired__value_PR_PDU_Session_Resource_To_Remove_List;
+    E1AP_PDU_Session_Resource_To_Remove_List_t *pdu2Remove = &msgNGRAN->value.choice.PDU_Session_Resource_To_Remove_List;
+    for (const pdu_session_to_remove_t *i = msg->pduSessionRem; i < msg->pduSessionRem + msg->numPDUSessionsRem; i++) {
+      asn1cSequenceAdd(pdu2Remove->list, E1AP_PDU_Session_Resource_To_Remove_Item_t, ieC4_1);
+      e1_encode_pdu_session_to_remove_item(ieC4_1, i);
+    }
+  }
+  return pdu;
+}
+
+/** @brief Bearer Context Modification Required decoding (9.2.2.7, 3GPP TS 38.463)
+ *         gNB-CU-UP -> gNB-CU-CP */
+bool decode_E1_bearer_context_mod_required(const E1AP_E1AP_PDU_t *pdu, e1ap_bearer_mod_required_t *out)
+{
+  DevAssert(pdu != NULL);
+  _EQ_CHECK_INT(pdu->present, E1AP_E1AP_PDU_PR_initiatingMessage);
+  const E1AP_InitiatingMessage_t *im = pdu->choice.initiatingMessage;
+  _EQ_CHECK_LONG(im->procedureCode, E1AP_ProcedureCode_id_bearerContextModificationRequired);
+  _EQ_CHECK_INT(im->value.present, E1AP_InitiatingMessage__value_PR_BearerContextModificationRequired);
+  const E1AP_BearerContextModificationRequired_t *in = &im->value.choice.BearerContextModificationRequired;
+
+  // Mandatory IEs (TS 38.463 9.2.2.7)
+  E1AP_BearerContextModificationRequiredIEs_t *ie = NULL;
+  E1AP_LIB_FIND_IE(E1AP_BearerContextModificationRequiredIEs_t, ie, in, E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID, true);
+  E1AP_LIB_FIND_IE(E1AP_BearerContextModificationRequiredIEs_t, ie, in, E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID, true);
+  E1AP_LIB_FIND_IE(E1AP_BearerContextModificationRequiredIEs_t, ie, in, E1AP_ProtocolIE_ID_id_System_BearerContextModificationRequired, true);
+
+  for (int i = 0; i < in->protocolIEs.list.count; i++) {
+    ie = in->protocolIEs.list.array[i];
+    AssertFatal(ie != NULL, "in->protocolIEs.list.array[i] shall not be null");
+    switch (ie->id) {
+      case E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID:
+        _EQ_CHECK_INT(ie->value.present, E1AP_BearerContextModificationRequiredIEs__value_PR_GNB_CU_CP_UE_E1AP_ID);
+        out->gNB_cu_cp_ue_id = ie->value.choice.GNB_CU_CP_UE_E1AP_ID;
+        break;
+      case E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID:
+        _EQ_CHECK_INT(ie->value.present, E1AP_BearerContextModificationRequiredIEs__value_PR_GNB_CU_UP_UE_E1AP_ID);
+        out->gNB_cu_up_ue_id = ie->value.choice.GNB_CU_UP_UE_E1AP_ID;
+        break;
+      case E1AP_ProtocolIE_ID_id_System_BearerContextModificationRequired: {
+        _EQ_CHECK_INT(ie->value.present,
+                      E1AP_BearerContextModificationRequiredIEs__value_PR_System_BearerContextModificationRequired);
+        const E1AP_System_BearerContextModificationRequired_t *modReq = &ie->value.choice.System_BearerContextModificationRequired;
+        switch (modReq->present) {
+          case E1AP_System_BearerContextModificationRequired_PR_NOTHING:
+            PRINT_ERROR("System Bearer Context Modification Required: no choice present\n");
+            break;
+          case E1AP_System_BearerContextModificationRequired_PR_e_UTRAN_BearerContextModificationRequired:
+            PRINT_ERROR("UTRAN in Bearer Context Modification Required not supported\n");
+            return false;
+          case E1AP_System_BearerContextModificationRequired_PR_nG_RAN_BearerContextModificationRequired: {
+            AssertFatal(modReq->choice.nG_RAN_BearerContextModificationRequired != NULL,
+                        "nG_RAN_BearerContextModificationRequired shall not be null");
+            const E1AP_ProtocolIE_Container_4932P33_t *msgNGRAN_list =
+                (const E1AP_ProtocolIE_Container_4932P33_t *)modReq->choice.nG_RAN_BearerContextModificationRequired;
+            for (int j = 0; j < msgNGRAN_list->list.count; j++) {
+              const E1AP_NG_RAN_BearerContextModificationRequired_t *msgNGRAN = msgNGRAN_list->list.array[j];
+              switch (msgNGRAN->id) {
+                case E1AP_ProtocolIE_ID_id_PDU_Session_Resource_To_Remove_List: {
+                  _EQ_CHECK_INT(msgNGRAN->value.present,
+                                E1AP_NG_RAN_BearerContextModificationRequired__value_PR_PDU_Session_Resource_To_Remove_List);
+                  const E1AP_PDU_Session_Resource_To_Remove_List_t *remList =
+                      &msgNGRAN->value.choice.PDU_Session_Resource_To_Remove_List;
+                  out->numPDUSessionsRem = remList->list.count;
+                  if (out->numPDUSessionsRem <= 0 || out->numPDUSessionsRem > NR_MAX_NB_PDU_SESSIONS) {
+                    PRINT_ERROR("PDU Session Resource To Remove List count %d out of range (1..%d)\n",
+                                out->numPDUSessionsRem,
+                                NR_MAX_NB_PDU_SESSIONS);
+                    return false;
+                  }
+                  out->pduSessionRem = calloc_or_fail(out->numPDUSessionsRem, sizeof(*out->pduSessionRem));
+                  for (int k = 0; k < remList->list.count; k++)
+                    CHECK_E1AP_DEC(e1_decode_pdu_session_to_remove_item(&out->pduSessionRem[k], remList->list.array[k]));
+                  break;
+                }
+                default:
+                  PRINT_ERROR("Unknown msgNGRAN->id in Bearer Context Modification Required\n");
+                  return false;
+              }
+            }
+            break;
+          }
+          default:
+            PRINT_ERROR("System Bearer Context Modification Required: No valid choice present.\n");
+            break;
+        }
+        break;
+      }
+      default:
+        PRINT_ERROR("%s decoding failure: IE %ld is invalid\n", __func__, ie->id);
+        return false;
+    }
+  }
+  return true;
+}
+
+/** @brief E1AP Bearer Context Modification Required: deep copy */
+e1ap_bearer_mod_required_t cp_bearer_context_mod_required(const e1ap_bearer_mod_required_t *msg)
+{
+  e1ap_bearer_mod_required_t cp = *msg;
+  cp.pduSessionRem = NULL;
+  if (msg->numPDUSessionsRem > 0 && msg->pduSessionRem != NULL) {
+    cp.pduSessionRem = calloc_or_fail(msg->numPDUSessionsRem, sizeof(*cp.pduSessionRem));
+    for (int i = 0; i < msg->numPDUSessionsRem; i++)
+      cp.pduSessionRem[i] = msg->pduSessionRem[i];
+  }
+  return cp;
+}
+
+/** @brief E1AP Bearer Context Modification Required: equality check */
+bool eq_bearer_context_mod_required(const e1ap_bearer_mod_required_t *a, const e1ap_bearer_mod_required_t *b)
+{
+  _EQ_CHECK_INT(a->gNB_cu_cp_ue_id, b->gNB_cu_cp_ue_id);
+  _EQ_CHECK_INT(a->gNB_cu_up_ue_id, b->gNB_cu_up_ue_id);
+  _EQ_CHECK_INT(a->numPDUSessionsRem, b->numPDUSessionsRem);
+  _EQ_CHECK_OPTIONAL_PTR(a, b, pduSessionRem);
+  if (a->pduSessionRem != NULL && b->pduSessionRem != NULL) {
+    for (int i = 0; i < a->numPDUSessionsRem; i++) {
+      _EQ_CHECK_LONG(a->pduSessionRem[i].sessionId, b->pduSessionRem[i].sessionId);
+      _EQ_CHECK_INT(a->pduSessionRem[i].cause.type, b->pduSessionRem[i].cause.type);
+      _EQ_CHECK_INT(a->pduSessionRem[i].cause.value, b->pduSessionRem[i].cause.value);
+    }
+  }
+  return true;
+}
+
+/** @brief E1AP Bearer Context Modification Required: free */
+void free_e1ap_context_mod_required(const e1ap_bearer_mod_required_t *msg)
+{
+  free(msg->pduSessionRem);
+}
+
+/* ============================================
+ *   E1AP Bearer Context Modification Confirm
+ * ============================================ */
+
+/** @brief Bearer Context Modification Confirm encoding (9.2.2.8, 3GPP TS 38.463)
+ *         gNB-CU-CP -> gNB-CU-UP */
+E1AP_E1AP_PDU_t *encode_E1_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *msg)
+{
+  E1AP_E1AP_PDU_t *pdu = calloc_or_fail(1, sizeof(*pdu));
+  pdu->present = E1AP_E1AP_PDU_PR_successfulOutcome;
+  // Message Type (M)
+  asn1cCalloc(pdu->choice.successfulOutcome, type);
+  type->procedureCode = E1AP_ProcedureCode_id_bearerContextModificationRequired;
+  type->criticality = E1AP_Criticality_reject;
+  type->value.present = E1AP_SuccessfulOutcome__value_PR_BearerContextModificationConfirm;
+  E1AP_BearerContextModificationConfirm_t *out = &type->value.choice.BearerContextModificationConfirm;
+
+  // gNB-CU-CP UE E1AP ID (M)
+  asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationConfirmIEs_t, ie1);
+  ie1->id = E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID;
+  ie1->criticality = E1AP_Criticality_reject;
+  ie1->value.present = E1AP_BearerContextModificationConfirmIEs__value_PR_GNB_CU_CP_UE_E1AP_ID;
+  ie1->value.choice.GNB_CU_CP_UE_E1AP_ID = msg->gNB_cu_cp_ue_id;
+
+  // gNB-CU-UP UE E1AP ID (M)
+  asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationConfirmIEs_t, ie2);
+  ie2->id = E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID;
+  ie2->criticality = E1AP_Criticality_reject;
+  ie2->value.present = E1AP_BearerContextModificationConfirmIEs__value_PR_GNB_CU_UP_UE_E1AP_ID;
+  ie2->value.choice.GNB_CU_UP_UE_E1AP_ID = msg->gNB_cu_up_ue_id;
+
+  return pdu;
+}
+
+/** @brief Bearer Context Modification Confirm decoding (9.2.2.8, 3GPP TS 38.463)
+ *         gNB-CU-CP -> gNB-CU-UP */
+bool decode_E1_bearer_context_mod_confirm(e1ap_bearer_mod_confirm_t *out, const E1AP_E1AP_PDU_t *pdu)
+{
+  DevAssert(pdu != NULL);
+  _EQ_CHECK_INT(pdu->present, E1AP_E1AP_PDU_PR_successfulOutcome);
+  E1AP_SuccessfulOutcome_t *type = pdu->choice.successfulOutcome;
+  _EQ_CHECK_LONG(type->procedureCode, E1AP_ProcedureCode_id_bearerContextModificationRequired);
+  _EQ_CHECK_INT(type->value.present, E1AP_SuccessfulOutcome__value_PR_BearerContextModificationConfirm);
+  const E1AP_BearerContextModificationConfirm_t *in = &type->value.choice.BearerContextModificationConfirm;
+
+  // Check mandatory IEs
+  E1AP_BearerContextModificationConfirmIEs_t *ie;
+  E1AP_LIB_FIND_IE(E1AP_BearerContextModificationConfirmIEs_t, ie, in, E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID, true);
+  E1AP_LIB_FIND_IE(E1AP_BearerContextModificationConfirmIEs_t, ie, in, E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID, true);
+
+  for (int i = 0; i < in->protocolIEs.list.count; i++) {
+    ie = in->protocolIEs.list.array[i];
+    AssertFatal(ie != NULL, "in->protocolIEs.list.array[i] shall not be null");
+    switch (ie->id) {
+      case E1AP_ProtocolIE_ID_id_gNB_CU_CP_UE_E1AP_ID:
+        _EQ_CHECK_INT(ie->value.present, E1AP_BearerContextModificationConfirmIEs__value_PR_GNB_CU_CP_UE_E1AP_ID);
+        out->gNB_cu_cp_ue_id = ie->value.choice.GNB_CU_CP_UE_E1AP_ID;
+        break;
+      case E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID:
+        _EQ_CHECK_INT(ie->value.present, E1AP_BearerContextModificationConfirmIEs__value_PR_GNB_CU_UP_UE_E1AP_ID);
+        out->gNB_cu_up_ue_id = ie->value.choice.GNB_CU_UP_UE_E1AP_ID;
+        break;
+      case E1AP_ProtocolIE_ID_id_System_BearerContextModificationConfirm:
+        break;
+      default:
+        PRINT_ERROR("%s decoding failure: IE %ld is not handled or invalid\n", __func__, ie->id);
+        break;
+    }
+  }
+  return true;
+}
+
+/** @brief Bearer Context Modification Confirm equality check */
+bool eq_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *a, const e1ap_bearer_mod_confirm_t *b)
+{
+  _EQ_CHECK_INT(a->gNB_cu_cp_ue_id, b->gNB_cu_cp_ue_id);
+  _EQ_CHECK_INT(a->gNB_cu_up_ue_id, b->gNB_cu_up_ue_id);
+  return true;
+}
+
+/** @brief Bearer Context Modification Confirm deep copy */
+e1ap_bearer_mod_confirm_t cp_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *msg)
+{
+  // Shallow copy only
+  e1ap_bearer_mod_confirm_t cp = *msg;
+  return cp;
+}
+
+/** @brief Bearer Context Modification Confirm free */
+void free_e1ap_context_mod_confirm(const e1ap_bearer_mod_confirm_t *msg)
+{
+  UNUSED(msg);
+  // do nothing
+}

@@ -15,6 +15,7 @@
 # define GTPU_HEADER_OVERHEAD_MAX 64
 
 #include "common/platform_types.h"
+#include "openair2/COMMON/gtpv1_u_messages_types.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,6 +65,20 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
                                   const bool      rqi,
                                   const int       pdusession_id);
 
+  /** @brief GTP callback payload (TS 23.527 clause 5.3.3.1) */
+  typedef struct gtpv1u_error_indication_ind_s {
+    instance_t gtp_instance;
+    ue_id_t ue_id;
+    uint16_t incoming_rb_id;
+    uint16_t pdusession_id;
+    teid_t teid_i;
+    transport_layer_addr_t gtpu_peer_address;
+    in_addr_t udp_peer;
+    bool udp_peer_valid;
+  } gtpv1u_error_indication_ind_t;
+
+  typedef void (*gtpv1u_error_indication_cb_fn_t)(const gtpv1u_error_indication_ind_t *ind);
+
   typedef struct openAddr_s {
     char originHost[HOST_NAME_MAX];
     char originService[HOST_NAME_MAX];
@@ -102,7 +117,8 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
                                const gtpv1u_gnb_create_tunnel_req_t *const create_tunnel_req_pP,
                                gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
                                gtpCallback callBack,
-                               gtpCallbackSDAP callBackSDAP);
+                               gtpCallbackSDAP callBackSDAP,
+                               gtpv1u_error_indication_cb_fn_t errorIndicationCallBack);
 
   int gtpv1u_update_ue_id(const instance_t instanceP, ue_id_t old_ue_id, ue_id_t new_ue_id);
 
@@ -114,7 +130,8 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
                              teid_t outgoing_teid,
                              transport_layer_addr_t remoteAddr,
                              gtpCallback callBack,
-                             gtpCallbackSDAP callBackSDAP);
+                             gtpCallbackSDAP callBackSDAP,
+                             gtpv1u_error_indication_cb_fn_t errorIndicationCallBack);
 
   void GtpuUpdateTunnelOutgoingAddressAndTeid(instance_t instance,
                                     ue_id_t ue_id,
@@ -137,6 +154,26 @@ typedef struct gtpv1u_gnb_delete_tunnel_req_s gtpv1u_gnb_delete_tunnel_req_t;
   instance_t gtpv1Init(openAddr_t context);
   int gtpv1Term(instance_t inst);
   void *gtpv1uTask(void *args);
+
+/* TS 29.281 Error Indication IEs */
+#define GTPU_TEID_I 16 /* Clause 8.3 */
+#define GTPU_PEER_ADDRESS 133 /* Clause 8.4 */
+#define GTPU_PRIVATE_EXTENSION 255 /* Clause 8.6 */
+#define GTPU_RECOVERY_TIME_STAMP 231 /* Clause 8.8 */
+#define GTPU_TEID_I_VALUE_OCTETS 4
+#define GTPU_PEER_ADDRESS_IPV4_OCTETS 4
+#define GTPU_PEER_ADDRESS_IPV6_OCTETS 16
+
+  /* TS 29.281 Table 7.3.1-1: Error Indication IEs */
+  typedef struct gtpv1u_error_indication_s {
+    // Tunnel Endpoint Identifier Data I (8.3 TS 29.281)
+    teid_t teid_i;
+    // GTPU Peer Address (8.4 TS 29.281)
+    transport_layer_addr_t gtpu_peer_address;
+  } gtpv1u_error_indication_t;
+
+  int gtpv1u_decode_error_indication(const uint8_t *msg_buf, uint32_t msg_buf_len, gtpv1u_error_indication_t *out);
+  int gtpv1u_encode_error_indication(const gtpv1u_error_indication_t *indication, uint8_t *msg_buf, uint32_t msg_buf_cap);
 
 #ifdef __cplusplus
 }

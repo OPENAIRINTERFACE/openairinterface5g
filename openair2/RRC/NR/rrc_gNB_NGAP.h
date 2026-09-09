@@ -14,6 +14,7 @@
 #include "NR_RRCSetupComplete-IEs.h"
 #include "NR_UECapabilityInformation.h"
 #include "NR_UL-DCCH-Message.h"
+#include "gtpv1_u_messages_types.h"
 #include "intertask_interface.h"
 #include "ngap_messages_types.h"
 #include "nr_rrc_defs.h"
@@ -55,6 +56,8 @@ void rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, 
 int rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(ngap_pdusession_release_command_t *cmd, gNB_RRC_INST *rrc);
 
 void rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, uint8_t xid);
+
+void rrc_gNB_send_NGAP_PDUSESSION_RESOURCE_NOTIFY(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE, uint8_t xid);
 
 void nr_rrc_pdcp_config_security(gNB_RRC_UE_t *UE, bool enable_ciphering);
 

@@ -663,6 +663,10 @@ void *ngap_gNB_process_itti_msg(void *notUsed)
         ngap_gNB_pdusession_release_resp(instance, &NGAP_PDUSESSION_RELEASE_RESPONSE(received_msg));
         break;
 
+      case NGAP_PDUSESSION_RESOURCE_NOTIFY:
+        ngap_gNB_pdusession_resource_notify(instance, &NGAP_PDUSESSION_RESOURCE_NOTIFY(received_msg));
+        break;
+
       case NGAP_PATH_SWITCH_REQ:
         ngap_gNB_path_switch_request(instance, &NGAP_PATH_SWITCH_REQ(received_msg));
         break;

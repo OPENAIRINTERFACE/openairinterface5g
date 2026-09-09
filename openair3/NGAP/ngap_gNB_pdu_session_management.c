@@ -414,3 +414,105 @@ int ngap_gNB_pdusession_release_resp(instance_t instance, ngap_pdusession_releas
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
   return 0;
 }
+
+/** @brief Encode and send NGAP PDU Session Resource Notify (8.2.4 of 3GPP TS 38.413) */
+int ngap_gNB_pdusession_resource_notify(instance_t instance, ngap_pdusession_resource_notify_t *msg)
+{
+  DevAssert(msg);
+  NGAP_NGAP_PDU_t pdu;
+  uint8_t *buffer = NULL;
+  uint32_t length;
+
+  ngap_gNB_instance_t *ngap_gNB_instance_p = ngap_gNB_get_instance(instance);
+  DevAssert(ngap_gNB_instance_p);
+
+  struct ngap_gNB_ue_context_s *ue_context_p = ngap_get_ue_context(msg->gNB_ue_ngap_id);
+  if (!ue_context_p) {
+    NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: 0x%08x\n", msg->gNB_ue_ngap_id);
+    return -1;
+  }
+
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
+  asn1cCalloc(pdu.choice.initiatingMessage, head);
+  head->procedureCode = NGAP_ProcedureCode_id_PDUSessionResourceNotify;
+  head->criticality = NGAP_Criticality_ignore;
+  head->value.present = NGAP_InitiatingMessage__value_PR_PDUSessionResourceNotify;
+  NGAP_PDUSessionResourceNotify_t *out = &head->value.choice.PDUSessionResourceNotify;
+
+  /* AMF-UE-NGAP-ID (mandatory) */
+  {
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_PDUSessionResourceNotifyIEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
+    ie->criticality = NGAP_Criticality_reject;
+    ie->value.present = NGAP_PDUSessionResourceNotifyIEs__value_PR_AMF_UE_NGAP_ID;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
+  }
+
+  /* RAN-UE-NGAP-ID (mandatory) */
+  {
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_PDUSessionResourceNotifyIEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
+    ie->criticality = NGAP_Criticality_reject;
+    ie->value.present = NGAP_PDUSessionResourceNotifyIEs__value_PR_RAN_UE_NGAP_ID;
+    ie->value.choice.RAN_UE_NGAP_ID = msg->gNB_ue_ngap_id;
+  }
+
+  /* PDUSessionResourceReleasedListNot (optional) */
+  if (msg->nb_pdu_sessions_released > 0) {
+    if (msg->nb_pdu_sessions_released > NR_MAX_NB_PDU_SESSIONS) {
+      NGAP_WARN("PDU Session Resource Notify with invalid released list count %d for gNB_ue_ngap_id %u\n",
+                msg->nb_pdu_sessions_released,
+                msg->gNB_ue_ngap_id);
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
+      return -1;
+    }
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_PDUSessionResourceNotifyIEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceReleasedListNot;
+    ie->criticality = NGAP_Criticality_ignore;
+    ie->value.present = NGAP_PDUSessionResourceNotifyIEs__value_PR_PDUSessionResourceReleasedListNot;
+    NGAP_PDUSessionResourceReleasedListNot_t *list = &ie->value.choice.PDUSessionResourceReleasedListNot;
+
+    for (int i = 0; i < msg->nb_pdu_sessions_released; i++) {
+      const ngap_pdusession_notify_item_t *released = &msg->pdu_sessions[i];
+      asn1cSequenceAdd(list->list, NGAP_PDUSessionResourceReleasedItemNot_t, item);
+      item->pDUSessionID = released->pdu_session_id;
+
+      NGAP_PDUSessionResourceNotifyReleasedTransfer_t notifyTransfer = {0};
+      encode_ngap_cause(&notifyTransfer.cause, &released->cause);
+      asn_encode_to_new_buffer_result_t res = asn_encode_to_new_buffer(NULL,
+                                                                       ATS_ALIGNED_CANONICAL_PER,
+                                                                       &asn_DEF_NGAP_PDUSessionResourceNotifyReleasedTransfer,
+                                                                       &notifyTransfer);
+      if (res.buffer == NULL || res.result.encoded <= 0) {
+        NGAP_ERROR("Failed to encode PDUSessionResourceNotifyReleasedTransfer for PDU session %u\n", released->pdu_session_id);
+        ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceNotifyReleasedTransfer, &notifyTransfer);
+        ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
+        return -1;
+      }
+      item->pDUSessionResourceNotifyReleasedTransfer.buf = res.buffer;
+      item->pDUSessionResourceNotifyReleasedTransfer.size = res.result.encoded;
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceNotifyReleasedTransfer, &notifyTransfer);
+    }
+  }
+
+  if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
+    NGAP_ERROR("Failed to encode PDU Session Resource Notify\n");
+    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
+    return -1;
+  }
+
+  /* UE associated signalling -> use the allocated stream */
+  ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
+                                   ue_context_p->amf_ref->assoc_id,
+                                   buffer,
+                                   length,
+                                   ue_context_p->tx_stream);
+  NGAP_INFO("pdusession_resource_notify sent gNB_UE_NGAP_ID %u amf_ue_ngap_id %lu nb_released %d\n",
+            msg->gNB_ue_ngap_id,
+            ue_context_p->amf_ue_ngap_id,
+            msg->nb_pdu_sessions_released);
+
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, &pdu);
+  return 0;
+}

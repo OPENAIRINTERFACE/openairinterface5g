@@ -53,6 +53,7 @@
 #define NGAP_UE_CONTEXT_RELEASE_REQ(mSGpTR)     (mSGpTR)->ittiMsg.ngap_ue_release_req
 #define NGAP_PDUSESSION_RELEASE_COMMAND(mSGpTR)      (mSGpTR)->ittiMsg.ngap_pdusession_release_command
 #define NGAP_PDUSESSION_RELEASE_RESPONSE(mSGpTR)     (mSGpTR)->ittiMsg.ngap_pdusession_release_resp
+#define NGAP_PDUSESSION_RESOURCE_NOTIFY(mSGpTR)      (mSGpTR)->ittiMsg.ngap_pdusession_resource_notify
 
 #define NGAP_UL_RAN_STATUS_TRANSFER(mSGpTR) (mSGpTR)->ittiMsg.ngap_ul_ran_status_transfer
 #define NGAP_DL_RAN_STATUS_TRANSFER(mSGpTR) (mSGpTR)->ittiMsg.ngap_dl_ran_status_transfer
@@ -302,6 +303,12 @@ typedef struct ngap_cause_s {
   CAUSE_DEF(NGAP_CAUSE_RADIO_NETWORK_INSUFFICIENT_UE_CAPABILITIES, 51)
 
 typedef enum { FOREACH_CAUSE_RADIO_NETWORK(TO_ENUM) } ngap_cause_radio_network_t;
+
+/* Transport Cause (9.3.1.2 of 3GPP TS 38.413) */
+typedef enum {
+  NGAP_CAUSE_TRANSPORT_RESOURCE_UNAVAILABLE = 0,
+  NGAP_CAUSE_TRANSPORT_UNSPECIFIED = 1,
+} ngap_cause_transport_t;
 
 /** NGAP protocol cause values (9.3.1.2 of 3GPP TS 38.413) */
 #define FOREACH_CAUSE_PROTOCOL(CAUSE_DEF)                                  \
@@ -994,6 +1001,18 @@ typedef struct ngap_pdusession_release_resp_s {
   uint16_t nb_of_pdusessions_released;
   pdusession_release_t pdusession_release[NR_MAX_NB_PDU_SESSIONS];
 } ngap_pdusession_release_resp_t;
+
+typedef struct ngap_pdusession_notify_item_s {
+  uint8_t pdu_session_id;
+  ngap_cause_t cause;
+} ngap_pdusession_notify_item_t;
+
+/** NGAP PDU Session Resource Notify (8.2.4 of 3GPP TS 38.413) */
+typedef struct ngap_pdusession_resource_notify_s {
+  uint32_t gNB_ue_ngap_id;
+  int nb_pdu_sessions_released;
+  ngap_pdusession_notify_item_t pdu_sessions[NR_MAX_NB_PDU_SESSIONS];
+} ngap_pdusession_resource_notify_t;
 
 /** NG PAGING PROCEDURES (9.2.4. of 3GPP TS 38.413) */
 
