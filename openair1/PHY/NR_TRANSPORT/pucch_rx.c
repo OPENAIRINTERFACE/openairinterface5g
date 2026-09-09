@@ -549,48 +549,29 @@ void nr_decode_pucch1(PHY_VARS_gNB *gNB,
   c16_t z_rx[16][MAX_SIZE_Z] = {0};
   c16_t z_dmrs_rx[16][MAX_SIZE_Z] = {0};
   c16_t z[16][12] = {0};
-  const int half_nb_rb_dl = frame_parms->N_RB_DL >> 1;
-  const bool nb_rb_is_even = (frame_parms->N_RB_DL & 1) == 0;
   for (int l = 0; l < nb_symbols; l++) { // extracting data and dmrs from rxdataF
     if (intraSlotFrequencyHopping && (l >= floor(nb_symbols / 2))) { // intra-slot hopping enabled, we need
       // to calculate new offset PRB
       pucch_pdu->prb_start = pucch_pdu->bwp_start + pucch_pdu->second_hop_prb;
     }
-    int re_offset = (l + pucch_pdu->start_symbol_index) * symb_sz;
-
-    if (nb_rb_is_even) {
-      if (pucch_pdu->prb_start < half_nb_rb_dl) // if number RBs in bandwidth is even and
-                                                // current PRB is lower band
-        re_offset += 12 * pucch_pdu->prb_start + frame_parms->first_carrier_offset;
-      else // if number RBs in bandwidth is even and current PRB is upper band
-        re_offset += 12 * (pucch_pdu->prb_start - half_nb_rb_dl);
-    } else {
-      if (pucch_pdu->prb_start < half_nb_rb_dl) // if number RBs in bandwidth is odd  and
-                                                // current PRB is lower band
-        re_offset += 12 * pucch_pdu->prb_start + frame_parms->first_carrier_offset;
-      else if (pucch_pdu->prb_start > half_nb_rb_dl) // if number RBs in bandwidth is odd
-                                                     // and current PRB is upper band
-        re_offset += 12 * (pucch_pdu->prb_start - half_nb_rb_dl) + 6;
-      else // if number RBs in bandwidth is odd  and current PRB contains DC
-        re_offset += 12 * pucch_pdu->prb_start + frame_parms->first_carrier_offset;
-    }
+    // Same RE-mapping pattern as the TX side (nr_generate_pucch1() and the other PUCCH
+    // formats): keep the per-symbol base offset and the within-symbol subcarrier offset
+    // separate, and only combine them at the point of access. The subcarrier offset alone
+    // wraps circularly within [0, symb_sz) as n advances.
+    const int symbol_offset = (l + pucch_pdu->start_symbol_index) * symb_sz;
+    int re_offset = CIRCULAR_INC(frame_parms->first_carrier_offset, 12 * pucch_pdu->prb_start, symb_sz);
 
     for (int n = 0; n < 12; n++) {
       const int current_subcarrier = (l / 2) * 12 + n;
-      if (n == 6 && pucch_pdu->prb_start == half_nb_rb_dl && !nb_rb_is_even) {
-        // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second
-        // half PRB)
-        re_offset = ((l + pucch_pdu->start_symbol_index) * symb_sz);
-      }
 
       if (l % 2 == 1) // mapping PUCCH or DM-RS according to TS38.211 subclause 6.4.1.3.1
         for (int r = 0; r < n_rx; r++) {
-          z_rx[r][current_subcarrier] = rxdataF[r][soffset + re_offset];
+          z_rx[r][current_subcarrier] = rxdataF[r][soffset + symbol_offset + re_offset];
           z[r][n] = z_rx[r][current_subcarrier];
         }
       else
         for (int r = 0; r < n_rx; r++) {
-          z_dmrs_rx[r][current_subcarrier] = rxdataF[r][soffset + re_offset];
+          z_dmrs_rx[r][current_subcarrier] = rxdataF[r][soffset + symbol_offset + re_offset];
           z[r][n] = z_dmrs_rx[r][current_subcarrier];
         }
 
@@ -605,13 +586,13 @@ void nr_decode_pucch1(PHY_VARS_gNB *gNB,
           frame_parms->N_RB_DL,
           frame_parms->first_carrier_offset,
           current_subcarrier,
-          soffset + re_offset,
+          soffset + symbol_offset + re_offset,
           l,
           n,
-          rxdataF[0][soffset + re_offset].r,
-          rxdataF[0][soffset + re_offset].i);
+          rxdataF[0][soffset + symbol_offset + re_offset].r,
+          rxdataF[0][soffset + symbol_offset + re_offset].i);
 #endif
-      re_offset++;
+      re_offset = CIRCULAR_INC(re_offset, 1, symb_sz);
     } // end sc loop
 
     // compute signal energy
