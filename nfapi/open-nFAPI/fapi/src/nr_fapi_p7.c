@@ -2470,7 +2470,7 @@ static uint8_t unpack_nr_srs_report_tlv(nfapi_srs_report_tlv_t *report_tlv, uint
     return 0;
   }
 #else
-  // Aerial sends a data_buf offset instead of the report; unread, the next PDU starts 4 bytes early
+  // Aerial sends a data_buf offset instead of the report; If left unread, the next PDU starts 4 bytes early
   uint32_t data_buf_offset;
   if (!pull32(ppReadPackedMsg, &data_buf_offset, end)) {
     return 0;
