@@ -20,12 +20,20 @@ while [[ $# -gt 0 ]]; do
 	shift
 done
 
-ARCHIVE_NAME="compressed_pcap.xz"
-EXTRACTED_FILENAME="uncompressed.pcap"
-curl -L $DOWNLOAD_URL --output $ARCHIVE_NAME
-unxz -c $ARCHIVE_NAME > $EXTRACTED_FILENAME
-
-
+#give each invocation its own scratch dir
+WORKDIR="$(mktemp -d "/tmp/oru_pcap.XXXXXX")"
+trap 'rm -rf "$WORKDIR"' EXIT
+ARCHIVE_NAME="$WORKDIR/compressed_pcap.xz"
+EXTRACTED_FILENAME="$WORKDIR/uncompressed.pcap"
+if ! curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o "$ARCHIVE_NAME" "$DOWNLOAD_URL"; then
+	echo "ERROR: cannot download test PCAP ${DOWNLOAD_URL} (network/GitHub access?)" >&2
+	exit 2
+fi
+if ! xz --test "$ARCHIVE_NAME"; then
+	echo "ERROR: downloaded PCAP archive is corrupt or truncated: ${ARCHIVE_NAME}" >&2
+	exit 2
+fi
+xz --decompress -c "$ARCHIVE_NAME" > "$EXTRACTED_FILENAME"
 
 echo "Running test ${TEST_EXECUTABLE} with PCAP ${DOWNLOAD_URL} and arguments: ${EXTRA_ARGS[*]}"
-exec "${TEST_EXECUTABLE}" "${EXTRACTED_FILENAME}" "${EXTRA_ARGS[@]}"
+"${TEST_EXECUTABLE}" "${EXTRACTED_FILENAME}" "${EXTRA_ARGS[@]}"
