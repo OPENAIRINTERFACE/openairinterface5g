@@ -547,6 +547,7 @@ void nr_decode_pucch1(PHY_VARS_gNB *gNB,
       // to calculate new offset PRB
       pucch_pdu->prb_start = pucch_pdu->bwp_start + pucch_pdu->second_hop_prb;
     }
+
     int re_offset = (l + pucch_pdu->start_symbol_index) * symb_sz + NR_NB_SC_PER_RB * pucch_pdu->prb_start;
 
     for (int n = 0; n < NR_NB_SC_PER_RB; n++) {

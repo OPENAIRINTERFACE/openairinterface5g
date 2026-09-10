@@ -733,7 +733,7 @@ int main(int argc, char **argv)
         pucch_pdu.bwp_start = 0;
         pucch_pdu.bwp_size = N_RB_DL;
         pucch_pdu.freq_hop_flag = 1;
-        pucch_pdu.second_hop_prb = N_RB_DL - 2;
+        pucch_pdu.second_hop_prb = N_RB_DL - 1;
         pucch_pdu.time_domain_occ_idx = timeDomainOCC;
 
         nr_decode_pucch1(gNB, rxdataF, nr_frame_tx, nr_slot_tx, &uci_pdu, &pucch_pdu);      
