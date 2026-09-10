@@ -33,9 +33,6 @@ class HTMLManagement():
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
 
-		self.repository = ''
-		self.branch = ''
-
 		self.nbTestXMLfiles = 0
 		self.htmlTabRefs = []
 		self.htmlTabNames = []
@@ -54,7 +51,7 @@ class HTMLManagement():
 #-----------------------------------------------------------
 
 
-	def CreateHtmlHeader(self):
+	def CreateHtmlHeader(self, repository, branch):
 		if (not self.htmlHeaderCreated):
 			logging.info('\u001B[1m----------------------------------------\u001B[0m')
 			logging.info('\u001B[1m  Creating HTML header \u001B[0m')
@@ -92,11 +89,11 @@ class HTMLManagement():
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-cloud-upload"></span> GIT Repository </td>\n')
-			self.htmlFile.write('       <td><a href="' + self.repository + '">' + self.repository + '</a></td>\n')
+			self.htmlFile.write('       <td><a href="' + repository + '">' + repository + '</a></td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-log-out"></span> Test Branch </td>\n')
-			self.htmlFile.write('       <td>' + self.branch + '</td>\n')
+			self.htmlFile.write('       <td>' + branch + '</td>\n')
 			self.htmlFile.write('     </tr>\n')
 			commit_id = subprocess.check_output("git log -n1 --pretty=format:\"%H\" ", shell=True, universal_newlines=True)
 			commit_id = commit_id.strip()

@@ -16,7 +16,6 @@
 # Import Components
 #-----------------------------------------------------------
 
-import helpreadme as HELP
 import constants as CONST
 
 
@@ -50,41 +49,28 @@ import traceback
 # General Functions
 #-----------------------------------------------------------
 
-
-
-def CheckClassValidity(xml_class_list,action,id):
-	if action not in xml_class_list:
-		logging.error('test-case ' + id + ' has unlisted class ' + action + ' ##CHECK xml_class_list.yml')
-		resp=False
-	else:
-		resp=True
-	return resp
-
-def ExecuteActionWithParam(action, ctx, node):
-	global RAN
+def ExecuteActionWithParam(action, test, ctx, node, oc):
 	global HTML
 	global CONTAINERS
-	global CLUSTER
 	if action == 'Build_eNB' or action == 'Build_Image' or action == "Build_Cluster_Image" or action == "Build_Run_Tests":
-		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
+		args = test.findtext('Build_eNB_args')
 		CONTAINERS.imageKind=test.findtext('kind')
 		dockerfile = test.findtext('dockerfile') or ''
 		runtime_opt = test.findtext('runtime-opt') or ''
 		ctest_opt = test.findtext('ctest-opt') or ''
 		if action == 'Build_eNB':
-			success = cls_native.Native.Build(ctx, node, HTML, RAN.workspace, RAN.Build_eNB_args)
+			success = cls_native.Native.Build(ctx, node, HTML, ctx.g.workspace, args)
 		elif action == 'Build_Image':
 			success = CONTAINERS.BuildImage(ctx, node, HTML)
 		elif action == 'Build_Cluster_Image':
-			success = CLUSTER.BuildClusterImage(ctx, node, HTML)
+			success = cls_cluster.Cluster.BuildClusterImage(ctx, oc, node, HTML)
 		elif action == 'Build_Run_Tests':
 			success = CONTAINERS.BuildRunTests(ctx, node, dockerfile, runtime_opt, ctest_opt, HTML)
 
 	elif action == 'Initialize_eNB':
-		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
+		args = test.findtext('Initialize_eNB_args')
 		cmd_prefix = test.findtext('cmd_prefix')
-		if cmd_prefix is not None: RAN.cmd_prefix = cmd_prefix
-		success = RAN.InitializeeNB(ctx, node, HTML)
+		success = ran.RAN.InitializeeNB(ctx, node, HTML, args, cmd_prefix)
 
 	elif action == 'Terminate_eNB':
 		services = []
@@ -94,7 +80,7 @@ def ExecuteActionWithParam(action, ctx, node):
 			services = analysis.findtext("services", default="").split()
 			# service: individual services to analyze, in case they have whitespace
 			services = services + [s.text for s in analysis.findall("service")]
-		success = RAN.TerminateeNB(ctx, node, HTML, services)
+		success = ran.RAN.TerminateeNB(ctx, node, HTML, services)
 
 	elif action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Terminate_UE' or action == 'CheckStatusUE' or action == 'DataEnable_UE' or action == 'DataDisable_UE':
 		CiTestObj.ue_ids = test.findtext('id').split(' ')
@@ -148,16 +134,16 @@ def ExecuteActionWithParam(action, ctx, node):
 	elif action == 'Deploy_Run_OC_PhySim':
 		oc_release = test.findtext('oc_release')
 		script = "scripts/oc-deploy-physims.sh"
-		image_tag = CLUSTER.branch
-		options = f"oaicicd-core-for-ci-ran {oc_release} {image_tag} {CLUSTER.workspace}"
-		workdir = CLUSTER.workspace
+		image_tag = ctx.g.branch
+		options = f"oaicicd-core-for-ci-ran {oc_release} {image_tag} {ctx.g.workspace}"
+		workdir = ctx.g.workspace
 		success = cls_oaicitest.Deploy_Physim(ctx, HTML, node, workdir, script, options)
 
 	elif action == 'Build_Deploy_PhySim':
 		ctest_opt = test.findtext('ctest-opt') or ''
 		script = test.findtext('script')
-		options = f"{CONTAINERS.workspace} {ctest_opt}"
-		workdir = CONTAINERS.workspace
+		options = f"{ctx.g.workspace} {ctest_opt}"
+		workdir = ctx.g.workspace
 		success = cls_oaicitest.Deploy_Physim(ctx, HTML, node, workdir, script, options)
 
 	elif action == 'DeployCoreNetwork' or action == 'UndeployCoreNetwork':
@@ -169,7 +155,7 @@ def ExecuteActionWithParam(action, ctx, node):
 		script = test.findtext('script')
 		options = test.findtext('options')
 		if action == 'DeployWithScript':
-			deploymentTag = RAN.branch
+			deploymentTag = ctx.g.branch
 			success = cls_oaicitest.DeployWithScript(HTML, node, script, options, deploymentTag)
 		elif action == 'UndeployWithScript':
 			success = cls_oaicitest.UndeployWithScript(HTML, ctx, node, script, options)
@@ -178,7 +164,7 @@ def ExecuteActionWithParam(action, ctx, node):
 		CONTAINERS.yamlPath = test.findtext('yaml_path')
 		CONTAINERS.services = test.findtext('services')
 		CONTAINERS.num_attempts = int(test.findtext('num_attempts') or 1)
-		CONTAINERS.deploymentTag = CONTAINERS.branch
+		CONTAINERS.deploymentTag = ctx.g.branch
 		if action == 'Deploy_Object':
 			success = CONTAINERS.DeployObject(ctx, node, HTML)
 		elif action == 'Stop_Object':
@@ -196,14 +182,14 @@ def ExecuteActionWithParam(action, ctx, node):
 			if force_local:
 				# Do not create a working directory when running locally. Current repo directory will be used
 				return True
-			success = CONTAINERS.Create_Workspace(node, HTML)
+			success = cls_containerize.Containerize.Create_Workspace(ctx, node, HTML)
 
 	elif action == 'LicenceAndFormattingCheck':
-		success = SCA.StaticCodeAnalysis.LicenceAndFormattingCheck(ctx, node, HTML, RAN.workspace, RAN.branch, RAN.merge, RAN.targetBranch)
+		success = SCA.StaticCodeAnalysis.LicenceAndFormattingCheck(ctx, node, HTML)
 
 	elif action == 'Push_Local_Registry':
 		tag_prefix = test.findtext('tag_prefix') or ""
-		success = CONTAINERS.Push_Image_to_Local_Registry(node, HTML, tag_prefix)
+		success = cls_containerize.Containerize.Push_Image_to_Local_Registry(ctx, node, HTML, tag_prefix)
 
 	elif action == 'Pull_Local_Registry' or action == 'Clean_Test_Server_Images':
 		if force_local:
@@ -216,31 +202,31 @@ def ExecuteActionWithParam(action, ctx, node):
 		if len(images) == 1 and images[0] == "oai-flexric":
 			tag = CONTAINERS.flexricTag
 		if action == "Pull_Local_Registry":
-			success = CONTAINERS.Pull_Image_from_Registry(HTML, node, images, tag=tag, tag_prefix=tag_prefix)
+			success = cls_containerize.Containerize.Pull_Image_from_Registry(ctx, HTML, node, images, tag=tag, tag_prefix=tag_prefix)
 		if action == "Clean_Test_Server_Images":
-			success = CONTAINERS.Clean_Test_Server_Images(HTML, node, images, tag=tag)
+			success = cls_containerize.Containerize.Clean_Test_Server_Images(ctx, HTML, node, images, tag=tag)
 
 	elif action == 'Custom_Command':
 		command = test.findtext('command')
 		# Allow referencing repository workspace path in XML via %%workspace%%
-		command = command.replace("%%workspace%%", CONTAINERS.workspace)
+		command = command.replace("%%workspace%%", ctx.g.workspace)
 		success = cls_oaicitest.Custom_Command(HTML, node, command)
 
 	elif action == 'Custom_Script':
 		script = test.findtext('script')
 		args = test.findtext('args')
 		# Allow referencing repository workspace path in XML via %%workspace%%
-		script = script.replace("%%workspace%%", CONTAINERS.workspace)
+		script = script.replace("%%workspace%%", ctx.g.workspace)
 		success = cls_oaicitest.Custom_Script(HTML, node, script, args)
 
 	elif action == 'Pull_Cluster_Image':
 		tag_prefix = test.findtext('tag_prefix') or ""
 		images = test.findtext('images').split()
-		success = CLUSTER.PullClusterImage(HTML, node, images, tag_prefix=tag_prefix)
+		success = cls_cluster.Cluster.PullClusterImage(ctx, oc, HTML, node, images, tag_prefix=tag_prefix)
 
 	elif action == 'AnalyzeRTStats':
 		yaml = test.findtext('stats_cfg')
-		success = RAN.AnalyzeRTStats(HTML, node, ctx, yaml)
+		success = ran.RAN.AnalyzeRTStats(HTML, node, ctx, yaml)
 
 	elif action == 'AnalyzeRTStats_Object':
 		yaml = test.findtext('stats_cfg')
@@ -249,8 +235,8 @@ def ExecuteActionWithParam(action, ctx, node):
 		success = CONTAINERS.AnalyzeRTStatsObject(HTML, node, ctx, yaml, service, stats_files)
 
 	else:
-		logging.warning(f"unknown action {action}, skip step")
-		success = True # by default, we skip the step and print a warning
+		logging.warning(f"unknown action {action}, CI run marked as failure")
+		success = False
 
 	return success
 
@@ -271,34 +257,53 @@ def ShowTestID(ctx, desc, file, line):
     logging.info(f'\u001B[1m {desc}                                 \u001B[0m')
     logging.info(f'\u001B[1m----------------------------------------\u001B[0m')
 
+def run_tests(g_ctx, logPath, HTML, all_tests):
+	task_set_succeeded = True
+	for index, test in enumerate(all_tests, start=1):
+		if test_runner_abort:
+			task_set_succeeded = False
+		test_case_idx = f"{index:06d}"
+		ctx = TestCaseCtx(int(test_case_idx), logPath, g_ctx)
+		desc = test.findtext('desc')
+		node = test.findtext('node') if not force_local else 'localhost'
+		always_exec = test.findtext('always_exec') in ['True', 'true', 'Yes', 'yes']
+		may_fail = test.findtext('may_fail') in ['True', 'true', 'Yes', 'yes']
+		HTML.testCaseIdx = test_case_idx
+		HTML.desc = desc
+		action = test.findtext('class')
+		file = os.path.basename(xml_test_file)
+		line = test.find('class').sourceline
+		ShowTestID(ctx, desc, file, line)
+		if not task_set_succeeded and not always_exec:
+			msg = f"skipping test due to prior error"
+			logging.warning(msg)
+			HTML.CreateHtmlTestRowQueue(msg, "SKIP", [])
+			continue
+		try:
+			test_succeeded = ExecuteActionWithParam(action, test, ctx, node, oc)
+			if not test_succeeded and may_fail:
+				logging.warning(f"test ID {test_case_idx} action {action} may or may not fail, proceeding despite error")
+			elif not test_succeeded:
+				logging.error(f"test ID {test_case_idx} action {action} failed ({test_succeeded}), skipping next tests")
+				task_set_succeeded = False
+		except Exception as e:
+			s = traceback.format_exc()
+			logging.error(f'while running CI, an exception occurred:\n{s}')
+			HTML.CreateHtmlTestRowQueue("N/A", 'KO', [f"CI test code encountered an exception:\n{s}"])
+			task_set_succeeded = False
+			continue
+	return task_set_succeeded
+
 #-----------------------------------------------------------
 # MAIN PART
 #-----------------------------------------------------------
-
-#loading xml action list from yaml
-import yaml
-xml_class_list_file='xml_class_list.yml'
-if (os.path.isfile(xml_class_list_file)):
-	yaml_file=xml_class_list_file
-elif (os.path.isfile('ci-scripts/'+xml_class_list_file)):
-	yaml_file='ci-scripts/'+xml_class_list_file
-else:
-	logging.error("XML action list yaml file cannot be found")
-	sys.exit("XML action list yaml file cannot be found")
-
-with open(yaml_file,'r') as f:
-    # The FullLoader parameter handles the conversion-$
-    #from YAML scalar values to Python dictionary format$
-    xml_class_list = yaml.load(f,Loader=yaml.FullLoader)
 
 mode = ''
 
 CiTestObj = cls_oaicitest.OaiCiTest()
  
-RAN = ran.RANManagement()
 HTML = cls_oai_html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
-CLUSTER = cls_cluster.Cluster()
 
 #-----------------------------------------------------------
 # Parsing Command Line Arguments
@@ -307,7 +312,7 @@ CLUSTER = cls_cluster.Cluster()
 import args_parse
 # Force local execution, move all execution targets to localhost
 force_local = False
-mode, force_local, date_fmt = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,CONTAINERS,HELP,CLUSTER)
+mode, force_local, date_fmt, final_status, g_ctx, oc = args_parse.ArgsParse(sys.argv,HTML,CONTAINERS)
 fmt = "%(levelname)8s: %(message)s"
 if date_fmt:
     fmt = "[%(asctime)s] %(levelname)s %(message)s"
@@ -319,36 +324,11 @@ logging.basicConfig(level=logging.DEBUG, stream=sys.stdout, format=fmt, datefmt=
 #-----------------------------------------------------------
 cwd = os.getcwd()
 
-if re.match('^TerminateeNB$', mode, re.IGNORECASE):
-	logging.warning("Option TerminateeNB ignored")
-elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
-	logging.warning("Option TerminateHSS ignored")
-elif re.match('^TerminateMME$', mode, re.IGNORECASE):
-	logging.warning("Option TerminateMME ignored")
-elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
-	logging.warning("Option TerminateSPGW ignored")
-elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectBuild ignored")
-elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollecteNB ignored")
-elif re.match('^LogCollectHSS$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectHSS ignored")
-elif re.match('^LogCollectMME$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectMME ignored")
-elif re.match('^LogCollectSPGW$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectSPGW ignored")
-elif re.match('^LogCollectPing$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectPing ignored")
-elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectIperf ignored")
-elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
-	logging.warning("Option LogCollectOAIUE ignored")
-elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
+if re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	count = 0
 	foundCount = 0
 	while (count < HTML.nbTestXMLfiles):
-		#xml_test_file = cwd + "/" + CiTestObj.testXMLfiles[count]
-		xml_test_file = sys.path[0] + "/" + CiTestObj.testXMLfiles[count]
+		xml_test_file = sys.path[0] + "/" + HTML.testXMLfiles[count]
 		if (os.path.isfile(xml_test_file)):
 			try:
 				xmlTree = ET.parse(xml_test_file)
@@ -363,39 +343,32 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if foundCount != HTML.nbTestXMLfiles:
 		HTML.nbTestXMLfiles=foundCount
 	
-	HTML.CreateHtmlHeader()
+	HTML.CreateHtmlHeader(g_ctx.repository, g_ctx.branch)
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	logging.info('\u001B[1m  Creating HTML footer \u001B[0m')
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 
-	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
-elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
+	HTML.CreateHtmlFooter(final_status)
+elif re.match('^TesteNB$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
-	logging.info('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
+	logging.info('\u001B[1m  Starting Scenario: ' + HTML.testXMLfiles[0] + '\u001B[0m')
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
-	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if RAN.repository == '' or RAN.branch == '' or RAN.workspace == '':
-			HELP.GenericHelp(CONST.Version)
-			if RAN.repository == '':
-				HELP.GitSrvHelp(RAN.repository, RAN.branch, RAN.merge, RAN.targetBranch)
-			if RAN.workspace == '':
-				HELP.SrvHelp(RAN.workspace)
-			sys.exit('Insufficient Parameter')
-	else:
-		if CiTestObj.repository == '' or CiTestObj.branch == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('UE: Insufficient Parameter')
-
+	if g_ctx.repository == '' or g_ctx.branch == '' or g_ctx.workspace == '':
+		sys.exit(f'Insufficient Parameters: {g_ctx.repository=}, {g_ctx.branch=}, {g_ctx.workspace=}')
+	if HTML.nbTestXMLfiles != 1:
+		sys.exit(f'Only one XML file per TesteNB call supported')
 	#read test_case_list.xml file
 	# if no parameters for XML file, use default value
 	if (HTML.nbTestXMLfiles != 1):
 		xml_test_file = cwd + "/test_case_list.xml"
 	else:
-		xml_test_file = cwd + "/" + CiTestObj.testXMLfiles[0]
+		xml_test_file = cwd + "/" + HTML.testXMLfiles[0]
+
+	signal.signal(signal.SIGINT, receive_signal)
 
 	# directory where all log artifacts will be placed
-	logPath = f"{cwd}/../cmake_targets/log/{CiTestObj.testXMLfiles[0].split('/')[-1]}.d"
+	logPath = f"{cwd}/../cmake_targets/log/{xml_test_file.split('/')[-1]}.d"
 	# we run from within ci-scripts, but the logPath is absolute, so replace
 	# the ci-scripts/..; if it does not exist, nothing will happen
 	logPath = logPath.replace(r'/ci-scripts/..', '')
@@ -406,66 +379,95 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	xmlTree = ET.parse(xml_test_file)
 	xmlRoot = xmlTree.getroot()
-
-	if (HTML.nbTestXMLfiles == 1):
-		HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
-		HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
 	all_tests=xmlRoot.findall('testCase')
 
-	signal.signal(signal.SIGINT, receive_signal)
-
+	HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
+	HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-0'))
 	HTML.CreateHtmlTabHeader()
-
-	task_set_succeeded = True
 	HTML.startTime=int(round(time.time() * 1000))
 
-	for index, test in enumerate(all_tests, start=1):
-		if test_runner_abort:
-			task_set_succeeded = False
-		test_case_idx = f"{index:06d}"
-		ctx = TestCaseCtx(int(test_case_idx), logPath)
-		HTML.testCaseIdx = test_case_idx
-		desc = test.findtext('desc')
-		node = test.findtext('node') if not force_local else 'localhost'
-		always_exec = test.findtext('always_exec') in ['True', 'true', 'Yes', 'yes']
-		may_fail = test.findtext('may_fail') in ['True', 'true', 'Yes', 'yes']
-		HTML.desc = desc
-		action = test.findtext('class')
-		if not CheckClassValidity(xml_class_list, action, test_case_idx):
-			task_set_succeeded = False
-			continue
-		file = os.path.basename(xml_test_file)
-		line = test.find('class').sourceline
-		ShowTestID(ctx, desc, file, line)
-		if not task_set_succeeded and not always_exec:
-			msg = f"skipping test due to prior error"
-			logging.warning(msg)
-			HTML.CreateHtmlTestRowQueue(msg, "SKIP", [])
-			continue
-		try:
-			test_succeeded = ExecuteActionWithParam(action, ctx, node)
-			if not test_succeeded and may_fail:
-				logging.warning(f"test ID {test_case_idx} action {action} may or may not fail, proceeding despite error")
-			elif not test_succeeded:
-				logging.error(f"test ID {test_case_idx} action {action} failed ({test_succeeded}), skipping next tests")
-				task_set_succeeded = False
-		except Exception as e:
-			s = traceback.format_exc()
-			logging.error(f'while running CI, an exception occurred:\n{s}')
-			HTML.CreateHtmlTestRowQueue("N/A", 'KO', [f"CI test code encountered an exception:\n{s}"])
-			task_set_succeeded = False
-			continue
+	success = run_tests(g_ctx, logPath, HTML, all_tests)
 
-	if not task_set_succeeded:
+	if not success:
 		logging.error('\u001B[1;37;41mScenario failed\u001B[0m')
 		HTML.CreateHtmlTabFooter(False)
 		sys.exit('Failed Scenario')
 	else:
 		logging.info('\u001B[1;37;42mScenario passed\u001B[0m')
 		HTML.CreateHtmlTabFooter(True)
-elif re.match('^LoadParams$', mode, re.IGNORECASE):
-	pass
+elif mode == "all-in-one":
+	if g_ctx.repository == '' or g_ctx.branch == '' or g_ctx.workspace == '':
+		sys.exit(f'Insufficient Parameters: {g_ctx.repository=}, {g_ctx.branch=}, {g_ctx.workspace=}')
+	count = 0
+	foundCount = 0
+	while (count < HTML.nbTestXMLfiles):
+		xml_test_file = sys.path[0] + "/" + HTML.testXMLfiles[count]
+		if (os.path.isfile(xml_test_file)):
+			try:
+				xmlTree = ET.parse(xml_test_file)
+			except Exception as e:
+				print(f"Error: {e} while parsing file: {xml_test_file}.")
+			xmlRoot = xmlTree.getroot()
+			HTML.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef'))
+			HTML.htmlTabNames.append(xmlRoot.findtext('htmlTabName'))
+			HTML.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon'))
+			foundCount += 1
+		count += 1
+	if foundCount != HTML.nbTestXMLfiles:
+		HTML.nbTestXMLfiles=foundCount
+
+	HTML.CreateHtmlHeader(g_ctx.repository, g_ctx.branch)
+
+	signal.signal(signal.SIGINT, receive_signal)
+
+	xmls = HTML.testXMLfiles
+
+	final_status = True
+	for xml in xmls:
+		logging.info('\u001B[1m----------------------------------------\u001B[0m')
+		logging.info(f'\u001B[1m  Starting Scenario: {xml}\u001B[0m')
+		logging.info('\u001B[1m----------------------------------------\u001B[0m')
+
+		xml_test_file = f"{cwd}/{xml}"
+
+		# directory where all log artifacts will be placed
+		logPath = f"{cwd}/../cmake_targets/log/{xml}.d"
+		# we run from within ci-scripts, but the logPath is absolute, so replace
+		# the ci-scripts/..; if it does not exist, nothing will happen
+		logPath = logPath.replace(r'/ci-scripts/..', '')
+		logging.info(f"placing all artifacts for this run in {logPath}/")
+		with cls_cmd.LocalCmd() as c:
+			c.run(f"rm -rf {logPath}")
+			c.run(f"mkdir -p {logPath}")
+
+		xmlTree = ET.parse(xml_test_file)
+		xmlRoot = xmlTree.getroot()
+		all_tests = xmlRoot.findall('testCase')
+
+		HTML.testXMLfiles = [xml]
+		HTML.nbTestXMLfiles = 1
+		HTML.htmlTabRefs = [xmlRoot.findtext('htmlTabRef')]
+		HTML.htmlTabNames = [xmlRoot.findtext('htmlTabName')]
+		HTML.htmlTabIcons = [xmlRoot.findtext('htmlTabIcon')]
+
+		# reset that we created a header (this "logic" makes no sense and will
+		# be removed once we removed the different modes)
+		HTML.htmlHeaderCreated = False
+		HTML.CreateHtmlTabHeader()
+		HTML.startTime=int(round(time.time() * 1000))
+
+		success = run_tests(g_ctx, logPath, HTML, all_tests)
+
+		HTML.htmlFooterCreated = False
+		if not success:
+			logging.error('\u001B[1;37;41mScenario failed\u001B[0m')
+			HTML.CreateHtmlTabFooter(False)
+			final_status = False
+		else:
+			logging.info('\u001B[1;37;42mScenario passed\u001B[0m')
+			HTML.CreateHtmlTabFooter(True)
+
+	HTML.CreateHtmlFooter(final_status)
 else:
-	HELP.GenericHelp(CONST.Version)
-	sys.exit('Invalid mode')
+	sys.exit(f'Invalid mode {mode}')
 sys.exit(0)

@@ -28,53 +28,33 @@ from cls_ci_helper import archiveArtifact
 #-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
-class RANManagement():
-
-	def __init__(self):
-		
-		self.repository = ''
-		self.branch = ''
-		self.merge = False
-		self.targetBranch = ''
-		self.workspace = ''
-		self.Initialize_eNB_args = ''
-		self.imageKind = ''
-		self.eNBOptions = ['', '', '']
-		self.eNBstatuses = [-1, -1, -1]
-		self.runtime_stats= ''
-		self.cmd_prefix = '' # prefix before {lte,nr}-softmodem
-		self.node = ''
-		self.command = ''
-
+class RAN():
 
 #-----------------------------------------------------------
 # RAN management functions
 #-----------------------------------------------------------
 
-	def InitializeeNB(self, ctx, node, HTML):
+	def InitializeeNB(ctx, node, HTML, args, cmd_prefix):
 		if not node:
 			raise ValueError(f"{node=}")
 		logging.debug('Starting eNB/gNB on server: ' + node)
 
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		cmd = cls_cmd.getConnection(node)
 		
-		# Initialize_eNB_args usually start with -O and followed by the location in repository
-		full_config_file = self.Initialize_eNB_args.replace('-O ','')
+		# args usually start with -O and followed by the location in repository
+		full_config_file = args.replace('-O ','')
 		extra_options = ''
 		extIdx = full_config_file.find('.conf')
 		if (extIdx <= 0):
-			raise ValueError(f"no config file in {self.Initialize_eNB_args}")
+			raise ValueError(f"no config file in {args}")
 		extra_options = full_config_file[extIdx + 5:]
 		full_config_file = full_config_file[:extIdx + 5]
 		config_path, config_file = os.path.split(full_config_file)
 
 		logfile = f'{lSourcePath}/cmake_targets/enb.log'
 		cmd.cd(f"{lSourcePath}/cmake_targets/") # important: set wd so nrL1_stats.log etc are logged here
-		cmd.run(f'sudo -E stdbuf -o0 {self.cmd_prefix} {lSourcePath}/cmake_targets/ran_build/build/nr-softmodem -O {lSourcePath}/{full_config_file} {extra_options} > {logfile} 2>&1 &')
-
-		if extra_options != '':
-			self.eNBOptions = extra_options
+		cmd.run(f'sudo -E stdbuf -o0 {cmd_prefix} {lSourcePath}/cmake_targets/ran_build/build/nr-softmodem -O {lSourcePath}/{full_config_file} {extra_options} > {logfile} 2>&1 &')
 
 		enbDidSync = False
 		for _ in range(10):
@@ -90,7 +70,7 @@ class RANManagement():
 
 		cmd.close()
 
-		msg = f'{self.cmd_prefix} nr-softmodem -O {config_file} {extra_options}'
+		msg = f'{cmd_prefix} nr-softmodem -O {config_file} {extra_options}'
 		if enbDidSync:
 			logging.debug('\u001B[1m Initialize eNB/gNB Completed\u001B[0m')
 			HTML.CreateHtmlTestRowQueue(msg, 'OK', [])
@@ -100,9 +80,9 @@ class RANManagement():
 
 		return enbDidSync
 
-	def TerminateeNB(self, ctx, node, HTML, to_analyze):
+	def TerminateeNB(ctx, node, HTML, to_analyze):
 		logging.debug('Stopping eNB/gNB on server: ' + node)
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		cmd = cls_cmd.getConnection(node)
 		ret = cmd.run('ps -aux | grep --color=never -e softmodem | grep -v grep')
 		result = re.search('-softmodem', ret.stdout)
@@ -135,9 +115,9 @@ class RANManagement():
 		success = cls_analysis.AnalyzeServices(HTML, service_desc, to_analyze)
 		return success
 
-	def AnalyzeRTStats(self, HTML, node, ctx, thresholds):
+	def AnalyzeRTStats(HTML, node, ctx, thresholds):
 		logging.info(f'Analyzing realtime stats from server: {node}')
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 
 		logdir = f'{lSourcePath}/cmake_targets'
 		with cls_cmd.getConnection(node) as cmd:
