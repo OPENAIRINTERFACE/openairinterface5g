@@ -567,7 +567,7 @@ int main(int argc, char **argv)
         if (symb < startingSymbolIndex || symb >= startingSymbolIndex + nrofSymbols) {
           int i0 = symb * gNB->frame_parms.ofdm_symbol_size;
           for (int re = 0; re < N_RB_DL * 12; re++) {
-            i = i0 + ((gNB->frame_parms.first_carrier_offset + re) % gNB->frame_parms.ofdm_symbol_size);
+            i = i0 + re;
             for (int aarx = 0; aarx < n_rx; aarx++) {
               double nr = sqrt(sigma2 / 2) * gaussdouble(0.0, 1.0);
               double ni = sqrt(sigma2 / 2) * gaussdouble(0.0, 1.0);
@@ -600,8 +600,8 @@ int main(int argc, char **argv)
             rxr = rxr_tmp;
             double nr = sqrt(sigma2 / 2) * gaussdouble(0.0, 1.0);
             double ni = sqrt(sigma2 / 2) * gaussdouble(0.0, 1.0);
-            rxdataF[aarx][i].r = (int16_t)(tx_level_fp * (rxr + nr) / sqrt((double)txlev));
-            rxdataF[aarx][i].i = (int16_t)(tx_level_fp * (rxi + ni) / sqrt((double)txlev));
+            rxdataF[aarx][i0 + re].r = (int16_t)(tx_level_fp * (rxr + nr) / sqrt((double)txlev));
+            rxdataF[aarx][i0 + re].i = (int16_t)(tx_level_fp * (rxi + ni) / sqrt((double)txlev));
 
             if (n_trials == 1 && fabs(txr) > 0)
               printf("symb %d, re %d , aarx %d : txr %f, txi %f, chr %f, chi %f, nr %f, ni %f, rxr %f, rxi %f => %d,%d\n",

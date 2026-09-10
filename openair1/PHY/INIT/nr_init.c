@@ -322,6 +322,8 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   fp->ofdm_offset_divisor = UINT_MAX;
   init_symbol_rotation(fp);
   init_timeshift_rotation(fp->ofdm_symbol_size, fp->nb_prefix_samples, fp->ofdm_offset_divisor, fp->timeshift_symbol_rotation);
+  // freq domain data is FFT shifted so shift this too.
+  fftshift_inplace(fp->timeshift_symbol_rotation, fp->N_RB_UL * NR_NB_SC_PER_RB, fp->ofdm_symbol_size);
 
   gNB->configured = 1;
 }
@@ -374,6 +376,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   fp->ofdm_offset_divisor = RC.gNB[Mod_id]->ofdm_offset_divisor;
   init_symbol_rotation(fp);
   init_timeshift_rotation(fp->ofdm_symbol_size, fp->nb_prefix_samples, fp->ofdm_offset_divisor, fp->timeshift_symbol_rotation);
+  // freq domain data is FFT shifted so shift this too.
+  fftshift_inplace(fp->timeshift_symbol_rotation, fp->N_RB_UL * NR_NB_SC_PER_RB, fp->ofdm_symbol_size);
 }
 
 static void init_DLSCH_struct(PHY_VARS_gNB *gNB)

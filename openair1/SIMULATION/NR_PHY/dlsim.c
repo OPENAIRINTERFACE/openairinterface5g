@@ -1168,18 +1168,13 @@ int main(int argc, char **argv)
           printf("slot_offset %d\n", slot_offset);
 
         //TODO: loop over slots
-        for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-          c16_t fft_in_buff[frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot] __attribute__((aligned(64)));
-          memset(fft_in_buff, 0, sizeof(fft_in_buff));
+        for (aa = 0; aa < gNB->frame_parms.nb_antennas_tx; aa++) {
           if (cyclic_prefix_type == 1) {
-            fft_shift(gNB->common_vars.txdataF[aa],
-                      frame_parms->ofdm_symbol_size,
-                      frame_parms->N_RB_DL,
-                      fft_in_buff,
-                      frame_parms->ofdm_symbol_size,
-                      0,
-                      12);
-            PHY_ofdm_mod((int *)fft_in_buff,
+            for (int i = 0; i < 12; i++)
+              fftshift_inverse_inplace(gNB->common_vars.txdataF[aa] + i * frame_parms->ofdm_symbol_size,
+                                       frame_parms->N_RB_DL * NR_NB_SC_PER_RB,
+                                       frame_parms->ofdm_symbol_size);
+            PHY_ofdm_mod((int *)gNB->common_vars.txdataF[aa],
                          (int *)&txdata[aa][slot_offset],
                          frame_parms->ofdm_symbol_size,
                          12,
@@ -1190,19 +1185,11 @@ int main(int argc, char **argv)
             for (int i = 0; i < 14; i++) {
               was_symbol_used[i] = true;
             }
-            fft_shift(gNB->common_vars.txdataF[aa],
-                      frame_parms->ofdm_symbol_size,
-                      frame_parms->N_RB_DL,
-                      fft_in_buff,
-                      frame_parms->ofdm_symbol_size,
-                      0,
-                      14);
-            nr_normal_prefix_mod(fft_in_buff,
-                                 &txdata[aa][slot_offset],
-                                 14,
-                                 frame_parms,
-                                 slot,
-                                 was_symbol_used);
+            for (int i = 0; i < 14; i++)
+              fftshift_inverse_inplace(gNB->common_vars.txdataF[aa] + i * frame_parms->ofdm_symbol_size,
+                                       frame_parms->N_RB_DL * NR_NB_SC_PER_RB,
+                                       frame_parms->ofdm_symbol_size);
+            nr_normal_prefix_mod(gNB->common_vars.txdataF[aa], &txdata[aa][slot_offset], 14, frame_parms, slot, was_symbol_used);
           }
         }
         if (n_trials==1) {

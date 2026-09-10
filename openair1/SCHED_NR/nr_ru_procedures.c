@@ -8,6 +8,7 @@
 
 #include "PHY/defs_gNB.h"
 #include "common/platform_types.h"
+#include "nr/nr_common.h"
 #include "sched_nr.h"
 #include "PHY/MODULATION/phy_ofdm_mod.h"
 #include "PHY/MODULATION/nr_modulation.h"
@@ -190,15 +191,13 @@ void nr_feptx(void *arg)
 
   // If there is no digital beamforming we just need to copy the data to RU
   if (ru->config.dbt_config.num_dig_beams == 0 || ru->gNB_list[0]->common_vars.analog_bf) {
-    // FFT shift
+    // Inverse FFT shift
     const NR_DL_FRAME_PARMS *fp = &ru->gNB_list[0]->frame_parms;
-    fft_shift(ru->gNB_list[0]->common_vars.txdataF[aa],
-              fp->ofdm_symbol_size,
-              fp->N_RB_DL,
-              (c16_t *)ru->common.txdataF_BF[aa],
-              fp->ofdm_symbol_size,
-              startSymbol,
-              numSymbols);
+    for (uint s = startSymbol; s < startSymbol + numSymbols; s++)
+      fftshift_inverse(ru->gNB_list[0]->common_vars.txdataF[aa] + s * fp->ofdm_symbol_size,
+                       (c16_t *)ru->common.txdataF_BF[aa] + s * fp->ofdm_symbol_size,
+                       fp->N_RB_DL * NR_NB_SC_PER_RB,
+                       fp->ofdm_symbol_size);
   } else {
     AssertFatal(false, "This needs to be fixed by using appropriate beams from config\n");
   }
@@ -278,13 +277,11 @@ void nr_fep(void *arg)
   int startSymbol = feprx_cmd->startSymbol;
   int endSymbol = feprx_cmd->endSymbol;
 
-  for (int l = startSymbol; l <= endSymbol; l++)
-    nr_symbol_fep_ul(feprx_cmd->fp,
-                     feprx_cmd->rxdata,
-                     &feprx_cmd->rxdataF[l * feprx_cmd->fp->ofdm_symbol_size],
-                     l,
-                     slot,
-                     feprx_cmd->sample_offet);
+  const NR_DL_FRAME_PARMS *fp = feprx_cmd->fp;
+  for (int l = startSymbol; l <= endSymbol; l++) {
+    nr_symbol_fep_ul(fp, feprx_cmd->rxdata, &feprx_cmd->rxdataF[l * fp->ofdm_symbol_size], l, slot, feprx_cmd->sample_offet);
+    fftshift_inplace(&feprx_cmd->rxdataF[l * fp->ofdm_symbol_size], fp->N_RB_UL * NR_NB_SC_PER_RB, fp->ofdm_symbol_size);
+  }
 
   completed_task_ans(feprx_cmd->ans);
 }

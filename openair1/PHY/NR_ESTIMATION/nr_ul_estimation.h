@@ -88,7 +88,6 @@ int nr_srs_channel_interpolation(int p_index,
                                  c16_t delay_table[2 * MAX_DELAY_COMP + 1][NR_MAX_OFDM_SYMBOL_SIZE]);
 
 void nr_srs_noise_power_estimation(uint16_t ofdm_symbol_size,
-                                   uint16_t first_carrier_offset,
                                    uint8_t N_symb_SRS,
                                    const nfapi_nr_srs_pdu_t *srs_pdu,
                                    const nr_srs_info_t *nr_srs_info,

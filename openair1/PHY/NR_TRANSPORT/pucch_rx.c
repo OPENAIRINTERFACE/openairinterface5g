@@ -5,6 +5,8 @@
 /*!
  * \brief Top-level routines for decoding the PUCCH physical channel
  */
+#include "PHY/defs_RU.h"
+#include "nr_common.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -22,12 +24,9 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "common/utils/LOG/log.h"
-#include "nfapi/oai_integration/vendor_ext.h"
-#include "nfapi/oai_integration/vendor_ext.h"
 #include "SCHED_NR/sched_nr.h"
 #include "bits.h"
 
-#include "T.h"
 #include "nr_phy_common.h"
 
 //#define DEBUG_NR_PUCCH_RX 1
@@ -219,17 +218,11 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   for (int l = 0; l < nb_symbols; l++) {
     uint8_t l2 = l + pucch_pdu->start_symbol_index;
 
-    re_offset[l] = CIRCULAR_INC(frame_parms->first_carrier_offset, NR_NB_SC_PER_RB * prb_offset[l], symb_sz);
+    re_offset[l] = NR_NB_SC_PER_RB * prb_offset[l];
+
     for (int aa = 0; aa < num_sp_streams; aa++) {
-      c16_t rp[nb_re_pucch];
-      c16_t *tmp_rp = &rxdataF[aa][soffset + l2 * symb_sz];
-      if (re_offset[l] + nb_re_pucch > symb_sz) {
-        int neg_length = symb_sz - re_offset[l];
-        int pos_length = nb_re_pucch - neg_length;
-        memcpy(rp, &tmp_rp[re_offset[l]], neg_length * sizeof(*tmp_rp));
-        memcpy(&rp[neg_length], tmp_rp, pos_length * sizeof(*tmp_rp));
-      } else
-        memcpy(rp, &tmp_rp[re_offset[l]], nb_re_pucch * sizeof(*tmp_rp));
+      c16_t *tmp_rp = &rxdataF[aa][soffset + l2 * frame_parms->ofdm_symbol_size];
+      c16_t *rp = tmp_rp + re_offset[l];
 
       for (int n = 0; n < nb_re_pucch; n++) {
         xr[aa][l][n].r = (int32_t)x_re[l][n] * rp[n].r + (int32_t)x_im[l][n] * rp[n].i;
@@ -497,7 +490,7 @@ void nr_decode_pucch1(PHY_VARS_gNB *gNB,
   const int nb_symbols = pucch_pdu->nr_of_symbols;
   const int symb_sz = frame_parms->ofdm_symbol_size;
 
-  const int soffset = (slot & 3) * frame_parms->symbols_per_slot * symb_sz;
+  const int soffset = (slot % RU_RX_SLOT_DEPTH) * frame_parms->symbols_per_slot * symb_sz;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the
   // slot given by [5, TS 38.213]
   const int lprime = pucch_pdu->start_symbol_index;
@@ -549,39 +542,15 @@ void nr_decode_pucch1(PHY_VARS_gNB *gNB,
   c16_t z_rx[16][MAX_SIZE_Z] = {0};
   c16_t z_dmrs_rx[16][MAX_SIZE_Z] = {0};
   c16_t z[16][12] = {0};
-  const int half_nb_rb_dl = frame_parms->N_RB_DL >> 1;
-  const bool nb_rb_is_even = (frame_parms->N_RB_DL & 1) == 0;
   for (int l = 0; l < nb_symbols; l++) { // extracting data and dmrs from rxdataF
-    if (intraSlotFrequencyHopping && (l >= floor(nb_symbols / 2))) { // intra-slot hopping enabled, we need
+    if (intraSlotFrequencyHopping && (l >= nb_symbols / 2)) { // intra-slot hopping enabled, we need
       // to calculate new offset PRB
       pucch_pdu->prb_start = pucch_pdu->bwp_start + pucch_pdu->second_hop_prb;
     }
-    int re_offset = (l + pucch_pdu->start_symbol_index) * symb_sz;
+    int re_offset = (l + pucch_pdu->start_symbol_index) * symb_sz + NR_NB_SC_PER_RB * pucch_pdu->prb_start;
 
-    if (nb_rb_is_even) {
-      if (pucch_pdu->prb_start < half_nb_rb_dl) // if number RBs in bandwidth is even and
-                                                // current PRB is lower band
-        re_offset += 12 * pucch_pdu->prb_start + frame_parms->first_carrier_offset;
-      else // if number RBs in bandwidth is even and current PRB is upper band
-        re_offset += 12 * (pucch_pdu->prb_start - half_nb_rb_dl);
-    } else {
-      if (pucch_pdu->prb_start < half_nb_rb_dl) // if number RBs in bandwidth is odd  and
-                                                // current PRB is lower band
-        re_offset += 12 * pucch_pdu->prb_start + frame_parms->first_carrier_offset;
-      else if (pucch_pdu->prb_start > half_nb_rb_dl) // if number RBs in bandwidth is odd
-                                                     // and current PRB is upper band
-        re_offset += 12 * (pucch_pdu->prb_start - half_nb_rb_dl) + 6;
-      else // if number RBs in bandwidth is odd  and current PRB contains DC
-        re_offset += 12 * pucch_pdu->prb_start + frame_parms->first_carrier_offset;
-    }
-
-    for (int n = 0; n < 12; n++) {
-      const int current_subcarrier = (l / 2) * 12 + n;
-      if (n == 6 && pucch_pdu->prb_start == half_nb_rb_dl && !nb_rb_is_even) {
-        // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second
-        // half PRB)
-        re_offset = ((l + pucch_pdu->start_symbol_index) * symb_sz);
-      }
+    for (int n = 0; n < NR_NB_SC_PER_RB; n++) {
+      const int current_subcarrier = (l / 2) * NR_NB_SC_PER_RB + n;
 
       if (l % 2 == 1) // mapping PUCCH or DM-RS according to TS38.211 subclause 6.4.1.3.1
         for (int r = 0; r < n_rx; r++) {
@@ -1102,12 +1071,10 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   int soffset = (slot % RU_RX_SLOT_DEPTH) * frame_parms->symbols_per_slot * symb_sz;
   uint16_t starting_prb = pucch_pdu->prb_start + pucch_pdu->bwp_start;
   int re_offset[nb_symbols];
-  re_offset[0] = CIRCULAR_INC(frame_parms->first_carrier_offset, NR_NB_SC_PER_RB * starting_prb, symb_sz);
+  re_offset[0] = NR_NB_SC_PER_RB * starting_prb;
   if (nb_symbols == 2) {
     if (pucch_pdu->freq_hop_flag)
-      re_offset[1] = CIRCULAR_INC(frame_parms->first_carrier_offset,
-                                  NR_NB_SC_PER_RB * (pucch_pdu->second_hop_prb + pucch_pdu->bwp_start),
-                                  symb_sz);
+      re_offset[1] = NR_NB_SC_PER_RB * (pucch_pdu->second_hop_prb + pucch_pdu->bwp_start);
     else
       re_offset[1] = re_offset[0];
   }
@@ -1125,14 +1092,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     for (int symb = 0; symb < nb_symbols; symb++) {
       c16_t *tmp_rp = &rxdataF[aa][soffset + (l2 + symb) * symb_sz];
 
-      if (re_offset[symb] + nb_re_pucch < symb_sz) {
-        memcpy(rp[aa][symb], &tmp_rp[re_offset[symb]], nb_re_pucch * sizeof(c16_t));
-      } else {
-        int neg_length = symb_sz - re_offset[symb];
-        int pos_length = nb_re_pucch - neg_length;
-        memcpy(rp[aa][symb], &tmp_rp[re_offset[symb]], neg_length * sizeof(c16_t));
-        memcpy(&rp[aa][symb][neg_length], tmp_rp, pos_length * sizeof(c16_t));
-      }
+      memcpy(rp[aa][symb], &tmp_rp[re_offset[symb]], nb_re_pucch * sizeof(c16_t));
       pucch2_lev += signal_energy_nodc(rp[aa][symb], nb_re_pucch);
     }
   }

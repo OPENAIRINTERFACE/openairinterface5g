@@ -1580,9 +1580,8 @@ int main(int argc, char *argv[])
         UL_INFO.srs_ind.number_of_pdus = 0;
 
         //----------- OFDM Demodulation and RX rotation--------------------------
-        bool was_symbol_used[14] = {0};
-        int offset = (slot & 3) * gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size;
-        for (int i = 0; i < 14; i++) {
+        bool was_symbol_used[NR_SYMBOLS_PER_SLOT] = {0};
+        for (int i = 0; i < NR_SYMBOLS_PER_SLOT; i++) {
           was_symbol_used[i] = true;
         }
         nr_ofdm_demod_and_rx_rotation(rxdata,
@@ -1590,7 +1589,7 @@ int main(int argc, char *argv[])
                                       &gNB->frame_parms,
                                       gNB->frame_parms.nb_antennas_rx,
                                       slot,
-                                      offset,
+                                      0,
                                       link_type_ul,
                                       was_symbol_used);
 
