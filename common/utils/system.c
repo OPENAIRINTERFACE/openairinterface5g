@@ -279,7 +279,16 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   strncpy(short_name, name, sizeof(short_name) - 1);
   short_name[sizeof(short_name) - 1] = '\0';
   ret = pthread_setname_np(*t, short_name);
-  AssertFatal(ret == 0, "Error in pthread_setname_np(): ret: %d, errno: %d\n", ret, errno);
+  // pthread_create() can initialize and complete before setting a name
+  AssertFatal(ret == 0 || ret == ENOENT || ret == ESRCH, "Error in pthread_setname_np(): ret: %d, errno: %d\n", ret, errno);
+  if (ret != 0) {
+    LOG_W(UTIL,
+          "pthread_setname_np() failed with ret: %d (%s) when naming %s - \
+                thread likely already exited, continuing\n",
+          ret,
+          strerror(ret),
+          name);
+  }
 
   pthread_attr_destroy(&attr);
 }
