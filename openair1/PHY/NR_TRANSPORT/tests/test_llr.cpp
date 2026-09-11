@@ -8,9 +8,7 @@
 #include <algorithm>
 #include <numeric>
 extern "C" {
-void nr_16qam_llr(int32_t *rxdataF_comp, int32_t *ch_mag_in, int16_t *llr, uint32_t nb_re);
-void nr_64qam_llr(int32_t *rxdataF_comp, int32_t *ch_mag, int32_t *ch_mag2, int16_t *llr, uint32_t nb_re);
-void nr_256qam_llr(int32_t *rxdataF_comp, int32_t *ch_mag, int32_t *ch_mag2, int32_t *ch_mag3, int16_t *llr, uint32_t nb_re);
+#include "nr_compute_llr.h"
 struct configmodule_interface_s;
 struct configmodule_interface_s *uniqCfg = NULL;
 
@@ -43,72 +41,45 @@ int16_t saturating_sub(int a, int b)
   }
 }
 
-void nr_16qam_llr_ref(c16_t *rxdataF_comp, int32_t *ch_mag, int16_t *llr, uint32_t nb_re)
+void nr_16qam_llr_ref(const c16_t *rxdataF_comp, const c16_t *ch_mag, int16_t *llr, uint32_t nb_re)
 {
-  int16_t *ch_mag_i16 = (int16_t *)ch_mag;
   for (auto i = 0U; i < nb_re; i++) {
     int16_t real = rxdataF_comp[i].r;
     int16_t imag = rxdataF_comp[i].i;
-    int16_t mag_real = ch_mag_i16[2 * i];
-    int16_t mag_imag = ch_mag_i16[2 * i + 1];
     llr[4 * i] = real;
     llr[4 * i + 1] = imag;
-    llr[4 * i + 2] = saturating_sub(mag_real, real);
-    llr[4 * i + 3] = saturating_sub(mag_imag, imag);
+    llr[4 * i + 2] = saturating_sub(ch_mag[i].r, real);
+    llr[4 * i + 3] = saturating_sub(ch_mag[i].i, imag);
   }
 }
 
-void nr_64qam_llr_ref(c16_t *rxdataF_comp,
-                      int32_t *ch_mag,
-                      int32_t *ch_magb,
-                      int16_t *llr,
-                      uint32_t nb_re)
+void nr_64qam_llr_ref(const c16_t *rxdataF_comp, const c16_t *ch_mag, const c16_t *ch_magb, int16_t *llr, uint32_t nb_re)
 {
-  int16_t *ch_mag_i16 = (int16_t *)ch_mag;
-  int16_t *ch_magb_i16 = (int16_t *)ch_magb;
   for (auto i = 0U; i < nb_re; i++) {
     int16_t real = rxdataF_comp[i].r;
     int16_t imag = rxdataF_comp[i].i;
-    int16_t mag_real = ch_mag_i16[2 * i];
-    int16_t mag_imag = ch_mag_i16[2 * i + 1];
     llr[6 * i] = real;
     llr[6 * i + 1] = imag;
-    llr[6 * i + 2] = saturating_sub(mag_real, real);
-    llr[6 * i + 3] = saturating_sub(mag_imag, imag);
-    int16_t mag_realb = ch_magb_i16[2 * i];
-    int16_t mag_imagb = ch_magb_i16[2 * i + 1];
-    llr[6 * i + 4] = saturating_sub(mag_realb, llr[6 * i + 2]);
-    llr[6 * i + 5] = saturating_sub(mag_imagb, llr[6 * i + 3]);
+    llr[6 * i + 2] = saturating_sub(ch_mag[i].r, real);
+    llr[6 * i + 3] = saturating_sub(ch_mag[i].i, imag);
+    llr[6 * i + 4] = saturating_sub(ch_magb[i].r, llr[6 * i + 2]);
+    llr[6 * i + 5] = saturating_sub(ch_magb[i].i, llr[6 * i + 3]);
   }
 }
 
-void nr_256qam_llr_ref(c16_t *rxdataF_comp,
-                       int32_t *ch_mag,
-                       int32_t *ch_magb,
-                       int32_t *ch_magc,
-                       int16_t *llr,
-                       uint32_t nb_re)
+void nr_256qam_llr_ref(const c16_t *rxdataF_comp, const c16_t *ch_mag, const c16_t *ch_magb, const c16_t *ch_magc, int16_t *llr, uint32_t nb_re)
 {
-  int16_t *ch_mag_i16 = (int16_t *)ch_mag;
-  int16_t *ch_magb_i16 = (int16_t *)ch_magb;
-  int16_t *ch_magc_i16 = (int16_t *)ch_magc;
   for (auto i = 0U; i < nb_re; i++) {
     int16_t real = rxdataF_comp[i].r;
     int16_t imag = rxdataF_comp[i].i;
-    int16_t mag_real = ch_mag_i16[2 * i];
-    int16_t mag_imag = ch_mag_i16[2 * i + 1];
     llr[8 * i] = real;
     llr[8 * i + 1] = imag;
-    llr[8 * i + 2] = saturating_sub(mag_real, real);
-    llr[8 * i + 3] = saturating_sub(mag_imag, imag);
-    int16_t magb_real = ch_magb_i16[2 * i];
-    int16_t magb_imag = ch_magb_i16[2 * i + 1];
-    llr[8 * i + 4] = saturating_sub(magb_real, llr[8 * i + 2]);
-    llr[8 * i + 5] = saturating_sub(magb_imag, llr[8 * i + 3]);
-    int16_t magc_real = ch_magc_i16[2 * i];
-    int16_t magc_imag = ch_magc_i16[2 * i + 1];
-    llr[8 * i + 6] = saturating_sub(magc_real, llr[8 * i + 4]);
-    llr[8 * i + 7] = saturating_sub(magc_imag, llr[8 * i + 5]);
+    llr[8 * i + 2] = saturating_sub(ch_mag[i].r, real);
+    llr[8 * i + 3] = saturating_sub(ch_mag[i].i, imag);
+    llr[8 * i + 4] = saturating_sub(ch_magb[i].r, llr[8 * i + 2]);
+    llr[8 * i + 5] = saturating_sub(ch_magb[i].i, llr[8 * i + 3]);
+    llr[8 * i + 6] = saturating_sub(ch_magc[i].r, llr[8 * i + 4]);
+    llr[8 * i + 7] = saturating_sub(ch_magc[i].i, llr[8 * i + 5]);
   }
 }
 
@@ -121,12 +92,12 @@ void test_function_16_qam(AlignedVector512<uint32_t> nb_res)
     AlignedVector512<int16_t> llr_ref;
     llr_ref.resize(nb_re * 4);
     std::fill(llr_ref.begin(), llr_ref.end(), 0);
-    nr_16qam_llr_ref((c16_t *)rf_data.data(), (int32_t *)magnitude_data.data(), (int16_t *)llr_ref.data(), nb_re);
+    nr_16qam_llr_ref((const c16_t *)rf_data.data(), (const c16_t *)magnitude_data.data(), (int16_t *)llr_ref.data(), nb_re);
 
     AlignedVector512<int16_t> llr;
     llr.resize(nb_re * 4);
     std::fill(llr.begin(), llr.end(), 0);
-    nr_16qam_llr((int32_t *)rf_data.data(), (int32_t *)magnitude_data.data(), (int16_t *)llr.data(), nb_re);
+    nr_16qam_llr((const c16_t *)rf_data.data(), (const c16_t *)magnitude_data.data(), (int16_t *)llr.data(), nb_re);
 
     int num_errors = 0;
     for (auto i = 0U; i < llr_ref.size(); i++) {
@@ -148,20 +119,20 @@ void test_function_64_qam(AlignedVector512<uint32_t> nb_res)
     AlignedVector512<int16_t> llr_ref;
     llr_ref.resize(nb_re * 6);
     std::fill(llr_ref.begin(), llr_ref.end(), 0);
-    nr_64qam_llr_ref((c16_t *)rf_data.data(),
-                           (int32_t *)magnitude_data.data(),
-                           (int32_t *)magnitude_b_data.data(),
-                           (int16_t *)llr_ref.data(),
-                           nb_re);
+    nr_64qam_llr_ref((const c16_t *)rf_data.data(),
+                     (const c16_t *)magnitude_data.data(),
+                     (const c16_t *)magnitude_b_data.data(),
+                     (int16_t *)llr_ref.data(),
+                     nb_re);
 
     AlignedVector512<int16_t> llr;
     llr.resize(nb_re * 6);
     std::fill(llr.begin(), llr.end(), 0);
-    nr_64qam_llr((int32_t *)rf_data.data(),
-                       (int32_t *)magnitude_data.data(),
-                       (int32_t *)magnitude_b_data.data(),
-                       (int16_t *)llr.data(),
-                       nb_re);
+    nr_64qam_llr((const c16_t *)rf_data.data(),
+                 (const c16_t *)magnitude_data.data(),
+                 (const c16_t *)magnitude_b_data.data(),
+                 (int16_t *)llr.data(),
+                 nb_re);
 
     int num_errors = 0;
     for (auto i = 0U; i < llr.size(); i++) {
@@ -184,22 +155,22 @@ void test_function_256_qam(AlignedVector512<uint32_t> nb_res)
     AlignedVector512<int16_t> llr_ref;
     llr_ref.resize(nb_re * 8);
     std::fill(llr_ref.begin(), llr_ref.end(), 0);
-    nr_256qam_llr_ref((c16_t *)rf_data.data(),
-                            (int32_t *)magnitude_data.data(),
-                            (int32_t *)magnitude_b_data.data(),
-                            (int32_t *)magnitude_c_data.data(),
-                            (int16_t *)llr_ref.data(),
-                            nb_re);
+    nr_256qam_llr_ref((const c16_t *)rf_data.data(),
+                      (const c16_t *)magnitude_data.data(),
+                      (const c16_t *)magnitude_b_data.data(),
+                      (const c16_t *)magnitude_c_data.data(),
+                      (int16_t *)llr_ref.data(),
+                      nb_re);
 
     AlignedVector512<int16_t> llr;
     llr.resize(nb_re * 8);
     std::fill(llr.begin(), llr.end(), 0);
-    nr_256qam_llr((int32_t *)rf_data.data(),
-                        (int32_t *)magnitude_data.data(),
-                        (int32_t *)magnitude_b_data.data(),
-                        (int32_t *)magnitude_c_data.data(),
-                        (int16_t *)llr.data(),
-                        nb_re);
+    nr_256qam_llr((const c16_t *)rf_data.data(),
+                  (const c16_t *)magnitude_data.data(),
+                  (const c16_t *)magnitude_b_data.data(),
+                  (const c16_t *)magnitude_c_data.data(),
+                  (int16_t *)llr.data(),
+                  nb_re);
 
     int num_errors = 0;
     for (auto i = 0U; i < llr.size(); i++) {
@@ -332,22 +303,22 @@ TEST(test_llr, check_2_res_256_qam)
   AlignedVector512<int16_t> llr_ref;
   llr_ref.resize(2 * 8);
   std::fill(llr_ref.begin(), llr_ref.end(), 0);
-  nr_256qam_llr_ref((c16_t *)rf_data.data(),
-                          (int32_t *)magnitude_data.data(),
-                          (int32_t *)magnitude_b_data.data(),
-                          (int32_t *)magnitude_c_data.data(),
-                          (int16_t *)llr_ref.data(),
-                          2);
+  nr_256qam_llr_ref((const c16_t *)rf_data.data(),
+                    (const c16_t *)magnitude_data.data(),
+                    (const c16_t *)magnitude_b_data.data(),
+                    (const c16_t *)magnitude_c_data.data(),
+                    (int16_t *)llr_ref.data(),
+                    2);
 
   AlignedVector512<int16_t> llr;
   llr.resize(2 * 8);
   std::fill(llr.begin(), llr.end(), 0);
-  nr_256qam_llr((int32_t *)rf_data.data(),
-                      (int32_t *)magnitude_data.data(),
-                      (int32_t *)magnitude_b_data.data(),
-                      (int32_t *)magnitude_c_data.data(),
-                      (int16_t *)llr.data(),
-                      2);
+  nr_256qam_llr((const c16_t *)rf_data.data(),
+                (const c16_t *)magnitude_data.data(),
+                (const c16_t *)magnitude_b_data.data(),
+                (const c16_t *)magnitude_c_data.data(),
+                (int16_t *)llr.data(),
+                2);
 
   printf("\nDUT:\n");
   for (auto i = 0U; i < 2; i++) {

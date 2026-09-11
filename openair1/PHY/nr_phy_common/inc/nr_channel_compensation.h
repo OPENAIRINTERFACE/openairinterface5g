@@ -5,7 +5,7 @@
 #ifndef __NR_CHANNEL_COMPENSATION__H__
 #define __NR_CHANNEL_COMPENSATION__H__
 
-#include "PHY/impl_defs_top.h"
+#include "platform_types.h"
 
 /**
  * @brief Common channel compensation function shared by DL (PDSCH) and UL (PUSCH) paths.

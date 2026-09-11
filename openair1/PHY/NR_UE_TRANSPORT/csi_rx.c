@@ -18,6 +18,8 @@
 
 #include "executables/nr-softmodem-common.h"
 #include "nr_transport_proto_ue.h"
+#include "nr_phy_common_csi_rs.h"
+#include "nr_phy_common.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "common/utils/nr/nr_common.h"
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"

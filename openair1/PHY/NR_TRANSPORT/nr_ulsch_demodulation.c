@@ -12,6 +12,8 @@
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/nr_phy_common/inc/nr_phy_common.h"
+#include "nr_channel_compensation.h"
+#include "nr_compute_llr.h"
 #include "nr_layer_demapping.h"
 #include "common/utils/nr/nr_common.h"
 #include "platform_types.h"

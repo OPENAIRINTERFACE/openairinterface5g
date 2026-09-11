@@ -2,7 +2,10 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-#include "PHY/nr_phy_common/inc/nr_phy_common.h"
+#include "PHY/nr_phy_common/inc/nr_phy_common_csi_rs.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
+#include "PHY/MODULATION/nr_modulation.h"
+#include "log.h"
 
 static void csi_rs_resource_mapping(c16_t **dataF,
                                     int csi_rs_length,
