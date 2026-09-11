@@ -57,10 +57,9 @@ subgraph tx
     subgraph tx_reorder_thread
         L1_tx_out>L1_tx_out]
         --> reorder{re order} --> reorder
-        reorder --> ru_tx_func
+        reorder --> feptx_prec/feptx_ofdm
         reorder --> L1_tx_free((L1_tx_free))
-        ru_tx_func --> feptx_prec
-        --> feptx_ofdm
+        feptx_prec/feptx_ofdm --> fh_south_ctrl --> fh_south_out
     end 
     tx_func2 --> tx_reorder_thread
 end

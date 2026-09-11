@@ -247,51 +247,6 @@ static void rx_rf(RU_t *ru, int *frame, int *slot)
   stop_meas(&ru->rx_fhaul);
 }
 
-static radio_tx_gpio_flag_t get_gpio_flags(RU_t *ru, int slot)
-{
-  radio_tx_gpio_flag_t flags_gpio = 0;
-  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  openair0_config_t *cfg0 = &ru->openair0_cfg;
-
-  switch (cfg0->gpio_controller) {
-    case RU_GPIO_CONTROL_GENERIC:
-      // currently we switch beams at the beginning of a slot and we take the beam index of the first symbol of this slot
-      // we only send the beam to the gpio if the beam is different from the previous slot
-
-      if (ru->common.beam_id) {
-        int prev_slot = (slot - 1 + fp->slots_per_frame) % fp->slots_per_frame;
-        uint16_t **beam_ids = ru->common.beam_id;
-        uint16_t prev_beam = beam_ids[prev_slot * fp->symbols_per_slot][0];
-        int beam = beam_ids[slot * fp->symbols_per_slot][0];
-        if (prev_beam != beam) {
-          flags_gpio = beam | TX_GPIO_CHANGE; // enable change of gpio
-          LOG_I(HW, "slot %d, beam %d\n", slot, beam_ids[slot * fp->symbols_per_slot][0]);
-        }
-      }
-      break;
-
-    case RU_GPIO_CONTROL_INTERDIGITAL: {
-      // the beam index is written in bits 8-10 of the flags
-      // bit 11 enables the gpio programming
-      int beam = 0;
-      if ((slot % 10 == 0) && ru->common.beam_id && (ru->common.beam_id[slot * fp->symbols_per_slot][0] < 64)) {
-        // beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 64;
-        beam = 1024; // hardcoded now for beam32 boresight
-        // beam = 127; //for the sake of trying beam63
-        LOG_D(HW, "slot %d, beam %d\n", slot, beam);
-      }
-      flags_gpio = beam | TX_GPIO_CHANGE;
-      // flags_gpio |= beam << 8; // MSB 8 bits are used for beam
-      LOG_D(HW, "slot %d, beam %d, flags_gpio %d\n", slot, beam, flags_gpio);
-      break;
-    }
-    default:
-      AssertFatal(false, "illegal GPIO controller %d\n", cfg0->gpio_controller);
-  }
-
-  return flags_gpio;
-}
-
 int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_symbol, int num_symbols)
 {
   RU_proc_t *proc = &ru->proc;
@@ -307,7 +262,6 @@ int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_s
   int sf_extension = 0;
   int siglen = get_samples_per_slot(slot, fp);
   radio_tx_burst_flag_t flags_burst = TX_BURST_INVALID;
-  radio_tx_gpio_flag_t flags_gpio = 0;
   int transmitted_symbols = num_symbols;
 
   if (cfg->cell_config.frame_duplex_type.value == TDD && !get_softmodem_params()->continuous_tx && !IS_SOFTMODEM_RFSIM) {
@@ -359,10 +313,7 @@ int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_s
     siglen = get_samples_symbol_duration(fp, slot, start_symbol, num_symbols);
   }
 
-  if (ru->openair0_cfg.gpio_controller != RU_GPIO_CONTROL_NONE)
-    flags_gpio = get_gpio_flags(ru, slot);
-
-  const int flags = flags_burst | (flags_gpio << 4);
+  const int flags = flags_burst;
   proc->first_tx = 0;
 
   int nt = ru->nb_tx;
@@ -395,26 +346,17 @@ int tx_rf_symbols(RU_t *ru, int frame, int slot, uint64_t timestamp, int start_s
   return transmitted_symbols;
 }
 
-// Pushes the per-antenna analog beam IDs assigned to this slot's symbols (ru->common.beam_id,
-// filled in from the gNB's precoding step) down to the RF device, one trx_set_beams() call per
-// symbol at which the beam vector changes. Only relevant for devices that need to be told about
-// beams explicitly (e.g. rfsimulator); USRP GPIO-controlled beam switching is handled separately
-// via get_gpio_flags(), embedded directly in the TX burst flags.
-//
-// Must run after nr_feptx_tp()/nr_feptx_prec() have copied this slot's beam_id from the gNB's
-// common_vars (done from ru_tx_func(), called below in tx_rf()) -- calling this any earlier reads
-// last frame's leftover beam_id instead of the one the MAC scheduler just picked for this slot.
+// Pushes the per-antenna split 8 analog beam IDs assigned to this slot's symbols down to
+// the RF device, one trx_set_beams() call per symbol at which the beam vector changes.
+// However, USRP GPIO-controlled beamforming currently only handles one beam.
 //
 // Only calls trx_set_beams() when the beam vector actually changes between symbols, to avoid
 // issuing redundant beam-switch commands to real hardware.
 static void ctrl_rf(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
-  if (!ru->rfdevice.trx_set_beams || !ru->gNB_list[0]->common_vars.analog_bf)
-    return;
-
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   int nb_tx = ru->nb_tx;
-  uint16_t **beam_id = ru->common.beam_id;
+  uint16_t **beam_id = ru->gNB_list[0]->common_vars.beam_id;
 
   uint16_t last_beams[nb_tx];
   memcpy(last_beams, beam_id[slot * fp->symbols_per_slot], nb_tx * sizeof(uint16_t));
@@ -435,7 +377,6 @@ static void ctrl_rf(RU_t *ru, int frame, int slot, uint64_t timestamp)
 
 void tx_rf(RU_t *ru, int frame, int slot, uint64_t timestamp)
 {
-  ctrl_rf(ru, frame, slot, timestamp);
   tx_rf_symbols(ru, frame, slot, timestamp, 0, 14);
 }
 
@@ -592,25 +533,6 @@ int setup_RU_buffers(RU_t *ru)
   return(0);
 }
 
-void ru_tx_func(void *param)
-{
-  processingData_RU_t *info = (processingData_RU_t *) param;
-  RU_t *ru = info->ru;
-  int frame_tx = info->frame_tx;
-  int slot_tx = info->slot_tx;
-
-  // do TX front-end processing if needed (precoding and/or IDFTs)
-  if (ru->feptx_prec)
-    ru->feptx_prec(ru,frame_tx,slot_tx);
-
-  // do OFDM with/without TX front-end processing  if needed
-  if (ru->feptx_ofdm)
-    ru->feptx_ofdm(ru, frame_tx, slot_tx);
-
-  if (ru->fh_south_out)
-    ru->fh_south_out(ru, frame_tx, slot_tx, info->timestamp_tx);
-}
-
 /* @brief wait for the next RX TTI to be free
  *
  * Certain radios, e.g., RFsim, can run faster than real-time. This might
@@ -695,6 +617,10 @@ void *ru_thread(void *param)
       t = ru->ifdevice.get_internal_parameter("fh_if4p5_south_out");
       if (t != NULL)
         ru->fh_south_out = t;
+      // this is temporarily until the new split 7.2 API
+      t = ru->ifdevice.get_internal_parameter("fh_if4p5_ctrl");
+      if (t != NULL)
+        ru->fh_south_ctrl = t;
     }
 
     int cpu = sched_getcpu();
@@ -940,6 +866,7 @@ void set_function_spec_param(RU_t *ru)
       ru->nr_start_if = NULL; // no if interface
       ru->fh_south_in = rx_rf; // local synchronous RF RX
       ru->fh_south_out = tx_rf; // local synchronous RF TX
+      ru->fh_south_ctrl = ctrl_rf; // beam API
       ru->start_rf = start_rf; // need to start the local RF interface
       ru->stop_rf = stop_rf;
       ru->start_write_thread = start_write_thread; // starting RF TX in different thread

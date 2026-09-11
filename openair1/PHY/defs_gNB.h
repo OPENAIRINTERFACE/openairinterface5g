@@ -222,10 +222,9 @@ typedef struct {
   /// - first index: tx antenna [0..16) where 16 is the total supported antenna ports.
   /// - second index: sample [0..ofdm_symbol_size*symbols_per_frame)
   c16_t **txdataF;
-  /// \brief Anaglogue beam ID for each OFDM symbol (used when beamforming not done in RU)
-  /// - first index: symbol index [0 .. symbols_per_frame)
-  /// - second index: beam ID for each antenna port [0 .. num_ports)
-  /// Array of beam id assigned to antenna ports in a frame
+  /// \brief Analogue beam ID for each [symbol, antenna] pair
+  /// - first index: symbol [slot * fp->symbols_per_slot + sym_idx]
+  /// - second index: logical antenna [0..nb_rx/nb_tx]
   uint16_t **beam_id;
   int num_beams_period;
   bool analog_bf;

@@ -14,7 +14,7 @@ RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
 
 ARG DPDK_VERSION=22.11.11
-ARG xran_VERSION=11.1.6
+ARG xran_VERSION=11.1.7
 
 ## Download and build DPDK
 RUN wget --no-verbose http://fast.dpdk.org/rel/dpdk-$DPDK_VERSION.tar.xz && \
