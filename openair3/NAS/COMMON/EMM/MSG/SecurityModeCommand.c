@@ -84,6 +84,20 @@ int decode_security_mode_command(security_mode_command_msg *security_mode_comman
       security_mode_command->presencemask |= SECURITY_MODE_COMMAND_NONCEMME_PRESENT;
       break;
 
+    /* HashMME (LV, 3GPP TS 24.301 9.9.3.50) */
+    case 0x4f: {
+      if (len - decoded < 2)
+        return TLV_DECODE_BUFFER_TOO_SHORT;
+
+      uint32_t hashmme_length = *(buffer + decoded + 1);
+
+      if (len - decoded < 2 + hashmme_length)
+        return TLV_DECODE_BUFFER_TOO_SHORT;
+
+      decoded += 2 + hashmme_length; // skip IE
+      break;
+    }
+
     default:
       errorCodeDecoder = TLV_DECODE_UNEXPECTED_IEI;
       return TLV_DECODE_UNEXPECTED_IEI;
