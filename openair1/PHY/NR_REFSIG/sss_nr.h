@@ -18,30 +18,12 @@
 #include "limits.h"
 #include "pss_nr.h"
 
-/************** DEFINE ********************************************/
-
-#define  SAMPLES_IQ                   (sizeof(int16_t)*2)
-#define  NUMBER_SSS_SEQUENCE          (336)
-#define  INVALID_SSS_SEQUENCE         (NUMBER_SSS_SEQUENCE)
-#define  LENGTH_SSS_NR                (127)
-#define  SCALING_METRIC_SSS_NR        (15)//(19)
-
-#define  N_ID_2_NUMBER                (NUMBER_PSS_SEQUENCE)
-#define  N_ID_2_NUMBER_SL             (NUMBER_PSS_SEQUENCE_SL)
-#define  N_ID_1_NUMBER                (NUMBER_SSS_SEQUENCE)
-
-#define  GET_NID2(Nid_cell)           (Nid_cell%3)
-#define  GET_NID1(Nid_cell)           (Nid_cell/3)
+#define NUMBER_SSS_SEQUENCE (336)
+#define LENGTH_SSS_NR (127)
 
 #define  GET_NID2_SL(Nid_SL)          (Nid_SL/NUMBER_SSS_SEQUENCE)
 #define  GET_NID1_SL(Nid_SL)          (Nid_SL%NUMBER_SSS_SEQUENCE)
-
-#define  PSS_SC_START_NR              (52)     /* see from TS 38.211 table 7.4.3.1-1: Resources within an SS/PBCH block for PSS... */
-
-#define  SSS_START_IDX                (3)      /* [0:PSBCH 1:PSS0 2:PSS1 3:SSS0 4:SSS1] */
-#define  NUM_SSS_SYMBOLS              (2)
-
-#define SSS_METRIC_FLOOR_NR   (30000)
+#define SSS_METRIC_FLOOR_NR (3) // ratio signal sss sequence power against signal power
 
 typedef struct {
   int nb_antennas_rx;

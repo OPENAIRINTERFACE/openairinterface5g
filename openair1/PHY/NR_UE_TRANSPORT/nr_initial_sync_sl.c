@@ -300,8 +300,8 @@ static void sl_nr_extract_sss(PHY_VARS_NR_UE *ue,
         ue->SL_UE_PHY_PARAMS.sync_params.N_sl_id);
 
 #ifdef SL_DEBUG
-#define SSS_METRIC_FLOOR_NR (30000)
-  if (*tot_metric > SSS_METRIC_FLOOR_NR) {
+#define SSS_METRIC_FLOOR_NR_SL (30000)
+  if (*tot_metric > SSS_METRIC_FLOOR_NR_SL) {
     Nid2 = ue->SL_UE_PHY_PARAMS.sync_params.N_sl_id2;
     Nid1 = ue->SL_UE_PHY_PARAMS.sync_params.N_sl_id1;
     printf("Nid2 %d Nid1 %d tot_metric %d, phase_max %d \n", Nid2, Nid1, *tot_metric, *phase_max);

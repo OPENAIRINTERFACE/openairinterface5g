@@ -529,7 +529,6 @@ typedef struct {
 typedef struct {
   bool success;
   int nid_cell; // detected PCI
-  int32_t metric; // SSS detection metric
   int freq_offset; // SSS frequency offset estimate
   int phase; // SSS phase
 } sss_detection_result_t;

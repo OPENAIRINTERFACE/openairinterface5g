@@ -317,10 +317,8 @@ static bool search_neighboring_cell(UE_nr_rxtx_proc_t *proc,
     nr_neighboring_cell->Nid_cell = search_params.sss_res.nid_cell;
     nr_neighboring_cell->is_candidate = true;
     LOG_D(NR_PHY,
-          "Candidate for neighboring cell found: PCI=%d, slot=%d, sss_metric=%d, pss peak pos=%d, pss_peak=%d dB, pss_avg=%d dB\n",
+          "Found neighbor cell PCI=%d (pss peak pos =%d, pss_peak=%d dB, pss_avg=%d dB)\n",
           search_params.sss_res.nid_cell,
-          proc->nr_slot_rx,
-          search_params.sss_res.metric,
           search_params.pss_res.pos,
           search_params.pss_res.peak,
           search_params.pss_res.avg);
@@ -409,16 +407,11 @@ static bool validate_known_pci(NR_DL_FRAME_PARMS *frame_parms,
   if (!res.success) {
     if (neighboring_cell_info->valid_meas)
       neighboring_cell_info->consec_fail++;
-    LOG_D(NR_PHY,
-          "Known PCI validation failed for PCI=%d (metric=%d, slot=%d), consec_fail=%d\n",
-          known_pci,
-          res.metric,
-          slot,
-          neighboring_cell_info->consec_fail);
+    LOG_D(NR_PHY, "Known PCI validation failed for PCI=%d, consec_fail=%d\n", known_pci, neighboring_cell_info->consec_fail);
     return false;
   }
 
-  LOG_D(NR_PHY, "Known PCI validation completed for PCI=%d, metric=%d, slot=%d\n", known_pci, res.metric, slot);
+  LOG_D(NR_PHY, "Known PCI validation completed for PCI=%d\n", known_pci);
   nr_neighboring_cell->is_candidate = false;
   neighboring_cell_info->consec_fail = 0;
   neighboring_cell_info->valid_meas = true;
