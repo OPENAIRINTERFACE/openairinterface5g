@@ -106,7 +106,9 @@ typedef PacketFilterIdentifiers DeletePacketFilter;
  * in existing TFT" shall contain a variable number of packet filters
  * ------------------------------------------------------------------
  */
-#define TRAFFIC_FLOW_TEMPLATE_NB_PACKET_FILTERS_MAX 4
+/* Number of packet filters is a 4 bit field (TS 24.008 10.5.6.12), so up to
+   15, and the decoder writes as many as it is told. */
+#define TRAFFIC_FLOW_TEMPLATE_NB_PACKET_FILTERS_MAX 16
 typedef struct {
   uint8_t identifier:4;
 #define TRAFFIC_FLOW_TEMPLATE_PRE_REL7_TFT_FILTER 0b00
