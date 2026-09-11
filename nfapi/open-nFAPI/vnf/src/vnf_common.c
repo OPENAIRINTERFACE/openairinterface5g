@@ -148,7 +148,7 @@ void vnf_nr_handle_vendor_extension(void *pRecvMsg,
     nfapi_p4_p5_message_header_t *msg = config->allocate_p4_p5_vendor_ext(message_id, &msg_size);
 
     if (msg) {
-      if (nfapi_p5_message_unpack(pRecvMsg, recvMsgLen, msg, msg_size, &config->codec_config) >= 0) {
+      if (nfapi_nr_p5_message_unpack(pRecvMsg, recvMsgLen, msg, msg_size, &config->codec_config)) {
         if (config->vendor_ext)
           config->vendor_ext(config, p5_idx, msg);
       } else {
