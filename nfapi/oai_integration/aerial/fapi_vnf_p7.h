@@ -22,10 +22,10 @@
 
 #include "nfapi_interface.h"
 #include "nfapi_nr_interface_scf.h"
-#include "nfapi_vnf_interface.h"
+#include "nfapi_nr_vnf_interface.h"
 #include "fapi_nvIPC.h"
 #include "openair2/PHY_INTERFACE/queue_t.h"
-#include "nfapi/open-nFAPI/vnf/inc/vnf_p7.h"
+#include "vnf_p7_nr.h"
 uint8_t aerial_unpack_nr_rx_data_indication(uint8_t **ppReadPackedMsg,
                                             uint8_t *end,
                                             uint8_t **pDataMsg,

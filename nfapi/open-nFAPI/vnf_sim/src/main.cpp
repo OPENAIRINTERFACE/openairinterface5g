@@ -32,7 +32,7 @@
 #include <boost/exception_ptr.hpp>
 
 extern "C" {
-#include <nfapi_vnf_interface.h>
+#include <nfapi_lte_vnf_interface.h>
 #include <nfapi.h>
 #include "mac.h"
 

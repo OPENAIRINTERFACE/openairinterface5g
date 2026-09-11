@@ -3,7 +3,6 @@
  */
 #include "wls_vnf.h"
 
-#include "vnf_p7.h"
 #include "common/utils/LOG/log.h"
 #include "wls_lib.h"
 #include <rte_eal.h>
@@ -16,12 +15,12 @@
 #include <unistd.h>
 #include <common/platform_constants.h>
 #include <sys/wait.h>
-#include "nfapi_vnf.h"
+#include "vnf/nfapi_nr_vnf.h"
 
 #include <rte_log.h>
 
 static WLS_MAC_CTX wls_mac_iface;
-vnf_t *_vnf = NULL;
+vnf_nr_t *_vnf = NULL;
 
 
 static PWLS_MAC_CTX wls_mac_get_ctx(void)
@@ -296,7 +295,7 @@ static int vnf_wls_init()
 
 void wls_vnf_stop()
 {
-  vnf_p7_t *p7_vnf = get_p7_vnf();
+  vnf_p7_t *p7_vnf = get_p7_nr_vnf();
   _vnf->terminate = 1;
   p7_vnf->terminate = 1;
   rte_eal_cleanup();
@@ -306,8 +305,8 @@ void wls_vnf_send_stop_request()
 {
   PWLS_MAC_CTX pWls = wls_mac_get_ctx();
   nfapi_nr_stop_request_scf_t req = {.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST, .header.phy_id = 0};
-  vnf_p7_t *p7_vnf = get_p7_vnf();
-  nfapi_vnf_config_t * config = get_config();
+  vnf_p7_t *p7_vnf = get_p7_nr_vnf();
+  nfapi_nr_vnf_config_t * config = get_nr_config();
   if (p7_vnf == NULL || pWls->hWls == NULL) {
     nfapi_nr_stop_indication_scf_t msg;
     msg.header.message_id = NFAPI_NR_PHY_MSG_TYPE_STOP_INDICATION;
@@ -324,7 +323,7 @@ void wls_vnf_send_stop_request()
 void *wls_fapi_vnf_nr_start_thread(void *ptr)
 {
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] IN WLS PNF NFAPI start thread %s\n", __FUNCTION__);
-  wls_fapi_nr_vnf_start((nfapi_vnf_config_t *)ptr);
+  wls_fapi_nr_vnf_start((nfapi_nr_vnf_config_t *)ptr);
   return (void *)0;
 }
 
@@ -341,11 +340,11 @@ static void procPhyMessages(uint32_t msg_size, void *msg_buf, uint16_t msg_id)
     case NFAPI_NR_PHY_MSG_TYPE_CONFIG_RESPONSE:
     case NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE:
     case NFAPI_NR_PHY_MSG_TYPE_STOP_INDICATION:
-      vnf_nr_handle_p4_p5_message(msg_buf, msg_size, 0, get_config());
+      vnf_nr_handle_p4_p5_message(msg_buf, msg_size, 0, get_nr_config());
       break;
 
     case NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST ... NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION: {
-      vnf_nr_handle_p7_message(msg_buf, msg_size + NFAPI_NR_P7_HEADER_LENGTH, get_p7_vnf());
+      vnf_nr_handle_p7_message(msg_buf, msg_size + NFAPI_NR_P7_HEADER_LENGTH, get_p7_nr_vnf());
       break;
     }
     default:
@@ -353,15 +352,15 @@ static void procPhyMessages(uint32_t msg_size, void *msg_buf, uint16_t msg_id)
   }
 }
 
-int wls_fapi_nr_vnf_start(nfapi_vnf_config_t *cfg)
+int wls_fapi_nr_vnf_start(nfapi_nr_vnf_config_t *cfg)
 {
-  nfapi_vnf_config_t * config = get_config();
+  nfapi_nr_vnf_config_t * config = get_nr_config();
   config = cfg;
 
   if (config == 0) {
     return -1;
   }
-  _vnf = (vnf_t *)(config);
+  _vnf = (vnf_nr_t *)(config);
 
   // init WLS connection
   if (vnf_wls_init() == 0) {
@@ -373,6 +372,7 @@ int wls_fapi_nr_vnf_start(nfapi_vnf_config_t *cfg)
   if (config->pnf_nr_start_resp != 0) {
     (config->pnf_nr_start_resp)(config, 0, NULL);
   }
+
   /* VNF receive loop */
   /* Number of Memory blocks to get */
   uint32_t msgSize;
@@ -411,7 +411,7 @@ int wls_fapi_nr_vnf_start(nfapi_vnf_config_t *cfg)
   return 1;
 }
 
-bool wls_vnf_nr_send_p5_message(vnf_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t *msg, uint32_t msg_len)
+bool wls_vnf_nr_send_p5_message(vnf_nr_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_message_header_t *msg, uint32_t msg_len)
 {
   UNUSED(p5_idx);
   int packed_len =

@@ -8,7 +8,7 @@
 #include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface_scf.h"
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "openair1/PHY/LTE_TRANSPORT/transport_common.h"
-#include "nfapi/open-nFAPI/vnf/inc/vnf.h"
+#include "vnf_lte.h"
 #include "nfapi/open-nFAPI/pnf/inc/pnf.h"
 int l1_north_init_gNB(void){return 0;}
 
