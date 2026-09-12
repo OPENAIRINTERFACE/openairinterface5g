@@ -600,18 +600,18 @@ rx_prach_out_t rx_nr_prach(const prach_item_t *in, int occasion)
     int preamble_shift2 = preamble_shift == 0 ? 0 : (preamble_shift << log2_ifft_size) / N_ZC;
 
     for (int i = 0; i < NCS2; i++) {
-      int lev = prach_ifft[preamble_shift2 + i];
-      int levdB = dB_fixed_times10(lev);
-      if (levdB > out.max_preamble_energy || (levdB == out.max_preamble_energy && out.max_preamble_delay > i)) {
+      const int peak_bin = preamble_shift2 + i;
+      const int levdB = dB_fixed_times10(prach_ifft[peak_bin]);
+      if (levdB > out.max_preamble_energy || (levdB == out.max_preamble_energy && out.max_preamble_delay_raw > i)) {
         LOG_D(NR_PHY_RACH, "preamble_index %d, delay %d en %d dB > %d dB\n", preamble_index, i, levdB, out.max_preamble_energy);
         out.max_preamble_energy = levdB;
-        out.max_preamble_delay = i; // Note: This has to be normalized to the 30.72 Ms/s sampling rate
+        out.max_preamble_delay_raw = i;
         out.max_preamble = preamble_index;
       }
     }
   } // preamble_index
 
-  // The conversion from *max_preamble_delay from TA value is done here.
+  // The conversion from raw PRACH delay to TA value is done here.
   // It is normalized to the 30.72 Ms/s, considering the numerology, N_RB and the sampling rate
   // See table 6.3.3.1 -1 and -2 in 38211.
 
@@ -626,14 +626,18 @@ rx_prach_out_t rx_nr_prach(const prach_item_t *in, int occasion)
   // Format >3: 2048/2^mu samples @ 30.72 Ms/s, 2048/2^mu * 4 samples @ 122.88 Ms/s
   // By solving:
   // max_preamble_delay * ( (2048/2^mu*(fs/30.72M)) / 256 ) / fs = TA * 16 * 64 / 2^mu * Tc
-  int mu = in->numerology_index;
+  const uint32_t raw_delay = out.max_preamble_delay_raw;
+  const int mu = in->numerology_index;
   if (in->prach_sequence_length == 0) {
+    const uint32_t mu_scale = 1U << mu;
+
     if (prach_fmt == 0 || prach_fmt == 1 || prach_fmt == 2)
-      out.max_preamble_delay *= 3 * (1 << mu) / 2;
+      out.max_preamble_delay = (raw_delay * 3U * mu_scale + 1U) / 2U;
     else if (prach_fmt == 3)
-      out.max_preamble_delay *= 3 * (1 << mu) / 8;
-  } else
-    out.max_preamble_delay /= 2;
+      out.max_preamble_delay = (raw_delay * 3U * mu_scale + 4U) / 8U;
+  } else {
+    out.max_preamble_delay = (raw_delay + 1U) / 2U;
+  }
 
   stop_meas(in->rx_prach);
   return out;

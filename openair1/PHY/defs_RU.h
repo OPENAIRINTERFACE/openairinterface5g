@@ -98,10 +98,6 @@ typedef struct {
   /// - second index: tx antenna [0..nb_antennas_tx[
   /// - third index: frequency [0..]
   int32_t **tdd_calib_coeffs;
-  /// \brief Anaglogue beam ID for each OFDM symbol (used when beamforming not done in RU)
-  /// - first index: concurrent beam
-  /// - second index: beam_id [0.. symbols_per_frame[
-  uint16_t **beam_id;
 } RU_COMMON;
 
 
@@ -482,6 +478,8 @@ typedef struct RU_t_s {
   void (*fh_south_in)(struct RU_t_s *ru, int *frame, int *subframe);
   /// function pointer to synchronous TX fronthaul function
   void (*fh_south_out)(struct RU_t_s *ru, int frame_tx, int tti_tx, uint64_t timestamp_tx);
+  /// NR function pointer for beam API
+  void (*fh_south_ctrl)(struct RU_t_s *ru, int frame, int slot, uint64_t timestamp);
   /// function pointer to synchronous RX fronthaul function (RRU)
   void (*fh_north_out)(struct RU_t_s *ru);
   /// function pointer to asynchronous fronthaul interface
@@ -713,11 +711,4 @@ typedef struct RRU_config_s {
   MBSFN_config_t MBSFN_config[8];
 } RRU_config_t;
 
-typedef struct processingData_RU {
-  int frame_tx;
-  int slot_tx;
-  int next_slot;
-  openair0_timestamp_t timestamp_tx;
-  RU_t *ru;
-} processingData_RU_t;
 #endif //__PHY_DEFS_RU__H__

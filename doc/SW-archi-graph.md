@@ -32,13 +32,13 @@ flowchart TB
 
     subgraph tx_func
 
-        NR_slot_indication --> msg:resp_L1 --> phy_procedures_gNB_tx --> ru_tx_func
+        NR_slot_indication --> msg:resp_L1 --> phy_procedures_gNB_tx --> feptx_prec/feptx_ofdm --> fh_south_ctrl --> fh_south_out
         NR_slot_indication["run the scheduler:
           - monolithic: run_scheduler_monolithic()
           - nFAPI: send indication via pnf_send_slot_ind()"]
         msg:resp_L1 -- async launch --> L1_RX_thread
     end
-    ru_tx_func --> TX_in
+    fh_south_out --> TX_in
 ```
 
 The `L1_tx_thread()` processes individual TX jobs sequentially, by waiting for
@@ -51,7 +51,7 @@ message, it calls `tx_func()` which does in order:
 - trigger RX processing by pushing a message into the FIFO queue `resp_L1`,
   asynchronously starting an RX job in `L1_rx_thread()` (see below).
 - process the current L1 TX job through `phy_procedures_gNB_tx()`
-- write to the radio board via `ru_tx_func()`.
+- write to the radio board via `fh_south_out()`.
 
 After these steps, `tx_func()` return to `L1_tx_thread()`, which will wait for
 the next TX job.

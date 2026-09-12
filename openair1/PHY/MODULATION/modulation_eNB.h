@@ -5,7 +5,6 @@
 #ifndef __MODULATION_ENB__H__
 #define __MODULATION_ENB__H__
 #include "PHY/defs_common.h"
-#include "modulation_common.h"
 
 /** @addtogroup _PHY_MODULATION_
  * @{
@@ -63,8 +62,5 @@ int beam_precoding_one_eNB(int32_t **txdataF,
 int estimate_DLCSI_from_ULCSI(int32_t **calib_dl_ch_estimates, int32_t **ul_ch_estimates, int32_t **tdd_calib_coeffs, int nb_ant, int nb_freq);
 
 int compute_BF_weights(int32_t **beam_weights, int32_t **calib_dl_ch_estimates, PRECODE_TYPE_t precode_type, int nb_ant, int nb_freq);
-
-
-
 /** @}*/
 #endif

@@ -37,7 +37,6 @@
 #include "NR_RLC-BearerConfig.h"
 #include "PHY/CODING/nrLDPC_coding/nrLDPC_coding_interface.h"
 #include "PHY/INIT/nr_phy_init.h"
-#include "PHY/MODULATION/modulation_common.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/TOOLS/tools_defs.h"
@@ -83,6 +82,8 @@ void signal_ue_id(void) { abort(); }
 /* E1AP stubs (pulled in by cucp_cuup_direct.c in libe1_if) */
 void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req) { abort(); }
 void e1_bearer_context_modif(const e1ap_bearer_mod_req_t *req) { abort(); }
+struct e1ap_bearer_mod_confirm_s;
+void e1_bearer_context_mod_confirm(const struct e1ap_bearer_mod_confirm_s *conf) { abort(); }
 struct e1ap_bearer_release_cmd_s;
 void e1_bearer_release_cmd(const struct e1ap_bearer_release_cmd_s *cmd) { abort(); }
 

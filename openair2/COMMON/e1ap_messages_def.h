@@ -29,6 +29,10 @@ MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_REQ , MESSAGE_PRIORITY_MED , e1ap_b
 MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_RESP, MESSAGE_PRIORITY_MED, e1ap_bearer_modif_resp_t, e1ap_bearer_modif_resp)
 /* E1AP Bearer Context Modification Failure: gNB-CU-UP -> gNB-CU-CP */
 MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_FAIL, MESSAGE_PRIORITY_MED, e1ap_bearer_context_mod_failure_t, e1ap_bearer_modif_fail)
+/* E1AP Bearer Context Modification Required: gNB-CU-UP -> gNB-CU-CP */
+MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_REQUIRED, MESSAGE_PRIORITY_MED, e1ap_bearer_mod_required_t, e1ap_bearer_mod_required)
+/* E1AP Bearer Context Modification Confirm: gNB-CU-CP -> gNB-CU-UP */
+MESSAGE_DEF(E1AP_BEARER_CONTEXT_MODIFICATION_CONFIRM, MESSAGE_PRIORITY_MED, e1ap_bearer_mod_confirm_t, e1ap_bearer_mod_confirm)
 /* E1AP Bearer Context Release Request: gNB-CU-CP -> gNB-CU-UP */
 MESSAGE_DEF(E1AP_BEARER_CONTEXT_RELEASE_CMD, MESSAGE_PRIORITY_MED, e1ap_bearer_release_cmd_t, e1ap_bearer_release_cmd)
 /* E1AP Bearer Context Release Response: gNB-CU-UP -> gNB-CU-CP */

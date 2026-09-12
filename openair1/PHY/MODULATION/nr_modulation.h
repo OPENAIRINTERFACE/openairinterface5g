@@ -111,6 +111,15 @@ void init_timeshift_rotation(const int ofdm_symbol_size,
                              const uint ofdm_offset_divisor,
                              c16_t *timeshift_symbol_rotation);
 
+void apply_nr_rotation_symbol_fftshifted_RX(const int symbols_per_slot,
+                                            const int slots_per_subframe,
+                                            const c16_t *shift_rot,
+                                            c16_t *rxdataF,
+                                            const c16_t *rot,
+                                            const int nb_rb,
+                                            const int slot,
+                                            const int symbol);
+
 void apply_nr_rotation_symbol_RX(const int symbols_per_slot,
                                  const int slots_per_subframe,
                                  const c16_t *timeshift_symbol_rotation,
@@ -150,11 +159,17 @@ void nr_layer_precoder_simd(const int n_layers,
                             const int re_cnt,
                             c16_t *txdataF_precoded);
 
-void fft_shift(const c16_t *in,
-               uint32_t in_symb_sz,
-               uint16_t num_prb,
-               c16_t *out,
-               uint16_t fft_size_out,
-               uint16_t start_symb,
-               uint16_t num_symb);
+void nr_normal_prefix_mod(c16_t *txdataF,
+                          c16_t *txdata,
+                          uint8_t nsymb,
+                          const NR_DL_FRAME_PARMS *frame_parms,
+                          uint32_t slot,
+                          bool was_symbol_used[NR_SYMBOLS_PER_SLOT]);
+
+// FFT shift routines
+void fftshift(const c16_t *in, c16_t *out, int nbins, int fft_size);
+void fftshift_inplace(c16_t *in, int nbins, int fft_size);
+void fftshift_inverse(const c16_t *in, c16_t *out, int nbins, int fft_size);
+void fftshift_inverse_inplace(c16_t *in, int nbins, int fft_size);
+
 #endif

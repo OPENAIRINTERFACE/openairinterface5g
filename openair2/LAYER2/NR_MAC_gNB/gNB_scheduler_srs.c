@@ -559,7 +559,7 @@ static bool nr_fill_nfapi_srs(gNB_MAC_INST *nrmac,
       // resetting the resources allocated for SRS
       reset_beam_status(&cell->beam_info, frame, slot, UE->UE_beam_index, slots_frame, beam.new_beam);
       for (int j = UE->current_UL_BWP.BWPStart; j < rb; ++j)
-        vrb_map_UL[rb] = 0;
+        vrb_map_UL[j] &= ~mask;
       return false;
     }
     vrb_map_UL[rb] |= mask;

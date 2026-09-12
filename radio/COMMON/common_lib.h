@@ -299,7 +299,6 @@ typedef struct {
   int cc;
   signed char first_packet;
   signed char last_packet;
-  radio_tx_gpio_flag_t flags_gpio;
 } openair0_write_package_t;
 
 typedef struct {

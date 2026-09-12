@@ -15,6 +15,9 @@
 #include "common/utils/LOG/log.h"
 #include "PHY/INIT/nr_phy_init.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/nr_phy_common/inc/nr_phy_common.h"
+#include "PHY/nr_phy_common/inc/nr_phy_common_csi_rs.h"
+#include "PHY/nr_phy_common/inc/nr_phy_common_srs.h"
 #include "T.h"
 #include "T_messages_creator.h"
 #include "executables/nr-softmodem.h"
@@ -785,7 +788,6 @@ nr_srs_info_t nr_srs_rx_procedures(PHY_VARS_gNB *gNB,
     for (int ant_rx_ind = 0; ant_rx_ind < nb_antennas_rx; ant_rx_ind++) {
       uint32_t noise_power_per_ant = 0;
       nr_srs_noise_power_estimation(ofdm_symbol_size,
-                                    frame_parms->first_carrier_offset,
                                     N_symb_SRS,
                                     srs_pdu,
                                     &nr_srs_info,

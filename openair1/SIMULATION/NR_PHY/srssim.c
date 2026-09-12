@@ -10,7 +10,6 @@
 #include "common/utils/assertions.h"
 #include "PHY/INIT/nr_phy_init.h"
 #include "PHY/MODULATION/nr_modulation.h"
-#include "PHY/MODULATION/modulation_common.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
@@ -57,6 +56,10 @@ void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req)
   abort();
 }
 void e1_bearer_context_modif(const e1ap_bearer_mod_req_t *req)
+{
+  abort();
+}
+void e1_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *conf)
 {
   abort();
 }

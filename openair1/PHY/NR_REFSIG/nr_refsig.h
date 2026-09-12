@@ -9,7 +9,6 @@
 #ifndef __NR_REFSIG__H__
 #define __NR_REFSIG__H__
 
-#include "PHY/nr_phy_common/inc/nr_phy_common.h"
 #include "PHY/defs_nr_common.h"
 
 uint32_t *gold_cache(uint32_t key, int length);

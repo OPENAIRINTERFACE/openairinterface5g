@@ -153,11 +153,6 @@ class Containerize():
 
 	def __init__(self):
 		
-		self.repository = ''
-		self.branch = ''
-		self.merge = False
-		self.targetBranch = ''
-		self.workspace = ''
 		self.imageKind = ''
 		self.yamlPath = ''
 		self.services = ''
@@ -172,7 +167,7 @@ class Containerize():
 #-----------------------------------------------------------
 
 	def BuildImage(self, ctx, node, HTML):
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		logging.debug('Building on server: ' + node)
 		cmd = cls_cmd.getConnection(node)
 		log_files = []
@@ -243,16 +238,16 @@ class Containerize():
 
 		cmd.cd(lSourcePath)
 
-		if (self.merge):
+		if ctx.g.merge:
 			imageTag = 'ci-temp'
-			if self.targetBranch == 'develop':
+			if ctx.g.targetBranch == 'develop':
 				cmd.run(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base{dockerfileprefix} | grep --colour=never -i INDEX')
 				result = re.search('index', cmd.getBefore())
 				if result is not None:
 					forceBaseImageBuild = True
 					baseTag = 'ci-temp'
 			# if the branch name contains integration_20xx_wyy, let rebuild ran-base
-			result = re.search('integration_20([0-9]{2})_w([0-9]{2})', self.branch)
+			result = re.search('integration_20([0-9]{2})_w([0-9]{2})', ctx.g.branch)
 			if not forceBaseImageBuild and result is not None:
 				forceBaseImageBuild = True
 				baseTag = 'ci-temp'
@@ -377,7 +372,7 @@ class Containerize():
 		return status
 
 	def BuildRunTests(self, ctx, node, dockerfile, runtime_opt, ctest_opt, HTML):
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		logging.debug('Building on server: ' + node)
 		cmd = cls_cmd.getConnection(node)
 		cmd.cd(lSourcePath)
@@ -385,8 +380,8 @@ class Containerize():
 		# check that ran-base image exists as we expect it
 		baseImage = 'ran-base'
 		baseTag = 'develop'
-		if self.merge:
-			if self.targetBranch == 'develop':
+		if ctx.g.merge:
+			if ctx.g.targetBranch == 'develop':
 				cmd.run(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base.ubuntu | grep --colour=never -i INDEX')
 				result = re.search('index', cmd.getBefore())
 				if result is not None:
@@ -428,8 +423,7 @@ class Containerize():
 			HTML.CreateHtmlTestRowQueue('Unit tests failed (see also doc/UnitTests.md)', 'KO', [ret.stdout])
 			return False
 
-	def Push_Image_to_Local_Registry(self, node, HTML, tag_prefix=""):
-		lSourcePath = self.workspace
+	def Push_Image_to_Local_Registry(ctx, node, HTML, tag_prefix=""):
 		logging.debug('Pushing images to server: ' + node)
 		ssh = cls_cmd.getConnection(node)
 		imagePrefix = DEFAULT_REGISTRY
@@ -442,10 +436,10 @@ class Containerize():
 			return False
 
 		orgTag = 'develop'
-		if self.merge:
+		if ctx.g.merge:
 			orgTag = 'ci-temp'
 		for image in IMAGES:
-			tagToUse = tag_prefix + self.branch
+			tagToUse = tag_prefix + ctx.g.branch
 			imageTag = f"{image}:{tagToUse}"
 			ret = ssh.run(f'docker image tag {image}:{orgTag} {imagePrefix}/{imageTag}')
 			if ret.returncode != 0:
@@ -458,7 +452,7 @@ class Containerize():
 				HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 				return False
 			# Creating a develop tag on the local private registry
-			if not self.merge:
+			if not ctx.g.merge:
 				devTag = f"{tag_prefix}develop"
 				ssh.run(f'docker image tag {image}:{orgTag} {imagePrefix}/{image}:{devTag}')
 				ssh.run(f'docker push {imagePrefix}/{image}:{devTag}')
@@ -503,10 +497,10 @@ class Containerize():
 		msg = "Pulled Images:\n" + '\n'.join(pulled_images)
 		return True, msg
 
-	def Pull_Image_from_Registry(self, HTML, node, images, tag=None, tag_prefix="", registry=DEFAULT_REGISTRY, username="oaicicd", password="oaicicd"):
+	def Pull_Image_from_Registry(ctx, HTML, node, images, tag=None, tag_prefix="", registry=DEFAULT_REGISTRY, username="oaicicd", password="oaicicd"):
 		logging.debug(f'\u001B[1m Pulling image(s) on server: {node}\u001B[0m')
 		if not tag:
-			tag = self.branch
+			tag = ctx.g.branch
 		with cls_cmd.getConnection(node) as cmd:
 			success, msg = Containerize.Pull_Image(cmd, images, tag, tag_prefix, registry, username, password)
 		param = f"on node {node}"
@@ -516,10 +510,10 @@ class Containerize():
 			HTML.CreateHtmlTestRowQueue(param, 'KO', [msg])
 		return success
 
-	def Clean_Test_Server_Images(self, HTML, node, images, tag=None):
+	def Clean_Test_Server_Images(ctx, HTML, node, images, tag=None):
 		logging.debug(f'\u001B[1m Cleaning image(s) from server: {node}\u001B[0m')
 		if not tag:
-			tag = self.branch
+			tag = ctx.g.branch
 
 		status = True
 		with cls_cmd.getConnection(node) as myCmd:
@@ -537,9 +531,9 @@ class Containerize():
 		HTML.CreateHtmlTestRowQueue(param, s, [msg])
 		return status
 
-	def Create_Workspace(self, node, HTML):
-		sourcePath = self.workspace
-		success = CreateWorkspace(node, sourcePath, self.repository, self.branch)
+	def Create_Workspace(ctx, node, HTML):
+		sourcePath = ctx.g.workspace
+		success = CreateWorkspace(node, sourcePath, ctx.g.repository, ctx.g.branch)
 		if success:
 			HTML.CreateHtmlTestRowQueue('N/A', 'OK', [f"created workspace {sourcePath} on node {node}"])
 		else:
@@ -548,7 +542,7 @@ class Containerize():
 
 	def DeployObject(self, ctx, node, HTML):
 		num_attempts = self.num_attempts
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		yaml = self.yamlPath.strip('/')
 		wd = f'{lSourcePath}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
@@ -592,7 +586,7 @@ class Containerize():
 		return deployed
 
 	def StopObject(self, ctx, node, HTML):
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		if not self.services:
 			raise ValueError(f'no services provided')
 		logging.info(f'\u001B[1m Stopping objects "{self.services}" from server: {node}\u001B[0m')
@@ -621,7 +615,7 @@ class Containerize():
 		return success
 
 	def UndeployObject(self, ctx, node, HTML, to_analyze):
-		lSourcePath = self.workspace
+		lSourcePath = ctx.g.workspace
 		logging.info(f'\u001B[1m Undeploying all objects from server {node}\u001B[0m')
 		yaml = self.yamlPath.strip('/')
 		wd = f'{lSourcePath}/{yaml}'
@@ -659,7 +653,7 @@ class Containerize():
 	def AnalyzeRTStatsObject(self, HTML, node, ctx, thresholds, service=None, stats_files=None):
 		logging.info(f'Analyzing realtime stats from server: {node}')
 		yaml = self.yamlPath.strip('/')
-		wd = f'{self.workspace}/{yaml}'
+		wd = f'{ctx.g.workspace}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 
 		with cls_cmd.getConnection(node) as cmd:

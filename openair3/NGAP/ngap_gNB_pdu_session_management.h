@@ -16,4 +16,6 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance, ngap_pdusession_modify_
 
 int ngap_gNB_pdusession_release_resp(instance_t instance, ngap_pdusession_release_resp_t *pdusession_release_resp_p);
 
+int ngap_gNB_pdusession_resource_notify(instance_t instance, ngap_pdusession_resource_notify_t *msg);
+
 #endif /* NGAP_GNB_PDU_SESSION_MANAGEMENT_H_ */

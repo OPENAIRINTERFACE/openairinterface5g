@@ -40,7 +40,9 @@ const e1ap_message_processing_t e1ap_message_processing[E1AP_NUM_MSG_HANDLERS][3
     {e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST,
      e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_RESPONSE,
      e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_FAILURE}, /* bearerContextModification */
-    {0, 0, 0}, /* bearerContextModificationRequired */
+    {e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_REQUIRED,
+     e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_CONFIRM,
+     0}, /* bearerContextModificationRequired */
     {e1apCUUP_handle_BEARER_CONTEXT_RELEASE_COMMAND, e1apCUCP_handle_BEARER_CONTEXT_RELEASE_COMPLETE, 0}, /* bearerContextRelease */
     {0, 0, 0}, /* bearerContextReleaseRequired */
     {0, 0, 0} /* bearerContextInactivityNotification */
@@ -412,6 +414,48 @@ int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_FAILURE(sctp_assoc_t assoc_id, e
   return 0;
 }
 
+static int e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_REQUIRED(sctp_assoc_t assoc_id, const e1ap_bearer_mod_required_t *req)
+{
+  E1AP_E1AP_PDU_t *pdu = encode_E1_bearer_context_mod_required(req);
+  return e1ap_encode_send(UPtype, assoc_id, pdu, 0, __func__);
+}
+
+int e1apCUCP_handle_BEARER_CONTEXT_MODIFICATION_REQUIRED(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu)
+{
+  UNUSED(inst);
+  e1ap_bearer_mod_required_t required = {0};
+  if (!decode_E1_bearer_context_mod_required(pdu, &required)) {
+    free_e1ap_context_mod_required(&required);
+    return -1;
+  }
+  MessageDef *msg = itti_alloc_new_message(TASK_CUUP_E1, 0, E1AP_BEARER_CONTEXT_MODIFICATION_REQUIRED);
+  msg->ittiMsgHeader.originInstance = assoc_id;
+  E1AP_BEARER_CONTEXT_MODIFICATION_REQUIRED(msg) = cp_bearer_context_mod_required(&required);
+  free_e1ap_context_mod_required(&required);
+  itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
+  return 0;
+}
+
+static int e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_CONFIRM(sctp_assoc_t assoc_id, const e1ap_bearer_mod_confirm_t *conf)
+{
+  E1AP_E1AP_PDU_t *pdu = encode_E1_bearer_context_mod_confirm(conf);
+  return e1ap_encode_send(CPtype, assoc_id, pdu, 0, __func__);
+}
+
+int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_CONFIRM(sctp_assoc_t assoc_id, e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu)
+{
+  UNUSED(assoc_id);
+  UNUSED(inst);
+  e1ap_bearer_mod_confirm_t conf = {0};
+  if (!decode_E1_bearer_context_mod_confirm(&conf, pdu)) {
+    free_e1ap_context_mod_confirm(&conf);
+    return -1;
+  }
+  e1_bearer_context_mod_confirm(&conf);
+  free_e1ap_context_mod_confirm(&conf);
+  return 0;
+}
+
 /*
   BEARER CONTEXT RELEASE
 */
@@ -664,6 +708,11 @@ void *E1AP_CUCP_task(void *arg)
         free_e1ap_context_mod_request(&E1AP_BEARER_CONTEXT_MODIFICATION_REQ(msg));
         break;
 
+      case E1AP_BEARER_CONTEXT_MODIFICATION_CONFIRM:
+        e1apCUCP_send_BEARER_CONTEXT_MODIFICATION_CONFIRM(assoc_id, &E1AP_BEARER_CONTEXT_MODIFICATION_CONFIRM(msg));
+        free_e1ap_context_mod_confirm(&E1AP_BEARER_CONTEXT_MODIFICATION_CONFIRM(msg));
+        break;
+
       case E1AP_BEARER_CONTEXT_RELEASE_CMD:
         e1apCUCP_send_BEARER_CONTEXT_RELEASE_COMMAND(assoc_id, &E1AP_BEARER_CONTEXT_RELEASE_CMD(msg));
         free_e1_bearer_context_release_command(&E1AP_BEARER_CONTEXT_RELEASE_CMD(msg));
@@ -756,6 +805,14 @@ void *E1AP_CUUP_task(void *arg)
         AssertFatal(inst, "no E1 instance found for instance %ld\n", myInstance);
         e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_FAILURE(inst->cuup.assoc_id, fail);
         free_E1_bearer_context_mod_failure(fail);
+      } break;
+
+      case E1AP_BEARER_CONTEXT_MODIFICATION_REQUIRED: {
+        const e1ap_bearer_mod_required_t *req = &E1AP_BEARER_CONTEXT_MODIFICATION_REQUIRED(msg);
+        const e1ap_upcp_inst_t *inst = getCxtE1(myInstance);
+        AssertFatal(inst, "no E1 instance found for instance %ld\n", myInstance);
+        e1apCUUP_send_BEARER_CONTEXT_MODIFICATION_REQUIRED(inst->cuup.assoc_id, req);
+        free_e1ap_context_mod_required(req);
       } break;
 
       case E1AP_BEARER_CONTEXT_RELEASE_CPLT: {

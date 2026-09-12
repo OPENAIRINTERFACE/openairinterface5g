@@ -314,9 +314,6 @@ def UndeployWithScript(HTML, ctx, node, script, options):
 class OaiCiTest():
 	
 	def __init__(self):
-		self.repository = ''
-		self.branch = ''
-		self.testXMLfiles = []
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.ping_rttavg_threshold =''
@@ -325,11 +322,9 @@ class OaiCiTest():
 		self.iperf_bitrate_threshold = ''
 		self.iperf_profile = ''
 		self.iperf_tcp_rate_target = ''
-		self.finalStatus = False
 		self.ue_ids = []
 		self.svr_node = None
 		self.svr_id = None
-		self.cmd_prefix = '' # prefix before {lte,nr}-uesoftmodem
 
 	def InitializeUE(self, node, HTML):
 		ues = [cls_module.Module_UE(n.strip(), node) for n in self.ue_ids]

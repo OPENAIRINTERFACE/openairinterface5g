@@ -59,4 +59,16 @@ void free_E1_bearer_context_mod_failure(const e1ap_bearer_context_mod_failure_t 
 e1ap_bearer_context_mod_failure_t cp_E1_bearer_context_mod_failure(const e1ap_bearer_context_mod_failure_t *msg);
 bool eq_E1_bearer_context_mod_failure(const e1ap_bearer_context_mod_failure_t *a, const e1ap_bearer_context_mod_failure_t *b);
 
+struct E1AP_E1AP_PDU *encode_E1_bearer_context_mod_required(const e1ap_bearer_mod_required_t *msg);
+bool decode_E1_bearer_context_mod_required(const struct E1AP_E1AP_PDU *pdu, e1ap_bearer_mod_required_t *out);
+void free_e1ap_context_mod_required(const e1ap_bearer_mod_required_t *msg);
+e1ap_bearer_mod_required_t cp_bearer_context_mod_required(const e1ap_bearer_mod_required_t *msg);
+bool eq_bearer_context_mod_required(const e1ap_bearer_mod_required_t *a, const e1ap_bearer_mod_required_t *b);
+
+struct E1AP_E1AP_PDU *encode_E1_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *msg);
+bool decode_E1_bearer_context_mod_confirm(e1ap_bearer_mod_confirm_t *out, const struct E1AP_E1AP_PDU *pdu);
+bool eq_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *a, const e1ap_bearer_mod_confirm_t *b);
+e1ap_bearer_mod_confirm_t cp_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *msg);
+void free_e1ap_context_mod_confirm(const e1ap_bearer_mod_confirm_t *msg);
+
 #endif /* E1AP_BEARER_CONTEXT_MANAGEMENT_H_ */

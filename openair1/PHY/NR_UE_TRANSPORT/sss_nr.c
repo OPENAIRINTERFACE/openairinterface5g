@@ -44,47 +44,24 @@
 *
 *********************************************************************/
 
-#define INITIAL_SSS_NR    (7)
-
-static void init_context_sss_nr(int amp, int N_ID_2, int16_t d_sss[N_ID_1_NUMBER][LENGTH_SSS_NR])
+static void init_context_sss_nr(int N_ID_2, int start_nid1, int nb_nid1, int16_t d_sss[nb_nid1][LENGTH_SSS_NR])
 {
-  int16_t x0[LENGTH_SSS_NR];
-  int16_t x1[LENGTH_SSS_NR];
-  int16_t dss_current;
-  int m0, m1;
+  const int INITIAL_SSS_NR = 7;
+  int16_t x0[LENGTH_SSS_NR] = {1, 0, 0, 0, 0, 0, 0};
+  int16_t x1[LENGTH_SSS_NR] = {1, 0, 0, 0, 0, 0, 0};
 
-  const int x0_initial[INITIAL_SSS_NR] = { 1, 0, 0, 0, 0, 0, 0 };
-  const int x1_initial[INITIAL_SSS_NR] = { 1, 0, 0, 0, 0, 0, 0 };
-  for (int i = 0; i < INITIAL_SSS_NR; i++) {
-    x0[i] = x0_initial[i];
-    x1[i] = x1_initial[i];
-  }
-  for (int i = 0; i < (LENGTH_SSS_NR - INITIAL_SSS_NR); i++) {
-    x0[i + 7] = (x0[i + 4] + x0[i]) % (2);
-    x1[i + 7] = (x1[i + 1] + x1[i]) % (2);
+  for (int i = 0; i < LENGTH_SSS_NR - INITIAL_SSS_NR; i++) {
+    x0[i + INITIAL_SSS_NR] = (x0[i + 4] + x0[i]) % 2;
+    x1[i + INITIAL_SSS_NR] = (x1[i + 1] + x1[i]) % 2;
   }
 
-  for (int N_ID_1 = 0; N_ID_1 < N_ID_1_NUMBER; N_ID_1++) {
-    m0 = 15 * (N_ID_1 / 112) + (5 * N_ID_2);
-    m1 = N_ID_1 % 112;
-    for (int n = 0; n < LENGTH_SSS_NR; n++) {
-      dss_current = (1 - 2 * x0[(n + m0) % (LENGTH_SSS_NR)]) * (1 - 2 * x1[(n + m1) % (LENGTH_SSS_NR)]);
-      /* Modulation of SSS is a BPSK TS 36.211 chapter 5.1.2 BPSK */
-#if 1
-      d_sss[N_ID_1][n] = dss_current; // * amp;
-      (void)amp;
-#else
-      (void)amp;
-      d_sss[N_ID_1][n] = dss_current((1U << SCALING_PSS_NR) - 1);
-#endif
-    }
+  for (int i = 0; i < nb_nid1; i++) {
+    int N_ID_1 = start_nid1 + i;
+    int m0 = 15 * (N_ID_1 / 112) + (5 * N_ID_2);
+    int m1 = N_ID_1 % 112;
+    for (int n = 0; n < LENGTH_SSS_NR; n++)
+      d_sss[i][n] = (1 - 2 * x0[(n + m0) % LENGTH_SSS_NR]) * (1 - 2 * x1[(n + m1) % LENGTH_SSS_NR]);
   }
-
-#if 0
-  for (int i = 0; i < LENGTH_SSS_NR; i++) {
-    printf("sss ref[%i] : %d %d \n", i, d_sss[0][0][i], d_sss[0][0][i]);
-  }
-#endif
 }
 
 // #define DEBUG_SSS_NR
@@ -197,11 +174,9 @@ sss_detection_result_t rx_sss_nr(nr_sss_params_t *params,
 {
   c16_t pss_ext[params->nb_antennas_rx][LENGTH_PSS_NR];
   c16_t sss_ext[params->nb_antennas_rx][LENGTH_SSS_NR];
-  const int Nid2 = GET_NID2(pss->nid2);
-  int16_t d_sss[N_ID_1_NUMBER][LENGTH_SSS_NR];
-  init_context_sss_nr(AMP, Nid2, d_sss);
-
   pss_sss_extract_nr(params, pss_ext, sss_ext, rxdataF); /* subframe */
+  const int Nid2 = pss->nid2;
+  AssertFatal(Nid2 >= 0 && Nid2 < NUMBER_PSS_SEQUENCE, "Wrong nid2: %d\n", Nid2);
 
 #ifdef DEBUG_PLOT_SSS
   write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_subframe,1,1);
@@ -213,81 +188,93 @@ sss_detection_result_t rx_sss_nr(nr_sss_params_t *params,
   // get conjugated channel estimate from PSS, H* = R* \cdot PSS
   // and do channel estimation and compensation based on PSS
   c16_t sss_comp[LENGTH_SSS_NR] = {};
-  pss_ch_est_nr(params->nb_antennas_rx, pss->nid2, pss_ext, sss_ext, sss_comp);
+  pss_ch_est_nr(params->nb_antennas_rx, Nid2, pss_ext, sss_ext, sss_comp);
 
-  // now do the SSS detection based on the precomputed sequences in PHY/LTE_TRANSPORT/sss.h
-  sss_detection_result_t res = {.metric = -INT_MAX};
-
-  /* for phase evaluation, one uses an array of possible phase shifts */
-  /* then a correlation is done between received signal with a shift pĥase and the reference signal */
-  /* Computation of signal with shift phase is based on below formula */
-  /* cosinus cos(x + y) = cos(x)cos(y) - sin(x)sin(y) */
-  /* sinus   sin(x + y) = sin(x)cos(y) + cos(x)sin(y) */
-
-  int Nid1_start = 0;
-  int Nid1_end = N_ID_1_NUMBER;
+  int nid1_start = 0;
+  int nb_nid1 = NUMBER_SSS_SEQUENCE;
   if (target_Nid_cell != -1) {
-    if (GET_NID2(target_Nid_cell) != pss->nid2) {
-      LOG_E(PHY, "calling sss detection with incoherent context %d, %d\n", pss->nid2, target_Nid_cell);
+    if (target_Nid_cell % NUMBER_PSS_SEQUENCE != Nid2) {
+      LOG_E(PHY, "calling sss detection with incoherent context %d, %d\n", Nid2, target_Nid_cell);
     } else {
-      Nid1_start = GET_NID1(target_Nid_cell);
-      Nid1_end = Nid1_start + 1;
+      nid1_start = target_Nid_cell / NUMBER_PSS_SEQUENCE;
+      nb_nid1 = 1;
     }
   }
 
+  int16_t d_sss[nb_nid1][LENGTH_SSS_NR];
+  init_context_sss_nr(Nid2, nid1_start, nb_nid1, d_sss);
+
+  // the phase has been compensated according to PSS detected
+  // A more accurate phase can be computed with SSS signal, we try phase angle around the PSS phase
   const int phase_to_try[] = {0, 2, -2, 4, -4, 6, -6, 8, -8, 10, -10, 12, -12, 14, -14};
+
+  // now do the SSS detection based on the precomputed sequences
+  int Nid1 = -1;
+  int64_t max_metric = 0;
+  sss_detection_result_t res = {};
+  int64_t base_power = 0;
+  for (int i = 0; i < LENGTH_SSS_NR; i++) {
+    base_power += squaredMod(sss_comp[i]);
+  }
+  base_power = sqrt(base_power);
+  if (base_power == 0) {
+    LOG_W(PHY, "SSS detection on a null signal skipping it\n");
+    base_power = INT64_MAX;
+  }
+
   for (int idx = 0; idx < sizeofArray(phase_to_try); idx++) { // phase offset between PSS and SSS
-    const c64_t rot =
-        (c64_t){round(cos(M_PI / 3 / 15 * (phase_to_try[idx])) * 32767), round(sin(M_PI / 3 / 15 * (phase_to_try[idx])) * 32767)};
-    for (int n1 = Nid1_start; n1 < Nid1_end; n1++) { // all possible Nid1 values
-      // Skip this Nid1 if the corresponding PCI is in the exclusion list
+
+    const float angle = M_PI / 3 / 15 * phase_to_try[idx];
+    const c64_t rot = (c64_t){round(cos(angle) * INT16_MAX), round(sin(angle) * INT16_MAX)};
+    for (int n = 0; n < nb_nid1; n++) { // all possible Nid1 values
+      int n1 = nid1_start + n;
       if (skip_pci(n1, Nid2, params->exclude_nid_cells, params->num_exclude_nid_cells))
         continue;
       int64_t metric = 0;
-      int16_t *d = d_sss[n1];
       for (int i = 0; i < LENGTH_SSS_NR; i++) {
-        // metric is only real part because sss is a pure real signal (imaginary is 0)
-        metric += d[i] * (rot.r * sss_comp[i].r - rot.i * sss_comp[i].i);
+        // d_sss is only real part because sss is a pure real signal (imaginary is 0)
+        metric += d_sss[n][i] * (rot.r * sss_comp[i].r - rot.i * sss_comp[i].i);
       }
-      metric >>= SCALING_METRIC_SSS_NR;
       // if the current metric is better than the last save it
-      if (metric > res.metric) {
-        res.metric = metric;
-        res.nid_cell = Nid2 + 3 * n1;
+      if (metric > max_metric) {
+        max_metric = metric;
+        Nid1 = n1;
         res.phase = idx;
-
-#ifdef DEBUG_SSS_NR
-        LOG_D(PHY,
-              "(phase,Nid1) (%d,%d), metric_phase %ld metric %d, phase_max %d \n",
-              res.phase,
-              n1,
-              metric,
-              res.metric,
-              res.phase);
-#endif
       }
+#ifdef DEBUG_SSS_NR
+      LOG_I(PHY,
+            "(phase,Nid1) (%.02f,%d), metric  %ld/%ld = %ld, max %ld, phase_max %d \n",
+            angle,
+            n1,
+            metric,
+            base_power,
+            metric / base_power,
+            max_metric / base_power,
+            res.phase);
+#endif
     }
     // we try progressively rotation between pss and sss
-    // but pss and sss are in phase at emission
+    // pss and sss are in phase at emission
     // rotation means doppler variation, or very noisy pss detection
-    if (res.metric >= SSS_METRIC_FLOOR_NR)
+    if (max_metric / base_power >= SSS_METRIC_FLOOR_NR)
       break;
   }
 
-  if (res.metric < SSS_METRIC_FLOOR_NR) {
+  if (max_metric / base_power < SSS_METRIC_FLOOR_NR) {
     LOG_D(PHY,
-          "Failed to detect SSS after PSS, metric of SSS %d, threshold to consider SSS valid %d, detected PCI: %d\n",
-          res.metric,
+          "Failed to detect SSS after PSS, metric of SSS %ld, threshold to consider SSS valid %d, detected PCI: %d\n",
+          max_metric,
           SSS_METRIC_FLOOR_NR,
           res.nid_cell);
     res.success = false;
     return res;
-  } else
+  } else {
+    res.nid_cell = Nid2 + NUMBER_PSS_SEQUENCE * Nid1;
     res.success = true;
+  }
 
-  int Nid1 = GET_NID1(res.nid_cell);
-  LOG_D(PHY, "Nid2 %d Nid1 %d metric %d, phase_max %d \n", Nid2, Nid1, res.metric, res.phase);
-  int16_t *d = d_sss[Nid1];
+  LOG_D(PHY, "Nid2 %d Nid1 %d metric %ld, phase_max %d \n", Nid2, Nid1, max_metric, res.phase);
+  int16_t *d = d_sss[Nid1-nid1_start];
   c32_t sig_sum = {};
   for (int i = 0; i < LENGTH_SSS_NR; i++) {
     sig_sum.r += d[i] * sss_comp[i].r;
@@ -298,16 +285,14 @@ sss_detection_result_t rx_sss_nr(nr_sss_params_t *params,
 
   double ffo_pss = (double)pss->freq_offset / params->subcarrier_spacing;
   LOG_D(NR_PHY,
-        "SSS detected, PCI: %d, ffo_pss %f (%i Hz), ffo_sss %f (%i Hz),  ffo_pss+ffo_sss %f (%i Hz), nid1: %d, nid2: %d\n",
+        "SSS detected, PCI: %d, ffo_pss %f (%.0f Hz), ffo_sss %f (%d Hz),  ffo_pss+ffo_sss %f (%.0f Hz)\n",
         res.nid_cell,
         ffo_pss,
-        (int)(ffo_pss * params->subcarrier_spacing),
+        ffo_pss * params->subcarrier_spacing,
         ffo_sss,
         res.freq_offset,
         ffo_pss + ffo_sss,
-        (int)((ffo_pss + ffo_sss) * params->subcarrier_spacing),
-        Nid1,
-        Nid2);
+        (ffo_pss + ffo_sss) * params->subcarrier_spacing);
   return res;
 }
 

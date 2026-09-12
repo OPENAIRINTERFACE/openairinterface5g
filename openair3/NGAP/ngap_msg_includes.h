@@ -102,4 +102,7 @@
 #include "NGAP_PathSwitchRequestTransfer.h"
 #include "NGAP_PDUSessionResourceSwitchedItem.h"
 #include "NGAP_PathSwitchRequestAcknowledgeTransfer.h"
+#include "NGAP_PDUSessionResourceNotify.h"
+#include "NGAP_PDUSessionResourceReleasedItemNot.h"
+#include "NGAP_PDUSessionResourceNotifyReleasedTransfer.h"
 #endif // NGAP_MSG_INCLUDES_H

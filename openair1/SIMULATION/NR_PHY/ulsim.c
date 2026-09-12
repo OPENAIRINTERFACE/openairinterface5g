@@ -113,6 +113,7 @@ void signal_ue_id(void /* const gNB_RRC_UE_t *rrc_ue_context, const uint16_t cla
 
 void e1_bearer_context_setup(const e1ap_bearer_setup_req_t *req) { abort(); }
 void e1_bearer_context_modif(const e1ap_bearer_mod_req_t *req) { abort(); }
+void e1_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *conf) { abort(); }
 void e1_bearer_release_cmd(const e1ap_bearer_release_cmd_t *cmd) { abort(); }
 
 int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index) {
@@ -1579,9 +1580,8 @@ int main(int argc, char *argv[])
         UL_INFO.srs_ind.number_of_pdus = 0;
 
         //----------- OFDM Demodulation and RX rotation--------------------------
-        bool was_symbol_used[14] = {0};
-        int offset = (slot & 3) * gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size;
-        for (int i = 0; i < 14; i++) {
+        bool was_symbol_used[NR_SYMBOLS_PER_SLOT] = {0};
+        for (int i = 0; i < NR_SYMBOLS_PER_SLOT; i++) {
           was_symbol_used[i] = true;
         }
         nr_ofdm_demod_and_rx_rotation(rxdata,
@@ -1589,7 +1589,7 @@ int main(int argc, char *argv[])
                                       &gNB->frame_parms,
                                       gNB->frame_parms.nb_antennas_rx,
                                       slot,
-                                      offset,
+                                      0,
                                       link_type_ul,
                                       was_symbol_used);
 

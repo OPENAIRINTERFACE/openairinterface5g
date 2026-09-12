@@ -355,6 +355,7 @@ void mac_top_destroy_gNB(gNB_MAC_INST *mac)
 {
   for (size_t i = 0; i < sizeofArray(mac->cells); i++) {
     nr_cell_sched_t *cell = &mac->cells[i];
+    free(cell->radio_config.bw_list);
     if (cell->common_channels.ServingCellConfigCommon == NULL)
       continue;
     NR_COMMON_channels_t *cc = &cell->common_channels;

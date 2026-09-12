@@ -128,6 +128,10 @@ void e1_bearer_context_modif(const e1ap_bearer_mod_req_t *req)
 {
   abort();
 }
+void e1_bearer_context_mod_confirm(const e1ap_bearer_mod_confirm_t *conf)
+{
+  abort();
+}
 void e1_bearer_release_cmd(const e1ap_bearer_release_cmd_t *cmd)
 {
   abort();

@@ -31,14 +31,14 @@ int decode_ue_security_capability(UeSecurityCapability *uesecuritycapability, ui
   uesecuritycapability->eia = *(buffer + decoded);
   decoded++;
 
-  if (len >= decoded + 3) {
+  if (ielen >= 4) {
     uesecuritycapability->umts_present = 1;
     uesecuritycapability->uea = *(buffer + decoded);
     decoded++;
     uesecuritycapability->uia = *(buffer + decoded) & 0x7f;
     decoded++;
 
-    if (len == decoded + 4) {
+    if (ielen >= 5) {
       uesecuritycapability->gprs_present = 1;
       uesecuritycapability->gea = *(buffer + decoded) & 0x7f;
       decoded++;

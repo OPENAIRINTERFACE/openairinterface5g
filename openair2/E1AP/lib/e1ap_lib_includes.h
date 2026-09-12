@@ -64,6 +64,12 @@
 #include "E1AP_PDU-Session-Resource-To-Setup-Mod-Item.h"
 #include "E1AP_DRB-To-Setup-Mod-Item-NG-RAN.h"
 #include "E1AP_PDU-Session-Resource-To-Remove-Item.h"
+#include "E1AP_ProtocolExtensionContainer.h"
+#include "E1AP_ProtocolExtensionField.h"
+// E1 Bearer Context Modification Required / Confirm
+#include "E1AP_BearerContextModificationRequired.h"
+#include "E1AP_System-BearerContextModificationRequired.h"
+#include "E1AP_BearerContextModificationConfirm.h"
 // E1 Bearer Context Modification Response
 #include "E1AP_PDU-Session-Resource-Modified-Item.h"
 #include "E1AP_DRB-Modified-List-NG-RAN.h"

@@ -9,7 +9,9 @@
 
 #include "PHY/defs_eNB.h"
 #include "SCHED/sched_eNB.h"
+#include "PHY/MODULATION/phy_ofdm_mod.h"
 #include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/modulation_common.h"
 #include "PHY/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"

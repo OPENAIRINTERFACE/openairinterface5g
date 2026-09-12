@@ -83,80 +83,12 @@ void E1AP_free_transaction_identifier(long id) {
   LOG_E(E1AP, "Couldn't find transaction ID %ld in list\n", id);
 }
 
-int e1ap_decode_initiating_message(E1AP_E1AP_PDU_t *pdu) {
-  DevAssert(pdu != NULL);
-
-  switch(pdu->choice.initiatingMessage->procedureCode) {
-    case E1AP_ProcedureCode_id_gNB_CU_UP_E1Setup:
-      break;
-
-    case E1AP_ProcedureCode_id_gNB_CU_UP_ConfigurationUpdate:
-      break;
-
-    case E1AP_ProcedureCode_id_bearerContextSetup:
-      break;
-
-    case E1AP_ProcedureCode_id_bearerContextModification:
-      break;
-
-    case E1AP_ProcedureCode_id_bearerContextRelease:
-      break;
-
-    default:
-      LOG_E(E1AP, "Unsupported procedure code (%d) for initiating message\n",
-            (int)pdu->choice.initiatingMessage->procedureCode);
-      return -1;
-  }
-  return 0;
-}
-
-int e1ap_decode_successful_outcome(E1AP_E1AP_PDU_t *pdu) {
-  DevAssert(pdu != NULL);
-  switch(pdu->choice.successfulOutcome->procedureCode) {
-    case E1AP_ProcedureCode_id_gNB_CU_UP_E1Setup:
-      break;
-
-    case E1AP_ProcedureCode_id_bearerContextSetup:
-      break;
-
-    case E1AP_ProcedureCode_id_bearerContextModification:
-      break;
-
-    case E1AP_ProcedureCode_id_bearerContextRelease:
-      break;
-
-    default:
-      LOG_E(E1AP, "Unsupported procedure code (%d) for successful message\n",
-            (int)pdu->choice.successfulOutcome->procedureCode);
-      return -1;
-  }
-  return 0;
-}
-
-int e1ap_decode_unsuccessful_outcome(E1AP_E1AP_PDU_t *pdu) {
-  DevAssert(pdu != NULL);
-  switch(pdu->choice.unsuccessfulOutcome->procedureCode) {
-    case E1AP_ProcedureCode_id_gNB_CU_UP_E1Setup:
-      break;
-
-    default:
-      LOG_E(E1AP, "Unsupported procedure code (%d) for unsuccessful message\n",
-            (int)pdu->choice.unsuccessfulOutcome->procedureCode);
-      return -1;
-  }
-  return 0;
-}
-
-int e1ap_decode_pdu(E1AP_E1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length) {
-  asn_dec_rval_t dec_ret;
+int e1ap_decode_pdu(E1AP_E1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length)
+{
   DevAssert(buffer != NULL);
-  dec_ret = aper_decode(NULL,
-                        &asn_DEF_E1AP_E1AP_PDU,
-                        (void **)&pdu,
-                        buffer,
-                        length,
-                        0,
-                        0);
+  DevAssert(pdu != NULL);
+
+  asn_dec_rval_t dec_ret = aper_decode(NULL, &asn_DEF_E1AP_E1AP_PDU, (void **)&pdu, buffer, length, 0, 0);
 
   if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
     LOG_E(E1AP, "----------------- ASN1 DECODER PRINT START----------------- \n");
@@ -165,26 +97,11 @@ int e1ap_decode_pdu(E1AP_E1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
   }
 
   if (dec_ret.code != RC_OK) {
-    AssertFatal(1==0,"Failed to decode pdu\n");
+    LOG_E(E1AP, "Failed to decode E1AP PDU\n");
     return -1;
   }
 
-  switch(pdu->present) {
-    case E1AP_E1AP_PDU_PR_initiatingMessage:
-      return e1ap_decode_initiating_message(pdu);
-
-    case E1AP_E1AP_PDU_PR_successfulOutcome:
-      return e1ap_decode_successful_outcome(pdu);
-
-    case E1AP_E1AP_PDU_PR_unsuccessfulOutcome:
-      return e1ap_decode_unsuccessful_outcome(pdu);
-
-    default:
-      LOG_E(E1AP, "Unknown presence (%d) or not implemented\n", (int)pdu->present);
-      break;
-  }
-
-  return -1;
+  return 0;
 }
 
 int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, E1AP_E1AP_PDU_t *pdu, uint16_t stream, const char *func)
@@ -199,10 +116,11 @@ int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, E1AP_E1AP_PDU_t *pdu, uin
 
   char errbuf[2048]; /* Buffer for error message */
   size_t errlen = sizeof(errbuf); /* Size of the buffer */
-  int ret = asn_check_constraints(&asn_DEF_E1AP_E1AP_PDU, pdu, errbuf, &errlen);
-
-  if(ret) {
+  if (asn_check_constraints(&asn_DEF_E1AP_E1AP_PDU, pdu, errbuf, &errlen)) {
+    xer_fprint(stdout, &asn_DEF_E1AP_E1AP_PDU, pdu);
     LOG_E(E1AP, "%s: Constraint validation failed: %s\n", func, errbuf);
+    ASN_STRUCT_FREE(asn_DEF_E1AP_E1AP_PDU, pdu);
+    return -1;
   }
 
   void *buffer = NULL;
@@ -213,6 +131,7 @@ int e1ap_encode_send(E1_t type, sctp_assoc_t assoc_id, E1AP_E1AP_PDU_t *pdu, uin
     LOG_E(E1AP, "%s: Failed to encode E1AP message\n", func);
     return -1;
   }
+
   MessageDef *message = itti_alloc_new_message((type == CPtype) ? TASK_CUCP_E1 : TASK_CUUP_E1, 0, SCTP_DATA_REQ);
   sctp_data_req_t *s = &message->ittiMsg.sctp_data_req;
   s->assoc_id = assoc_id;

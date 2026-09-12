@@ -395,6 +395,7 @@ typedef struct PHY_VARS_NR_UE_s {
   int ta_frame;
   int ta_slot;
   int ta_command;
+  bool ta_command_is_rar; /// Pending TA command originated from a Random Access Response
 
   /// Flag to initialize averaging of PHY measurements
   int init_averaging;
@@ -528,7 +529,6 @@ typedef struct {
 typedef struct {
   bool success;
   int nid_cell; // detected PCI
-  int32_t metric; // SSS detection metric
   int freq_offset; // SSS frequency offset estimate
   int phase; // SSS phase
 } sss_detection_result_t;

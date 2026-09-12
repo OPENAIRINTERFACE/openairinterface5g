@@ -9,7 +9,7 @@
 
 FROM ran-base:latest AS ran-base
 
-ARG xran_VERSION=11.1.6
+ARG xran_VERSION=11.1.7
 ARG DPDK_VERSION=22.11.3
 ARG T2_PATCH=AMD-T2-SDFEC_25-03-1.patch
 ENV DEBIAN_FRONTEND=noninteractive

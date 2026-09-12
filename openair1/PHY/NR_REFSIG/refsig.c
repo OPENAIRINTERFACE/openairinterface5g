@@ -5,6 +5,7 @@
 #include "nr_refsig.h"
 #include "openair1/PHY/gold.h"
 #include "ds/hashtable.h"
+#include "log.h"
 
 #define GOLD_HT_SIZE 1024
 static const int grain = 64 / sizeof(uint32_t); // align to 64 bytes for AVX-512

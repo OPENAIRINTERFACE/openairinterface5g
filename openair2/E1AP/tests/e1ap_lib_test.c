@@ -926,6 +926,65 @@ static void test_bearer_context_modification_failure(void)
   free_E1_bearer_context_mod_failure(&cp);
 }
 
+static void test_bearer_context_modification_required(void)
+{
+  pdu_session_to_remove_t rem1 = {
+      .sessionId = 5,
+      .cause = {.type = E1AP_CAUSE_TRANSPORT, .value = E1AP_TRANSPORT_CAUSE_RESOURCE_UNAVAILABLE},
+  };
+  pdu_session_to_remove_t rem2 = pdu_session_rem_template(6); // no cause
+
+  e1ap_bearer_mod_required_t orig = {
+      .gNB_cu_cp_ue_id = 0x1234,
+      .gNB_cu_up_ue_id = 0x5678,
+      .numPDUSessionsRem = 2,
+  };
+  orig.pduSessionRem = calloc_or_fail(2, sizeof(*orig.pduSessionRem));
+  orig.pduSessionRem[0] = rem1;
+  orig.pduSessionRem[1] = rem2;
+
+  E1AP_E1AP_PDU_t *enc = encode_E1_bearer_context_mod_required(&orig);
+  E1AP_E1AP_PDU_t *dec = e1ap_encode_decode(enc);
+  e1ap_msg_free(enc);
+
+  e1ap_bearer_mod_required_t decoded = {0};
+  AssertFatal(decode_E1_bearer_context_mod_required(dec, &decoded),
+              "decode_E1_bearer_context_mod_required(): could not decode message\n");
+  e1ap_msg_free(dec);
+
+  AssertFatal(eq_bearer_context_mod_required(&orig, &decoded), "eq_bearer_context_mod_required(): decoded message doesn't match\n");
+  free_e1ap_context_mod_required(&decoded);
+
+  e1ap_bearer_mod_required_t cp = cp_bearer_context_mod_required(&orig);
+  AssertFatal(eq_bearer_context_mod_required(&orig, &cp), "eq_bearer_context_mod_required(): copied message doesn't match\n");
+  free_e1ap_context_mod_required(&cp);
+  free_e1ap_context_mod_required(&orig);
+}
+
+static void test_bearer_context_modification_confirm(void)
+{
+  e1ap_bearer_mod_confirm_t orig = {
+      .gNB_cu_cp_ue_id = 0x1234,
+      .gNB_cu_up_ue_id = 0x5678,
+  };
+
+  E1AP_E1AP_PDU_t *enc = encode_E1_bearer_context_mod_confirm(&orig);
+  E1AP_E1AP_PDU_t *dec = e1ap_encode_decode(enc);
+  e1ap_msg_free(enc);
+
+  e1ap_bearer_mod_confirm_t decoded = {0};
+  AssertFatal(decode_E1_bearer_context_mod_confirm(&decoded, dec),
+              "decode_E1_bearer_context_mod_confirm(): could not decode message\n");
+  e1ap_msg_free(dec);
+
+  AssertFatal(eq_bearer_context_mod_confirm(&orig, &decoded), "eq_bearer_context_mod_confirm(): decoded message doesn't match\n");
+
+  e1ap_bearer_mod_confirm_t cp = cp_bearer_context_mod_confirm(&orig);
+  AssertFatal(eq_bearer_context_mod_confirm(&orig, &cp), "eq_bearer_context_mod_confirm(): copied message doesn't match\n");
+  free_e1ap_context_mod_confirm(&decoded);
+  free_e1ap_context_mod_confirm(&cp);
+}
+
 int main()
 {
   // E1 Bearer Context Setup
@@ -941,6 +1000,8 @@ int main()
   test_bearer_context_modification_response();
   test_bearer_context_modification_response_fail();
   test_bearer_context_modification_failure();
+  test_bearer_context_modification_required();
+  test_bearer_context_modification_confirm();
   // Bearer Context Release
   test_bearer_context_release_command();
   test_bearer_context_release_complete();

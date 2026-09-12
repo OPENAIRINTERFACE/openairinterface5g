@@ -18,6 +18,7 @@
 #include "SCHED_NR_UE/harq_nr.h"
 #include "nr-uesoftmodem.h"
 #include "common/config/config_userapi.h"
+#include "nr_phy_common.h"
 #ifdef LDPC_CUDA
 #include <cuda_runtime.h>
 #endif

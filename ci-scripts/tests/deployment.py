@@ -17,7 +17,7 @@ sys.path.append('./') # to find OAI imports below
 import cls_oai_html
 import cls_oaicitest
 import cls_containerize
-from cls_ci_helper import TestCaseCtx
+from cls_ci_helper import GlobalTestCtx, TestCaseCtx
 import cls_cmd
 
 class TestDeploymentMethods(unittest.TestCase):
@@ -41,12 +41,10 @@ class TestDeploymentMethods(unittest.TestCase):
 		self.ci = cls_oaicitest.OaiCiTest()
 		self.cont = cls_containerize.Containerize()
 		self.cont.yamlPath = ''
-		self.cont.merge = True
-		self.cont.branch = ''
-		self.cont.workspace = os.getcwd()
 		self.cont.num_attempts = 3
 		self.node = 'localhost'
-		self.ctx = TestCaseCtx.Default(tempfile.mkdtemp())
+		g = GlobalTestCtx(repository='', workspace=os.getcwd(), branch='', merge=True, targetBranch='')
+		self.ctx = TestCaseCtx.Default(tempfile.mkdtemp(), g)
 	def tearDown(self):
 		with cls_cmd.LocalCmd() as c:
 			c.run(f'rm -rf {self.ctx.logPath}')
@@ -135,12 +133,13 @@ class TestDeploymentMethods(unittest.TestCase):
 		self.assertTrue(undeploy)
 
 	def test_create_workspace(self):
-		self.cont.workspace = tempfile.mkdtemp()
-		self.cont.repository = "https://github.com/duranta-project/openairinterface5g.git"
-		self.cont.branch = "develop"
-		ws = self.cont.Create_Workspace(self.node, self.html)
+		workspace = tempfile.mkdtemp()
+		repo = "https://github.com/duranta-project/openairinterface5g.git"
+		g = GlobalTestCtx(repository=repo, workspace=workspace, branch="develop", merge=False, targetBranch='')
+		ctx = TestCaseCtx.Default(self.ctx.logPath, g)
+		ws = cls_containerize.Containerize.Create_Workspace(ctx, self.node, self.html)
 		with cls_cmd.LocalCmd() as cmd:
-			cmd.run(f"rm -rf {self.cont.workspace}")
+			cmd.run(f"rm -rf {workspace}")
 		self.assertTrue(ws)
 
 	def test_undeploy_loganalysis(self):

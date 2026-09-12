@@ -184,7 +184,7 @@ nr_pss_info_t pss_search_time_nr(const pss_search_t *p)
   int pss_index_start;
   int pss_index_end;
   if (p->target_Nid_cell != -1) {
-    pss_index_start = GET_NID2(p->target_Nid_cell);
+    pss_index_start = p->target_Nid_cell % NUMBER_PSS_SEQUENCE;
     pss_index_end = pss_index_start + 1;
   } else {
     pss_index_start = 0;

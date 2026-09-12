@@ -282,11 +282,6 @@ typedef struct {
 } NR_PRACH_RESOURCES_t;
 
 typedef struct {
-  float ssb_per_ro;
-  int preambles_per_ssb;
-} ssb_ro_preambles_t;
-
-typedef struct {
   bool active;
   uint32_t preamble_index;
   uint32_t ssb_index;

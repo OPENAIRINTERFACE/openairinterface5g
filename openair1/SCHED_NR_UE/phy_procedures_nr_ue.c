@@ -18,6 +18,7 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/nr_phy_init.h"
 #include "PHY/nr_phy_common/inc/nr_phy_common.h"
+#include "PHY/nr_phy_common/inc/nr_phy_common_srs.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
@@ -190,18 +191,41 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx)
     // = 16 * ofdm_symbol_size / 2048
     uint16_t bw_scaling = 16 * ofdm_symbol_size / 2048;
 
-    ue->timing_advance += (ue->ta_command - 31) * bw_scaling;
+    const int timing_advance_before = ue->timing_advance;
+    const bool ta_command_is_rar = ue->ta_command_is_rar;
+    const int ta_units = ta_command_is_rar ? ue->ta_command : ue->ta_command - 31;
+    const int ta_samples = ta_units * bw_scaling;
+
+    if (ta_command_is_rar && timing_advance_before != 0)
+      LOG_W(PHY,
+            "[UE %d] %d.%d applying RAR TA command %d to non-zero timing advance %d samples; "
+            "timing advance should have been reset before PRACH\n",
+            ue->Mod_id,
+            frame_tx,
+            slot_tx,
+            ue->ta_command,
+            timing_advance_before);
+
+    ue->timing_advance += ta_samples;
 
     LOG_D(PHY,
-          "[UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+          "[UE %d] %d.%d applied %s command %d: TA-units %d, samples-per-unit %u, command-samples %d, "
+          "timing-advance %d -> %d samples (N_TA_offset %d)\n",
           ue->Mod_id,
           frame_tx,
           slot_tx,
+          ta_command_is_rar ? "RAR" : "relative MAC CE",
           ue->ta_command,
-          ue->timing_advance);
+          ta_units,
+          bw_scaling,
+          ta_samples,
+          timing_advance_before,
+          ue->timing_advance,
+          ue->N_TA_offset);
 
     ue->ta_frame = -1;
     ue->ta_slot = -1;
+    ue->ta_command_is_rar = false;
   }
 }
 
