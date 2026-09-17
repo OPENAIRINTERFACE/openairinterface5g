@@ -1685,42 +1685,6 @@ int nr_pcch_decode(const byte_array_t pcch, nr_paging_params_t *out_params, int 
   return 0;
 }
 
-/* \brief generate HandoverPreparationInformation to be sent to the DU for
- * handover. Takes uecap_buf in encoded form as (1) this is the form present at
- * the CU already (2) we have to clone this information anyway, so can take it
- * in encoded form which we decode + add to the handoverPreparationInformation */
-int do_NR_HandoverPreparationInformation(const uint8_t *uecap_buf, int uecap_buf_size, uint8_t *buf, int buf_size)
-{
-  NR_HandoverPreparationInformation_t *hpi = calloc_or_fail(1, sizeof(*hpi));
-  hpi->criticalExtensions.present = NR_HandoverPreparationInformation__criticalExtensions_PR_c1;
-  hpi->criticalExtensions.choice.c1 = calloc_or_fail(1, sizeof(*hpi->criticalExtensions.choice.c1));
-  hpi->criticalExtensions.choice.c1->present =
-      NR_HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation;
-  NR_HandoverPreparationInformation_IEs_t *hpi_ie = calloc_or_fail(1, sizeof(*hpi_ie));
-  hpi->criticalExtensions.choice.c1->choice.handoverPreparationInformation = hpi_ie;
-
-  NR_UE_CapabilityRAT_ContainerList_t *list = NULL;
-  asn_dec_rval_t dec_rval =
-      uper_decode_complete(NULL, &asn_DEF_NR_UE_CapabilityRAT_ContainerList, (void **)&list, uecap_buf, uecap_buf_size);
-  if (dec_rval.code == RC_OK) {
-    hpi_ie->ue_CapabilityRAT_List = *list;
-    free(list); /* list itself is not needed, members below will be freed in ASN_STRUCT_FREE */
-  } else {
-    /* problem with decoding, don't put a capability */
-    ASN_STRUCT_FREE(asn_DEF_NR_UE_CapabilityRAT_ContainerList, list);
-    list = NULL;
-  }
-
-  if (LOG_DEBUGFLAG(DEBUG_ASN1))
-    xer_fprint(stdout, &asn_DEF_NR_HandoverPreparationInformation, hpi);
-
-  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_HandoverPreparationInformation, NULL, hpi, buf, buf_size);
-  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
-
-  ASN_STRUCT_FREE(asn_DEF_NR_HandoverPreparationInformation, hpi);
-  return (enc_rval.encoded + 7) / 8;
-}
-
 int do_NR_MeasConfig(const NR_MeasConfig_t *measconfig, uint8_t *buf, int buf_size)
 {
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_MeasConfig, NULL, measconfig, buf, buf_size);

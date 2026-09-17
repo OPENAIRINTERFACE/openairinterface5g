@@ -3930,6 +3930,47 @@ NR_CellGroupConfig_t *update_cellGroupConfig_for_reconfig(NR_CellGroupConfig_t *
   return clone_cg;
 }
 
+/* Handover target: CellGroupConfig is a delta over what the UE already has, so a
+ * source dedicated BWP the target doesn't itself configure is never dropped. Release
+ * whatever the source had that the target doesn't. */
+void release_stale_ho_source_bwps(NR_ServingCellConfig_t *target_cd, const NR_ServingCellConfig_t *source_cd)
+{
+  if (source_cd->downlinkBWP_ToAddModList) {
+    for (int i = 0; i < source_cd->downlinkBWP_ToAddModList->list.count; i++) {
+      long bwp_id = source_cd->downlinkBWP_ToAddModList->list.array[i]->bwp_Id;
+      bool target_has_it = false;
+      if (target_cd->downlinkBWP_ToAddModList)
+        for (int j = 0; j < target_cd->downlinkBWP_ToAddModList->list.count && !target_has_it; j++)
+          target_has_it = target_cd->downlinkBWP_ToAddModList->list.array[j]->bwp_Id == bwp_id;
+      if (target_has_it)
+        continue;
+      if (!target_cd->downlinkBWP_ToReleaseList)
+        target_cd->downlinkBWP_ToReleaseList = calloc_or_fail(1, sizeof(*target_cd->downlinkBWP_ToReleaseList));
+      asn1cSequenceAdd(target_cd->downlinkBWP_ToReleaseList->list, NR_BWP_Id_t, id);
+      *id = bwp_id;
+      LOG_I(NR_MAC, "HO: releasing source DL BWP %ld, not configured in target cell\n", bwp_id);
+    }
+  }
+  NR_UplinkConfig_t *target_uc = target_cd->uplinkConfig;
+  AssertFatal(target_uc, "HO target ServingCellConfig has no uplinkConfig\n");
+  if (source_cd->uplinkConfig && source_cd->uplinkConfig->uplinkBWP_ToAddModList) {
+    for (int i = 0; i < source_cd->uplinkConfig->uplinkBWP_ToAddModList->list.count; i++) {
+      long bwp_id = source_cd->uplinkConfig->uplinkBWP_ToAddModList->list.array[i]->bwp_Id;
+      bool target_has_it = false;
+      if (target_uc->uplinkBWP_ToAddModList)
+        for (int j = 0; j < target_uc->uplinkBWP_ToAddModList->list.count && !target_has_it; j++)
+          target_has_it = target_uc->uplinkBWP_ToAddModList->list.array[j]->bwp_Id == bwp_id;
+      if (target_has_it)
+        continue;
+      if (!target_uc->uplinkBWP_ToReleaseList)
+        target_uc->uplinkBWP_ToReleaseList = calloc_or_fail(1, sizeof(*target_uc->uplinkBWP_ToReleaseList));
+      asn1cSequenceAdd(target_uc->uplinkBWP_ToReleaseList->list, NR_BWP_Id_t, id);
+      *id = bwp_id;
+      LOG_I(NR_MAC, "HO: releasing source UL BWP %ld, not configured in target cell\n", bwp_id);
+    }
+  }
+}
+
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             const int uid,
                             const NR_UE_NR_Capability_t *uecap,

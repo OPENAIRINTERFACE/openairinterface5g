@@ -86,6 +86,9 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             const NR_UE_NR_Capability_t *uecap,
                             const nr_cell_sched_t *cell,
                             const NR_ServingCellConfigCommon_t *scc);
+/* Handover target only: release any dedicated BWP source_cd (source cell's spCellConfigDedicated)
+ * has that target_cd doesn't itself configure. */
+void release_stale_ho_source_bwps(NR_ServingCellConfig_t *target_cd, const NR_ServingCellConfig_t *source_cd);
 int encode_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, uint8_t *buffer, int max_buffer_size);
 
 /* Note: this function returns a new CellGroupConfig for a user with given

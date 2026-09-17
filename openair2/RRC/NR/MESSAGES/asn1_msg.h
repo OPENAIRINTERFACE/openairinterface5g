@@ -103,8 +103,6 @@ int do_RRCSetupComplete(uint8_t *buffer,
                         const int dedicatedInfoNASLength,
                         const char *dedicatedInfoNAS);
 
-int do_NR_HandoverPreparationInformation(const uint8_t *uecap_buf, int uecap_buf_size, uint8_t *buf, int buf_size);
-
 int do_NR_MeasConfig(const NR_MeasConfig_t *measconfig, uint8_t *buf, int buf_size);
 
 int do_NR_MeasurementTimingConfiguration(const NR_MeasurementTimingConfiguration_t *mtc, uint8_t *buf, int buf_size);
