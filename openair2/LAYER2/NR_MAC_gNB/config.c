@@ -976,7 +976,19 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac, nr_cell_sched_t *cell, NR_ServingCel
 
   const int NTN_gNB_Koffset = get_NTN_Koffset(scc);
   const int n = get_slots_per_frame_from_scs(*scc->ssbSubcarrierSpacing);
-  const int size = n << ceil_log2_u32((NTN_gNB_Koffset + 13) / n + 1); // 13 is upper limit for max_fb_time
+  int size = n << ceil_log2_u32((NTN_gNB_Koffset + 13) / n + 1); // 13 is upper limit for max_fb_time
+
+  // If the RA is configured as 2-step, the size must be increased to accommodate more frames. This allows MsgA-PUSCH and the
+  // ACK/NACK to be scheduled within the same slot, as they reside in different frames. Consequently, multiple MsgA-PUSCH
+  // transmissions can be scheduled without overriding the ACK/NACK.
+  if (scc->uplinkConfigCommon->initialUplinkBWP->ext1
+      && scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16
+             ->msgA_PUSCH_ResourceGroupA_r16->msgA_PUSCH_TimeDomainOffset_r16) {
+    NR_MsgA_ConfigCommon_r16_t *msgacc = scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup;
+    int msgA_PUSCH_TimeDomainOffset = msgacc->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16->msgA_PUSCH_TimeDomainOffset_r16;
+    size *= (n + msgA_PUSCH_TimeDomainOffset + (n - 1)) / n;
+  }
+
   cell->vrb_map_UL_size = size;
 
   int num_beams = 1;
