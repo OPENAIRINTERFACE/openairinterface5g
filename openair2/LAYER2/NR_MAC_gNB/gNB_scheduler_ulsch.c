@@ -841,7 +841,7 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
   if (!cfra && ra->ra_type == RA_2_STEP) {
     // random access pusch with RA-RNTI
     if (ra->RA_rnti != rnti) {
-      LOG_E(NR_MAC, "expected TC_RNTI %04x to match current RNTI %04x\n", ra->RA_rnti, rnti);
+      LOG_E(NR_MAC, "expected RA_RNTI %04x to match current RNTI %04x\n", ra->RA_rnti, rnti);
       return;
     }
   }
@@ -849,7 +849,12 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
   // re-initialize ta update variables after RA procedure completion
   UE->UE_sched_ctrl.ta_frame = (frame + 100) % MAX_FRAME_NUMBER;
 
-  LOG_A(NR_MAC, "%4d.%2d PUSCH with TC_RNTI 0x%04x received correctly\n", frame, slot, rnti);
+  LOG_A(NR_MAC,
+        "%4d.%2d PUSCH with %s 0x%04x received correctly\n",
+        frame,
+        slot,
+        ra->ra_type == RA_2_STEP ? "RA_RNTI" : "TC_RNTI",
+        rnti);
 
   NR_UE_sched_ctrl_t *UE_scheduling_control = &UE->UE_sched_ctrl;
   DevAssert(harq_pid >= 0 && harq_pid < 8);
@@ -917,9 +922,10 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
   nr_process_mac_pdu(mac, cell, UE, frame, slot, sdu, sdu_len, harq_pid);
 
   LOG_I(NR_MAC,
-        "Activating scheduling %s for TC_RNTI 0x%04x (state %s)\n",
+        "Activating scheduling %s for %s 0x%04x (state %s)\n",
         ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4",
-        UE->rnti,
+        ra->ra_type == RA_2_STEP ? "MsgB_rnti" : "TC_RNTI",
+        ra->ra_type == RA_2_STEP ? UE->ra->MsgB_rnti : UE->rnti,
         nrra_text[ra->ra_state]);
   ra->ra_state = ra->ra_type == RA_2_STEP ? nrRA_MsgB : nrRA_Msg4;
   LOG_D(NR_MAC, "TC_RNTI 0x%04x next RA state %s\n", UE->rnti, nrra_text[ra->ra_state]);
