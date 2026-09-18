@@ -2665,9 +2665,13 @@ NR_UE_info_t *find_nr_UE(NR_UEs_t *UEs, rnti_t rntiP)
 
 NR_UE_info_t *find_ra_UE(NR_UEs_t *UEs, rnti_t rntiP)
 {
-  UE_iterator(UEs->access_ue_list, UE) {
+  UE_iterator (UEs->access_ue_list, UE) {
+    if (UE->ra->ra_type == RA_2_STEP && UE->ra->RA_rnti == rntiP) {
+      LOG_D(NR_MAC, "Search and found RA 2-Step RA_rnti: %04x\n", rntiP);
+      return UE;
+    }
     if (UE->rnti == rntiP) {
-      LOG_D(NR_MAC,"Search and found rnti: %04x\n", rntiP);
+      LOG_D(NR_MAC, "Search and found rnti: %04x\n", rntiP);
       return UE;
     }
   }
