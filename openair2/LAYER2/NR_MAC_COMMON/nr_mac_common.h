@@ -264,6 +264,13 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             frequency_range_t);
 ssb_ro_preambles_t get_ssb_ro_preambles_4step(struct NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB *config);
 
+ssb_ro_preambles_t get_ssb_ro_preambles_2step(struct NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16 *config);
+
+void get_config_index_and_ssb_ro(const NR_MsgA_ConfigCommon_r16_t *msgacc,
+                                 const NR_RACH_ConfigCommon_t *rach_ConfigCommon,
+                                 uint8_t *config_index,
+                                 ssb_ro_preambles_t *ssb_ro);
+
 int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig, long transformPrecoder);
 
 uint8_t get_pdsch_mcs_table(long *mcs_Table, int dci_format, int rnti_type, int ss_type);

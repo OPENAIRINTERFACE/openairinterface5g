@@ -67,7 +67,9 @@
 
 #define GNB_CONFIG_STRING_MSGBRESPONSEWINDOW_R16                         "msgB_ResponseWindow_r16"
 #define GNB_CONFIG_STRING_MSGARSRPTHRESHOLD_R16                          "msgA_RSRP_Threshold_r16"
-#define GNB_CONFIG_STRING_MSGACBPREAMBLESPERSHAREDRO_R16                 "msgA_CB_PreamblesPerSSB_PerSharedRO_r16"
+#define GNB_CONFIG_STRING_MSGAPRACHCONFIGURATIONINDEX_R16                "msgA_prach_ConfigurationIndex_r16"
+#define GNB_CONFIG_STRING_MSGASSBPERRACHOCCASIONANDCBPREAMBLESPERSSBPR   "msgA_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR"
+#define GNB_CONFIG_STRING_MSGASSBPERRACHOCCASIONANDCBPREAMBLESPERSSB     "msgA_ssb_perRACH_OccasionAndCB_PreamblesPerSSB"
 #define GNB_CONFIG_STRING_MSGAMCS_R16                                    "msgA_MCS_r16"
 #define GNB_CONFIG_STRING_NROFSLOTSMSGAPUSCH_R16                         "nrofSlotsMsgA_PUSCH_r16"
 #define GNB_CONFIG_STRING_NROFMSGAPOPERSLOT_R16                          "nrofMsgA_PO_PerSlot_r16"
@@ -201,6 +203,9 @@
 #define MSGASCCPARAMS_DESC(scc) { \
 {GNB_CONFIG_STRING_MSGBRESPONSEWINDOW_R16,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->rach_ConfigCommonTwoStepRA_r16.rach_ConfigGenericTwoStepRA_r16.msgB_ResponseWindow_r16,.defint64val=-1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_MSGARSRPTHRESHOLD_R16,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->rach_ConfigCommonTwoStepRA_r16.msgA_RSRP_Threshold_r16,.defint64val=19,TYPE_INT64,0},\
+{GNB_CONFIG_STRING_MSGAPRACHCONFIGURATIONINDEX_R16,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->rach_ConfigCommonTwoStepRA_r16.rach_ConfigGenericTwoStepRA_r16.msgA_PRACH_ConfigurationIndex_r16,.defint64val=98,TYPE_INT64,0},\
+{GNB_CONFIG_STRING_MSGASSBPERRACHOCCASIONANDCBPREAMBLESPERSSBPR,NULL,0,.uptr=&scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->rach_ConfigCommonTwoStepRA_r16.msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16->present,.defuintval=0,TYPE_UINT,0},\
+{GNB_CONFIG_STRING_MSGASSBPERRACHOCCASIONANDCBPREAMBLESPERSSB,NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->rach_ConfigCommonTwoStepRA_r16.msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16->choice.one,.defint64val=0,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_MSGAMCS_R16,NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16->msgA_MCS_r16,.defint64val=2,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFSLOTSMSGAPUSCH_R16,NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16->nrofSlotsMsgA_PUSCH_r16,.defint64val=1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFMSGAPOPERSLOT_R16,NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16->nrofMsgA_PO_PerSlot_r16,.defint64val=NR_MsgA_PUSCH_Resource_r16__nrofMsgA_PO_PerSlot_r16_one,TYPE_INT64,0},\
@@ -213,6 +218,5 @@
 {GNB_CONFIG_STRING_NROFMSGAPOFDM_R16,NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16->nrofMsgA_PO_FDM_r16,.defint64val=NR_MsgA_PUSCH_Resource_r16__nrofMsgA_PO_FDM_r16_one,TYPE_INT64,0}, \
 {GNB_CONFIG_STRING_MSGAPUSCHNROFPORTS_R16,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16->msgA_DMRS_Config_r16.msgA_PUSCH_NrofPorts_r16,.defint64val=1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_NROFDMRSSEQUENCES_R16,NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16->nrofDMRS_Sequences_r16,.defint64val=1,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_MSGATRANSFORMPRECODER_R16,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16,.defint64val=NR_MsgA_PUSCH_Config_r16__msgA_TransformPrecoder_r16_disabled,TYPE_INT64,0},\
-{GNB_CONFIG_STRING_MSGACBPREAMBLESPERSHAREDRO_R16,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->rach_ConfigCommonTwoStepRA_r16.msgA_CB_PreamblesPerSSB_PerSharedRO_r16,.defint64val=1,TYPE_INT64,0}}
+{GNB_CONFIG_STRING_MSGATRANSFORMPRECODER_R16,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16,.defint64val=NR_MsgA_PUSCH_Config_r16__msgA_TransformPrecoder_r16_disabled,TYPE_INT64,0}}
 #endif

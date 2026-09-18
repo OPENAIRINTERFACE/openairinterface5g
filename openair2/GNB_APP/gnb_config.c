@@ -181,11 +181,14 @@ void prepare_msgA_scc(NR_ServingCellConfigCommon_t *scc) {
   initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup =
       calloc(1, sizeof(*initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup));
   NR_MsgA_ConfigCommon_r16_t *NR_MsgA_ConfigCommon_r16 = initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup;
-  NR_MsgA_ConfigCommon_r16->rach_ConfigCommonTwoStepRA_r16.rach_ConfigGenericTwoStepRA_r16.msgB_ResponseWindow_r16 =
+  NR_RACH_ConfigCommonTwoStepRA_r16_t *NR_Rach_CC_TwoStepRA = &NR_MsgA_ConfigCommon_r16->rach_ConfigCommonTwoStepRA_r16;
+  NR_Rach_CC_TwoStepRA->rach_ConfigGenericTwoStepRA_r16.msgB_ResponseWindow_r16 =
       calloc(1, sizeof(long));
-  NR_MsgA_ConfigCommon_r16->rach_ConfigCommonTwoStepRA_r16.msgA_RSRP_Threshold_r16 = calloc(1, sizeof(NR_RSRP_Range_t));
+  NR_Rach_CC_TwoStepRA->msgA_RSRP_Threshold_r16 = calloc(1, sizeof(NR_RSRP_Range_t));
 
-  NR_MsgA_ConfigCommon_r16->rach_ConfigCommonTwoStepRA_r16.msgA_CB_PreamblesPerSSB_PerSharedRO_r16 = calloc(1, sizeof(long));
+  NR_Rach_CC_TwoStepRA->rach_ConfigGenericTwoStepRA_r16.msgA_PRACH_ConfigurationIndex_r16 = calloc(1, sizeof(long));
+  NR_Rach_CC_TwoStepRA->msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16 =
+      calloc_or_fail(1, sizeof(*NR_Rach_CC_TwoStepRA->msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16));
 
   NR_MsgA_ConfigCommon_r16->msgA_PUSCH_Config_r16 = calloc(1, sizeof(NR_MsgA_PUSCH_Config_r16_t));
   NR_MsgA_PUSCH_Config_r16_t *msgA_PUSCH_Config_r16 = NR_MsgA_ConfigCommon_r16->msgA_PUSCH_Config_r16;
