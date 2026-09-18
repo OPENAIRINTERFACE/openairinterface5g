@@ -223,8 +223,8 @@ static void schedule_nr_MsgA_pusch(NR_UplinkConfigCommon_t *uplinkConfigCommon,
                                    NR_PhysCellId_t physCellId)
 {
 
-  NR_MsgA_PUSCH_Resource_r16_t *msgA_PUSCH_Resource = uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice
-                                                          .setup->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16;
+  NR_MsgA_ConfigCommon_r16_t *msgacc = uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup;
+  NR_MsgA_PUSCH_Resource_r16_t *msgA_PUSCH_Resource = msgacc->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16;
 
   const int n_slots_frame = cell->frame_structure.numb_slots_frame;
   slot_t msgA_pusch_slot = (slotP + msgA_PUSCH_Resource->msgA_PUSCH_TimeDomainOffset_r16) % n_slots_frame;
@@ -266,50 +266,83 @@ static void schedule_nr_MsgA_pusch(NR_UplinkConfigCommon_t *uplinkConfigCommon,
   pusch_pdu->pusch_data.new_data_indicator = 1;
   pusch_pdu->nrOfLayers = 1;
   pusch_pdu->num_dmrs_cdm_grps_no_data = L <= 2 ? 1 : 2; // no data in dmrs symbols as in 6.2.2 in 38.214
-  pusch_pdu->ul_dmrs_symb_pos = get_l_prime(3, 0, pusch_dmrs_pos2, pusch_len1, 10, dmrs_TypeA_Position);
-  pusch_pdu->transform_precoding = *uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16;
+  pusch_pdu->ul_dmrs_symb_pos =
+      get_l_prime(L, *msgA_PUSCH_Resource->mappingTypeMsgA_PUSCH_r16, pusch_dmrs_pos2, pusch_len1, S, dmrs_TypeA_Position);
+  pusch_pdu->transform_precoding = *msgacc->msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16;
   pusch_pdu->rb_bitmap[0] = 0;
   pusch_pdu->rb_start = msgA_PUSCH_Resource->frequencyStartMsgA_PUSCH_r16; // rb_start depends on the RO
   int locationAndBandwidth = uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth;
   pusch_pdu->bwp_size = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE);
   pusch_pdu->bwp_start = NRRIV2PRBOFFSET(locationAndBandwidth, MAX_BWP_SIZE);
-  pusch_pdu->subcarrier_spacing = 0;
+  pusch_pdu->subcarrier_spacing = uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
   pusch_pdu->cyclic_prefix = 0;
   pusch_pdu->uplink_frequency_shift_7p5khz = 0;
   pusch_pdu->vrb_to_prb_mapping = 0;
   pusch_pdu->dmrs_config_type = 0;
-  pusch_pdu->data_scrambling_id = 0;
-  if (msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16) {
-    pusch_pdu->ul_dmrs_scrambling_id = *msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16;
-  } else {
-    pusch_pdu->ul_dmrs_scrambling_id = physCellId;
-  }
-  pusch_pdu->scid =
-      0; // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
+  NR_MsgA_PUSCH_Config_r16_t *msgA_pusch_cfg = msgacc->msgA_PUSCH_Config_r16;
+  pusch_pdu->data_scrambling_id =
+      msgA_pusch_cfg->msgA_DataScramblingIndex_r16 ? *msgA_pusch_cfg->msgA_DataScramblingIndex_r16 : physCellId;
+  pusch_pdu->ul_dmrs_scrambling_id = msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16
+                                         ? *msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16
+                                         : physCellId;
+  pusch_pdu->scid = 0; // n_SCID from DMRS resource mapping (TS 38.213 8.1A); only resource 0 scheduled (nrofDMRS-Sequences = 1)
   pusch_pdu->pusch_identity = 0;
   pusch_pdu->resource_alloc = 1; // type 1
   pusch_pdu->tx_direct_current_location = 0;
   pusch_pdu->mcs_index = msgA_PUSCH_Resource->msgA_MCS_r16;
   pusch_pdu->qam_mod_order = nr_get_Qm_dl(pusch_pdu->mcs_index, pusch_pdu->mcs_table);
 
-  int num_dmrs_symb = count_bits64_with_mask(pusch_pdu->ul_dmrs_symb_pos, 10, 3);
+  int num_dmrs_symb = count_bits64_with_mask(pusch_pdu->ul_dmrs_symb_pos, S, L);
   AssertFatal(pusch_pdu->mcs_index <= 28, "Exceeding MCS limit for MsgA PUSCH\n");
   int R = nr_get_code_rate_ul(pusch_pdu->mcs_index, pusch_pdu->mcs_table);
   pusch_pdu->target_code_rate = R;
   int TBS = nr_compute_tbs(pusch_pdu->qam_mod_order,
-                       R,
-                       pusch_pdu->rb_size,
-                       pusch_pdu->nr_of_symbols,
-                       num_dmrs_symb * 12, // nb dmrs set for no data in dmrs symbol
-                       0, // nb_rb_oh
-                       0, // to verify tb scaling
-                       pusch_pdu->nrOfLayers)
-        >> 3;
+                           R,
+                           pusch_pdu->rb_size,
+                           pusch_pdu->nr_of_symbols,
+                           num_dmrs_symb * 12, // nb dmrs set for no data in dmrs symbol
+                           0, // nb_rb_oh
+                           0, // to verify tb scaling
+                           pusch_pdu->nrOfLayers)
+            >> 3;
 
   pusch_pdu->pusch_data.tb_size = TBS;
   pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS << 3, R);
 
+  pusch_pdu->param_v4.numSpatialStreamIndices = cell->radio_config.pusch_AntennaPorts;
+
   LOG_D(NR_MAC, "Scheduling MsgA PUSCH in %d.%d\n", msgA_pusch_frame, msgA_pusch_slot);
+
+  LOG_D(NR_MAC,
+        "pdu_bit_map %d rnti %d handle %d rb_size %d mcs_table %d frequency_hopping %d dmrs_ports %d start_symbol_index %d "
+        "nr_of_symbols %d new_data_indicator %d num_dmrs_cdm_grps_no_data %d ul_dmrs_symb_pos %d transform_precoding %d rb_start "
+        "%d bwp_size %d bwp_start %d subcarrier_spacing %d data_scrambling_id %d ul_dmrs_scrambling_id %d mcs_index %d "
+        "qam_mod_order %d target_code_rate %d tb_size %d ldpcBaseGraph %d numSpatialStreamIndices %d\n",
+        pusch_pdu->pdu_bit_map,
+        pusch_pdu->rnti,
+        pusch_pdu->handle,
+        pusch_pdu->rb_size,
+        pusch_pdu->mcs_table,
+        pusch_pdu->frequency_hopping,
+        pusch_pdu->dmrs_ports,
+        pusch_pdu->start_symbol_index,
+        pusch_pdu->nr_of_symbols,
+        pusch_pdu->pusch_data.new_data_indicator,
+        pusch_pdu->num_dmrs_cdm_grps_no_data,
+        pusch_pdu->ul_dmrs_symb_pos,
+        pusch_pdu->transform_precoding,
+        pusch_pdu->rb_start,
+        pusch_pdu->bwp_size,
+        pusch_pdu->bwp_start,
+        pusch_pdu->subcarrier_spacing,
+        pusch_pdu->data_scrambling_id,
+        pusch_pdu->ul_dmrs_scrambling_id,
+        pusch_pdu->mcs_index,
+        pusch_pdu->qam_mod_order,
+        pusch_pdu->target_code_rate,
+        pusch_pdu->pusch_data.tb_size,
+        pusch_pdu->maintenance_parms_v3.ldpcBaseGraph,
+        pusch_pdu->param_v4.numSpatialStreamIndices);
 
   UL_tti_req->n_pdus += 1;
 }

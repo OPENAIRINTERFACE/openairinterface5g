@@ -378,29 +378,19 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   int dmrslength = 1;
   NR_PUSCH_Config_t *pusch_Config = current_UL_BWP->pusch_Config;
 
-  AssertFatal(!((mac->ra.ra_state < nrRA_SUCCEEDED && mac->ra.ra_type == RA_2_STEP) && rar_grant), "logic error: Is not possible to have both msgA_pusch_resource and rar_grant\n");
+  AssertFatal(!((mac->ra.ra_state < nrRA_SUCCEEDED && mac->ra.ra_type == RA_2_STEP) && rar_grant),
+              "logic error: Is not possible to have both msgA_pusch_resource and rar_grant\n");
 
   if (mac->ra.ra_state < nrRA_SUCCEEDED && mac->ra.ra_type == RA_2_STEP) {
     NR_MsgA_PUSCH_Resource_r16_t *msgA_PUSCH_Resource =
         current_UL_BWP->msgA_ConfigCommon_r16->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16;
+    int mapping_type = *msgA_PUSCH_Resource->mappingTypeMsgA_PUSCH_r16;
     int S = 0;
     int L = 0;
     SLIV2SL(*msgA_PUSCH_Resource->startSymbolAndLengthMsgA_PO_r16, &S, &L);
     tda_info->k2 = msgA_PUSCH_Resource->msgA_PUSCH_TimeDomainOffset_r16;
-    tda_info->startSymbolIndex = S;
-    tda_info->nrOfSymbols = L;
-    l_prime_mask = get_l_prime(tda_info->nrOfSymbols,
-                               tda_info->mapping_type,
-                               add_pos,
-                               dmrslength,
-                               tda_info->startSymbolIndex,
-                               mac->dmrs_TypeA_Position);
-    LOG_I(NR_MAC,
-          "MSGA PUSCH start_sym:%d NR Symb:%d mappingtype:%d, DMRS_MASK:%x\n",
-          pusch_config_pdu->start_symbol_index,
-          pusch_config_pdu->nr_of_symbols,
-          tda_info->mapping_type,
-          l_prime_mask);
+    l_prime_mask = get_l_prime(L, mapping_type, add_pos, dmrslength, S, 0);
+    LOG_I(NR_MAC, "MSGA PUSCH start_sym:%d NR Symb:%d mappingtype:%d, DMRS_MASK:%x\n", S, L, mapping_type, l_prime_mask);
 
     LOG_D(NR_MAC,
           "sc_info->initial_ul_BWPStart = %d  sc_info->initial_ul_BWPSize = %d\n",
@@ -409,12 +399,12 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->handle = 0;
     pusch_config_pdu->rb_size = msgA_PUSCH_Resource->nrofPRBs_PerMsgA_PO_r16;
     pusch_config_pdu->mcs_table = 0;
-    pusch_config_pdu->frequency_hopping = msgA_PUSCH_Resource->msgA_IntraSlotFrequencyHopping_r16 ? *msgA_PUSCH_Resource->msgA_IntraSlotFrequencyHopping_r16 : 0;
+    pusch_config_pdu->frequency_hopping =
+        msgA_PUSCH_Resource->msgA_IntraSlotFrequencyHopping_r16 ? *msgA_PUSCH_Resource->msgA_IntraSlotFrequencyHopping_r16 : 0;
     pusch_config_pdu->pusch_data.new_data_indicator = 1; // new data
     pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
-    pusch_config_pdu->ul_dmrs_symb_pos = get_l_prime(3, 0, pusch_dmrs_pos2, pusch_len1, 10, mac->dmrs_TypeA_Position);
     pusch_config_pdu->transform_precoding =
-           *mac->current_UL_BWP->msgA_ConfigCommon_r16->msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16;
+        *mac->current_UL_BWP->msgA_ConfigCommon_r16->msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16;
     pusch_config_pdu->rb_bitmap[0] = 0;
     pusch_config_pdu->rb_start = msgA_PUSCH_Resource->frequencyStartMsgA_PUSCH_r16; // rb_start depends on the RO
     pusch_config_pdu->bwp_size = sc_info->initial_ul_BWPSize;
@@ -425,19 +415,52 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->vrb_to_prb_mapping = 0;
     pusch_config_pdu->dmrs_config_type = 0;
     pusch_config_pdu->data_scrambling_id = mac->physCellId;
-    pusch_config_pdu->ul_dmrs_scrambling_id = mac->physCellId;
-    pusch_config_pdu->scid = 0;
+    NR_MsgA_PUSCH_Config_r16_t *msgA_pusch_cfg = current_UL_BWP->msgA_ConfigCommon_r16->msgA_PUSCH_Config_r16;
+    pusch_config_pdu->data_scrambling_id =
+        msgA_pusch_cfg->msgA_DataScramblingIndex_r16 ? *msgA_pusch_cfg->msgA_DataScramblingIndex_r16 : mac->physCellId;
+    pusch_config_pdu->ul_dmrs_scrambling_id = msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16
+                                                  ? *msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16
+                                                  : mac->physCellId;
+    pusch_config_pdu->scid =
+        0; // n_SCID from DMRS resource mapping (TS 38.213 8.1A); only resource 0 scheduled (nrofDMRS-Sequences = 1)
     pusch_config_pdu->resource_alloc = 1;
     pusch_config_pdu->tx_direct_current_location = 0;
     pusch_config_pdu->mcs_index = msgA_PUSCH_Resource->msgA_MCS_r16;
-    pusch_config_pdu->qam_mod_order = nr_get_Qm_dl(pusch_config_pdu->mcs_index, 0);
     pusch_config_pdu->start_symbol_index = S;
     pusch_config_pdu->nr_of_symbols = L;
     pusch_config_pdu->pusch_data.rv_index = 0; // 8.3 in 38.213
     pusch_config_pdu->pusch_data.harq_process_id = 0;
     pusch_config_pdu->pusch_data.num_cb = 0;
     pusch_config_pdu->tbslbrm = 0;
-    pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, 0);
+
+    LOG_D(NR_MAC,
+          "pdu_bit_map %d rnti %d handle %d rb_size %d mcs_table %d frequency_hopping %d dmrs_ports %d start_symbol_index %d "
+          "nr_of_symbols %d new_data_indicator %d num_dmrs_cdm_grps_no_data %d ul_dmrs_symb_pos %d transform_precoding %d rb_start "
+          "%d bwp_size %d bwp_start %d subcarrier_spacing %d data_scrambling_id %d ul_dmrs_scrambling_id %d mcs_index %d "
+          "qam_mod_order %d target_code_rate %d tb_size %d\n",
+          pusch_config_pdu->pdu_bit_map,
+          pusch_config_pdu->rnti,
+          pusch_config_pdu->handle,
+          pusch_config_pdu->rb_size,
+          pusch_config_pdu->mcs_table,
+          pusch_config_pdu->frequency_hopping,
+          pusch_config_pdu->dmrs_ports,
+          pusch_config_pdu->start_symbol_index,
+          pusch_config_pdu->nr_of_symbols,
+          pusch_config_pdu->pusch_data.new_data_indicator,
+          pusch_config_pdu->num_dmrs_cdm_grps_no_data,
+          pusch_config_pdu->ul_dmrs_symb_pos,
+          pusch_config_pdu->transform_precoding,
+          pusch_config_pdu->rb_start,
+          pusch_config_pdu->bwp_size,
+          pusch_config_pdu->bwp_start,
+          pusch_config_pdu->subcarrier_spacing,
+          pusch_config_pdu->data_scrambling_id,
+          pusch_config_pdu->ul_dmrs_scrambling_id,
+          pusch_config_pdu->mcs_index,
+          pusch_config_pdu->qam_mod_order,
+          pusch_config_pdu->target_code_rate,
+          pusch_config_pdu->pusch_data.tb_size);
 
   } else if (rar_grant) {
     // Note: for Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0

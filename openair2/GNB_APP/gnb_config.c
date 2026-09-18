@@ -193,6 +193,7 @@ void prepare_msgA_scc(NR_ServingCellConfigCommon_t *scc) {
   NR_MsgA_PUSCH_Resource_r16_t *msgA_PUSCH_Resource = msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16;
   msgA_PUSCH_Resource->startSymbolAndLengthMsgA_PO_r16 = calloc(1, sizeof(long));
   msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16 = calloc(1, sizeof(long));
+  msgA_PUSCH_Resource->mappingTypeMsgA_PUSCH_r16 = calloc(1, sizeof(long));
 }
 
 // Section 4.1 in 38.213
