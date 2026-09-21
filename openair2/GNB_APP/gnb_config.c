@@ -1511,6 +1511,21 @@ static double complex **read_dbt_from_config(const char *prefix,
   return table;
 }
 
+/* a beam ID names at most one digital beam table entry, otherwise the entry a given
+ * ssb_beams value resolves to would depend on the row order */
+static void check_dbt_beam_ids_unique(const nr_beam_table_t *bt)
+{
+  if (!bt->beam_ids) // no explicit IDs: the row number is the ID, unique by construction
+    return;
+  for (int a = 0; a < bt->num_beams; a++)
+    for (int b = a + 1; b < bt->num_beams; b++)
+      AssertFatal(bt->beam_ids[a] != bt->beam_ids[b],
+                  "digital beam table rows %d and %d both have beam ID %u\n",
+                  a,
+                  b,
+                  bt->beam_ids[a]);
+}
+
 /* the beam ID names a digital beam table entry by beam_idx, not by row number */
 static void check_ssb_beams_in_dbt(const int32_t *ssb_beams, int num_ssb_beams, const nr_beam_table_t *bt)
 {
@@ -1836,6 +1851,8 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg, nr_cell_sched_t **out_cel
             read_dbt_from_config(prefix, &config.bt.num_beams, &config.bt.num_weights_per_beam, &config.bt.beam_ids);
       }
       const bool have_dbt = config.bt.num_beams > 0;
+      if (have_dbt)
+        check_dbt_beam_ids_unique(&config.bt);
 
       // config_get_processedint() takes only paramdef_t *, so cast const away
       paramdef_t *p_bf = (paramdef_t *)gpd(params, np, MACRLC_BF_METHOD);
