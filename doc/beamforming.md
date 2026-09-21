@@ -132,6 +132,11 @@ Both the real and the imaginary part must lie in [-1, 1]. They are converted to 
 (multiplied by 32767 and rounded) before being handed to L1, so the table is written in
 normalised floating point and the fixed-point conversion is done for you.
 
+The number of weights per beam must equal the number of physical antenna ports, and a
+mismatch is rejected at startup. Under Aerial that count is `num_tx_ant` of the
+[`Aerial` section](#aerial-section). Should a native L1 gain DBT support, it would
+instead be the sum of `nb_tx` over the `RUs` section.
+
 ### Beam IDs and their relation to `ssb_beams`
 
 Beam IDs name the rows of the table; they are arbitrary 16-bit values and do not have to

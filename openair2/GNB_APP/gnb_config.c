@@ -1922,6 +1922,26 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg, nr_cell_sched_t **out_cel
                     "." AERIAL_NUM_TX_ANT " and " CONFIG_STRING_AERIAL "." AERIAL_NUM_RX_ANT "\n",
                     *gpd(params, np, MACRLC_BF_METHOD)->strptr);
 #endif
+      /* The weights are applied per physical antenna port: a native L1 takes that count
+       * from the RU section, Aerial from num_tx_ant, which is required just above. */
+      if (have_dbt) {
+        if (RUParamList.numelt > 0) {
+          AssertFatal(config.bt.num_weights_per_beam == num_tx,
+                      "digital beam table has %d weight(s) per beam but %d physical antenna port(s) are configured "
+                      "(sum of nb_tx over the " CONFIG_STRING_RU_LIST " section)\n",
+                      config.bt.num_weights_per_beam,
+                      num_tx);
+        }
+#ifdef ENABLE_AERIAL
+        else {
+          AssertFatal(config.bt.num_weights_per_beam == config.aerial.num_tx_ant,
+                      "digital beam table has %d weight(s) per beam but " CONFIG_STRING_AERIAL "." AERIAL_NUM_TX_ANT
+                      " is %d\n",
+                      config.bt.num_weights_per_beam,
+                      config.aerial.num_tx_ant);
+        }
+#endif
+      }
       config.num_ssb_beams = num_ssb_beams;
       if (beam_info->bf_method != BF_METHOD_STRAIGHT_WIRE) {
         beam_info->beam_allocation = malloc16(beams_per_period * sizeof(beam_info->beam_allocation));
