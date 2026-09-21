@@ -4105,6 +4105,10 @@ void fill_beam_index_list(NR_ServingCellConfigCommon_t *scc, const nr_mac_config
     } else
       cell->beam_index_list[i] = -1;
   }
+  AssertFatal(config->num_ssb_beams == 0 || index == config->num_ssb_beams,
+              "%d beam indices configured but %d SSB(s) transmitted\n",
+              config->num_ssb_beams,
+              index);
 }
 
 static inline int get_beam_index(const NR_beam_info_t *beam_info, int frame, int slot, int slots_per_frame)
