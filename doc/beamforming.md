@@ -64,6 +64,11 @@ is forwarded unchanged to the radio or the fronthaul.
 A DBT is only meaningful for `predefined`. Configuring one together with
 `straight-wire` or `das` is rejected at startup.
 
+It is also only supported with Aerial for the time being. The table does reach a native
+L1, but `nr_feptx_prec()` copies the samples through instead of precoding them, so the
+weights would have no effect; configuring a table without Aerial is rejected rather than
+silently ignored.
+
 The table can come from either of two places, checked in this order:
 
 1. `dbt_file`, a path to a CSV file (relative to the working directory of the gNB process);
