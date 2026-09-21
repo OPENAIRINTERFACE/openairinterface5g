@@ -1354,19 +1354,25 @@ static void get_bwp_config(nr_mac_config_t *configuration, const NR_ServingCellC
   }
 }
 
+/* sscanf() returns the number of assignments, not whether trailing literals matched, so
+ * the imaginary unit has to be checked separately: "0.5" otherwise matches "%lfi" and a
+ * purely real weight would be read as a purely imaginary one. */
 static bool parse_complex_token(const char *tok, double complex *out)
 {
   double re = 0.0;
   double im = 0.0;
-  if (sscanf(tok, "%lf%lfi", &re, &im) == 2 || sscanf(tok, "%lf%lfj", &re, &im) == 2) {
+  int n = 0;
+  if (sscanf(tok, "%lf%lf%n", &re, &im, &n) == 2 && (tok[n] == 'i' || tok[n] == 'j') && tok[n + 1] == '\0') {
     *out = re + I * im;
     return true;
   }
-  if (sscanf(tok, "%lfi", &im) == 1 || sscanf(tok, "%lfj", &im) == 1) {
+  n = 0;
+  if (sscanf(tok, "%lf%n", &im, &n) == 1 && (tok[n] == 'i' || tok[n] == 'j') && tok[n + 1] == '\0') {
     *out = I * im;
     return true;
   }
-  if (sscanf(tok, "%lf", &re) == 1) {
+  n = 0;
+  if (sscanf(tok, "%lf%n", &re, &n) == 1 && tok[n] == '\0') {
     *out = re;
     return true;
   }
