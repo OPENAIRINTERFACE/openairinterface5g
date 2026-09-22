@@ -177,6 +177,14 @@ typedef struct nr_beam_table {
   double complex **beam_weights;
 } nr_beam_table_t;
 
+/// Physical antenna counts advertised to an Aerial L1 in CONFIG.request
+/// (numTxAnt/numRxAnt), decoupled from the logical antenna ports carried in
+/// numTxPort/numRxPort; 0 = derive from the logical ports as before
+typedef struct nr_aerial_config {
+  int num_tx_ant;
+  int num_rx_ant;
+} nr_aerial_config_t;
+
 typedef struct nr_power_config {
   /// target SNR
   int target_snrx10;
@@ -213,6 +221,7 @@ typedef struct nr_mac_config_s {
   /// SNR threshold needed to put or not a PRB in the black list
   int ul_prbblack_SNR_threshold;
   nr_power_config_t pucch;
+  nr_aerial_config_t aerial;
   nr_mac_timers_t timer_config;
   int num_dlharq;
   int num_ulharq;

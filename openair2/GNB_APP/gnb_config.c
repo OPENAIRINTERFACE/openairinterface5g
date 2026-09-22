@@ -17,6 +17,9 @@
 #include "BIT_STRING.h"
 #include "L1_nr_paramdef.h"
 #include "MACRLC_nr_paramdef.h"
+#ifdef ENABLE_AERIAL
+#include "aerial_paramdef.h"
+#endif
 #include "PHY/INIT/nr_phy_init.h"
 #include "RRC_nr_paramsvalues.h"
 #include "T.h"
@@ -1585,6 +1588,21 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg, nr_cell_sched_t **out_cel
         config.pdsch_AntennaPorts.XP,
         config.pusch_AntennaPorts);
 
+#ifdef ENABLE_AERIAL
+  // Aerial: physical antenna counts advertised to the L1 in CONFIG.request,
+  // decoupled from the logical antenna ports above
+  GET_PARAMS(Aerial_Params, AERIALPARAMS_DESC, CONFIG_STRING_AERIAL);
+  config.aerial.num_tx_ant = *gpd(Aerial_Params, sizeofArray(Aerial_Params), AERIAL_NUM_TX_ANT)->iptr;
+  config.aerial.num_rx_ant = *gpd(Aerial_Params, sizeofArray(Aerial_Params), AERIAL_NUM_RX_ANT)->iptr;
+  AssertFatal(config.aerial.num_tx_ant >= 0 && config.aerial.num_tx_ant <= 64
+                  && config.aerial.num_rx_ant >= 0 && config.aerial.num_rx_ant <= 64,
+              "Aerial num_tx_ant (%d) and num_rx_ant (%d) must be in 0..64\n",
+              config.aerial.num_tx_ant,
+              config.aerial.num_rx_ant);
+  if (config.aerial.num_tx_ant > 0 || config.aerial.num_rx_ant > 0)
+    LOG_I(GNB_APP, "Aerial physical antennas: num_tx_ant %d num_rx_ant %d\n", config.aerial.num_tx_ant, config.aerial.num_rx_ant);
+#endif
+
   // RU
   GET_PARAMS_LIST(RUParamList, RUParams, RUPARAMS_DESC, CONFIG_STRING_RU_LIST, NULL);
   int num_tx = 0;
@@ -1894,6 +1912,16 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg, nr_cell_sched_t **out_cel
         default:
           AssertFatal(false, "unhandled " MACRLC_BF_METHOD " %d\n", beam_info->bf_method);
       }
+#ifdef ENABLE_AERIAL
+      /* Aerial applies the beam weights, and the SRS-based precoder, per physical antenna
+       * and cannot derive that count from the logical antenna ports. */
+      if (NFAPI_MODE == NFAPI_MODE_AERIAL
+          && (beam_info->bf_method == BF_METHOD_PREDEFINED || beam_info->bf_method == BF_METHOD_DYNAMIC))
+        AssertFatal(config.aerial.num_tx_ant > 0 && config.aerial.num_rx_ant > 0,
+                    MACRLC_BF_METHOD " \"%s\" needs the physical antenna counts, set " CONFIG_STRING_AERIAL
+                    "." AERIAL_NUM_TX_ANT " and " CONFIG_STRING_AERIAL "." AERIAL_NUM_RX_ANT "\n",
+                    *gpd(params, np, MACRLC_BF_METHOD)->strptr);
+#endif
       config.num_ssb_beams = num_ssb_beams;
       if (beam_info->bf_method != BF_METHOD_STRAIGHT_WIRE) {
         beam_info->beam_allocation = malloc16(beams_per_period * sizeof(beam_info->beam_allocation));

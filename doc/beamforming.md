@@ -36,6 +36,21 @@ The remaining parameters are:
 - `dbt_file` is the path to a CSV file holding the digital beam table; the table can also be
   inlined in the same section as a `dbt` list. See [Digital beam table (DBT)](#digital-beam-table-dbt).
 
+### Aerial section
+
+With the NVIDIA Aerial L1 the physical antenna array is not described by an `RUs` section, so a separate top-level `Aerial` section carries the counts advertised to L1 in `CONFIG.request` as `numTxAnt`/`numRxAnt`:
+
+```
+Aerial = {
+  num_tx_ant = 64;
+  num_rx_ant = 64;
+};
+```
+
+Both values are in 0..64. They are the *physical* antennas, kept apart from the logical antenna ports (`numTxPort`/`numRxPort`), which are still derived from `pdsch_AntennaPorts_*` and `pusch_AntennaPorts`: `numRxAnt` sizes the L1 uplink receive processing, so deriving it from the logical ports used to cost the array gain of every antenna beyond the configured number of UL layers.
+
+The section is required for `bf_method = "predefined"` and `"dynamic"`, which apply the beam weights, or the SRS-based precoder, per physical antenna. For `straight-wire` and `das` it is optional, and the counts keep being derived from the logical ports when it is absent.
+
 > **Note:** `bf_method` replaces the previous `set_analog_beamforming` parameter, and `ssb_beams` replaces `beam_weights`; DAS is no longer selected with `enable_das` in the `L1` section. Tag `2026.w42` is the last one accepting the old parameters. Configuration files still using them are rejected at startup with a message pointing at the replacement.
 
 ## Digital beam table (DBT)

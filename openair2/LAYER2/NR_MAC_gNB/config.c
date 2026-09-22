@@ -778,16 +778,41 @@ static void config_common(nr_cell_sched_t *cell, const nr_mac_config_t *config, 
   cfg->num_tlv++;
   cfg->num_tlv++;
 #ifdef ENABLE_AERIAL
+  /* numTxAnt/numRxAnt advertise the physical antennas to the L1 (numRxAnt
+   * sizes e.g. the PUSCH receive combining), while numTxPort/numRxPort carry
+   * the logical antenna ports. The physical counts come from the Aerial
+   * config section; when not set (0) fall back to the previous behavior. */
+  const nr_aerial_config_t *aerial_cfg = &config->aerial;
   if (cell->beam_info.bf_method == BF_METHOD_PREDEFINED && !cell->beam_info.beam_id_to_ru) {
-    // if we are doing BF in Aerial we need these Custom TLV
-    cfg->carrier_config.num_rx_ant.value = 64; //TOOD: Read number of baseband ports (phy ant) from Config?
-    cfg->carrier_config.num_tx_ant.value = 64; //TOOD: Read number of baseband ports (phy ant) from Config? 
-  }else{
-    // In CAT-A Mode these are equal to num_rx_ant (and Aerial ignores the value)
+    // if we are doing BF in Aerial we need these Custom TLV. The weights are applied per
+    // physical antenna, so the count has to be configured rather than guessed
+    AssertFatal(aerial_cfg->num_tx_ant > 0 && aerial_cfg->num_rx_ant > 0,
+                "beam-index based beamforming needs the physical antenna counts of the Aerial section\n");
+    cfg->carrier_config.num_rx_ant.value = aerial_cfg->num_rx_ant;
+    cfg->carrier_config.num_tx_ant.value = aerial_cfg->num_tx_ant;
+    /* with mMIMO enabled the L1 dimensions PUSCH processing from the vendor
+     * port TLVs (numRxAnt only sizes SRS); without them it falls back to a
+     * compile-time constant, so always send the logical port counts */
+    cfg->carrier_config.num_rx_port.value = pusch_AntennaPorts * cell->beam_info.beams_per_period;
+    cfg->carrier_config.num_rx_port.tl.tag = NFAPI_NR_CONFIG_NUM_RX_PORT_TAG;
+    cfg->carrier_config.num_tx_port.value = num_pdsch_antenna_ports * cell->beam_info.beams_per_period;
+    cfg->carrier_config.num_tx_port.tl.tag = NFAPI_NR_CONFIG_NUM_TX_PORT_TAG;
+  } else {
+    if (aerial_cfg->num_rx_ant > 0)
+      cfg->carrier_config.num_rx_ant.value = aerial_cfg->num_rx_ant;
+    if (aerial_cfg->num_tx_ant > 0)
+      cfg->carrier_config.num_tx_ant.value = aerial_cfg->num_tx_ant;
     cfg->carrier_config.num_rx_port.value = pusch_AntennaPorts;
     cfg->carrier_config.num_rx_port.tl.tag = NFAPI_NR_CONFIG_NUM_RX_PORT_TAG;
     cfg->carrier_config.num_tx_port.value = num_pdsch_antenna_ports;
     cfg->carrier_config.num_tx_port.tl.tag = NFAPI_NR_CONFIG_NUM_TX_PORT_TAG;
+    if (aerial_cfg->num_rx_ant > 0 || aerial_cfg->num_tx_ant > 0)
+      LOG_I(NR_MAC,
+            "Aerial: numTxAnt %d numRxAnt %d (numTxPort %d numRxPort %d)\n",
+            cfg->carrier_config.num_tx_ant.value,
+            cfg->carrier_config.num_rx_ant.value,
+            cfg->carrier_config.num_tx_port.value,
+            cfg->carrier_config.num_rx_port.value);
   }
 #endif
   // Frame structure configuration
