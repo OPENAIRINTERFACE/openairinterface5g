@@ -27,6 +27,7 @@ def ArgsParse(argvs, CONTAINERS):
     p.add_argument('--datefmt', '-f', help="date format to prepend to logs")
     p.add_argument('--repository', '-r', default='', help="OAI RAN Repository URL")
     p.add_argument('--ranAllowMerge', type=strToBool, default=False, help="Allow Merge Request (with target branch) (true or false)")
+    p.add_argument('--merge', action='store_true', default=False, help="Allow Merge Request (with target branch) (true or false)")
     p.add_argument('--branch', '-b', default='', help="OAI RAN Repository Branch")
     p.add_argument('--targetBranch', '-t', default='', help="Target Branch in case of a Merge Request")
     p.add_argument('--workspace', '-w', default='', help="directory for workspaces on remote hosts")
@@ -39,7 +40,8 @@ def ArgsParse(argvs, CONTAINERS):
 
     args = p.parse_args()
 
-    g = GlobalTestCtx(args.repository, args.workspace, args.branch, args.ranAllowMerge, args.targetBranch)
+    merge = args.ranAllowMerge or args.merge
+    g = GlobalTestCtx(args.repository, args.workspace, args.branch, merge, args.targetBranch)
 
     oc = OcCtx(args.OCUserName, args.OCPassword, args.OCProjectName)
 
