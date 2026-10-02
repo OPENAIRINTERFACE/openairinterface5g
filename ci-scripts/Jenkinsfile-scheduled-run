@@ -19,7 +19,7 @@ if (params.LockResources != null && params.LockResources.trim().length() > 0)
 def targetBranch = params.targetBranch ?: 'develop'
 def testRepository = params.repository ?: 'git@asterix:/home/git/openairinterface5g.git'
 def testBranch = params.branch ?: "latest"
-def mergeWithTarget = params.mergeWithTarget ?: false
+def mergeWithTarget = params.mergeWithTarget ? '--merge' : ''
 def sourceBranch = params.sourceBranch ?: testBranch
 
 def flexricOption = ""
@@ -123,7 +123,7 @@ pipeline {
                     sh """
                       python3 main.py --repository=${testRepository} \
                                       --branch=${testBranch} \
-                                      --ranAllowMerge=${mergeWithTarget} --targetBranch=${targetBranch} \
+                                      ${mergeWithTarget} --targetBranch=${targetBranch} \
                                       --workspace=${params.workspace} \
                                       --OCUserName=${OC_Username} --OCPassword=${OC_Password} --OCProjectName=${OC_ProjectName} \
                                       ${flexricOption} \
@@ -141,7 +141,7 @@ pipeline {
                   sh """
                     python3 main.py --repository=${testRepository} \
                                     --branch=${testBranch} \
-                                    --ranAllowMerge=${mergeWithTarget} --targetBranch=${targetBranch} \
+                                    ${mergeWithTarget} --targetBranch=${targetBranch} \
                                     --workspace=${params.workspace} \
                                     ${flexricOption} \
                                     ${mainPythonAllXmlFiles}
