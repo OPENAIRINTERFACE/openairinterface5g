@@ -96,6 +96,12 @@ typedef enum {
 static const char *const nrra_text[] =
     {"IDLE", "Msg2", "WAIT_MsgA_PUSCH", "WAIT_Msg3", "Msg3_retransmission", "Msg4", "MsgB", "WAIT_Msg4_MsgB_ACK"};
 
+typedef enum nr_periodic_channel_e {
+  CSI_RS,
+  CSI_MEASUREMENTS,
+  SRS
+} nr_periodic_channel_t;
+
 typedef struct {
   int idx;
   bool new_beam;
@@ -1225,6 +1231,12 @@ typedef struct NR_du_stats {
   /// 0-63 SSB index, 0-127 SS-RSRP report level (TS 38.133)
   uint32_t ss_rsrp_ssb_dist[NR_KPM_NB_SSB][NR_KPM_SS_RSRP_NB_LEVELS];
 } NR_du_stats_t;
+
+typedef struct {
+  NR_UE_info_t **list;
+  int max_period; // common multiple of periodicities sharing the table
+  int max_ue_per_slot; // UE capacity per slot instance
+} periodic_ue_sched_t;
 
 typedef struct {
   bool active;

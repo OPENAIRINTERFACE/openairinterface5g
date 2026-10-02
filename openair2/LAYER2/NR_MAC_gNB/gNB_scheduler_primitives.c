@@ -2674,6 +2674,46 @@ NR_UE_info_t *find_ra_UE(NR_UEs_t *UEs, rnti_t rntiP)
   return NULL;
 }
 
+NR_UE_info_t **get_periodic_ue(periodic_ue_sched_t *p, int ul_idx, int index)
+{
+  return &p->list[ul_idx * p->max_ue_per_slot + index];
+}
+
+static void reset_periodic_info(const NR_UE_info_t *UE, periodic_ue_sched_t *periodic_config, int ue_periodic_offset)
+{
+  if (periodic_config->list && ue_periodic_offset >= 0) {
+    for (int i = 0; i < periodic_config->max_ue_per_slot; i++) {
+      if (*get_periodic_ue(periodic_config, ue_periodic_offset, i) != UE)
+        continue;
+      *get_periodic_ue(periodic_config, ue_periodic_offset, i) = NULL;
+    }
+  }
+}
+
+static int set_periodic_info(NR_UE_info_t *UE, int ue_offset, periodic_ue_sched_t *periodic_config, int idx)
+{
+  bool reset = false;
+  if (ue_offset != -1) {
+    if (ue_offset == idx) {
+      for (int i = 0; i < periodic_config->max_ue_per_slot; i++) {
+        if (*get_periodic_ue(periodic_config, idx, i) == UE)
+          return ue_offset; // info already set for this UE
+      }
+      reset = true;
+    } else
+      reset = true;
+  }
+  if (reset)
+    reset_periodic_info(UE, periodic_config, ue_offset); // need to re-configure
+  for (int i = 0; i < periodic_config->max_ue_per_slot; i++) {
+    if (*get_periodic_ue(periodic_config, idx, i) != NULL)
+      continue;
+    *get_periodic_ue(periodic_config, idx, i) = UE;
+    return idx;
+  }
+  return -1;
+}
+
 void delete_nr_ue_data(NR_UE_info_t *UE, uid_allocator_t *uia)
 {
   ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->CellGroup);

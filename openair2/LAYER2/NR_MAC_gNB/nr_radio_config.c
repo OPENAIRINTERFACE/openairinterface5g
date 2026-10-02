@@ -347,19 +347,13 @@ uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc)
   return bitmap;
 }
 
-typedef enum {
-  CSI_RS,
-  CSI_MEASUREMENTS,
-  SRS
-} nr_periodic_channel_t;
-
 static bool check_periodicity(int val, int ideal_period, const frame_structure_t *fs)
 {
   bool valid_periodicity_for_tdd_period = fs->frame_type == FDD ? true : (val % fs->numb_slots_period == 0);
   return (ideal_period < val + 1) && valid_periodicity_for_tdd_period;
 }
 
-static int set_ideal_period(const nr_cell_sched_t *cell, nr_periodic_channel_t channel_type, int num_pucch_slot)
+int get_ideal_period(const nr_cell_sched_t *cell, nr_periodic_channel_t channel_type, int num_pucch_slot)
 {
   const frame_structure_t *fs = &cell->frame_structure;
   const int nb_slots_per_period = fs->numb_slots_period;
@@ -510,7 +504,7 @@ static NR_NZP_CSI_RS_Resource_t *get_nzp_csi_rs_resource(int id,
   *nzpcsi->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
   nzpcsi->scramblingID = *scc->physCellId;
   const int num_pucch2 = get_nb_pucch2_per_slot(scc, curr_bwp, num_dl_antenna_ports);
-  const int ideal_period = set_ideal_period(cell, CSI_RS, num_pucch2); // same periodicity as CSI measurement report
+  const int ideal_period = get_ideal_period(cell, CSI_RS, num_pucch2); // same periodicity as CSI measurement report
   const frame_structure_t *fs = &cell->frame_structure;
   set_csirs_periodicity(nzpcsi, id, ideal_period, fs);
   nzpcsi->qcl_InfoPeriodicCSI_RS = calloc(1, sizeof(*nzpcsi->qcl_InfoPeriodicCSI_RS));
@@ -700,7 +694,7 @@ static struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(co
   int offset = get_ul_slot_offset(fs, uid, false); // only full UL slots for SRS
   // checked for validity in verify_radio_configuration
   AssertFatal(offset < 2560, "Cannot allocate SRS configuration for uid %d, not enough resources\n", uid);
-  const int ideal_period = set_ideal_period(cell, SRS, 0);
+  const int ideal_period = get_ideal_period(cell, SRS, 0);
 
   struct NR_SRS_Resource__resourceType__periodic *periodic_srs = calloc(1,sizeof(*periodic_srs));
   if (ideal_period == 4) {
@@ -1986,7 +1980,7 @@ static void set_csi_meas_periodicity(const nr_cell_sched_t *cell,
                                      bool is_rsrp)
 {
   const int num_pucch2 = get_nb_pucch2_per_slot(scc, curr_bwp, antennaports->N1 * antennaports->N2 * antennaports->XP);
-  const int ideal_period = set_ideal_period(cell, CSI_MEASUREMENTS, num_pucch2);
+  const int ideal_period = get_ideal_period(cell, CSI_MEASUREMENTS, num_pucch2);
   const int idx = (uid * 2 / num_pucch2) + is_rsrp;
   const frame_structure_t *fs = &cell->frame_structure;
   int offset = get_ul_slot_offset(fs, idx, true);
