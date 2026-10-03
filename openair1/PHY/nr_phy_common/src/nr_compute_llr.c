@@ -60,7 +60,7 @@ void nr_qpsk_llr_2layer(c16_t *stream0_in, c16_t *stream1_in, int16_t *stream0_o
   simde__m128i ONE_OVER_2_SQRT_2 = simde_mm_set1_epi16(23170); // round(2 ^ 16 / (2 * sqrt(2)))
 
   // In each iteration, we take 8 complex symbols
-  for (int i = 0; i < length >> 2; i += 2) {
+  for (int i = 0; i < (length + 3) >> 2; i += 2) {
     /// Compute real and imaginary parts of MF output for stream 0 (desired stream)
     simde__m128i y0r, y0i;
     oai_mm_separate_real_imag_parts(&y0r, &y0i, stream0_128i_in[i], stream0_128i_in[i + 1]);
@@ -209,7 +209,7 @@ void nr_qpsk_llr_2layer(c16_t *stream0_in, c16_t *stream1_in, int16_t *stream0_o
   simde__m256i ONE_OVER_2_SQRT_2 = simde_mm256_set1_epi16(23170); // round(2 ^ 16 / (2 * sqrt(2)))
 
   // In each iteration, we take 16 complex symbols
-  for (int i = 0; i < length >> 3; i += 2) {
+  for (int i = 0; i < (length + 7) >> 3; i += 2) {
     /// Compute real and imaginary parts of MF output for stream 0 (desired stream)
     simde__m256i y0r, y0i;
     oai_mm256_separate_real_imag_parts(&y0r, &y0i, stream0_256i_in[i], stream0_256i_in[i + 1]);
@@ -648,7 +648,7 @@ void nr_qam16_llr_2layer(c16_t *stream0_in,
   simde__m128i y1i;
 
   // In one iteration, we deal with 8 REs
-  for (int i = 0; i < length >> 2; i += 2) {
+  for (int i = 0; i < (length + 3) >> 2; i += 2) {
     // Get rho
     oai_mm_separate_real_imag_parts(&xmm2, &xmm3, rho01_128i[i], rho01_128i[i + 1]);
     rho_rpi = simde_mm_adds_epi16(xmm2, xmm3); // rho = Re(rho) + Im(rho)
@@ -870,7 +870,7 @@ void nr_qam16_llr_2layer(c16_t *stream0_in,
   simde__m256i y1i;
 
   // In one iteration, we deal with 8 REs
-  for (int i = 0; i < length >> 3; i += 2) {
+  for (int i = 0; i < (length + 7) >> 3; i += 2) {
     // Get rho
     oai_mm256_separate_real_imag_parts(&xmm2, &xmm3, rho01_256i[i], rho01_256i[i + 1]);
     rho_rpi = simde_mm256_adds_epi16(xmm2, xmm3); // rho = Re(rho) + Im(rho)
@@ -1129,7 +1129,7 @@ void nr_qam64_llr_2layer(c16_t *stream0_in,
   simde__m128i two_ch_mag_int_with_sigma2;
   simde__m128i three_ch_mag_int_with_sigma2;
 
-  for (int i = 0; i < length >> 2; i += 2) {
+  for (int i = 0; i < (length + 3) >> 2; i += 2) {
     // Get rho
     simde__m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8;
     oai_mm_separate_real_imag_parts(&xmm2, &xmm3, rho01_128i[i], rho01_128i[i + 1]);
@@ -1813,7 +1813,7 @@ void nr_qam64_llr_2layer(c16_t *stream0_in,
   simde__m256i two_ch_mag_int_with_sigma2;
   simde__m256i three_ch_mag_int_with_sigma2;
 
-  uint32_t len256 = length >> 3;
+  uint32_t len256 = (length + 7) >> 3;
 
   for (int i = 0; i < len256; i += 2) {
     // Get rho
@@ -2476,25 +2476,17 @@ void nr_qam64_llr_2layer(c16_t *stream0_in,
 
 static void nr_ml_llr_shift(int16_t *llr_layer0, int16_t *llr_layer1, uint32_t nb_re, int shift)
 {
-  simde__m128i *llr_layers0 = (simde__m128i *)llr_layer0;
-  simde__m128i *llr_layers1 = (simde__m128i *)llr_layer1;
-
-  uint8_t mem_offset = ((16 - ((long)llr_layers0)) & 0xF) >> 2;
-
-  if (mem_offset > 0) {
-    c16_t *llr_layers0_c16 = (c16_t *)llr_layer0;
-    c16_t *llr_layers1_c16 = (c16_t *)llr_layer1;
-    for (int i = 0; i < mem_offset; i++) {
-      llr_layers0_c16[i] = c16Shift(llr_layers0_c16[i], shift);
-      llr_layers1_c16[i] = c16Shift(llr_layers1_c16[i], shift);
-    }
-    llr_layers0 = (simde__m128i *)&llr_layer0[mem_offset * 2];
-    llr_layers1 = (simde__m128i *)&llr_layer1[mem_offset * 2];
+  const uint32_t n = 2 * nb_re; // QPSK: 2 LLRs per RE
+  uint32_t i = 0;
+  for (; i + 8 <= n; i += 8) {
+    simde__m128i *l0 = (simde__m128i *)&llr_layer0[i];
+    simde__m128i *l1 = (simde__m128i *)&llr_layer1[i];
+    simde_mm_storeu_si128(l0, simde_mm_srai_epi16(simde_mm_loadu_si128(l0), shift));
+    simde_mm_storeu_si128(l1, simde_mm_srai_epi16(simde_mm_loadu_si128(l1), shift));
   }
-
-  for (int i = 0; i < nb_re >> 2; i++) {
-    llr_layers0[i] = simde_mm_srai_epi16(llr_layers0[i], shift);
-    llr_layers1[i] = simde_mm_srai_epi16(llr_layers1[i], shift);
+  for (; i < n; i++) {
+    llr_layer0[i] >>= shift;
+    llr_layer1[i] >>= shift;
   }
 }
 
