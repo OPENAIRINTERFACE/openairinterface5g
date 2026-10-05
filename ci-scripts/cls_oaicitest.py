@@ -18,6 +18,8 @@ import logging
 import concurrent.futures
 import json
 import uuid
+from typing import NamedTuple
+import math
 
 #import our libs
 import cls_module
@@ -293,15 +295,18 @@ def Deploy_Physim(ctx, HTML, node, workdir, script, options):
 		logging.error('\u001B[1m Physical Simulator Fail\u001B[0m')
 	return test_status
 
+class PingOpt(NamedTuple):
+    """Parameters for running a Ping test"""
+    args: str # Parameters passed verbatim to ping
+    packetloss_threshold: float # packet loss (0-100%)
+    rttavg_threshold: float # average maximum RTT
+
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
 #-----------------------------------------------------------
 class OaiCiTest():
 	
 	def __init__(self):
-		self.ping_args = ''
-		self.ping_packetloss_threshold = ''
-		self.ping_rttavg_threshold =''
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
 		self.iperf_bitrate_threshold = ''
@@ -384,7 +389,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
 		return True
 
-	def Ping_common(self, ctx, cn, ue):
+	def Ping_common(ctx, cn, ue, opt):
 		ping_status = 0
 		ueIP = ue.getIP()
 		if not ueIP:
@@ -393,11 +398,11 @@ class OaiCiTest():
 		if not svrIP:
 			return (False, f"CN {cn.getName()} has no IP address")
 		ping_log_file = f'/tmp/ping_{ue.getName()}.log'
-		ping_time = re.findall(r"-c *(\d+)",str(self.ping_args))
-		if re.search('%cn_ip%', self.ping_args) or re.search(r'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+', self.ping_args):
-			raise Exception(f"ping_args should not have IP address: {self.ping_args}")
+		ping_time = re.findall(r"-c *(\d+)", opt.args)
+		if re.search('%cn_ip%', opt.args) or re.search(r'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+', opt.args):
+			raise Exception(f"ping_args should not have IP address: {opt.args}")
 		interface = f'-I {ue.getIFName()}' if ue.getIFName() else ''
-		ping_cmd = f'{ue.getCmdPrefix()} ping {interface} {self.ping_args} {svrIP} 2>&1 | tee {ping_log_file}'
+		ping_cmd = f'{ue.getCmdPrefix()} ping {interface} {opt.args} {svrIP} 2>&1 | tee {ping_log_file}'
 		cmd = cls_cmd.getConnection(ue.getHost())
 		response = cmd.run(ping_cmd, timeout=int(ping_time[0])*1.5)
 		ue_header = f'UE {ue.getName()} ({ueIP})'
@@ -431,27 +436,27 @@ class OaiCiTest():
 		message = f'{ue_header}\n{pal_msg}\n{min_msg}\n{avg_msg}\n{max_msg}'
 
 		#checking packet loss compliance
-		if float(packetloss) > float(self.ping_packetloss_threshold):
+		if float(packetloss) > opt.packetloss_threshold:
 			message += '\nPacket Loss too high'
 			return (False, message)
 		elif float(packetloss) > 0:
 			message += '\nPacket Loss is not 0%'
 
-		if self.ping_rttavg_threshold != '':
-			if float(rtt_avg) > float(self.ping_rttavg_threshold):
-				ping_rttavg_error_msg = f'RTT(Avg) too high: {rtt_avg} ms; Target: {self.ping_rttavg_threshold} ms'
+		if not math.isnan(opt.rttavg_threshold):
+			if float(rtt_avg) > opt.rttavg_threshold:
+				ping_rttavg_error_msg = f'RTT(Avg) too high: {rtt_avg} ms; Target: {opt.rttavg_threshold} ms'
 				message += f'\n {ping_rttavg_error_msg}'
 				return (False, message)
 
 		return (True, message)
 
-	def Ping(self, ctx, node, HTML, infra_file="ci_infra.yaml"):
+	def Ping(self, ctx, node, HTML, opt, infra_file="ci_infra.yaml"):
 		if self.ue_ids == [] or self.svr_id == None:
 			raise Exception("no module names in self.ue_ids or/and self.svr_id provided")
 		ues = [cls_module.Module_UE(ue_id, node, infra_file) for ue_id in self.ue_ids]
 		cn = cls_corenetwork.CoreNetwork(self.svr_id, self.svr_node, filename=infra_file)
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
-			futures = [executor.submit(self.Ping_common, ctx, cn, ue) for ue in ues]
+			futures = [executor.submit(OaiCiTest.Ping_common, ctx, cn, ue, opt) for ue in ues]
 			results = [f.result() for f in futures]
 			# each result in results is a tuple, first member goes to successes, second to messages
 			successes, messages = map(list, zip(*results))
@@ -467,9 +472,9 @@ class OaiCiTest():
 				logger(f'{lcolor}    {l}\u001B[0m')
 
 		if success:
-			HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', messages)
+			HTML.CreateHtmlTestRowQueue(opt.args, 'OK', messages)
 		else:
-			HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', messages)
+			HTML.CreateHtmlTestRowQueue(opt.args, 'KO', messages)
 		return success
 
 	def Iperf_Module(self, ctx, cn, ue, idx, ue_num):

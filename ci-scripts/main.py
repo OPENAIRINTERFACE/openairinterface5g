@@ -94,14 +94,15 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 			success = cls_oaicitest.OaiCiTest.DataDisableUE(node, HTML, ue_ids)
 
 	elif action == 'Ping':
-		CiTestObj.ping_args = test.findtext('ping_args')
-		CiTestObj.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
+		args = test.findtext('ping_args')
+		packetloss_threshold = float(test.findtext('ping_packetloss_threshold'))
+		ping_rttavg_threshold = test.findtext('ping_rttavg_threshold') or '' # was ignored
+		opt = cls_oaicitest.PingOpt(args, packetloss_threshold, float('nan'))
 		CiTestObj.ue_ids = test.findtext('id').split(' ')
 		CiTestObj.svr_id = test.findtext('svr_id')
 		if test.findtext('svr_node'):
 			CiTestObj.svr_node = test.findtext('svr_node') if not force_local else 'localhost'
-		ping_rttavg_threshold = test.findtext('ping_rttavg_threshold') or ''
-		success = CiTestObj.Ping(ctx, node, HTML)
+		success = CiTestObj.Ping(ctx, node, HTML, opt)
 
 	elif action == 'Iperf' or action == 'Iperf2_Unidir':
 		CiTestObj.iperf_args = test.findtext('iperf_args')

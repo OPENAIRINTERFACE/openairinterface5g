@@ -32,12 +32,11 @@ class TestPingIperf(unittest.TestCase):
 			c.run(f'rm -rf {self.ctx.logPath}')
 
 	def test_ping(self):
-		self.ci.ping_args = "-c3"
-		self.ci.ping_packetloss_threshold = "0"
+		opt = cls_oaicitest.PingOpt("-c3", 0.0, float('nan'))
 		self.ci.svr_id = "test"
 		infra_file = "tests/config/infra_ping_iperf.yaml"
 		# TODO Should need nothing but options and UE(s) to use
-		success = self.ci.Ping(self.ctx, self.node, self.html, infra_file=infra_file)
+		success = self.ci.Ping(self.ctx, self.node, self.html, opt, infra_file=infra_file)
 		self.assertTrue(success)
 
 	def test_iperf(self):
