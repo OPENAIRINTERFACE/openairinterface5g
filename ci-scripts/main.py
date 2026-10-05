@@ -105,22 +105,23 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 		success = CiTestObj.Ping(ctx, node, HTML, opt)
 
 	elif action == 'Iperf' or action == 'Iperf2_Unidir':
-		CiTestObj.iperf_args = test.findtext('iperf_args')
+		args = test.findtext('iperf_args')
+		packetloss_threshold = float(test.findtext('iperf_packetloss_threshold') or 'nan') # only for UDP
+		bitrate_threshold = float(test.findtext('iperf_bitrate_threshold') or '90')
+		profile = test.findtext('iperf_profile') or 'balanced'
+		tcp_rate_target = float(test.findtext('iperf_tcp_rate_target') or 'nan')
+		if profile != 'balanced' and profile != 'unbalanced' and profile != 'single-ue':
+			logging.error(f'test-case has wrong profile {profile}, forcing balanced')
+			profile = 'balanced'
+		opt = cls_oaicitest.IperfOpt(args, packetloss_threshold, bitrate_threshold, profile, tcp_rate_target)
 		CiTestObj.ue_ids = test.findtext('id').split(' ')
 		CiTestObj.svr_id = test.findtext('svr_id')
 		if test.findtext('svr_node'):
 			CiTestObj.svr_node = test.findtext('svr_node') if not force_local else 'localhost'
-		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
-		CiTestObj.iperf_bitrate_threshold = test.findtext('iperf_bitrate_threshold') or '90'
-		CiTestObj.iperf_profile = test.findtext('iperf_profile') or 'balanced'
-		CiTestObj.iperf_tcp_rate_target = test.findtext('iperf_tcp_rate_target') or None
-		if CiTestObj.iperf_profile != 'balanced' and CiTestObj.iperf_profile != 'unbalanced' and CiTestObj.iperf_profile != 'single-ue':
-			logging.error(f'test-case has wrong profile {CiTestObj.iperf_profile}, forcing balanced')
-			CiTestObj.iperf_profile = 'balanced'
 		if action == 'Iperf':
-			success = CiTestObj.Iperf(ctx, node, HTML)
+			success = CiTestObj.Iperf(ctx, node, HTML, opt)
 		elif action == 'Iperf2_Unidir':
-			success = CiTestObj.Iperf2_Unidir(ctx, node, HTML)
+			success = CiTestObj.Iperf2_Unidir(ctx, node, HTML, opt)
 
 	elif action == 'IdleSleep':
 		st = test.findtext('idle_sleep_time_in_sec') or "5"

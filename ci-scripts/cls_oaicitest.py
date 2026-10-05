@@ -119,8 +119,8 @@ def Iperf_analyzeV3TCPJson(filename, iperf_tcp_rate_target):
 	snd_msg = f'Sender Bitrate   : {sender_bitrate} Mbps'
 	rcv_msg = f'Receiver Bitrate : {receiver_bitrate} Mbps'
 	success = True
-	if iperf_tcp_rate_target is not None:
-		success = float(receiver_bitrate) >= float(iperf_tcp_rate_target)
+	if not math.isnan(iperf_tcp_rate_target):
+		success = float(receiver_bitrate) >= iperf_tcp_rate_target
 		if success:
 			rcv_msg += f" (target: {iperf_tcp_rate_target})"
 		else:
@@ -301,17 +301,20 @@ class PingOpt(NamedTuple):
     packetloss_threshold: float # packet loss (0-100%)
     rttavg_threshold: float # average maximum RTT
 
+class IperfOpt(NamedTuple):
+    """Parameters for running an Iperf test"""
+    args: str # Parameters passed to iperf (bandwidth/bind/port might be modified)
+    packetloss_threshold: float # max UDP packet loss (0-100%)
+    bitrate_threshold: float # min UDP bitrate relative to target (0-100%)
+    profile: str # bandwidth distribution among UEs: balanced, unbalanced, single-ue
+    tcp_rate_target: float # min TCP receiver bitrate (Mbps), NaN to disable
+
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
 #-----------------------------------------------------------
 class OaiCiTest():
 	
 	def __init__(self):
-		self.iperf_args = ''
-		self.iperf_packetloss_threshold = ''
-		self.iperf_bitrate_threshold = ''
-		self.iperf_profile = ''
-		self.iperf_tcp_rate_target = ''
 		self.ue_ids = []
 		self.svr_node = None
 		self.svr_id = None
@@ -477,26 +480,26 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue(opt.args, 'KO', messages)
 		return success
 
-	def Iperf_Module(self, ctx, cn, ue, idx, ue_num):
+	def Iperf_Module(ctx, cn, ue, idx, ue_num, opt):
 		ueIP = ue.getIP()
 		if not ueIP:
 			return (False, f"UE {ue.getName()} has no IP address")
 		svrIP = cn.getIP()
 		if not svrIP:
 			return (False, f"Iperf server {cn.getName()} has no IP address")
-		iperf_opt = self.iperf_args
+		iperf_opt = opt.args
 		jsonReport = "--json"
 		serverReport = ""
 		udpIperf = re.search('-u', iperf_opt) is not None
 		bidirIperf = re.search('--bidir', iperf_opt) is not None
 		client_filename = f'/tmp/iperf_client_{ue.getName()}.log'
 		if udpIperf:
-			target_bitrate, iperf_opt = Iperf_ComputeModifiedBW(idx, ue_num, self.iperf_profile, self.iperf_args)
+			target_bitrate, iperf_opt = Iperf_ComputeModifiedBW(idx, ue_num, opt.profile, opt.args)
 			# note: for UDP testing we don't want to use json report - reports 0 Mbps received bitrate
 			jsonReport = ""
 			# note: enable server report collection on the UE side, no need to store and collect server report separately on the server side
 			serverReport = "--get-server-output"
-		iperf_time = Iperf_ComputeTime(self.iperf_args)
+		iperf_time = Iperf_ComputeTime(opt.args)
 		bindIP, port, iperf_opt = Iperf_UpdateBindPort(iperf_opt, ueIP, idx)
 		# hack: the ADB UEs don't have iperf in $PATH, so we need to hardcode for the moment
 		iperf_ue = '/data/local/tmp/iperf3' if re.search('adb', ue.getName()) else 'iperf3'
@@ -515,11 +518,11 @@ class OaiCiTest():
 			client_ret = cmd_ue.run(f'{ue.getCmdPrefix()} timeout -vk3 {t} {iperf_ue} -c {svrIP} {iperf_opt} {jsonReport} {serverReport} -O 5 >> {client_filename}', timeout=t, reportNonZero=False)
 			dest_filename = archiveArtifact(cmd_ue, ctx, client_filename)
 		if udpIperf:
-			status, msg = Iperf_analyzeV3UDP(dest_filename, self.iperf_bitrate_threshold, self.iperf_packetloss_threshold, target_bitrate)
+			status, msg = Iperf_analyzeV3UDP(dest_filename, opt.bitrate_threshold, opt.packetloss_threshold, target_bitrate)
 		elif bidirIperf:
 			status, msg = Iperf_analyzeV3BIDIRJson(dest_filename)
 		else:
-			status, msg = Iperf_analyzeV3TCPJson(dest_filename, self.iperf_tcp_rate_target)
+			status, msg = Iperf_analyzeV3TCPJson(dest_filename, opt.tcp_rate_target)
 
 		# add some diagnostic messages if the actual iperf command returned non-zero
 		if client_ret.returncode != 0:
@@ -527,15 +530,15 @@ class OaiCiTest():
 
 		return (status, f'{ue_header}\n{msg}')
 
-	def Iperf(self, ctx, node, HTML, infra_file="ci_infra.yaml"):
-		logging.debug(f'Iperf: iperf_args "{self.iperf_args}" iperf_packetloss_threshold "{self.iperf_packetloss_threshold}" iperf_bitrate_threshold "{self.iperf_bitrate_threshold}" iperf_profile "{self.iperf_profile}"')
+	def Iperf(self, ctx, node, HTML, opt, infra_file="ci_infra.yaml"):
+		logging.debug(f'Iperf: {opt}')
 
 		if self.ue_ids == [] or self.svr_id == None:
 			raise Exception("no module names in self.ue_ids or/and self.svr_id provided")
 		ues = [cls_module.Module_UE(ue_id, node, infra_file) for ue_id in self.ue_ids]
 		cn = cls_corenetwork.CoreNetwork(self.svr_id, self.svr_node, filename=infra_file)
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
-			futures = [executor.submit(self.Iperf_Module, ctx, cn, ue, i, len(ues)) for i, ue in enumerate(ues)]
+			futures = [executor.submit(OaiCiTest.Iperf_Module, ctx, cn, ue, i, len(ues), opt) for i, ue in enumerate(ues)]
 			results = [f.result() for f in futures]
 			# each result in results is a tuple, first member goes to successes, second to messages
 			successes, messages = map(list, zip(*results))
@@ -551,12 +554,12 @@ class OaiCiTest():
 				logger(f'{lcolor}    {l}\u001B[0m')
 
 		if success:
-			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', messages)
+			HTML.CreateHtmlTestRowQueue(opt.args, 'OK', messages)
 		else:
-			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', messages)
+			HTML.CreateHtmlTestRowQueue(opt.args, 'KO', messages)
 		return success
 
-	def Iperf2_Unidir(self, ctx, node, HTML, infra_file="ci_infra.yaml"):
+	def Iperf2_Unidir(self, ctx, node, HTML, opt, infra_file="ci_infra.yaml"):
 		if self.ue_ids == [] or self.svr_id == None or len(self.ue_ids) != 1:
 			raise Exception("no module names in self.ue_ids or/and self.svr_id provided, multi UE scenario not supported")
 		ue = cls_module.Module_UE(self.ue_ids[0].strip(), node, infra_file)
@@ -568,8 +571,8 @@ class OaiCiTest():
 		if not svrIP:
 			return False
 		server_filename = f'/tmp/iperf_server_{ue.getName()}.log'
-		iperf_time = Iperf_ComputeTime(self.iperf_args)
-		target_bitrate, iperf_opt = Iperf_ComputeModifiedBW(0, 1, self.iperf_profile, self.iperf_args)
+		iperf_time = Iperf_ComputeTime(opt.args)
+		target_bitrate, iperf_opt = Iperf_ComputeModifiedBW(0, 1, opt.profile, opt.args)
 		t = iperf_time*2.5
 		with cls_cmd.getConnection(ue.getHost()) as cmd_ue, cls_cmd.getConnection(cn.getHost()) as cmd_svr:
 			cmd_ue.run(f'rm {server_filename}', reportNonZero=False)
@@ -577,15 +580,15 @@ class OaiCiTest():
 			cmd_svr.run(f'{cn.getCmdPrefix()} timeout -vk3 {t} iperf -c {ueIP} -B {svrIP} {iperf_opt} -i1 >> /dev/null', timeout=t)
 			localPath = f'{os.getcwd()}'
 			local = archiveArtifact(cmd_ue, ctx, server_filename)
-		success, msg = Iperf_analyzeV2UDP(local, self.iperf_bitrate_threshold, self.iperf_packetloss_threshold, target_bitrate)
+		success, msg = Iperf_analyzeV2UDP(local, opt.bitrate_threshold, opt.packetloss_threshold, target_bitrate)
 		ue_header = f'UE {ue.getName()} ({ueIP})'
 		logging.info(f'\u001B[1;37;45m iperf result for {ue_header}\u001B[0m')
 		for l in msg.split('\n'):
 			logging.info(f'\u001B[1;35m	{l} \u001B[0m')
 		if success:
-			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', [f'{ue_header}\n{msg}'])
+			HTML.CreateHtmlTestRowQueue(opt.args, 'OK', [f'{ue_header}\n{msg}'])
 		else:
-			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', [f'{ue_header}\n{msg}'])
+			HTML.CreateHtmlTestRowQueue(opt.args, 'KO', [f'{ue_header}\n{msg}'])
 		return success
 
 	def TerminateUE(ctx, node, HTML, ue_ids):
