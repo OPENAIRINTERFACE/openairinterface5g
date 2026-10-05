@@ -44,8 +44,7 @@ import traceback
 # General Functions
 #-----------------------------------------------------------
 
-def ExecuteActionWithParam(action, test, ctx, node, oc):
-	global HTML
+def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 	global CONTAINERS
 	if action == 'Build_eNB' or action == 'Build_Image' or action == "Build_Cluster_Image" or action == "Build_Run_Tests":
 		args = test.findtext('Build_eNB_args')
@@ -269,7 +268,7 @@ def run_tests(g_ctx, logPath, HTML, all_tests, filename):
 			HTML.CreateHtmlTestRowQueue(msg, "SKIP", [])
 			continue
 		try:
-			test_succeeded = ExecuteActionWithParam(action, test, ctx, node, oc)
+			test_succeeded = ExecuteActionWithParam(action, test, ctx, node, oc, HTML)
 			if not test_succeeded and may_fail:
 				logging.warning(f"test ID {test_case_idx} action {action} may or may not fail, proceeding despite error")
 			elif not test_succeeded:
@@ -289,7 +288,6 @@ def run_tests(g_ctx, logPath, HTML, all_tests, filename):
 
 CiTestObj = cls_oaicitest.OaiCiTest()
  
-HTML = cls_oai_html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
 
 #-----------------------------------------------------------
@@ -341,6 +339,7 @@ if __name__ == "__main__":
 		t = TestXML(x, logPath, root.findtext('htmlTabName'))
 		test_xmls.append(t)
 
+	HTML = cls_oai_html.HTMLManagement()
 	HTML.CreateHtmlHeader(g_ctx.repository, g_ctx.branch, test_xmls)
 
 	signal.signal(signal.SIGINT, receive_signal)
