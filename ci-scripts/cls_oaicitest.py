@@ -311,8 +311,8 @@ class OaiCiTest():
 		self.svr_node = None
 		self.svr_id = None
 
-	def InitializeUE(self, node, HTML):
-		ues = [cls_module.Module_UE(n.strip(), node) for n in self.ue_ids]
+	def InitializeUE(node, HTML, ue_ids):
+		ues = [cls_module.Module_UE(n.strip(), node) for n in ue_ids]
 		messages = []
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(ue.initialize) for ue in ues]
@@ -323,8 +323,8 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRowQueue('N/A', 'OK', messages)
 		return True
 
-	def AttachUE(self, node, HTML):
-		ues = [cls_module.Module_UE(ue_id, node) for ue_id in self.ue_ids]
+	def AttachUE(node, HTML, ue_ids):
+		ues = [cls_module.Module_UE(ue_id, node) for ue_id in ue_ids]
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(ue.attach) for ue in ues]
 			attached = [f.result() for f in futures]
@@ -336,8 +336,8 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["Could not retrieve UE IP address(es)!"])
 		return success
 
-	def DetachUE(self, node, HTML):
-		ues = [cls_module.Module_UE(ue_id, node) for ue_id in self.ue_ids]
+	def DetachUE(node, HTML, ue_ids):
+		ues = [cls_module.Module_UE(ue_id, node) for ue_id in ue_ids]
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(ue.detach) for ue in ues]
 			[f.result() for f in futures]
@@ -345,8 +345,8 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
 		return True
 
-	def DataDisableUE(self, node, HTML):
-		ues = [cls_module.Module_UE(n.strip(), node) for n in self.ue_ids]
+	def DataDisableUE(node, HTML, ue_ids):
+		ues = [cls_module.Module_UE(n.strip(), node) for n in ue_ids]
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(ue.dataDisable) for ue in ues]
 			status = [f.result() for f in futures]
@@ -359,8 +359,8 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["Could not disable UE data!"])
 		return success
 
-	def DataEnableUE(self, node, HTML):
-		ues = [cls_module.Module_UE(n.strip(), node) for n in self.ue_ids]
+	def DataEnableUE(node, HTML, ue_ids):
+		ues = [cls_module.Module_UE(n.strip(), node) for n in ue_ids]
 		logging.debug(f'disabling data for UEs {ues}')
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(ue.dataEnable) for ue in ues]
@@ -374,8 +374,8 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["Could not enable UE data!"])
 		return success
 
-	def CheckStatusUE(self, node, HTML):
-		ues = [cls_module.Module_UE(n.strip(), node) for n in self.ue_ids]
+	def CheckStatusUE(node, HTML, ue_ids):
+		ues = [cls_module.Module_UE(n.strip(), node) for n in ue_ids]
 		logging.debug(f'checking status of UEs {ues}')
 		messages = []
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
@@ -583,8 +583,8 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', [f'{ue_header}\n{msg}'])
 		return success
 
-	def TerminateUE(self, ctx, node, HTML):
-		ues = [cls_module.Module_UE(n.strip(), node) for n in self.ue_ids]
+	def TerminateUE(ctx, node, HTML, ue_ids):
+		ues = [cls_module.Module_UE(n.strip(), node) for n in ue_ids]
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(ue.terminate, ctx) for ue in ues]
 			archives = [f.result() for f in futures]

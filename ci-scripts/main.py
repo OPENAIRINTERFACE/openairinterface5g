@@ -77,21 +77,21 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 		success = ran.RAN.TerminateeNB(ctx, node, HTML, services)
 
 	elif action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Terminate_UE' or action == 'CheckStatusUE' or action == 'DataEnable_UE' or action == 'DataDisable_UE':
-		CiTestObj.ue_ids = test.findtext('id').split(' ')
+		ue_ids = test.findtext('id').split(' ')
 		if action == 'Initialize_UE':
-			success = CiTestObj.InitializeUE(node, HTML)
+			success = cls_oaicitest.OaiCiTest.InitializeUE(node, HTML, ue_ids)
 		elif action == 'Attach_UE':
-			success = CiTestObj.AttachUE(node, HTML)
+			success = cls_oaicitest.OaiCiTest.AttachUE(node, HTML, ue_ids)
 		elif action == 'Detach_UE':
-			success = CiTestObj.DetachUE(node, HTML)
+			success = cls_oaicitest.OaiCiTest.DetachUE(node, HTML, ue_ids)
 		elif action == 'Terminate_UE':
-			success = CiTestObj.TerminateUE(ctx, node, HTML)
+			success = cls_oaicitest.OaiCiTest.TerminateUE(ctx, node, HTML, ue_ids)
 		elif action == 'CheckStatusUE':
-			success = CiTestObj.CheckStatusUE(node, HTML)
+			success = cls_oaicitest.OaiCiTest.CheckStatusUE(node, HTML, ue_ids)
 		elif action == 'DataEnable_UE':
-			success = CiTestObj.DataEnableUE(node, HTML)
+			success = cls_oaicitest.OaiCiTest.DataEnableUE(node, HTML, ue_ids)
 		elif action == 'DataDisable_UE':
-			success = CiTestObj.DataDisableUE(node, HTML)
+			success = cls_oaicitest.OaiCiTest.DataDisableUE(node, HTML, ue_ids)
 
 	elif action == 'Ping':
 		CiTestObj.ping_args = test.findtext('ping_args')
