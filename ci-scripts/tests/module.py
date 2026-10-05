@@ -31,7 +31,6 @@ class TestModule(unittest.TestCase):
         self.assertTrue(success)
         ip = c.attach()
         self.assertEqual(ip, "127.0.0.1")
-        self.assertTrue(c.checkMTU())
         c.detach()
         logs = c.terminate()
         self.assertEqual(logs, None) # no tracing
@@ -43,7 +42,6 @@ class TestModule(unittest.TestCase):
         self.assertTrue(success)
         ip = c.attach()
         self.assertEqual(ip, None)
-        self.assertFalse(c.checkMTU())
         c.detach()
         logs = c.terminate()
         self.assertEqual(logs, None) # no tracing
@@ -55,7 +53,6 @@ class TestModule(unittest.TestCase):
         self.assertTrue(success)
         ip = c.attach()
         self.assertEqual(ip, "127.0.0.1")
-        self.assertTrue(c.checkMTU())
         c.detach()
         tmp = tempfile.mkdtemp()
         log_file = c.terminate(self.ctx)

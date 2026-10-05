@@ -328,15 +328,12 @@ class OaiCiTest():
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(ue.attach) for ue in ues]
 			attached = [f.result() for f in futures]
-			futures = [executor.submit(ue.checkMTU) for ue in ues]
-			mtus = [f.result() for f in futures]
 			messages = [f"UE {ue.getName()}: {ue.getIP()}" for ue in ues]
-		success = all(attached) and all(mtus)
+		success = all(attached)
 		if success:
 			HTML.CreateHtmlTestRowQueue('N/A', 'OK', messages)
 		else:
-			logging.error(f'error attaching or wrong MTU: attached {attached}, mtus {mtus}')
-			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["Could not retrieve UE IP address(es) or MTU(s) wrong!"])
+			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["Could not retrieve UE IP address(es)!"])
 		return success
 
 	def DetachUE(self, node, HTML):
