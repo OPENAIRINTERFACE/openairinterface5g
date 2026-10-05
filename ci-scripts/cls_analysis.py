@@ -76,7 +76,7 @@ class Analysis():
 				f.write(output)
 			# prepare result and info
 			resultstr = 'PASS' if (test_check and time_check and output_check) else 'FAIL'
-			info = f"{test_name}.log: test {resultstr}"
+			info = f"{test_name}.log: test {resultstr} (in {time}s)"
 			for l in output.splitlines():
 				if l.startswith("CHECK "):
 					info += f"\n{l}"
