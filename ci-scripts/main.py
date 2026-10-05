@@ -340,7 +340,7 @@ if __name__ == "__main__":
 	final_status = True
 	for i, xml in enumerate(test_xmls):
 		logging.info('\u001B[1m----------------------------------------\u001B[0m')
-		logging.info(f'\u001B[1m  Starting Scenario: {xml.filename}\u001B[0m')
+		logging.info(f'\u001B[1m {xml}\u001B[0m')
 		logging.info('\u001B[1m----------------------------------------\u001B[0m')
 
 		xml_test_file = f"{cwd}/{xml.filename}"
