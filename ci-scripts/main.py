@@ -246,7 +246,7 @@ def ShowTestID(ctx, desc, file, line):
     logging.info(f'\u001B[1m {desc}                                 \u001B[0m')
     logging.info(f'\u001B[1m----------------------------------------\u001B[0m')
 
-def run_tests(g_ctx, logPath, HTML, all_tests):
+def run_tests(g_ctx, logPath, HTML, all_tests, filename):
 	task_set_succeeded = True
 	for index, test in enumerate(all_tests, start=1):
 		if test_runner_abort:
@@ -260,7 +260,7 @@ def run_tests(g_ctx, logPath, HTML, all_tests):
 		HTML.testCaseIdx = test_case_idx
 		HTML.desc = desc
 		action = test.findtext('class')
-		file = os.path.basename(xml_test_file)
+		file = os.path.basename(filename)
 		line = test.find('class').sourceline
 		ShowTestID(ctx, desc, file, line)
 		if not task_set_succeeded and not always_exec:
@@ -319,15 +319,14 @@ if __name__ == "__main__":
 	TestXML = namedtuple("TestXML", ["filename", "title"])
 	test_xmls = []
 	for x in xmls:
-		xml_test_file = f"{sys.path[0]}/{x}"
-		logging.info(f"open and parse file {xml_test_file}")
-		if not os.path.isfile(xml_test_file):
-			logging.error(f"no such file {xml_test_file}")
+		logging.info(f"open and parse file {x}")
+		if not os.path.isfile(x):
+			logging.error(f"no such file {x}")
 			sys.exit(1)
 		try:
-			xmlTree = ET.parse(xml_test_file)
+			xmlTree = ET.parse(x)
 		except Exception as e:
-			logging.error(f"while parsing file {xml_test_file}: {e}")
+			logging.error(f"while parsing file {x}: {e}")
 			sys.exit(1)
 		root = xmlTree.getroot()
 		t = TestXML(x, root.findtext('htmlTabName'))
@@ -343,8 +342,6 @@ if __name__ == "__main__":
 		logging.info(f'\u001B[1m {xml}\u001B[0m')
 		logging.info('\u001B[1m----------------------------------------\u001B[0m')
 
-		xml_test_file = f"{cwd}/{xml.filename}"
-
 		# directory where all log artifacts will be placed
 		logPath = f"{cwd}/../cmake_targets/log/{xml.filename}.d"
 		# we run from within ci-scripts, but the logPath is absolute, so replace
@@ -355,14 +352,14 @@ if __name__ == "__main__":
 			c.run(f"rm -rf {logPath}")
 			c.run(f"mkdir -p {logPath}")
 
-		xmlTree = ET.parse(xml_test_file)
+		xmlTree = ET.parse(xml.filename)
 		xmlRoot = xmlTree.getroot()
 		all_tests = xmlRoot.findall('testCase')
 
 		HTML.CreateHtmlTabHeader(xml.filename, i)
 		HTML.startTime=int(round(time.time() * 1000))
 
-		success = run_tests(g_ctx, logPath, HTML, all_tests)
+		success = run_tests(g_ctx, logPath, HTML, all_tests, xml.filename)
 
 		if not success:
 			logging.error(f'\u001B[1;37;41mScenario {xml.filename} failed\u001B[0m')
