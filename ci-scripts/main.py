@@ -310,13 +310,15 @@ logging.basicConfig(level=logging.DEBUG, stream=sys.stdout, format=fmt, datefmt=
 # XML class (action) analysis
 #-----------------------------------------------------------
 cwd = os.getcwd()
+logDir = f"{cwd}/../cmake_targets/log"
+logging.info(f"placing all artifacts for this run in {logDir}/")
 
 if __name__ == "__main__":
 	if g_ctx.repository == '' or g_ctx.branch == '' or g_ctx.workspace == '':
 		sys.exit(f'Insufficient Parameters: {g_ctx.repository=}, {g_ctx.branch=}, {g_ctx.workspace=}')
 	count = 0
 	foundCount = 0
-	TestXML = namedtuple("TestXML", ["filename", "title"])
+	TestXML = namedtuple("TestXML", ["filename", "logPath", "title"])
 	test_xmls = []
 	for x in xmls:
 		logging.info(f"open and parse file {x}")
@@ -328,8 +330,15 @@ if __name__ == "__main__":
 		except Exception as e:
 			logging.error(f"while parsing file {x}: {e}")
 			sys.exit(1)
+		logPath = f"{logDir}/{os.path.basename(x)}.d"
+		with cls_cmd.LocalCmd() as c:
+			c.run(f"rm -rf {logPath}")
+			ret = c.run(f"mkdir -p {logPath}")
+			if ret.returncode != 0:
+				logging.error(f"error while creating logPath {logPath}")
+				sys.exit(1)
 		root = xmlTree.getroot()
-		t = TestXML(x, root.findtext('htmlTabName'))
+		t = TestXML(x, logPath, root.findtext('htmlTabName'))
 		test_xmls.append(t)
 
 	HTML.CreateHtmlHeader(g_ctx.repository, g_ctx.branch, test_xmls)
@@ -342,16 +351,6 @@ if __name__ == "__main__":
 		logging.info(f'\u001B[1m {xml}\u001B[0m')
 		logging.info('\u001B[1m----------------------------------------\u001B[0m')
 
-		# directory where all log artifacts will be placed
-		logPath = f"{cwd}/../cmake_targets/log/{xml.filename}.d"
-		# we run from within ci-scripts, but the logPath is absolute, so replace
-		# the ci-scripts/..; if it does not exist, nothing will happen
-		logPath = logPath.replace(r'/ci-scripts/..', '')
-		logging.info(f"placing all artifacts for this run in {logPath}/")
-		with cls_cmd.LocalCmd() as c:
-			c.run(f"rm -rf {logPath}")
-			c.run(f"mkdir -p {logPath}")
-
 		xmlTree = ET.parse(xml.filename)
 		xmlRoot = xmlTree.getroot()
 		all_tests = xmlRoot.findall('testCase')
@@ -359,7 +358,7 @@ if __name__ == "__main__":
 		HTML.CreateHtmlTabHeader(xml.filename, i)
 		HTML.startTime=int(round(time.time() * 1000))
 
-		success = run_tests(g_ctx, logPath, HTML, all_tests, xml.filename)
+		success = run_tests(g_ctx, xml.logPath, HTML, all_tests, xml.filename)
 
 		if not success:
 			logging.error(f'\u001B[1;37;41mScenario {xml.filename} failed\u001B[0m')
