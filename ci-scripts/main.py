@@ -98,11 +98,9 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 		packetloss_threshold = float(test.findtext('ping_packetloss_threshold'))
 		ping_rttavg_threshold = test.findtext('ping_rttavg_threshold') or '' # was ignored
 		opt = cls_oaicitest.PingOpt(args, packetloss_threshold, float('nan'))
-		CiTestObj.ue_ids = test.findtext('id').split(' ')
-		CiTestObj.svr_id = test.findtext('svr_id')
-		if test.findtext('svr_node'):
-			CiTestObj.svr_node = test.findtext('svr_node') if not force_local else 'localhost'
-		success = CiTestObj.Ping(ctx, node, HTML, opt)
+		svr_node = 'localhost' if force_local and test.findtext('svr_node') else test.findtext('svr_node')
+		ep = cls_oaicitest.TrafficEndpoints.create(test.findtext('id'), node, test.findtext('svr_id'), svr_node)
+		success = cls_oaicitest.OaiCiTest.Ping(ctx, HTML, opt, ep)
 
 	elif action == 'Iperf' or action == 'Iperf2_Unidir':
 		args = test.findtext('iperf_args')
@@ -114,14 +112,12 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 			logging.error(f'test-case has wrong profile {profile}, forcing balanced')
 			profile = 'balanced'
 		opt = cls_oaicitest.IperfOpt(args, packetloss_threshold, bitrate_threshold, profile, tcp_rate_target)
-		CiTestObj.ue_ids = test.findtext('id').split(' ')
-		CiTestObj.svr_id = test.findtext('svr_id')
-		if test.findtext('svr_node'):
-			CiTestObj.svr_node = test.findtext('svr_node') if not force_local else 'localhost'
+		svr_node = 'localhost' if force_local and test.findtext('svr_node') else test.findtext('svr_node')
+		ep = cls_oaicitest.TrafficEndpoints.create(test.findtext('id'), node, test.findtext('svr_id'), svr_node)
 		if action == 'Iperf':
-			success = CiTestObj.Iperf(ctx, node, HTML, opt)
+			success = cls_oaicitest.OaiCiTest.Iperf(ctx, HTML, opt, ep)
 		elif action == 'Iperf2_Unidir':
-			success = CiTestObj.Iperf2_Unidir(ctx, node, HTML, opt)
+			success = cls_oaicitest.OaiCiTest.Iperf2_Unidir(ctx, HTML, opt, ep)
 
 	elif action == 'IdleSleep':
 		st = test.findtext('idle_sleep_time_in_sec') or "5"
@@ -288,7 +284,6 @@ def run_tests(g_ctx, logPath, HTML, all_tests, filename):
 # MAIN PART
 #-----------------------------------------------------------
 
-CiTestObj = cls_oaicitest.OaiCiTest()
  
 CONTAINERS = cls_containerize.Containerize()
 

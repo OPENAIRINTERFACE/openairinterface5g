@@ -309,15 +309,26 @@ class IperfOpt(NamedTuple):
     profile: str # bandwidth distribution among UEs: balanced, unbalanced, single-ue
     tcp_rate_target: float # min TCP receiver bitrate (Mbps), NaN to disable
 
+class TrafficEndpoints(NamedTuple):
+    """UE(s) and server between which to run Ping/Iperf traffic"""
+    ue_ids: list[str] # when doing Ping/Iperf, can be multiple UEs
+    ue_node: str # node on which the UE(s) run
+    svr_id: str # to one (optional) server/host
+    svr_node: str # optional CN override TODO necessary?
+
+    @classmethod
+    def create(cls, ue_ids, ue_node, svr_id, svr_node=None):
+        """Create from strings; ue_ids is a space-separated list of UE IDs"""
+        return cls((ue_ids or '').split(), ue_node, svr_id or None, svr_node or None)
+
+    def valid(self):
+        """True if there is at least one UE and a server"""
+        return len(self.ue_ids) > 0 and all(self.ue_ids) and bool(self.svr_id)
+
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
 #-----------------------------------------------------------
 class OaiCiTest():
-	
-	def __init__(self):
-		self.ue_ids = []
-		self.svr_node = None
-		self.svr_id = None
 
 	def InitializeUE(node, HTML, ue_ids):
 		ues = [cls_module.Module_UE(n.strip(), node) for n in ue_ids]
@@ -453,11 +464,11 @@ class OaiCiTest():
 
 		return (True, message)
 
-	def Ping(self, ctx, node, HTML, opt, infra_file="ci_infra.yaml"):
-		if self.ue_ids == [] or self.svr_id == None:
-			raise Exception("no module names in self.ue_ids or/and self.svr_id provided")
-		ues = [cls_module.Module_UE(ue_id, node, infra_file) for ue_id in self.ue_ids]
-		cn = cls_corenetwork.CoreNetwork(self.svr_id, self.svr_node, filename=infra_file)
+	def Ping(ctx, HTML, opt, ep, infra_file="ci_infra.yaml"):
+		if not ep.valid():
+			raise Exception(f"invalid traffic endpoints: {ep}")
+		ues = [cls_module.Module_UE(ue_id, ep.ue_node, infra_file) for ue_id in ep.ue_ids]
+		cn = cls_corenetwork.CoreNetwork(ep.svr_id, ep.svr_node, filename=infra_file)
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(OaiCiTest.Ping_common, ctx, cn, ue, opt) for ue in ues]
 			results = [f.result() for f in futures]
@@ -530,13 +541,13 @@ class OaiCiTest():
 
 		return (status, f'{ue_header}\n{msg}')
 
-	def Iperf(self, ctx, node, HTML, opt, infra_file="ci_infra.yaml"):
+	def Iperf(ctx, HTML, opt, ep, infra_file="ci_infra.yaml"):
 		logging.debug(f'Iperf: {opt}')
 
-		if self.ue_ids == [] or self.svr_id == None:
-			raise Exception("no module names in self.ue_ids or/and self.svr_id provided")
-		ues = [cls_module.Module_UE(ue_id, node, infra_file) for ue_id in self.ue_ids]
-		cn = cls_corenetwork.CoreNetwork(self.svr_id, self.svr_node, filename=infra_file)
+		if not ep.valid():
+			raise Exception(f"invalid traffic endpoints: {ep}")
+		ues = [cls_module.Module_UE(ue_id, ep.ue_node, infra_file) for ue_id in ep.ue_ids]
+		cn = cls_corenetwork.CoreNetwork(ep.svr_id, ep.svr_node, filename=infra_file)
 		with concurrent.futures.ThreadPoolExecutor(max_workers=64) as executor:
 			futures = [executor.submit(OaiCiTest.Iperf_Module, ctx, cn, ue, i, len(ues), opt) for i, ue in enumerate(ues)]
 			results = [f.result() for f in futures]
@@ -559,11 +570,11 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue(opt.args, 'KO', messages)
 		return success
 
-	def Iperf2_Unidir(self, ctx, node, HTML, opt, infra_file="ci_infra.yaml"):
-		if self.ue_ids == [] or self.svr_id == None or len(self.ue_ids) != 1:
-			raise Exception("no module names in self.ue_ids or/and self.svr_id provided, multi UE scenario not supported")
-		ue = cls_module.Module_UE(self.ue_ids[0].strip(), node, infra_file)
-		cn = cls_corenetwork.CoreNetwork(self.svr_id, self.svr_node, filename=infra_file)
+	def Iperf2_Unidir(ctx, HTML, opt, ep, infra_file="ci_infra.yaml"):
+		if not ep.valid() or len(ep.ue_ids) != 1:
+			raise Exception(f"invalid traffic endpoints (multi UE scenario not supported): {ep}")
+		ue = cls_module.Module_UE(ep.ue_ids[0].strip(), ep.ue_node, infra_file)
+		cn = cls_corenetwork.CoreNetwork(ep.svr_id, ep.svr_node, filename=infra_file)
 		ueIP = ue.getIP()
 		if not ueIP:
 			return False
