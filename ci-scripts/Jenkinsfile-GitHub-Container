@@ -89,7 +89,6 @@ pipeline {
             echo "Commit ID           :   ${env.GIT_COMMIT}"
             branch = "${gitLocalBranch}-${env.GIT_COMMIT}"
           }
-          env.JOB_TIMESTAMP = sh(returnStdout: true, script: 'date --utc --rfc-3339=seconds | sed -e "s#+00:00##"').trim()
         }
       }
     }
@@ -1047,9 +1046,7 @@ def finalizeDownstreamJob(jobName) {
         filter: 'test_results*.html',
         selector: lastCompleted(),
         optional: true)
-      if (fileExists(fileName)) {
-        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${env.JOB_TIMESTAMP}#' ${fileName}"
-      } else {
+      if (!fileExists(fileName)) {
         sh "echo \"could not copy results from ${jobName}, please check pipeline ${BUILD_URL}\" > ${fileName}"
       }
       archiveArtifacts artifacts: fileName

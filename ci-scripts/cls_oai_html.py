@@ -13,6 +13,7 @@
 import re               # reg
 import fileinput
 import time
+from datetime import datetime, timezone
 import subprocess
 
 def tabRef(idx):
@@ -65,7 +66,8 @@ class HTMLManagement():
 			f.write('  <table border = "1">\n')
 			f.write('     <tr>\n')
 			f.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-time"></span> Build Start Time (UTC) </td>\n')
-			f.write('       <td>TEMPLATE_BUILD_TIME</td>\n')
+			now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S%z")
+			f.write(f'       <td>{now}</td>\n')
 			f.write('     </tr>\n')
 			f.write('     <tr>\n')
 			f.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-cloud-upload"></span> GIT Repository </td>\n')
