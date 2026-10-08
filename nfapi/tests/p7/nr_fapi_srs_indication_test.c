@@ -14,7 +14,7 @@ static void fil_srs_indication_report_tlv(nfapi_srs_report_tlv_t *tlv)
     tlv->value[i] = rand32();
   }
   const uint8_t num_bytes = 4 - get_tlv_padding(tlv->length);
-  tlv->value[last_idx] = rand32_range(0, 1 << (8 * num_bytes));
+  tlv->value[last_idx] = num_bytes == 4 ? rand32() : rand32_range(0, 1 << (8 * num_bytes));
 }
 
 static void fill_srs_indication_PDU(nfapi_nr_srs_indication_pdu_t *pdu)
@@ -50,8 +50,6 @@ static void test_pack_unpack(nfapi_nr_srs_indication_t *req)
   int pack_result = fapi_nr_p7_message_pack(req, msg_buf, message_size, NULL);
 
   DevAssert(pack_result >= 0 + NFAPI_HEADER_LENGTH);
-  // update req message_length value with value calculated in message_pack procedure
-  req->header.message_length = pack_result; //- NFAPI_HEADER_LENGTH;
   // test the unpacking of the header
   // copy first NFAPI_HEADER_LENGTH bytes into a new buffer, to simulate SCTP PEEK
   fapi_message_header_t header;

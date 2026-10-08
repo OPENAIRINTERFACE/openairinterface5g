@@ -15,7 +15,7 @@ static void test_phy_id_roundtrip(uint16_t phy_id)
   uint8_t msg_buf[1024];
   int pack_result = fapi_nr_p7_message_pack(&req, msg_buf, sizeof(msg_buf), NULL);
   // Should always return 4 (2 bytes sfn + 2 bytes slot)
-  DevAssert(pack_result == 4);
+  DevAssert(pack_result == 4 + NFAPI_HEADER_LENGTH);
   // the opaque handle is the second byte of the packed header
   DevAssert(msg_buf[1] == phy_id);
 

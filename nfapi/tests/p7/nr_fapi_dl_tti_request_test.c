@@ -230,8 +230,6 @@ static void test_pack_unpack(nfapi_nr_dl_tti_request_t *req)
   int pack_result = fapi_nr_p7_message_pack(req, msg_buf, sizeof(msg_buf), NULL);
 
   DevAssert(pack_result >= 0 + NFAPI_HEADER_LENGTH);
-  // update req message_length value with value calculated in message_pack procedure
-  req->header.message_length = pack_result; //- NFAPI_HEADER_LENGTH;
   // test the unpacking of the header
   // copy first NFAPI_HEADER_LENGTH bytes into a new buffer, to simulate SCTP PEEK
   fapi_message_header_t header;
@@ -244,6 +242,7 @@ static void test_pack_unpack(nfapi_nr_dl_tti_request_t *req)
   int unpack_header_result = fapi_nr_p7_message_header_unpack(pReadPackedMessage, NFAPI_HEADER_LENGTH, &header, sizeof(header), 0);
   DevAssert(unpack_header_result >= 0);
   DevAssert(header.message_id == req->header.message_id);
+  printf("%d %d\n", header.message_length, req->header.message_length);
   DevAssert(header.message_length == req->header.message_length);
   // test the unpacking and compare with initial message
   nfapi_nr_dl_tti_request_t unpacked_req = {0};

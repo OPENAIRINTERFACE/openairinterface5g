@@ -211,7 +211,7 @@ bool aerial_nr_send_p7_message(vnf_p7_t *vnf_p7, nfapi_nr_p7_message_header_t *h
       return false;
     }
     // Set the length
-    send_msg.msg_len = len_FAPI + 8; // adding 8 to account for the size of the FAPI header
+    send_msg.msg_len = len_FAPI;
     // Send
     return send_nvipc_msg(&send_msg);
   }

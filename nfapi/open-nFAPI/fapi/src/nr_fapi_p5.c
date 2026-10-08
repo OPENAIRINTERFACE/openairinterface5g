@@ -90,14 +90,17 @@ int fapi_nr_p5_message_pack(void *pMessageBuf,
   push16(pMessageHeader->message_id, &pWritePackedMessage, pPackMessageEnd); // Message type ID
 
   // check for a valid message length
-  const uint32_t packedMsgLen = get_packed_msg_len((uintptr_t)pPackedBuf, (uintptr_t)pPacketBodyField);
-  uint16_t packedMsgLen16 = get_packed_msg_len((uintptr_t)pPacketBodyFieldStart, (uintptr_t)pPacketBodyField);
+  const uintptr_t msgStart = (uintptr_t)pPackedBuf;
+  const uintptr_t msgHead = (uintptr_t)pPacketBodyFieldStart;
+  const uintptr_t msgEnd = (uintptr_t)pPacketBodyField;
+  const uint32_t packedMsgLen = get_packed_msg_len(msgHead, msgEnd);
+  const int totalMsgLen = (int)get_packed_msg_len(msgStart, msgEnd);
   if (pMessageHeader->message_id == NFAPI_NR_PHY_MSG_TYPE_PARAM_REQUEST
       || pMessageHeader->message_id == NFAPI_NR_PHY_MSG_TYPE_START_REQUEST
       || pMessageHeader->message_id == NFAPI_NR_PHY_MSG_TYPE_STOP_REQUEST
       || pMessageHeader->message_id == NFAPI_NR_PHY_MSG_TYPE_STOP_INDICATION) {
     // These messages don't have a body, length is 0
-    packedMsgLen16 = 0;
+    AssertFatal(packedMsgLen == 0, "Message 0x%02x shouldn't have a body", pMessageHeader->message_id);
   }
   AssertFatal(packedMsgLen <= 0xFFFF && packedMsgLen <= packedBufLen,
               "Packed message 0x%02x length error %d, buffer supplied %d\n",
@@ -105,11 +108,13 @@ int fapi_nr_p5_message_pack(void *pMessageBuf,
               packedMsgLen,
               packedBufLen);
   // Update the message length in the header
-  if (!push32(packedMsgLen16, &pPackedLengthField, pPackMessageEnd))
+  pMessageHeader->message_length = packedMsgLen;
+
+  if (!push32(packedMsgLen, &pPackedLengthField, pPackMessageEnd))
     return -1;
 
-  // return the packed length
-  return packedMsgLen;
+  // Return the total message length, not just the body length
+  return totalMsgLen;
 }
 
 bool fapi_nr_p5_message_unpack(void *pMessageBuf,

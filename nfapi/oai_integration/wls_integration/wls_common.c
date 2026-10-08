@@ -96,8 +96,8 @@ uint8_t wls_send_fapi_msg(PWLS_MAC_CTX pWls, const uint16_t message_id, const in
   AssertFatal(headerElem, "WLS_PA2VA failed for headerElem\n");
   p_fapi_api_queue_elem_t fapiMsgElem = WLS_PA2VA(pWls->hWls, pa_msg);
   AssertFatal(fapiMsgElem, "WLS_PA2VA failed for fapiMsgElem\n");
-  fill_fapi_list_elem(fapiMsgElem, NULL, message_id, 1, packed_len + NFAPI_HEADER_LENGTH);
-  memcpy((uint8_t *)(fapiMsgElem + 1), message, packed_len + NFAPI_HEADER_LENGTH);
+  fill_fapi_list_elem(fapiMsgElem, NULL, message_id, 1, packed_len);
+  memcpy((uint8_t *)(fapiMsgElem + 1), message, packed_len);
   uint8_t wls_header[] = {1, 0}; // num_messages ,  opaque_handle
   if (NFAPI_MODE == NFAPI_MODE_VNF) {
     // Use the opaque handle to signal to our PNF to not progress the FAPI PNF state machine

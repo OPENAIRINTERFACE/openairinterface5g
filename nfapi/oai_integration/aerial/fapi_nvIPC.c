@@ -252,7 +252,7 @@ bool aerial_nr_send_p5_message(vnf_nr_t *vnf, uint16_t p5_idx, nfapi_nr_p4_p5_me
       return false;
     }
     // Set the length
-    send_msg.msg_len = packedMessageLengthFAPI + 8; // adding 8 to account for the size of the FAPI header
+    send_msg.msg_len = packedMessageLengthFAPI;
 
     if (has_separate_dbt_payload) {
       AssertFatal(send_msg.data_buf != NULL, "CONFIG.request DBT path: data buffer is NULL\n");

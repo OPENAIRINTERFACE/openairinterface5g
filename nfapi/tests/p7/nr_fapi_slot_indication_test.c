@@ -18,9 +18,7 @@ static void test_pack_unpack(nfapi_nr_slot_indication_scf_t *req)
   int pack_result = fapi_nr_p7_message_pack(req, msg_buf, sizeof(msg_buf), NULL);
 
   // Should always return 4 (2 bytes sfn + 2 bytes slot )
-  DevAssert(pack_result == 4);
-  // update req message_length value with value calculated in message_pack procedure
-  // req->header.message_length = pack_result;
+  DevAssert(pack_result == 4 + NFAPI_HEADER_LENGTH);
   // test the unpacking of the header
   // copy first NFAPI_HEADER_LENGTH bytes into a new buffer, to simulate SCTP PEEK
   fapi_message_header_t header;

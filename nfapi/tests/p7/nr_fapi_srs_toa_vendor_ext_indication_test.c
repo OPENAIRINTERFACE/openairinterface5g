@@ -23,8 +23,6 @@ static void test_pack_unpack(nfapi_nr_srs_toa_vendor_ext_indication_t *req)
   // first test the packing procedure
   int pack_result = fapi_nr_p7_message_pack(req, msg_buf, message_size, NULL);
   DevAssert(pack_result >= 0 + NFAPI_HEADER_LENGTH);
-  // update req message_length value with value calculated in message_pack procedure
-  req->header.message_length = pack_result; //- NFAPI_HEADER_LENGTH;
   // test the unpacking of the header
   // copy first NFAPI_HEADER_LENGTH bytes into a new buffer, to simulate SCTP PEEK
   fapi_message_header_t header;

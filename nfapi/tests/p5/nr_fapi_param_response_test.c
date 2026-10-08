@@ -205,8 +205,6 @@ void test_pack_unpack(nfapi_nr_param_response_scf_t *req)
   int pack_result = fapi_nr_p5_message_pack(req, msg_len, msg_buf, sizeof(msg_buf), NULL);
   // PARAM.response message body length is AT LEAST 10 (NFAPI_HEADER_LENGTH + 1 byte error_code + 1 byte num_tlv)
   DevAssert(pack_result >= NFAPI_HEADER_LENGTH + 1 + 1);
-  // update req message_length value with value calculated in message_pack procedure
-  req->header.message_length = pack_result - NFAPI_HEADER_LENGTH;
   // test the unpacking of the header
   // copy first NFAPI_HEADER_LENGTH bytes into a new buffer, to simulate SCTP PEEK
   nfapi_nr_p4_p5_message_header_t header;
