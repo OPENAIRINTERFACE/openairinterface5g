@@ -553,9 +553,8 @@ static NR_UE_info_t *create_new_UE(gNB_MAC_INST *mac, nr_cell_sched_t *cell, uin
     cellGroupConfig->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(UE->rnti, UE->uid, scc, mac->frame);
   } else {
     NR_UE_NR_Capability_t *cap = get_ue_nr_cap_from_cg_config_info(cgci);
-    const f1ap_served_cell_info_t *f1ap_cell = &mac->f1_config.setup_req->cell[0].info;
-    int nr_band = f1ap_cell->mode == F1AP_MODE_TDD ? f1ap_cell->tdd.freqinfo.band : f1ap_cell->fdd.dl_freqinfo.band;
-    UE->uecap_fs_ids = get_feature_set_ids(cap, nr_band, EN_DC);
+    NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
+    UE->uecap_fs_ids = feature_set_ids_handler(cap, frequencyInfoDL, EN_DC);
     cellGroupConfig = get_default_secondaryCellGroup(scc, cap, &UE->uecap_fs_ids, 1, 1, &cell->radio_config, cell, UE->uid, ssb_index);
     cellGroupConfig->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(UE->rnti, UE->uid, scc, mac->frame);
     // TODO: in NSA we assign capabilities here, otherwise outside => not logic
@@ -733,9 +732,8 @@ void ue_context_setup_request(const f1ap_ue_context_setup_req_t *req)
 
   // Needed for DRB Setup (e.g., RLC might reduce SN size)
   UE->capability = ue_cap;
-  const f1ap_served_cell_info_t *f1ap_cell = &mac->f1_config.setup_req->cell[0].info;
-  int nr_band = f1ap_cell->mode == F1AP_MODE_TDD ? f1ap_cell->tdd.freqinfo.band : f1ap_cell->fdd.dl_freqinfo.band;
-  UE->uecap_fs_ids = get_feature_set_ids(ue_cap, nr_band, is_SA ? NR_SA : EN_DC);
+  NR_ServingCellConfigCommon_t *scc = cell->common_channels.ServingCellConfigCommon;
+  UE->uecap_fs_ids = feature_set_ids_handler(ue_cap, scc->downlinkConfigCommon->frequencyInfoDL, is_SA ? NR_SA : EN_DC);
 
   if (req->srbs_len > 0) {
     resp.srbs_len = handle_ue_context_srbs_setup(UE, req->srbs_len, req->srbs, &resp.srbs, new_CellGroup, &mac->rlc_config);
@@ -750,7 +748,6 @@ void ue_context_setup_request(const f1ap_ue_context_setup_req_t *req)
     handle_ue_context_rrc_container(req->rrc_container, UE->rnti);
   }
 
-  NR_ServingCellConfigCommon_t *scc = cell->common_channels.ServingCellConfigCommon;
   if (ue_cap != NULL && cg_configinfo == NULL) {
     // store the new UE capabilities, and update the cellGroupConfig
     // only to be done if we did not already update through the cg_configinfo
@@ -896,9 +893,8 @@ void ue_context_modification_request(const f1ap_ue_context_mod_req_t *req)
     // store the new UE capabilities, and update the cellGroupConfig
     ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
     UE->capability = ue_cap;
-    const f1ap_served_cell_info_t *f1ap_cell = &mac->f1_config.setup_req->cell[0].info;
-    int nr_band = f1ap_cell->mode == F1AP_MODE_TDD ? f1ap_cell->tdd.freqinfo.band : f1ap_cell->fdd.dl_freqinfo.band;
-    UE->uecap_fs_ids = get_feature_set_ids(ue_cap, nr_band, IS_SA_MODE(get_softmodem_params()) ? NR_SA : EN_DC);
+    NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
+    UE->uecap_fs_ids = feature_set_ids_handler(ue_cap, frequencyInfoDL, IS_SA_MODE(get_softmodem_params()) ? NR_SA : EN_DC);
     LOG_I(NR_MAC, "UE %04x: received capabilities, updating CellGroupConfig\n", UE->rnti);
     update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, &UE->uecap_fs_ids, cell, scc);
   }
