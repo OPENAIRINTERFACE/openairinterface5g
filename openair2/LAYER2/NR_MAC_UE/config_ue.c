@@ -2998,7 +2998,11 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
   configure_logicalChannelBearer(mac, cell_group_config->rlc_BearerToAddModList, cell_group_config->rlc_BearerToReleaseList);
 
   if (ue_Capability) {
-    mac->uecap_fs_ids = get_feature_set_ids(ue_Capability, mac->nr_band, IS_SA_MODE(get_softmodem_params()) ? NR_SA : EN_DC);
+    mac->uecap_fs_ids = get_feature_set_ids(ue_Capability,
+                                            mac->nr_band,
+                                            mac->current_DL_BWP->scs,
+                                            mac->phy_config.config_req.carrier_config.dl_bandwidth,
+                                            IS_SA_MODE(get_softmodem_params()) ? NR_SA : EN_DC);
     handle_mac_uecap_info(mac, ue_Capability);
   }
 
