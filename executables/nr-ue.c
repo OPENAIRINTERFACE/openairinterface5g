@@ -469,32 +469,35 @@ static int handle_sync_req_from_mac(PHY_VARS_NR_UE *UE)
 
     const fapi_nr_config_request_t *config = &UE->nrUE_config;
     const fapi_nr_ue_carrier_config_t *cfg = &config->carrier_config;
-    uint64_t dl_CarrierFreq = get_carrier_frequency(fp->N_RB_DL, fp->numerology_index, cfg->dl_frequency);
-    uint64_t ul_CarrierFreq = get_carrier_frequency(fp->N_RB_UL, fp->numerology_index, cfg->uplink_frequency);
-    if (dl_CarrierFreq != fp->dl_CarrierFreq || ul_CarrierFreq != fp->ul_CarrierFreq) {
-      LOG_I(NR_PHY,
-            "[UE %d] SYNC REQ: RF frequency change: dl %lu->%lu Hz, ul %lu->%lu Hz (from dl_frequency=%u kHz, target_Nid_cell=%d)\n",
-            UE->Mod_id,
-            fp->dl_CarrierFreq,
-            dl_CarrierFreq,
-            fp->ul_CarrierFreq,
-            ul_CarrierFreq,
-            cfg->dl_frequency,
-            UE->target_Nid_cell);
-      nrue_ru_set_freq(UE, ul_CarrierFreq, dl_CarrierFreq, 0);
-      fp->dl_CarrierFreq = dl_CarrierFreq;
-      fp->ul_CarrierFreq = ul_CarrierFreq;
-      init_symbol_rotation(fp);
-    }
+    if (cfg->dl_frequency != 0) {
+      uint64_t dl_CarrierFreq = get_carrier_frequency(fp->N_RB_DL, fp->numerology_index, cfg->dl_frequency);
+      uint64_t ul_CarrierFreq = get_carrier_frequency(fp->N_RB_UL, fp->numerology_index, cfg->uplink_frequency);
+      if (dl_CarrierFreq != fp->dl_CarrierFreq || ul_CarrierFreq != fp->ul_CarrierFreq) {
+        LOG_I(NR_PHY,
+              "[UE %d] SYNC REQ: RF frequency change: dl %lu->%lu Hz, ul %lu->%lu Hz (from dl_frequency=%u kHz, "
+              "target_Nid_cell=%d)\n",
+              UE->Mod_id,
+              fp->dl_CarrierFreq,
+              dl_CarrierFreq,
+              fp->ul_CarrierFreq,
+              ul_CarrierFreq,
+              cfg->dl_frequency,
+              UE->target_Nid_cell);
+        nrue_ru_set_freq(UE, ul_CarrierFreq, dl_CarrierFreq, 0);
+        fp->dl_CarrierFreq = dl_CarrierFreq;
+        fp->ul_CarrierFreq = ul_CarrierFreq;
+        init_symbol_rotation(fp);
+      }
 
-    int ssb_start_subcarrier = nr_get_ssb_start_sc(fp->numerology_index,
-                                                   config->ssb_table.ssb_offset_point_a,
-                                                   config->ssb_table.ssb_subcarrier_offset,
-                                                   fp->freq_range);
-    // SSB location can change during for ex: handover on the target cell
-    if (ssb_start_subcarrier != fp->ssb_start_subcarrier) {
-      fp->ssb_start_subcarrier = ssb_start_subcarrier;
-      LOG_I(NR_PHY, "SYNC REQ: SSB location changed:%d\n", fp->ssb_start_subcarrier);
+      int ssb_start_subcarrier = nr_get_ssb_start_sc(fp->numerology_index,
+                                                     config->ssb_table.ssb_offset_point_a,
+                                                     config->ssb_table.ssb_subcarrier_offset,
+                                                     fp->freq_range);
+      // SSB location can change during for ex: handover on the target cell
+      if (ssb_start_subcarrier != fp->ssb_start_subcarrier) {
+        fp->ssb_start_subcarrier = ssb_start_subcarrier;
+        LOG_I(NR_PHY, "SYNC REQ: SSB location changed:%d\n", fp->ssb_start_subcarrier);
+      }
     }
 
     // Apply Doppler based on NTN-Config for target cell
