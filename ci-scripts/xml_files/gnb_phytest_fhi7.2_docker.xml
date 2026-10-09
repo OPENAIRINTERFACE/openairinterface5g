@@ -32,6 +32,7 @@
   <testCase>
     <class>AnalyzeRTStats_Object</class>
     <desc>Analyze Real-Time Stats</desc>
+    <yaml_path>ci-scripts/yaml_files/phytest_fhi72</yaml_path>
     <stats_cfg>datalog_rt_stats.100.4x4.fhi72.yaml</stats_cfg>
     <service>oai-gnb</service>
     <stats_file>/opt/oai-gnb/nrL1_stats.log /opt/oai-gnb/nrMAC_stats.log</stats_file>

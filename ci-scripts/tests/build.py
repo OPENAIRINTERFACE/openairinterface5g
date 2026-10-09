@@ -20,7 +20,6 @@ class TestBuild(unittest.TestCase):
 	def setUp(self):
 		self.html = cls_oai_html.HTMLManagement()
 		self.html.testCaseIdx = "000000"
-		self.cont = cls_containerize.Containerize()
 		self._d = tempfile.mkdtemp()
 		logging.warning(f"temporary directory: {self._d}")
 		self.node = 'localhost'

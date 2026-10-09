@@ -154,16 +154,11 @@ class DeploymentOpt(NamedTuple):
 #-----------------------------------------------------------
 class Containerize():
 
-	def __init__(self):
-		
-		self.imageKind = ''
-		self.yamlPath = ''
-
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
 
-	def BuildImage(self, ctx, node, HTML):
+	def BuildImage(ctx, node, HTML, image_kind):
 		lSourcePath = ctx.g.workspace
 		logging.debug('Building on server: ' + node)
 		cmd = cls_cmd.getConnection(node)
@@ -177,7 +172,7 @@ class Containerize():
 		forceBaseImageBuild = False
 		imageTag = 'develop'
 
-		result = re.search('native_cuda_armv8', self.imageKind)
+		result = re.search('native_cuda_armv8', image_kind)
 		if result is not None:
 			baseImage = 'ran-base-cuda'
 			buildImage = 'ran-build-cuda'
@@ -185,13 +180,13 @@ class Containerize():
 		# we always build the ran-build image with all targets
 		# Creating a tupple with the imageName, the DockerFile prefix pattern, targetName and sanitized option
 		imageNames = [(buildImage, 'build', f'{buildImage}', '')]
-		result = re.search('eNB', self.imageKind)
+		result = re.search('eNB', image_kind)
 		if result is not None:
 			imageNames.append(('oai-enb', 'eNB', 'oai-enb', ''))
-		result = re.search('gNB', self.imageKind)
+		result = re.search('gNB', image_kind)
 		if result is not None:
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
-		result = re.search('x86', self.imageKind)
+		result = re.search('x86', image_kind)
 		if result is not None:
 			imageNames.append(('oai-enb', 'eNB', 'oai-enb', ''))
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
@@ -209,26 +204,26 @@ class Containerize():
 			imageNames.append(('ran-build-fhi72', 'build.fhi72', 'ran-build-fhi72', ''))
 			imageNames.append(('oai-gnb', 'gNB.fhi72', 'oai-gnb-fhi72', ''))
 			imageNames.append(('oai-nr-oru', 'nrORU.fhi72', 'oai-nr-oru', ''))
-		result = re.search('build_cross_arm64', self.imageKind)
+		result = re.search('build_cross_arm64', image_kind)
 		if result is not None:
 			dockerfileprefix = '.ubuntu.cross-arm64'
-		result = re.search('native_armv9', self.imageKind)
+		result = re.search('native_armv9', image_kind)
 		if result is not None:
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
 			imageNames.append(('ran-build-fhi72', 'build.fhi72.native_arm', 'ran-build-fhi72', ''))
 			imageNames.append(('oai-nr-cuup', 'nr-cuup', 'oai-nr-cuup', ''))
 			imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue', ''))
 			imageNames.append(('oai-gnb-aerial', 'gNB.aerial', 'oai-gnb-aerial', ''))
-		result = re.search('native_armv8', self.imageKind)
+		result = re.search('native_armv8', image_kind)
 		if result is not None:
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
 			imageNames.append(('oai-nr-cuup', 'nr-cuup', 'oai-nr-cuup', ''))
 			imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue', ''))
-		result = re.search('fhi72-t2', self.imageKind)
+		result = re.search('fhi72-t2', image_kind)
 		if result is not None:
 			imageNames.append(('ran-build-fhi72-t2', 'build.fhi72.t2', 'ran-build-fhi72-t2', ''))
 			imageNames.append(('oai-gnb', 'gNB.fhi72.t2', 'oai-gnb-fhi72-t2', ''))
-		result = re.search('native_cuda_armv8', self.imageKind)
+		result = re.search('native_cuda_armv8', image_kind)
 		if result is not None:
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
 			imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue', ''))
@@ -278,7 +273,7 @@ class Containerize():
 			cmd.run(f"docker image prune --force")
 			cmd.close()
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
-			HTML.CreateHtmlTestRowQueue(self.imageKind, 'KO', [])
+			HTML.CreateHtmlTestRowQueue(image_kind, 'KO', [])
 			return False
 		else:
 			result = re.search(r'Size *= *(?P<size>[0-9\-]+) *bytes', cmd.getBefore())
@@ -368,7 +363,7 @@ class Containerize():
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
 		return status
 
-	def BuildRunTests(self, ctx, node, dockerfile, runtime_opt, ctest_opt, HTML):
+	def BuildRunTests(ctx, node, dockerfile, runtime_opt, ctest_opt, HTML):
 		lSourcePath = ctx.g.workspace
 		logging.debug('Building on server: ' + node)
 		cmd = cls_cmd.getConnection(node)
@@ -656,9 +651,9 @@ class Containerize():
 			logging.error('\u001B[1m Undeploying objects Failed\u001B[0m')
 		return success
 
-	def AnalyzeRTStatsObject(self, HTML, node, ctx, thresholds, service=None, stats_files=None):
+	def AnalyzeRTStatsObject(HTML, node, ctx, yaml_path, thresholds, service=None, stats_files=None):
 		logging.info(f'Analyzing realtime stats from server: {node}')
-		yaml = self.yamlPath.strip('/')
+		yaml = yaml_path.strip('/')
 		wd = f'{ctx.g.workspace}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 

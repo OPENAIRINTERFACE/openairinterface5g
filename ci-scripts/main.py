@@ -45,21 +45,20 @@ import traceback
 #-----------------------------------------------------------
 
 def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
-	global CONTAINERS
 	if action == 'Build_eNB' or action == 'Build_Image' or action == "Build_Cluster_Image" or action == "Build_Run_Tests":
 		args = test.findtext('Build_eNB_args')
-		CONTAINERS.imageKind=test.findtext('kind')
+		image_kind = test.findtext('kind')
 		dockerfile = test.findtext('dockerfile') or ''
 		runtime_opt = test.findtext('runtime-opt') or ''
 		ctest_opt = test.findtext('ctest-opt') or ''
 		if action == 'Build_eNB':
 			success = cls_native.Native.Build(ctx, node, HTML, ctx.g.workspace, args)
 		elif action == 'Build_Image':
-			success = CONTAINERS.BuildImage(ctx, node, HTML)
+			success = cls_containerize.Containerize.BuildImage(ctx, node, HTML, image_kind)
 		elif action == 'Build_Cluster_Image':
 			success = cls_cluster.Cluster.BuildClusterImage(ctx, oc, node, HTML)
 		elif action == 'Build_Run_Tests':
-			success = CONTAINERS.BuildRunTests(ctx, node, dockerfile, runtime_opt, ctest_opt, HTML)
+			success = cls_containerize.Containerize.BuildRunTests(ctx, node, dockerfile, runtime_opt, ctest_opt, HTML)
 
 	elif action == 'Initialize_eNB':
 		args = test.findtext('Initialize_eNB_args')
@@ -148,7 +147,6 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 		services = test.findtext('services') or ''
 		num_attempts = int(test.findtext('num_attempts') or 1)
 		opt = cls_containerize.DeploymentOpt(yaml_path, services, num_attempts)
-		CONTAINERS.yamlPath = yaml_path # still needed by AnalyzeRTStatsObject()
 		if action == 'Deploy_Object':
 			success = cls_containerize.Containerize.DeployObject(ctx, node, HTML, opt)
 		elif action == 'Stop_Object':
@@ -216,10 +214,11 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 		success = ran.RAN.AnalyzeRTStats(HTML, node, ctx, yaml)
 
 	elif action == 'AnalyzeRTStats_Object':
+		yaml_path = test.findtext('yaml_path')
 		yaml = test.findtext('stats_cfg')
 		service = test.findtext('service')
 		stats_files = (test.findtext('stats_file') or '').split()
-		success = CONTAINERS.AnalyzeRTStatsObject(HTML, node, ctx, yaml, service, stats_files)
+		success = cls_containerize.Containerize.AnalyzeRTStatsObject(HTML, node, ctx, yaml_path, yaml, service, stats_files)
 
 	else:
 		logging.warning(f"unknown action {action}, CI run marked as failure")
@@ -284,9 +283,6 @@ def run_tests(g_ctx, logPath, HTML, all_tests, filename):
 #-----------------------------------------------------------
 # MAIN PART
 #-----------------------------------------------------------
-
- 
-CONTAINERS = cls_containerize.Containerize()
 
 #-----------------------------------------------------------
 # Parsing Command Line Arguments
