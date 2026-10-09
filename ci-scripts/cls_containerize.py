@@ -13,6 +13,7 @@
 import re	       # reg
 import logging
 import os
+from typing import NamedTuple
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -142,6 +143,12 @@ def GetDeployedServices(ssh, file):
 			deployed_services.append((s, c))
 	return deployed_services
 
+class DeploymentOpt(NamedTuple):
+	"""Options to deploy/stop/undeploy docker compose services"""
+	yaml_path: str # directory of docker-compose.yml, relative to workspace
+	services: str = '' # space-separated list of services, empty for all
+	num_attempts: int = 1 # number of deployment attempts
+
 #-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
@@ -151,10 +158,6 @@ class Containerize():
 		
 		self.imageKind = ''
 		self.yamlPath = ''
-		self.services = ''
-		self.deploymentTag = ''
-
-		self.num_attempts = 1
 
 		self.flexricTag = ''
 
@@ -545,14 +548,14 @@ class Containerize():
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["cannot create workspace"])
 		return success
 
-	def DeployObject(self, ctx, node, HTML):
-		num_attempts = self.num_attempts
+	def DeployObject(self, ctx, node, HTML, opt):
+		num_attempts = opt.num_attempts
 		lSourcePath = ctx.g.workspace
-		yaml = self.yamlPath.strip('/')
+		yaml = opt.yaml_path.strip('/')
 		wd = f'{lSourcePath}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 		with cls_cmd.getConnection(node) as ssh:
-			services = GetServices(ssh, self.services, wd_yaml)
+			services = GetServices(ssh, opt.services, wd_yaml)
 			if services == [] or services == ' ' or services == None:
 				msg = 'Cannot determine services to start'
 				logging.error(msg)
@@ -560,7 +563,7 @@ class Containerize():
 				return False
 			logging.info(f'\u001B[1mDeploying object(s) "{services}" on server {node}\u001B[0m')
 			ExistEnvFilePrint(ssh, wd)
-			WriteEnvFile(ssh, services, wd, self.deploymentTag, self.flexricTag)
+			WriteEnvFile(ssh, services, wd, ctx.g.branch, self.flexricTag)
 			if num_attempts <= 0:
 				raise ValueError(f'Invalid value for num_attempts: {num_attempts}, must be greater than 0')
 			for attempt in range(num_attempts):
@@ -583,20 +586,20 @@ class Containerize():
 		imagesInfo = info.stdout.splitlines()[1:]
 		logging.debug(f'{info.stdout.splitlines()[1:]}')
 		if deployed:
-			HTML.CreateHtmlTestRowQueue(self.services, 'OK', ['\n'.join(imagesInfo)])
+			HTML.CreateHtmlTestRowQueue(opt.services, 'OK', ['\n'.join(imagesInfo)])
 			logging.info('\u001B[1m Deploying objects Pass\u001B[0m')
 		else:
-			HTML.CreateHtmlTestRowQueue(self.services, 'KO', ['\n'.join(imagesInfo)])
+			HTML.CreateHtmlTestRowQueue(opt.services, 'KO', ['\n'.join(imagesInfo)])
 			logging.error('\u001B[1m Deploying objects Failed\u001B[0m')
 		return deployed
 
-	def StopObject(self, ctx, node, HTML):
+	def StopObject(ctx, node, HTML, opt):
 		lSourcePath = ctx.g.workspace
-		if not self.services:
+		if not opt.services:
 			raise ValueError(f'no services provided')
-		logging.info(f'\u001B[1m Stopping objects "{self.services}" from server: {node}\u001B[0m')
-		reqServices = self.services.split()
-		yaml = self.yamlPath.strip('/')
+		logging.info(f'\u001B[1m Stopping objects "{opt.services}" from server: {node}\u001B[0m')
+		reqServices = opt.services.split()
+		yaml = opt.yaml_path.strip('/')
 		wd = f'{lSourcePath}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 		with cls_cmd.getConnection(node) as ssh:
@@ -613,16 +616,16 @@ class Containerize():
 					fail.append(s)
 		if success == reqServices:
 			logging.info('\u001B[1m Stopping object Pass\u001B[0m')
-			HTML.CreateHtmlTestRowQueue(self.services, 'OK', [f'Stopped {self.services}'])
+			HTML.CreateHtmlTestRowQueue(opt.services, 'OK', [f'Stopped {opt.services}'])
 		else:
 			logging.error('\u001B[1m Stopping object Failed\u001B[0m')
-			HTML.CreateHtmlTestRowQueue(self.services, 'KO', [f'Failed stopping {" ".join(fail)}, succeeded {" ".join(success)}'])
+			HTML.CreateHtmlTestRowQueue(opt.services, 'KO', [f'Failed stopping {" ".join(fail)}, succeeded {" ".join(success)}'])
 		return success
 
-	def UndeployObject(self, ctx, node, HTML, to_analyze):
+	def UndeployObject(ctx, node, HTML, opt, to_analyze):
 		lSourcePath = ctx.g.workspace
 		logging.info(f'\u001B[1m Undeploying all objects from server {node}\u001B[0m')
-		yaml = self.yamlPath.strip('/')
+		yaml = opt.yaml_path.strip('/')
 		wd = f'{lSourcePath}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 		with cls_cmd.getConnection(node) as ssh:

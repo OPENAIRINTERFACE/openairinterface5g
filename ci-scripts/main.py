@@ -144,14 +144,15 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 		success = core_op(cn_id, ctx, HTML)
 
 	elif action == 'Deploy_Object' or action == 'Undeploy_Object' or action == "Create_Workspace" or action == "Stop_Object":
-		CONTAINERS.yamlPath = test.findtext('yaml_path')
-		CONTAINERS.services = test.findtext('services')
-		CONTAINERS.num_attempts = int(test.findtext('num_attempts') or 1)
-		CONTAINERS.deploymentTag = ctx.g.branch
+		yaml_path = test.findtext('yaml_path')
+		services = test.findtext('services') or ''
+		num_attempts = int(test.findtext('num_attempts') or 1)
+		opt = cls_containerize.DeploymentOpt(yaml_path, services, num_attempts)
+		CONTAINERS.yamlPath = yaml_path # still needed by AnalyzeRTStatsObject()
 		if action == 'Deploy_Object':
-			success = CONTAINERS.DeployObject(ctx, node, HTML)
+			success = CONTAINERS.DeployObject(ctx, node, HTML, opt)
 		elif action == 'Stop_Object':
-			success = CONTAINERS.StopObject(ctx, node, HTML)
+			success = cls_containerize.Containerize.StopObject(ctx, node, HTML, opt)
 		elif action == 'Undeploy_Object':
 			analysis = test.find("analysis")
 			services = []
@@ -160,7 +161,7 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 				services = analysis.findtext("services", default="").split()
 				# service: individual services to analyze, in case they have whitespace
 				services = services + [s.text for s in analysis.findall("service")]
-			success = CONTAINERS.UndeployObject(ctx, node, HTML, services)
+			success = cls_containerize.Containerize.UndeployObject(ctx, node, HTML, opt, services)
 		elif action == 'Create_Workspace':
 			if force_local:
 				# Do not create a working directory when running locally. Current repo directory will be used

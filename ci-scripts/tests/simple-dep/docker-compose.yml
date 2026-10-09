@@ -2,7 +2,7 @@
 
 services:
   test:
-    image: ubuntu:${TAG:-jammy}
+    image: ubuntu:jammy
     container_name: test_container
     cap_drop:
       - ALL
