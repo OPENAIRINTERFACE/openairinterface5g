@@ -11,6 +11,7 @@ class GlobalTestCtx(NamedTuple):
     branch: str
     merge: bool
     targetBranch: str
+    flexric_tag: str = '' # FlexRIC image tag to use
 
     def Default(workspace=None):
         return GlobalTestCtx('', workspace if workspace is not None else os.getcwd(), '', False, '')

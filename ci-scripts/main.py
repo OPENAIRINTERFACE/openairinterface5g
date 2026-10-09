@@ -150,7 +150,7 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 		opt = cls_containerize.DeploymentOpt(yaml_path, services, num_attempts)
 		CONTAINERS.yamlPath = yaml_path # still needed by AnalyzeRTStatsObject()
 		if action == 'Deploy_Object':
-			success = CONTAINERS.DeployObject(ctx, node, HTML, opt)
+			success = cls_containerize.Containerize.DeployObject(ctx, node, HTML, opt)
 		elif action == 'Stop_Object':
 			success = cls_containerize.Containerize.StopObject(ctx, node, HTML, opt)
 		elif action == 'Undeploy_Object':
@@ -184,7 +184,7 @@ def ExecuteActionWithParam(action, test, ctx, node, oc, HTML):
 		# hack: for FlexRIC, we need to overwrite the tag to use
 		tag = None
 		if len(images) == 1 and images[0] == "oai-flexric":
-			tag = CONTAINERS.flexricTag
+			tag = ctx.g.flexric_tag
 		if action == "Pull_Local_Registry":
 			success = cls_containerize.Containerize.Pull_Image_from_Registry(ctx, HTML, node, images, tag=tag, tag_prefix=tag_prefix)
 		if action == "Clean_Test_Server_Images":
@@ -295,7 +295,7 @@ CONTAINERS = cls_containerize.Containerize()
 import args_parse
 # Force local execution, move all execution targets to localhost
 force_local = False
-force_local, date_fmt, xmls, g_ctx, oc = args_parse.ArgsParse(sys.argv, CONTAINERS)
+force_local, date_fmt, xmls, g_ctx, oc = args_parse.ArgsParse(sys.argv)
 fmt = "%(levelname)8s: %(message)s"
 if date_fmt:
     fmt = "[%(asctime)s] %(levelname)s %(message)s"

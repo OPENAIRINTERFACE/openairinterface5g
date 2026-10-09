@@ -159,8 +159,6 @@ class Containerize():
 		self.imageKind = ''
 		self.yamlPath = ''
 
-		self.flexricTag = ''
-
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
@@ -548,7 +546,7 @@ class Containerize():
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["cannot create workspace"])
 		return success
 
-	def DeployObject(self, ctx, node, HTML, opt):
+	def DeployObject(ctx, node, HTML, opt):
 		num_attempts = opt.num_attempts
 		lSourcePath = ctx.g.workspace
 		yaml = opt.yaml_path.strip('/')
@@ -563,7 +561,7 @@ class Containerize():
 				return False
 			logging.info(f'\u001B[1mDeploying object(s) "{services}" on server {node}\u001B[0m')
 			ExistEnvFilePrint(ssh, wd)
-			WriteEnvFile(ssh, services, wd, ctx.g.branch, self.flexricTag)
+			WriteEnvFile(ssh, services, wd, ctx.g.branch, ctx.g.flexric_tag)
 			if num_attempts <= 0:
 				raise ValueError(f'Invalid value for num_attempts: {num_attempts}, must be greater than 0')
 			for attempt in range(num_attempts):

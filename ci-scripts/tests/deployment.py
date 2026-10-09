@@ -38,7 +38,6 @@ class TestDeploymentMethods(unittest.TestCase):
 			self._pull_image(cmd, "oai-nr-ue")
 		self.html = cls_oai_html.HTMLManagement()
 		self.html.testCaseId = "000000"
-		self.cont = cls_containerize.Containerize()
 		self.node = 'localhost'
 		g = GlobalTestCtx(repository='', workspace=os.getcwd(), branch=self.tag, merge=True, targetBranch='')
 		self.ctx = TestCaseCtx.Default(tempfile.mkdtemp(), g)
@@ -48,7 +47,7 @@ class TestDeploymentMethods(unittest.TestCase):
 
 	def test_deploy(self):
 		opt = cls_containerize.DeploymentOpt('tests/simple-dep/', '', 3)
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertTrue(deploy)
 		self.assertTrue(undeploy)
@@ -56,7 +55,7 @@ class TestDeploymentMethods(unittest.TestCase):
 	def test_stop_services(self):
 		yaml_path = 'tests/simple-undep/'
 		# should deploy both testA and testB
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path, '', 3))
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path, '', 3))
 		# should fail (no such service)
 		stopC = cls_containerize.Containerize.StopObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path, "testC"))
 		# should stop testA
@@ -77,27 +76,27 @@ class TestDeploymentMethods(unittest.TestCase):
 	def test_deployfails(self):
 		# fails reliably
 		opt = cls_containerize.DeploymentOpt('tests/simple-fail/', '', 3)
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertFalse(deploy)
 
 	def test_deployfails_2svc(self):
 		# fails reliably
 		opt = cls_containerize.DeploymentOpt('tests/simple-fail-2svc/', '', 3)
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertFalse(deploy)
 
 	def test_deploy_ran(self):
 		opt = cls_containerize.DeploymentOpt('yaml_files/5g_rfsimulator_tdd_dora', "oai-gnb", 3)
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertTrue(deploy)
 		self.assertTrue(undeploy)
 
 	def test_deploy_multiran(self):
 		opt = cls_containerize.DeploymentOpt('yaml_files/5g_rfsimulator_tdd_dora', "oai-gnb oai-nr-ue", 3)
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertTrue(deploy)
 		self.assertTrue(undeploy)
@@ -105,9 +104,9 @@ class TestDeploymentMethods(unittest.TestCase):
 	def test_deploy_staged(self):
 		yaml_path = 'yaml_files/5g_rfsimulator_tdd_dora'
 		opt = cls_containerize.DeploymentOpt(yaml_path, "oai-gnb", 3)
-		deploy1 = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy1 = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		opt = cls_containerize.DeploymentOpt(yaml_path, "oai-nr-ue", 3)
-		deploy2 = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy2 = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertTrue(deploy1)
 		self.assertTrue(deploy2)
@@ -125,7 +124,7 @@ class TestDeploymentMethods(unittest.TestCase):
 
 	def test_undeploy_loganalysis(self):
 		opt = cls_containerize.DeploymentOpt('yaml_files/5g_rfsimulator_tdd_dora', "oai-gnb", 3)
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		analyze = ["oai-gnb"]
 		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, analyze)
 		self.assertTrue(deploy)
@@ -133,7 +132,7 @@ class TestDeploymentMethods(unittest.TestCase):
 
 	def test_undeploy_multi_loganalysis(self):
 		opt = cls_containerize.DeploymentOpt('yaml_files/5g_rfsimulator_tdd_dora', "oai-gnb", 3)
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		analyze = ["oai-gnb", "oai-gnb=ContainsString=NOTFOUND"]
 		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, analyze)
 		self.assertTrue(deploy)
@@ -143,7 +142,7 @@ class TestDeploymentMethods(unittest.TestCase):
 	#def test_undeploy_rc_nonnull(self):
 	#	# fails reliably
 	#	opt = cls_containerize.DeploymentOpt('tests/simple-fail/', '', 3)
-	#	deploy = self.cont.DeployObject(self.ctx, self.node, self.html, opt)
+	#	deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 	#	# should be false because wrong exit code
 	#	undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, ["test"])
 	#	self.assertFalse(deploy)
