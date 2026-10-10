@@ -730,7 +730,9 @@ static e2sm_rc_func_def_t fill_rc_ran_def_cucp(void)
   // RAN Function Definition for CONTROL
   // Optional
   // 9.2.2.5
-  def.ctrl = NULL;
+  def.ctrl = calloc(1, sizeof(ran_func_def_ctrl_t));
+  assert(def.ctrl != NULL && "Memory exhausted");
+  fill_rc_control(def.ctrl);
 
   // RAN Function Definition for POLICY
   // Optional
