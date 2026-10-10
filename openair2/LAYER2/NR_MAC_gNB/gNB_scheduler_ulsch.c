@@ -399,6 +399,8 @@ static rnti_t lcid_crnti_lookahead(uint8_t *pdu, uint32_t pdu_len)
   return 0;
 }
 
+/* Decodes the MAC PDU; its RLC PDUs are returned in data_ind[] (pointing into pduP) for
+ * the caller to hand to RLC once sched_lock is released. */
 static int nr_process_mac_pdu(gNB_MAC_INST *nrmac,
                               nr_cell_sched_t *cell,
                               NR_UE_info_t *UE,
@@ -406,7 +408,9 @@ static int nr_process_mac_pdu(gNB_MAC_INST *nrmac,
                               slot_t slot,
                               uint8_t *pduP,
                               uint32_t pdu_len,
-                              const int8_t harq_pid)
+                              const int8_t harq_pid,
+                              nr_rlc_data_ind_t *data_ind,
+                              int *num_data_ind)
 {
   int sdus = 0;
   NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
@@ -432,8 +436,6 @@ static int nr_process_mac_pdu(gNB_MAC_INST *nrmac,
   log_dump(NR_MAC, pduP, pdu_len, LOG_DUMP_CHAR, "\n");
 #endif
 
-  nr_rlc_data_ind_t data_ind[MAX_NUM_DATA_IND] = {0};
-  int num_data_ind = 0;
   while (pdu_len > 0) {
     uint16_t mac_len = 0;
     uint8_t lcid = 0;
@@ -496,8 +498,8 @@ static int nr_process_mac_pdu(gNB_MAC_INST *nrmac,
 
         if (prepare_initial_ul_rrc_message(nrmac, cell, UE)) {
           nr_rlc_data_ind_t ind = {.ch = 0, .buf = pduP + mac_subheader_len, .len = mac_len};
-          data_ind[num_data_ind++] = ind;
-          DevAssert(num_data_ind < MAX_NUM_DATA_IND);
+          data_ind[(*num_data_ind)++] = ind;
+          DevAssert(*num_data_ind < MAX_NUM_DATA_IND);
         } else {
           LOG_E(NR_MAC, "prepare_initial_ul_rrc_message() returned false, cannot forward CCCH message\n");
         }
@@ -517,8 +519,8 @@ static int nr_process_mac_pdu(gNB_MAC_INST *nrmac,
           LOG_I(NR_MAC, "RNTI %04x LCID %d: ignoring %d bytes\n", UE->rnti, lcid, mac_len);
         } else {
           nr_rlc_data_ind_t ind = {.ch = lcid, .buf = pduP + mac_subheader_len, .len = mac_len};
-          data_ind[num_data_ind++] = ind;
-          DevAssert(num_data_ind < MAX_NUM_DATA_IND);
+          data_ind[(*num_data_ind)++] = ind;
+          DevAssert(*num_data_ind < MAX_NUM_DATA_IND);
 
           UE->mac_stats.ul.total_sdu_bytes += mac_len;
           UE->mac_stats.ul.lc_bytes[lcid] += mac_len;
@@ -544,8 +546,8 @@ static int nr_process_mac_pdu(gNB_MAC_INST *nrmac,
           UE->mac_stats.ul.lc_bytes[lcid] += mac_len;
 
           nr_rlc_data_ind_t ind = {.ch = lcid, .buf = pduP + mac_subheader_len, .len = mac_len};
-          data_ind[num_data_ind++] = ind;
-          DevAssert(num_data_ind < MAX_NUM_DATA_IND);
+          data_ind[(*num_data_ind)++] = ind;
+          DevAssert(*num_data_ind < MAX_NUM_DATA_IND);
 
           sdus += 1;
           /* Updated estimated buffer when receiving data */
@@ -638,8 +640,6 @@ static int nr_process_mac_pdu(gNB_MAC_INST *nrmac,
     pduP += (mac_subheader_len + mac_len);
     pdu_len -= (mac_subheader_len + mac_len);
   }
-
-  nr_mac_rlc_data_ind(nrmac->Mod_id, UE->rnti, true, data_ind, num_data_ind);
 
   UE->mac_stats.ul.num_mac_sdu += sdus;
 
@@ -747,7 +747,10 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
                          uint8_t harq_pid,
                          const uint16_t timing_advance,
                          const uint8_t ul_cqi,
-                         const uint16_t rssi)
+                         const uint16_t rssi,
+                         nr_rlc_data_ind_t *data_ind,
+                         int *num_data_ind,
+                         rnti_t *rlc_rnti)
 {
   NR_ServingCellConfigCommon_t *scc = cell->common_channels.ServingCellConfigCommon;
   NR_UE_info_t *UE = find_ra_UE(&mac->UE_info, rnti);
@@ -890,7 +893,8 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
 
     // Decode the entire MAC PDU
     // It may have multiple MAC subPDUs, for example, a MAC subPDU with LCID 1 caring a RRCReestablishmentComplete
-    nr_process_mac_pdu(mac, cell, old_UE, frame, slot, sdu, sdu_len, harq_pid);
+    *rlc_rnti = old_UE->rnti;
+    nr_process_mac_pdu(mac, cell, old_UE, frame, slot, sdu, sdu_len, harq_pid, data_ind, num_data_ind);
     return;
   }
 
@@ -903,7 +907,8 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
   memcpy(ra->cont_res_id, &sdu[1], sizeof(uint8_t) * 6);
 
   // Decode MAC PDU
-  nr_process_mac_pdu(mac, cell, UE, frame, slot, sdu, sdu_len, harq_pid);
+  *rlc_rnti = UE->rnti;
+  nr_process_mac_pdu(mac, cell, UE, frame, slot, sdu, sdu_len, harq_pid, data_ind, num_data_ind);
 
   LOG_I(NR_MAC,
         "Activating scheduling %s for TC_RNTI 0x%04x (state %s)\n",
@@ -925,7 +930,10 @@ static void _nr_rx_sdu(gNB_MAC_INST *gNB_mac,
                        const int8_t harq_pid,
                        const uint16_t timing_advance,
                        const uint8_t ul_cqi,
-                       const uint16_t rssi)
+                       const uint16_t rssi,
+                       nr_rlc_data_ind_t *data_ind,
+                       int *num_data_ind,
+                       rnti_t *rlc_rnti)
 {
   const int current_rnti = rntiP;
   LOG_D(NR_MAC, "rx_sdu for rnti %04x\n", current_rnti);
@@ -999,7 +1007,8 @@ static void _nr_rx_sdu(gNB_MAC_INST *gNB_mac,
       if (UE_scheduling_control->sched_ul_bytes < 0)
         UE_scheduling_control->sched_ul_bytes = 0;
 
-      nr_process_mac_pdu(gNB_mac, cell, UE, frameP, slotP, sduP, sdu_lenP, harq_pid);
+      *rlc_rnti = UE->rnti;
+      nr_process_mac_pdu(gNB_mac, cell, UE, frameP, slotP, sduP, sdu_lenP, harq_pid, data_ind, num_data_ind);
     } else {
       if (ul_cqi == 0xff || ul_cqi <= 128) {
         UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt++;
@@ -1019,7 +1028,7 @@ static void _nr_rx_sdu(gNB_MAC_INST *gNB_mac,
     }
     handle_nr_ul_harq(cell, UE, current_rnti, harq_pid, sduP == NULL);
   } else {
-    nr_rx_ra_sdu(gNB_mac, cell, frameP, slotP, current_rnti, sduP, sdu_lenP, harq_pid, timing_advance, ul_cqi, rssi);
+    nr_rx_ra_sdu(gNB_mac, cell, frameP, slotP, current_rnti, sduP, sdu_lenP, harq_pid, timing_advance, ul_cqi, rssi, data_ind, num_data_ind, rlc_rnti);
   }
 }
 
@@ -1038,10 +1047,16 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   gNB_MAC_INST *gNB_mac = RC.nrmac[gnb_mod_idP];
   NR_SCHED_LOCK(&gNB_mac->sched_lock);
   nr_cell_sched_t *cell = nr_mac_get_cell_by_phy_id(gNB_mac, CC_idP);
+  nr_rlc_data_ind_t data_ind[MAX_NUM_DATA_IND];
+  int num_data_ind = 0;
+  rnti_t rlc_rnti = 0;
   start_meas(&cell->rx_ulsch_sdu);
-  _nr_rx_sdu(gNB_mac, cell, frameP, slotP, rntiP, sduP, sdu_lenP, harq_pid, timing_advance, ul_cqi, rssi);
+  _nr_rx_sdu(gNB_mac, cell, frameP, slotP, rntiP, sduP, sdu_lenP, harq_pid, timing_advance, ul_cqi, rssi, data_ind, &num_data_ind, &rlc_rnti);
   stop_meas(&cell->rx_ulsch_sdu);
   NR_SCHED_UNLOCK(&gNB_mac->sched_lock);
+  // RLC has its own lock: deliver outside sched_lock. data_ind[] points into sduP.
+  if (num_data_ind > 0)
+    nr_mac_rlc_data_ind(gNB_mac->Mod_id, rlc_rnti, true, data_ind, num_data_ind);
 }
 
 static uint32_t calc_power_complex(const int16_t *x, const int16_t *y, const uint32_t size)
