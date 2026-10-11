@@ -175,8 +175,14 @@ static void rx_func(processingData_L1_t *info)
     LOG_D(NR_PHY, "%d.%d Starting RX processing\n", frame_rx, slot_rx);
 
     // UE-specific RX processing for subframe n
-    NR_UL_IND_t UL_INFO = {.frame = frame_rx, .slot = slot_rx, .module_id = gNB->Mod_id, .phy_id = gNB->CC_id};
+    // Intentionally not zero-initialized: each indication fills only its used PDUs.
+    NR_UL_IND_t UL_INFO;
+    UL_INFO.frame = frame_rx;
+    UL_INFO.slot = slot_rx;
+    UL_INFO.module_id = gNB->Mod_id;
+    UL_INFO.phy_id = gNB->CC_id;
     // Do PRACH RU processing
+    UL_INFO.rach_ind.header.transmit_timestamp = 0;
     UL_INFO.rach_ind.pdu_list = UL_INFO.prach_pdu_indication_list;
     UL_INFO.rach_ind.number_of_pdus = 0;
     // even if processing is late, we might collect all PRACH

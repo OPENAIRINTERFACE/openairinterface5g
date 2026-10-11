@@ -50,6 +50,11 @@ static void test_pack_unpack(nfapi_nr_srs_indication_t *req)
   int pack_result = fapi_nr_p7_message_pack(req, msg_buf, message_size, NULL);
 
   DevAssert(pack_result >= 0 + NFAPI_HEADER_LENGTH);
+  // The packed message must contain zero padding, regardless of the input padding.
+  for (int i = 0; i < req->number_of_pdus; ++i) {
+    nfapi_srs_report_tlv_t *tlv = &req->pdu_list[i].report_tlv;
+    memset((uint8_t *)tlv->value + tlv->length, 0, get_tlv_padding(tlv->length));
+  }
   // test the unpacking of the header
   // copy first NFAPI_HEADER_LENGTH bytes into a new buffer, to simulate SCTP PEEK
   fapi_message_header_t header;
@@ -92,6 +97,8 @@ int main()
   printf("Allocated size before filling: %zu bytes\n", get_srs_indication_size(req));
   // Fill TX_DATA request
   fill_srs_indication(req);
+  req->pdu_list[0].report_tlv.length = 13;
+  req->pdu_list[0].report_tlv.value[3] = UINT32_MAX;
   printf("Allocated size after filling: %zu bytes\n", get_srs_indication_size(req));
   // Perform tests
   test_pack_unpack(req);
