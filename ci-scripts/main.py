@@ -25,6 +25,7 @@ from cls_ci_helper import TestCaseCtx
 import ran
 import cls_cmd
 import cls_oai_html
+import args_parse
 
 
 #-----------------------------------------------------------
@@ -283,30 +284,19 @@ def run_tests(g_ctx, logPath, HTML, all_tests, filename):
 #-----------------------------------------------------------
 # MAIN PART
 #-----------------------------------------------------------
-
-#-----------------------------------------------------------
-# Parsing Command Line Arguments
-#-----------------------------------------------------------
-
-import args_parse
-# Force local execution, move all execution targets to localhost
-force_local, date_fmt, xmls, g_ctx, oc = args_parse.ArgsParse()
-fmt = "%(levelname)8s: %(message)s"
-if date_fmt:
-    fmt = "[%(asctime)s] %(levelname)s %(message)s"
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout, format=fmt, datefmt=date_fmt,)
-
-
-#-----------------------------------------------------------
-# XML class (action) analysis
-#-----------------------------------------------------------
-cwd = os.getcwd()
-logDir = f"{cwd}/../cmake_targets/log"
-logging.info(f"placing all artifacts for this run in {logDir}/")
-
 if __name__ == "__main__":
+	force_local, date_fmt, xmls, g_ctx, oc = args_parse.ArgsParse()
+	fmt = "%(levelname)8s: %(message)s"
+	if date_fmt:
+		fmt = "[%(asctime)s] %(levelname)s %(message)s"
+	logging.basicConfig(level=logging.DEBUG, stream=sys.stdout, format=fmt, datefmt=date_fmt,)
+
 	if g_ctx.repository == '' or g_ctx.branch == '' or g_ctx.workspace == '':
 		sys.exit(f'Insufficient Parameters: {g_ctx.repository=}, {g_ctx.branch=}, {g_ctx.workspace=}')
+
+	cwd = os.getcwd()
+	logDir = f"{cwd}/../cmake_targets/log"
+	logging.info(f"placing all artifacts for this run in {logDir}/")
 	TestXML = namedtuple("TestXML", ["filename", "logPath", "title"])
 	test_xmls = []
 	for x in xmls:
