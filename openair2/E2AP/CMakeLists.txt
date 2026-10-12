@@ -56,6 +56,9 @@ set(SM_ENCODING_RC "ASN" CACHE STRING "The RC SM encoding to use")
 set_property(CACHE SM_ENCODING_RC PROPERTY STRINGS "PLAIN" "ASN" "FLATBUFFERS")
 message(STATUS "Selected RC SM_ENCODING: ${SM_ENCODING_RC}")
 
+# CCC service Model encoding definitions
+set(SM_ENCODING_CCC "JSON" CACHE STRING "The CCC SM is not yet supported in OAI RAN")
+
 # MAC Service Model
 set(SM_ENCODING_MAC "PLAIN" CACHE STRING "The MAC SM encoding to use")
 set_property(CACHE SM_ENCODING_MAC PROPERTY STRINGS "PLAIN" "ASN" "FLATBUFFERS")
