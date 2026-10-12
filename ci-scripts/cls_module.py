@@ -7,9 +7,7 @@
 #
 #---------------------------------------------------------------------
 
-#to use isfile
 import logging
-#time.sleep
 import time
 import re
 import yaml

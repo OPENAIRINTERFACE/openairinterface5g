@@ -404,7 +404,6 @@ class OaiCiTest():
 		return True
 
 	def Ping_common(ctx, cn, ue, opt):
-		ping_status = 0
 		ueIP = ue.getIP()
 		if not ueIP:
 			return (False, f"UE {ue.getName()} has no IP address")
@@ -573,7 +572,7 @@ class OaiCiTest():
 	def Iperf2_Unidir(ctx, HTML, opt, ep, infra_file="ci_infra.yaml"):
 		if not ep.valid() or len(ep.ue_ids) != 1:
 			raise Exception(f"invalid traffic endpoints (multi UE scenario not supported): {ep}")
-		ue = cls_module.Module_UE(ep.ue_ids[0].strip(), ep.ue_node, infra_file)
+		ue = cls_module.Module_UE(ep.ue_ids[0], ep.ue_node, infra_file)
 		cn = cls_corenetwork.CoreNetwork(ep.svr_id, ep.svr_node, filename=infra_file)
 		ueIP = ue.getIP()
 		if not ueIP:
@@ -589,7 +588,6 @@ class OaiCiTest():
 			cmd_ue.run(f'rm {server_filename}', reportNonZero=False)
 			cmd_ue.run(f'{ue.getCmdPrefix()} timeout -vk3 {t} iperf -B {ueIP} -s -u -i1 >> {server_filename} &', timeout=t)
 			cmd_svr.run(f'{cn.getCmdPrefix()} timeout -vk3 {t} iperf -c {ueIP} -B {svrIP} {iperf_opt} -i1 >> /dev/null', timeout=t)
-			localPath = f'{os.getcwd()}'
 			local = archiveArtifact(cmd_ue, ctx, server_filename)
 		success, msg = Iperf_analyzeV2UDP(local, opt.bitrate_threshold, opt.packetloss_threshold, target_bitrate)
 		ue_header = f'UE {ue.getName()} ({ueIP})'
