@@ -300,6 +300,7 @@ add_physim_test(physim.5g.nr_prachsim.test5 "120kHz SCS, 32 PRBs, Prach format A
 add_physim_test(physim.5g.nr_prachsim.test6 "120kHz SCS, 66 PRBs, Prach format A2" nr_prachsim -a -s -30 -n 300 -p 32 -R 66 -m 3 -c52)
 add_physim_test(physim.5g.nr_prachsim.test7 "120kHz SCS, 66 PRBs, High Speed Enabled" nr_prachsim -a -s -30 -n 300 -R 66 -m 3 -c52 -H)
 add_physim_test(physim.5g.nr_prachsim.test8 "15kHz SCS, 25 PRBs" nr_prachsim -a -s -30 -n 300 -p 99 -R 25 -m 0)
+add_physim_test(physim.5g.nr_prachsim.test9 "30kHz SCS, 106 PRBs, Prach format A2, NCS_config 0" nr_prachsim -a -s -30 -n 300 -p 63 -R 106 -Z 0)
 
 ####################################################################################
 ######                           nr_psbchsim unit test                        ######
