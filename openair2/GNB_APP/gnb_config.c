@@ -1970,6 +1970,19 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg, nr_cell_sched_t **out_cel
                       config.aerial.num_tx_ant);
         }
 #endif
+        /* The scheduler repeats the same beam ID on every beamforming port of a PDU
+         * (the dig_bf_interface_list loops), so with more than one CSI port a single
+         * beam's weights would be applied to all of them instead of one vector per
+         * port. */
+        const nr_pdsch_AntennaPorts_t *ap = &config.pdsch_AntennaPorts;
+        const int csi_ports = ap->N1 * ap->N2 * ap->XP;
+        AssertFatal(csi_ports == 1,
+                    "a digital beam table is only supported with one CSI port, but pdsch_AntennaPorts N1 %d N2 %d XP %d give "
+                    "%d: the same beam ID is signalled for every FAPI beamforming port\n",
+                    ap->N1,
+                    ap->N2,
+                    ap->XP,
+                    csi_ports);
       }
       config.num_ssb_beams = num_ssb_beams;
       if (beam_info->bf_method != BF_METHOD_STRAIGHT_WIRE) {

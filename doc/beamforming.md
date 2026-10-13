@@ -127,6 +127,13 @@ native L1, but `nr_feptx_prec()` copies the samples through instead of precoding
 them, so the weights would have no effect; configuring a table without Aerial is
 rejected rather than silently ignored.
 
+A single CSI port is required as well, that is `pdsch_AntennaPorts_N1 *
+pdsch_AntennaPorts_N2 * pdsch_AntennaPorts_XP` must be 1. The scheduler signals
+one beam ID per PDU and repeats it on every FAPI beamforming port, so with more
+ports the weights of a single beam would be applied to all of them instead of
+one weight vector per port. A table configured together with more CSI ports is
+rejected at startup.
+
 The table can come from either of two places, checked in this order:
 
 1. `dbt_file`, a path to a CSV file (relative to the working directory of the
