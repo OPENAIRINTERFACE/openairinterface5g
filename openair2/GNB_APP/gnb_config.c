@@ -1607,8 +1607,8 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg, nr_cell_sched_t **out_cel
         config.pusch_AntennaPorts);
 
 #ifdef ENABLE_AERIAL
-  // Aerial: physical antenna counts advertised to the L1 in CONFIG.request,
-  // decoupled from the logical antenna ports above
+  // Aerial: TXRU counts advertised to the L1 in CONFIG.request, decoupled
+  // from the logical antenna ports above
   GET_PARAMS(Aerial_Params, AERIALPARAMS_DESC, CONFIG_STRING_AERIAL);
   config.aerial.num_tx_ant = *gpd(Aerial_Params, sizeofArray(Aerial_Params), AERIAL_NUM_TX_ANT)->iptr;
   config.aerial.num_rx_ant = *gpd(Aerial_Params, sizeofArray(Aerial_Params), AERIAL_NUM_RX_ANT)->iptr;
@@ -1618,7 +1618,7 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg, nr_cell_sched_t **out_cel
               config.aerial.num_tx_ant,
               config.aerial.num_rx_ant);
   if (config.aerial.num_tx_ant > 0 || config.aerial.num_rx_ant > 0)
-    LOG_I(GNB_APP, "Aerial physical antennas: num_tx_ant %d num_rx_ant %d\n", config.aerial.num_tx_ant, config.aerial.num_rx_ant);
+    LOG_I(GNB_APP, "Aerial TXRUs: num_tx_ant %d num_rx_ant %d\n", config.aerial.num_tx_ant, config.aerial.num_rx_ant);
 #endif
 
   // RU
@@ -1942,21 +1942,21 @@ void RCconfig_nr_macrlc(configmodule_interface_t *cfg, nr_cell_sched_t **out_cel
                   MACRLC_BF_METHOD " \"das\" is not supported with a split L1: the PNF has no " MACRLC_LIST
                   " section to read it from\n");
 #ifdef ENABLE_AERIAL
-      /* Aerial applies the beam weights, and the SRS-based precoder, per physical antenna
-       * and cannot derive that count from the logical antenna ports. */
+      /* Aerial applies the beam weights, and the SRS-based precoder, per TXRU and
+       * cannot derive that count from the logical antenna ports. */
       if (NFAPI_MODE == NFAPI_MODE_AERIAL
           && (beam_info->bf_method == BF_METHOD_PREDEFINED || beam_info->bf_method == BF_METHOD_DYNAMIC))
         AssertFatal(config.aerial.num_tx_ant > 0 && config.aerial.num_rx_ant > 0,
-                    MACRLC_BF_METHOD " \"%s\" needs the physical antenna counts, set " CONFIG_STRING_AERIAL
+                    MACRLC_BF_METHOD " \"%s\" needs the TXRU counts, set " CONFIG_STRING_AERIAL
                     "." AERIAL_NUM_TX_ANT " and " CONFIG_STRING_AERIAL "." AERIAL_NUM_RX_ANT "\n",
                     *gpd(params, np, MACRLC_BF_METHOD)->strptr);
 #endif
-      /* The weights are applied per physical antenna port: a native L1 takes that count
-       * from the RU section, Aerial from num_tx_ant, which is required just above. */
+      /* The weights are applied per TXRU: a native L1 takes that count from the RU
+       * section, Aerial from num_tx_ant, which is required just above. */
       if (have_dbt) {
         if (RUParamList.numelt > 0) {
           AssertFatal(config.bt.num_weights_per_beam == num_tx,
-                      "digital beam table has %d weight(s) per beam but %d physical antenna port(s) are configured "
+                      "digital beam table has %d weight(s) per beam but %d TXRU(s) are configured "
                       "(sum of nb_tx over the " CONFIG_STRING_RU_LIST " section)\n",
                       config.bt.num_weights_per_beam,
                       num_tx);

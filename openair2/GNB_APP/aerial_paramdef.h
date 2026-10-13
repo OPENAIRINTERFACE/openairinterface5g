@@ -17,9 +17,9 @@
 #define AERIAL_NUM_RX_ANT "num_rx_ant"
 
 #define HLP_AERIAL_NUM_TX_ANT \
-  "Physical TX antennas advertised to the Aerial L1 in CONFIG.request (numTxAnt). 0 = derive from logical antenna ports"
+  "TX TXRUs advertised to the Aerial L1 in CONFIG.request (numTxAnt). 0 = derive from logical antenna ports"
 #define HLP_AERIAL_NUM_RX_ANT \
-  "Physical RX antennas advertised to the Aerial L1 in CONFIG.request (numRxAnt), sizes the L1 UL receive processing. 0 = derive from logical antenna ports"
+  "RX TXRUs advertised to the Aerial L1 in CONFIG.request (numRxAnt), sizes the L1 UL receive processing. 0 = derive from logical antenna ports"
 
 /*-----------------------------------------------------------------------------------------------------------------------*/
 /*                                            Aerial configuration parameters                                             */

@@ -248,7 +248,7 @@ and check the following parameters:
   * `GNB_IPV4_ADDRESS_FOR_NG_AMF` shall match your DU N2 interface IP address
   * `GNB_IPV4_ADDRESS_FOR_NGU` shall match your DU N3 interface IP address
   
-* `Aerial` section: physical antenna counts advertised to the L1
+* `Aerial` section: TXRU counts advertised to the L1
 
 ```
 Aerial = {
@@ -257,7 +257,7 @@ Aerial = {
 };
 ```
 
-These set the *physical* antenna counts in the FAPI CONFIG.request
+These set the TXRU counts in the FAPI CONFIG.request
 (`numTxAnt`/`numRxAnt`), decoupled from the *logical* antenna ports
 (`pdsch_AntennaPorts`/`pusch_AntennaPorts`, carried in `numTxPort`/`numRxPort`).
 `numRxAnt` sizes cuBB's UL receive processing: e.g. on a 4x4 radio with
@@ -267,8 +267,8 @@ gain) instead of only two. The fronthaul configuration must deliver the
 corresponding number of UL eAxC streams.
 
 The section is required for `bf_method = "predefined"` and `"dynamic"`, which
-apply the beam weights, or the SRS-based precoder, per physical antenna: that
-count cannot be derived from the logical ports, and guessing it was worse than
+apply the beam weights, or the SRS-based precoder, per TXRU: that count
+cannot be derived from the logical ports, and guessing it was worse than
 asking, so there is no default. For `straight-wire` and `das` the section stays
 optional, and when it is absent (or the values are 0) the counts are derived
 from the logical antenna ports as before.

@@ -78,9 +78,9 @@ The remaining parameters are:
 
 ### Aerial section
 
-With the NVIDIA Aerial L1 the physical antenna array is not described by an
-`RUs` section, so a separate top-level `Aerial` section carries the counts
-advertised to L1 in `CONFIG.request` as `numTxAnt`/`numRxAnt`:
+With the NVIDIA Aerial L1 the antenna array is not described by an `RUs`
+section, so a separate top-level `Aerial` section carries the counts advertised
+to L1 in `CONFIG.request` as `numTxAnt`/`numRxAnt`:
 
 ```
 Aerial = {
@@ -89,16 +89,17 @@ Aerial = {
 };
 ```
 
-Both values are in 0..64. They are the *physical* antennas, kept apart from the
-logical antenna ports (`numTxPort`/`numRxPort`), which are still derived from
-`pdsch_AntennaPorts_*` and `pusch_AntennaPorts`: `numRxAnt` sizes the L1 uplink
-receive processing, so deriving it from the logical ports used to cost the array
-gain of every antenna beyond the configured number of UL layers.
+Both values are in 0..64. They count TXRUs (see [Digital beam table
+(DBT)](#digital-beam-table-dbt)), kept apart from the logical antenna ports
+(`numTxPort`/`numRxPort`), which are still derived from `pdsch_AntennaPorts_*`
+and `pusch_AntennaPorts`: `numRxAnt` sizes the L1 uplink receive processing, so
+deriving it from the logical ports used to cost the array gain of every TXRU
+beyond the configured number of UL layers.
 
 The section is required for `bf_method = "predefined"` and `"dynamic"`, which
-apply the beam weights, or the SRS-based precoder, per physical antenna. For
-`straight-wire` and `das` it is optional, and the counts keep being derived from
-the logical ports when it is absent.
+apply the beam weights, or the SRS-based precoder, per TXRU. For `straight-wire`
+and `das` it is optional, and the counts keep being derived from the logical
+ports when it is absent.
 
 > **Note:** `bf_method` replaces the previous `set_analog_beamforming`
 parameter, and `ssb_beams` replaces `beam_weights`; DAS is no longer selected
@@ -109,10 +110,14 @@ with a message pointing at the replacement.
 ## Digital beam table (DBT)
 
 The digital beam table maps each beam ID to a vector of complex weights, one per
-TXRU (the physical antenna elements the weights are applied to). It is what
-turns `bf_method = "predefined"` from "pass the beam ID through to the RU" into
-"L1 applies these weights": with a table, L1 resolves each beam ID through it;
-without one, the ID is forwarded unchanged to the radio or the fronthaul.
+TXRU, the transceiver unit of the 3GPP antenna model: one RF chain, carried as
+one eAxC in a 7.2x split and counted by FAPI as `numTxAnt`. A TXRU is not
+necessarily one physical antenna element — it can drive several of them through
+the analog part of the array — so the weights are per TXRU, not per element. It
+is what turns `bf_method = "predefined"` from "pass the beam ID through to the
+RU" into "L1 applies these weights": with a table, L1 resolves each beam ID
+through it; without one, the ID is forwarded unchanged to the radio or the
+fronthaul.
 
 A DBT is only meaningful for `predefined`. Configuring one together with
 `straight-wire` or `das` is rejected at startup.
@@ -196,10 +201,10 @@ Q15 (multiplied by 32767 and rounded) before being handed to L1, so the table is
 written in normalised floating point and the fixed-point conversion is done for
 you.
 
-The number of weights per beam must equal the number of physical antenna ports,
-and a mismatch is rejected at startup. Under Aerial that count is `num_tx_ant`
-of the [`Aerial` section](#aerial-section). Should a native L1 gain DBT support,
-it would instead be the sum of `nb_tx` over the `RUs` section.
+The number of weights per beam must equal the number of TXRUs, and a mismatch
+is rejected at startup. Under Aerial that count is `num_tx_ant` of the
+[`Aerial` section](#aerial-section). Should a native L1 gain DBT support, it
+would instead be the sum of `nb_tx` over the `RUs` section.
 
 ### Beam IDs and their relation to `ssb_beams`
 
