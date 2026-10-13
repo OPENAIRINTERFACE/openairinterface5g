@@ -2330,8 +2330,11 @@ static void rrc_gNB_generate_UECapabilityEnquiry(gNB_RRC_INST *rrc, gNB_RRC_UE_t
   T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(rrc->module_id), T_INT(0), T_INT(0), T_INT(ue->rrc_ue_id));
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(rrc->module_id);
   ue->xids[xid] = RRC_UECAPABILITY_ENQUIRY;
-  int size = do_NR_SA_UECapabilityEnquiry(buffer, xid);
-  LOG_I(NR_RRC, "UE %d: Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d, xid %d)\n", ue->rrc_ue_id, size, xid);
+  nr_rrc_cell_container_t *cell = rrc_get_pcell_for_ue(rrc, ue);
+  DevAssert(cell != NULL);
+  int band = cell->info.mode == NR_MODE_TDD ? cell->info.tdd.dlul.band : cell->info.fdd.dl.band;
+  int size = do_NR_SA_UECapabilityEnquiry(buffer, xid, band);
+  LOG_I(NR_RRC, "UE %d: Generate NR UECapabilityEnquiry (bytes %d, xid %d, band %d)\n", ue->rrc_ue_id, size, xid, band);
 
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
