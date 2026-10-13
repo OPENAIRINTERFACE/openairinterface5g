@@ -25,8 +25,7 @@ endif()
 add_compile_options(-Wno-packed-not-aligned)
 
 set_target_properties(oran_fhlib_5g_mplane PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -march=native")
-target_link_libraries(oran_fhlib_5g_mplane PRIVATE xran::xran ${dpdk_LINK_LIBRARIES} log_headers pthread dl rt m numa)
-target_include_directories(oran_fhlib_5g_mplane PRIVATE ${dpdk_INCLUDE_DIRS})
+target_link_libraries(oran_fhlib_5g_mplane PRIVATE xran::xran PkgConfig::dpdk_fh log_headers pthread dl rt m numa)
 
 target_compile_definitions(oran_fhlib_5g_mplane PRIVATE OAI_MPLANE)
 
