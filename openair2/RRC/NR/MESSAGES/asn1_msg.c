@@ -414,7 +414,7 @@ int do_NR_SecurityModeCommand(uint8_t *const buffer,
   return((enc_rval.encoded+7)/8);
 }
 
-int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transaction_id)
+int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transaction_id, const int band)
 {
   NR_UE_CapabilityRequestFilterNR_t *sa_band_filter;
   NR_FreqBandList_t *sa_band_list;
@@ -437,7 +437,7 @@ int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transactio
   ue_capabilityrat_request->rat_Type = NR_RAT_Type_nr;
 
   sa_band_infoNR = (NR_FreqBandInformationNR_t*)calloc(1,sizeof(NR_FreqBandInformationNR_t));
-  sa_band_infoNR->bandNR = 78;
+  sa_band_infoNR->bandNR = band;
   sa_band_info = (NR_FreqBandInformation_t*)calloc(1,sizeof(NR_FreqBandInformation_t));
   sa_band_info->present = NR_FreqBandInformation_PR_bandInformationNR;
   sa_band_info->choice.bandInformationNR = sa_band_infoNR;

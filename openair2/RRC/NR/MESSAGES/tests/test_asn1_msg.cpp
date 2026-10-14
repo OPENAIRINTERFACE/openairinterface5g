@@ -83,7 +83,7 @@ TEST(nr_asn1, rrc_reject)
 TEST(nr_asn1, sa_capability_enquiry)
 {
   unsigned char buf[1000];
-  EXPECT_GT(do_NR_SA_UECapabilityEnquiry(buf, 0), 0);
+  EXPECT_GT(do_NR_SA_UECapabilityEnquiry(buf, 0, 78), 0);
 }
 
 TEST(nr_asn1, rrc_reconfiguration_complete_for_nsa)
