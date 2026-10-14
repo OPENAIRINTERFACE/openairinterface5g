@@ -54,12 +54,10 @@ uicc0 = {
 | **IMSI** | Unique identifier for the UE within the mobile network. Used by the network to identify the UE during authentication. It ensures that the UE is correctly identified by the network. | 001010000000001 |
 | **key** | Cryptographic key shared between the UE and the network, used for encryption during the authentication process. | `fec86ba6eb707ed08905757b1bb44b8f` |
 | **OPC** | Operator key for the Milenage Authentication and Key Agreement algorithm used for encryption during the authentication process. | Ensures secure communication between the UE and the network by matching the encryption keys. | `C42449363BBAD02B66D16BC975D77CC1` |
-| **DNN** | _Deprecated_: Specifies the name of the data network the UE wishes to connect to, similar to an APN in 4G networks. Use `pdu_sessions` instead. | `oai` |
-| **NSSAI** | _Deprecated_: Allows the UE to select the appropriate network slice, which provides different QoS. Use `pdu_sessions` instead. | `1` |
 | **pdu_sessions** | list of PDU sessions to request | empty array (no PDU session) |
 
-Note that DNN and NSSAI parameters are deprecated, and `pdu_sessions` should be
-used. If the `pdu_sessions` array is present, DNN and NSSAI are ignored.
+Note that the legacy DNN and NSSAI parameters are not supported anymore, and
+`pdu_sessions` should be defined in the config style, or the UE will not start.
 
 Each element within the `pdu_sessions` array takes the following parameters.
 Multiple PDU sessions can be requested.
