@@ -137,8 +137,6 @@ static void get_options(configmodule_interface_t *cfg)
   paramdef_t cmdline_params[] = CMDLINE_NRUEPARAMS_DESC;
   int numparams = sizeofArray(cmdline_params);
   config_get(cfg, cmdline_params, numparams, NULL);
-  AssertFatal(nrUE_params.extra_pdu_id == -1,
-              "Add additional PDU sessions in uicc.pdu_sessions array instead\n");
 }
 
 /* Parse --actor-affinity into cores[]. Returns number of cores. Empty/NULL -> 0. */
