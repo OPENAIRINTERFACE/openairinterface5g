@@ -5,7 +5,11 @@
 </h1>
 
 <p align="center">
-    <a href="https://github.com/duranta-project/openairinterface5g/blob/develop/LICENSE"><img src="https://img.shields.io/badge/license-CSSL--v1.0-blue" alt="License"></a>
+    <a href="https://github.com/duranta-project/openairinterface5g/releases/tag/v3.0.0"><img src="https://img.shields.io/badge/release-v3.0.0-rebeccapurple?style=flat-square&logo=github" alt="Release v3.0.0"></a>
+    <a href="https://github.com/duranta-project/openairinterface5g/blob/develop/LICENSE"><img src="https://img.shields.io/badge/license-CSSL--v1.0-rebeccapurple" alt="License"></a>
+</p>
+
+<p align="center">
     <a href="https://releases.ubuntu.com/22.04/"><img src="https://img.shields.io/badge/OS-Ubuntu22-Green" alt="Supported OS Ubuntu 22"></a>
     <a href="https://releases.ubuntu.com/24.04/"><img src="https://img.shields.io/badge/OS-Ubuntu24-Green" alt="Supported OS Ubuntu 24"></a>
     <a href="https://releases.ubuntu.com/26.04/"><img src="https://img.shields.io/badge/OS-Ubuntu26-Green" alt="Supported OS Ubuntu 26"></a>
