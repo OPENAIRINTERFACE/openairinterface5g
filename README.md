@@ -85,23 +85,27 @@ The OpenAirInterface (OAI) software is composed of the following parts:
 
 ```
 openairinterface5g
-├── charts
-├── ci-scripts        : Meta-scripts used by the OSA CI process. Contains also configuration files used day-to-day by CI.
-├── CMakeLists.txt    : Top-level CMakeLists.txt for building
-├── cmake_targets     : Build utilities to compile (simulation, emulation and real-time platforms), and generated build files.
-├── common            : Some common OAI utilities, some other tools can be found at openair2/UTILS.
+├── .github           : GitHub workflows and repository configuration
+├── LICENSES          : Preferred, deprecated, and exception license texts
+├── charts            : Helm charts for running 4G and 5G physical simulators
+├── ci-scripts        : OAI CI framework, test scenarios, and configuration files
+├── CMakeLists.txt    : Top-level CMake configuration
+├── cmake_targets     : Build and dependency-management utilities
+├── common            : Common configuration, utilities, and shared infrastructure
 ├── doc               : Documentation
-├── docker            : Dockerfiles to build for Ubuntu and RHEL
-├── executables       : Top-level executable source files (gNB, eNB, ...)
-├── maketags          : Script to generate emacs tags.
-├── nfapi             : (n)FAPI code for MAC-PHY interface
-├── openair1          : Layer 1 (3GPP LTE Rel-10/12 PHY, NR Rel-15 PHY)
-├── openair2          : Layer 2 (3GPP LTE Rel-10 MAC/RLC/PDCP/RRC/X2AP, LTE Rel-14 M2AP, NR Rel-15+ MAC/RLC/PDCP/SDAP/RRC/X2AP/F1AP/E1AP), E2AP
-├── openair3          : Layer 3 (3GPP LTE Rel-10 S1AP/GTP, NR Rel-15 NGAP/GTP)
-├── openshift         : OpenShift helm charts for some deployment options of OAI
-├── radio             : Drivers for various radios such as USRP, AW2S, RFsim, 7.2 FHI, ...
-├── targets           : Some configuration files; only historical relevance, and might be deleted in the future
-└── tools             : Tools for use by the developers/ci machines: code analysis and formatting
+├── docker            : Dockerfiles for building Ubuntu, RHEL, and Rocky Linux images
+├── executables       : Top-level gNB, eNB, UE, CU, DU, and O-RU entry points
+├── fronthaul         : Native OAI 7.2x fronthaul implementation
+├── maketags          : Script to generate Emacs tags
+├── nfapi             : FAPI and nFAPI implementations for the MAC-PHY interface
+├── openair1          : LTE and NR physical layer
+├── openair2          : MAC, RLC, PDCP, SDAP, RRC, and application protocols
+├── openair3          : NAS, S1AP, NGAP, GTP, and related layer-3 protocols
+├── openshift         : OpenShift deployment resources
+├── radio             : Radio and simulation drivers
+├── targets           : Legacy configuration files and deployment resources
+├── tests             : Component and integration tests
+└── tools             : Developer and CI analysis, formatting, and plotting tools
 ```
 
 ## How to get support from the Community
