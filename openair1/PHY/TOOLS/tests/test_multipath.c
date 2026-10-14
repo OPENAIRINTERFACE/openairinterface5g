@@ -38,16 +38,16 @@ channel_desc_t *create_manual_channel_desc(int nb_tx, int nb_rx, int channel_len
   desc->nb_tx = nb_tx;
   desc->nb_rx = nb_rx;
   desc->channel_length = channel_length;
-  desc->path_loss_dB = 10.0;
+  desc->path_loss_dB = -10.0;
   desc->channel_offset = 0;
   int num_links = nb_tx * nb_rx;
   desc->ch = (struct complexd **)malloc(num_links * sizeof(struct complexd *));
-  float path_loss = (float)pow(10, desc->path_loss_dB / 20.0);
+  float path_gain = (float)pow(10, -desc->path_loss_dB / 20.0);
   for (int i = 0; i < num_links; i++) {
     desc->ch[i] = (struct complexd *)malloc(channel_length * sizeof(struct complexd));
     for (int l = 0; l < channel_length; l++) {
-      desc->ch[i][l].r = (double)rand() / (double)RAND_MAX * path_loss;
-      desc->ch[i][l].i = (double)rand() / (double)RAND_MAX * path_loss;
+      desc->ch[i][l].r = (double)rand() / (double)RAND_MAX * path_gain;
+      desc->ch[i][l].i = (double)rand() / (double)RAND_MAX * path_gain;
     }
   }
   return desc;

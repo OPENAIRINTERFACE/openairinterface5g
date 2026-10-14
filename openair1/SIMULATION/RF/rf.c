@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
   double input_amp = pow(10.0,(.05*INPUT_dBm))/sqrt(2);
   double nf[2] = {3.0,3.0};
   double ip =0.0;
-  double path_loss_dB = -90, rx_gain_dB = 125;
+  double path_loss_dB = 90, rx_gain_dB = 125;
   double tx_pwr, rx_pwr;
 
   uint32_t **input = malloc(nb_antennas*sizeof(uint32_t*));

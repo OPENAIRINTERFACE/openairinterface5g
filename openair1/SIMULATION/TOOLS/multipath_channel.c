@@ -40,12 +40,12 @@ void __attribute__((no_sanitize_address)) multipath_channel(channel_desc_t *desc
   int i, ii, j, l;
   // int simd_length;
   // int simd_length, tail_start;
-  simde__m128d rx_tmp128_re, rx_tmp128_im, tx128_re, tx128_im, ch128_r, ch128_i, pathloss128;
+  simde__m128d rx_tmp128_re, rx_tmp128_im, tx128_re, tx128_im, ch128_r, ch128_i, path_gain128;
 
-  double path_loss = pow(10, desc->path_loss_dB / 20);
+  double path_gain = pow(10, -desc->path_loss_dB / 20);
   uint64_t dd = desc->channel_offset;
 
-  pathloss128 = simde_mm_set1_pd(path_loss);
+  path_gain128 = simde_mm_set1_pd(path_gain);
 
   if (keep_channel == 0) {
     random_channel(desc, 0);
@@ -86,8 +86,8 @@ void __attribute__((no_sanitize_address)) multipath_channel(channel_desc_t *desc
                                   simde_mm_add_pd(simde_mm_mul_pd(tx128_re, ch128_i), simde_mm_mul_pd(tx128_im, ch128_r)));
             }
           }
-          simde_mm_storeu_pd(&rx_sig_re[ii][i + dd], simde_mm_mul_pd(rx_tmp128_re, pathloss128));
-          simde_mm_storeu_pd(&rx_sig_im[ii][i + dd], simde_mm_mul_pd(rx_tmp128_im, pathloss128));
+          simde_mm_storeu_pd(&rx_sig_re[ii][i + dd], simde_mm_mul_pd(rx_tmp128_re, path_gain128));
+          simde_mm_storeu_pd(&rx_sig_im[ii][i + dd], simde_mm_mul_pd(rx_tmp128_im, path_gain128));
         }
       }
     } // ii
@@ -110,8 +110,8 @@ void __attribute__((no_sanitize_address)) multipath_channel(channel_desc_t *desc
           }
         }
       }
-      rx_sig_re[ii][i_tail + dd] = rx_tmp.r * path_loss;
-      rx_sig_im[ii][i_tail + dd] = rx_tmp.i * path_loss;
+      rx_sig_re[ii][i_tail + dd] = rx_tmp.r * path_gain;
+      rx_sig_im[ii][i_tail + dd] = rx_tmp.i * path_gain;
     }
   }
 }
@@ -127,13 +127,13 @@ void __attribute__((no_sanitize_address)) multipath_channel(channel_desc_t *desc
                                                             uint8_t keep_channel,
                                                             int log_channel)
 {
-  double path_loss = pow(10, desc->path_loss_dB / 20);
+  double path_gain = pow(10, -desc->path_loss_dB / 20);
   uint64_t dd = desc->channel_offset;
 
 #ifdef DEBUG_CH
-  printf("[CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %lu, len %d \n",
+  printf("[CHANNEL] keep = %d : path_gain = %g (path_loss_dB %f), nb_rx %d, nb_tx %d, dd %lu, len %d \n",
          keep_channel,
-         path_loss,
+         path_gain,
          desc->path_loss_dB,
          desc->nb_rx,
          desc->nb_tx,
@@ -192,8 +192,8 @@ void __attribute__((no_sanitize_address)) multipath_channel(channel_desc_t *desc
              sqrt(cexp_doppler[i].r * cexp_doppler[i].r + cexp_doppler[i].i * cexp_doppler[i].i));
 #endif
 
-      rx_sig_re[ii][i + dd] = rx_tmp.r * path_loss;
-      rx_sig_im[ii][i + dd] = rx_tmp.i * path_loss;
+      rx_sig_re[ii][i + dd] = rx_tmp.r * path_gain;
+      rx_sig_im[ii][i + dd] = rx_tmp.i * path_gain;
 #ifdef DEBUG_CH
       if ((i % 32) == 0) {
         printf("rx aa %d: %f, %f  =>  %e, %e\n", ii, rx_tmp.r, rx_tmp.i, rx_sig_re[ii][i - dd], rx_sig_im[ii][i - dd]);
@@ -217,7 +217,7 @@ void __attribute__((no_sanitize_address)) multipath_channel_float(channel_desc_t
                                                                   int log_channel)
 {
   int i, ii, j, l;
-  simde__m128 rx_tmp128_re, rx_tmp128_im, tx128_re, tx128_im, ch128_r, ch128_i, pathloss128;
+  simde__m128 rx_tmp128_re, rx_tmp128_im, tx128_re, tx128_im, ch128_r, ch128_i, path_gain128;
   uint64_t dd = desc->channel_offset;
 
   if (keep_channel == 0) {
