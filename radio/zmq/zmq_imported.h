@@ -20,6 +20,9 @@ class zmq_tx_channel {
   void *socket_;
   std::queue<zmq_msg_t> queue_;
   std::mutex queue_mutex_;
+  // Signalled whenever a message is pushed onto queue_, so tx_poll_thread can
+  // block for the next message instead of re-checking on a 10ms poll timeout.
+  std::condition_variable queue_cvar_;
   std::atomic<uint64_t> sample_count_ = 0;
   std::atomic<bool> is_tx_enabled_ = false;
   std::mutex transmit_alignment_mutex_;
@@ -40,6 +43,8 @@ class zmq_tx_channel {
 
   void transmit(c16_t *samples, size_t nsamps, uint64_t timestamp);
   bool pop_message(zmq_msg_t *msg);
+  // Block until a message is available (woken by queue_cvar_) or timeout/stop.
+  bool wait_and_pop_message(zmq_msg_t *msg, std::chrono::milliseconds timeout, std::atomic<bool> *running);
 
   void start(uint64_t init_time);
 
