@@ -38,12 +38,12 @@ wireless software stack for 4G, 5G and future networking technologies. It
 supports simulation, prototyping, and end-to-end deployments on
 Commercial-Off-The-Shelf (COTS) hardware. Built for research and
 experimentation, it provides standard-compliant interfaces and is released
-under the Collaborative Standards Software License (CSSL).
+under the Collaborative Standards Software License v1.0 (CSSL).
 
 ## License
 
- *  [OAI License Model](http://www.openairinterface.org/?page_id=101)
- *  [CSSL v1.0](http://www.openairinterface.org/?page_id=698)
+ *  [CSSL v1.0](./LICENSE)
+ *  [Licenses](./LICENSES/)
 
 The source code is distributed under [**CSSL v1.0**](LICENSE).
 Some files, such as for orchestration, are distributed under
