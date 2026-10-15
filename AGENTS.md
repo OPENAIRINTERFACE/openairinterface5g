@@ -23,10 +23,19 @@ ninja                    # or target it: ninja nr-softmodem nr-uesoftmodem
 - `openair1`: PHY layer
 - `openair2`: MAC / RLC / PDCP / RRC / SDAP layers
 - `openair3`: NAS / NGAP / GTP layers
+- `common`: Shared utilities, config module, platform types
+- `nfapi`: nFAPI / FAPI (PNF/VNF split) messages and integration
 - `radio`: Radio drivers (rfsimulator, USRP, etc.)
 - `fronthaul`: Native OAI 7.2x fronthaul split
 - `executables`: gNB / UE / CU / DU top-level main entrypoints
+- `cmake_targets`: `build_oai` wrapper, dependency installation, physim test lists
+- `tests`: Standalone test executables (CU-UP, NAS simulator, DL benchmark)
 - `ci-scripts`: Official CI test harness and execution scripts (see Verification below)
+- `docker`: Dockerfiles for build and runtime images
+- `charts`, `openshift`: Helm charts and OpenShift build configs used by CI
+- `targets`: Example configuration files (`targets/PROJECTS/GENERIC-NR-5GC/CONF`)
+- `doc`: Tutorials, feature docs, code style (`doc/code-style-contrib.md`)
+- `tools`: Formatting, IWYU, cppcheck, dev-env and helper scripts
 
 ## Code style
 
@@ -34,10 +43,20 @@ See `doc/code-style-contrib.md`. In short: 2-space indent, no tabs, 132-column
 limit, respect `.clang-format`, strong types (`c16_t` not `uint32_t` for IQ
 samples), `AssertFatal()`/`DevAssert()` for invariants — not error handling.
 
-Be concise and to the point in responses, commit messages, and code comments.
-Don't leave "in-progress"/WIP/TODO markers or temporary debug logging
-(`LOG_E`/print statements added only to trace a bug) in code you consider
-finished — remove them before reporting the task done.
+Don't leave temporary debug logging (`LOG_E`/print statements added only to
+trace a bug) in code you consider finished — remove it before reporting the
+task done.
+
+## Comments
+
+- Be concise; write for a domain expert, not a beginner.
+- Comment the *why* (a non-obvious constraint, workaround, or invariant), not
+  the *what*.
+- When implementing part of a 3GPP spec, cite the concrete section (e.g.
+  `TS 38.331 §6.2.2`), not just the spec number.
+- Don't narrate the edit ("was X, now Y because Z", "removed old A") — put
+  that in the commit message; describe only the resulting code.
+- Don't leave "in-progress"/WIP/TODO markers in code you consider finished.
 
 ## Verification
 
@@ -95,10 +114,57 @@ sudo ./nr-uesoftmodem -O ../ci-scripts/conf_files/nrue.uicc.yaml -E --rfsim -r 1
 Present what you observe (RRC state, asserts, segfaults, "Bye." on shutdown)
 without declaring pass/fail yourself — that judgment call is the user's.
 
+## Agent commits
+
+Follow the [Commit Guidelines](CONTRIBUTING.md#commit-guidelines). In particular:
+
+- Never write a `Signed-off-by:` or `Co-authored-by:` trailer yourself, nor infer
+  one from git config or history — only the human submitter can certify the
+  Developer Certificate of Origin.
+- Add an `Assisted-by: AGENT_NAME:MODEL_VERSION` trailer to every commit an agent
+  authored or materially edited, e.g. `Assisted-by: Claude:claude-opus-5`.
+- Commit only when the user asks you to, and then with `git commit -s -S`: the
+  request is the user's authorization for `-s` (their `Signed-off-by:` from their
+  git identity) and `-S` (their key) — see
+  [Signing Commits](CONTRIBUTING.md#signing-commits). Otherwise leave the changes
+  for the user to commit. Never change the signing configuration or bypass it with
+  `--no-gpg-sign`; report a signing failure instead.
+- One logical change per commit; subject preferably at most 72 characters.
+- Commit messages are concise, written for a domain expert, and explain the
+  resulting change and its rationale; 3GPP behavior cites the concrete spec
+  section (see [Comments](#comments)).
+- Trailers go at the end of the message after a blank line, one `Key: value`
+  per line, using only the keys from these guidelines (`Signed-off-by:`,
+  `Assisted-by:`, `Fixes: <commit>`, `Closes: #<issue>`). The value is the bare
+  reference with no explanation; reasoning belongs in the message body. Add
+  `Fixes:`/`Closes:` only when the reference is verified. For more details,
+  refer to [contribution guidelines](./doc/code-style-contrib.md#use-of-git-commit-trailers).
+- Feature branches are based on the latest `develop` and contain no merge commits.
+  Update one by rebasing (when asked, see below), never by merging `develop` in.
+  Fetching is fine.
+- Before handing a branch over for a pull request, run
+  `ci-scripts/pre-ci-check.sh` (defaults: current branch against
+  `origin/develop`) and fix what it reports: merge commits and commits missing
+  the human submitter's `Signed-off-by:`.
+
+## Actions that need explicit instructions
+
+Agents must never do any of the following without being explicitly asked to:
+
+- Push or update a remote or upstream branch, create a pull request, edit its
+  title or description, or post a comment on one.
+- Rewrite history (rebase, amend, squash), pushed or not, or force-push.
+- Delete branches or tags, locally or on a remote, or create or push tags.
+- Add or remove pull request labels.
+- Push images to a container registry.
+- Add or update third-party dependencies, or change license headers.
+
 ## Notes
 
 - Prefer adding new tests to `ctest` when you write them. Agents should always try to generate
   unit tests for new features or bug fixes.
-- Agents must never post PR comments, create PRs, or push/update remote or upstream branches
-  without explicit user instructions.
+- When asked to prepare a PR, give the user a draft description: rationale,
+  before/after narrative, alternatives considered, verification results, and
+  diagrams where useful. The long-form narrative belongs there; commit messages
+  keep only the concise rationale.
 - Check `CONTRIBUTING.md` for licensing/contribution requirements.
