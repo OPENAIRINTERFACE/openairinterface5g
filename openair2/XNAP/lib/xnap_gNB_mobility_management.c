@@ -70,7 +70,9 @@ static bool decode_xnap_ul_ngu_tnl_info(const XNAP_UPTransportLayerInformation_t
   const XNAP_GTPtunnelTransportLayerInformation_t *gtp = in->choice.gtpTunnel;
   DevAssert(gtp != NULL);
 
-  BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&gtp->tnl_address, *(uint32_t *)out->addr.buffer);
+  uint32_t addr = 0;
+  BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&gtp->tnl_address, addr);
+  memcpy(out->addr.buffer, &addr, sizeof(addr));
   out->addr.length = 4;
   OCTET_STRING_TO_INT32(&gtp->gtp_teid, out->teid);
 
@@ -326,8 +328,9 @@ XNAP_XnAP_PDU_t *encode_xnap_handover_request(const xnap_handover_req_t *req)
 
   /* Signalling TNL association address at source NG-C side */
   ctx->cp_TNL_info_source.present = XNAP_CPTransportLayerInformation_PR_endpointIPAddress;
-  TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(*(long *)req->ue_context.cp_tnl_ip_source.buffer,
-                                             &ctx->cp_TNL_info_source.choice.endpointIPAddress);
+  uint32_t cp_tnl_addr = 0;
+  memcpy(&cp_tnl_addr, req->ue_context.cp_tnl_ip_source.buffer, sizeof(cp_tnl_addr));
+  TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(cp_tnl_addr, &ctx->cp_TNL_info_source.choice.endpointIPAddress);
 
   /* UE Security Capabilities */
   const xnap_security_capabilities_t *s_cap = &req->ue_context.security_capabilities;
@@ -429,8 +432,9 @@ bool decode_xnap_handover_request(xnap_handover_req_t *out, const XNAP_XnAP_PDU_
 
         asn_INTEGER2uint64(&ctx->ng_c_UE_reference, &out->ue_context.ngc_ue_sig_ref);
 
-        BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ctx->cp_TNL_info_source.choice.endpointIPAddress,
-                                                   *(long *)out->ue_context.cp_tnl_ip_source.buffer);
+        uint32_t cp_tnl_addr = 0;
+        BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ctx->cp_TNL_info_source.choice.endpointIPAddress, cp_tnl_addr);
+        memcpy(out->ue_context.cp_tnl_ip_source.buffer, &cp_tnl_addr, sizeof(cp_tnl_addr));
         out->ue_context.cp_tnl_ip_source.length = 4;
 
         asn_INTEGER2ulong(&ctx->ue_AMBR.ul_UE_AMBR, &out->ue_context.ue_ambr.br_ul);
@@ -1990,8 +1994,9 @@ static void xnap_encode_ue_ctx_info_retr(const xnap_ue_context_info_t *in, XNAP_
 
   /* Signalling TNL association address at source NG-C side (M) 9.2.3.31 */
   out->signalling_TNL_at_source.present = XNAP_CPTransportLayerInformation_PR_endpointIPAddress;
-  TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(*(long *)in->cp_tnl_ip_source.buffer,
-                                             &out->signalling_TNL_at_source.choice.endpointIPAddress);
+  uint32_t cp_tnl_addr = 0;
+  memcpy(&cp_tnl_addr, in->cp_tnl_ip_source.buffer, sizeof(cp_tnl_addr));
+  TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(cp_tnl_addr, &out->signalling_TNL_at_source.choice.endpointIPAddress);
 
   /* UE Security Capabilities (M) 9.2.3.49 */
   out->ueSecurityCapabilities = xnap_encode_security_capabilities(&in->security_capabilities);
@@ -2027,8 +2032,9 @@ static bool decode_xnap_ue_ctx_info_retr(const XNAP_UEContextInfoRetrUECtxtResp_
     PRINT_ERROR("Unsupported CPTransportLayerInformation choice %d\n", in->signalling_TNL_at_source.present);
     return false;
   }
-  BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&in->signalling_TNL_at_source.choice.endpointIPAddress,
-                                             *(long *)out->cp_tnl_ip_source.buffer);
+  uint32_t cp_tnl_addr = 0;
+  BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&in->signalling_TNL_at_source.choice.endpointIPAddress, cp_tnl_addr);
+  memcpy(out->cp_tnl_ip_source.buffer, &cp_tnl_addr, sizeof(cp_tnl_addr));
   out->cp_tnl_ip_source.length = 4;
 
   if (!decode_xnap_ue_security_capabilities(&in->ueSecurityCapabilities, &out->security_capabilities))
