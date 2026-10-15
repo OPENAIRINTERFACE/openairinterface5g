@@ -36,6 +36,19 @@ if(ENABLE_UESCOPE OR ENABLE_ENBSCOPE OR ENABLE_NRSCOPE)
                         PROPERTIES LIBRARY_OUTPUT_DIRECTORY ../../..
   )
 endif()
+
+add_boolean_option(ENABLE_RFTEST OFF "Whether to build the rftest calibration tool (requires libforms)" OFF)
+if(ENABLE_RFTEST)
+  find_library(forms NAMES forms REQUIRED)
+  add_executable(rftest calibration_test.c calibration_scope.c)
+  target_link_libraries(rftest PRIVATE
+    minimal_lib PHY_NR_COMMON UTIL forms pthread dl m ${T_LIB}
+    radio_common softmodem_common)
+  target_link_libraries(rftest PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
+  # keep the executable in the root build dir, where it was built so far
+  set_target_properties(rftest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()
+
 if (ENABLE_TESTS)
   add_subdirectory(tests)
 endif()
