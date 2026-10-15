@@ -17,7 +17,7 @@
     ((((x) & 0x00FF) << 8) | (((x) & 0xFF00) >> 8))
 
 # define ntoh_int32_buf(bUF)        \
-    ((*((uint8_t*)bUF)) << 24) | ((*((uint8_t*)bUF + 1)) << 16) | ((*((uint8_t*)bUF + 2)) << 8)   \
+    ((uint32_t)(*((uint8_t*)bUF)) << 24) | ((*((uint8_t*)bUF + 1)) << 16) | ((*((uint8_t*)bUF + 2)) << 8)   \
   | (*((uint8_t*)bUF + 3))
 #else
 # define hton_int32(x) (x)
