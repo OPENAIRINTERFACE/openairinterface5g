@@ -591,18 +591,16 @@ static byte_array_t do_HO_RRCReconfiguration(nr_rrc_reconfig_param_t *params)
   int val = uper_encode_to_new_buffer(&asn_DEF_NR_RRCReconfiguration, NULL, &rrcReconf, (void **)&msg.buf);
   if (val <= 0) {
     LOG_E(NR_RRC, "ASN1 RRCReconfiguration message encoding failed\n");
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_RRCReconfiguration, &rrcReconf);
-    return msg;
+  } else {
+    msg.len = val;
+    LOG_D(NR_RRC, "RRCReconfiguration: Encoded (%ld bytes)\n", msg.len);
   }
-  msg.len = val;
-  LOG_D(NR_RRC, "RRCReconfiguration: Encoded (%ld bytes)\n", msg.len);
 
   // don't free what we did not allocate, so set fields with pointers to NULL
   // if memory comes from outside
   ie->measConfig = NULL;
   if (ie->radioBearerConfig) {
     ie->radioBearerConfig->srb3_ToRelease = NULL;
-    ie->radioBearerConfig->drb_ToReleaseList = NULL;
     ie->radioBearerConfig->drb_ToAddModList = NULL;
     ie->radioBearerConfig->srb_ToAddModList = NULL;
     ie->radioBearerConfig->securityConfig = NULL;
@@ -683,17 +681,15 @@ byte_array_t do_RRCReconfiguration(const nr_rrc_reconfig_param_t *params)
   int val = uper_encode_to_new_buffer(&asn_DEF_NR_DL_DCCH_Message, NULL, &dl_dcch_msg, (void **)&msg.buf);
   if (val <= 0) {
     LOG_E(NR_RRC, "Failed to encode DL-DCCH message\n");
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_DCCH_Message, &dl_dcch_msg);
-    return msg;
+  } else {
+    msg.len = val;
+    LOG_D(NR_RRC, "RRCReconfiguration: Encoded (%ld bytes)\n", msg.len);
   }
-  msg.len = val;
-  LOG_D(NR_RRC, "RRCReconfiguration: Encoded (%ld bytes)\n", msg.len);
 
   // Do not free what is not allocated in this context
   ie->measConfig = NULL;
   if (ie->radioBearerConfig) {
     ie->radioBearerConfig->securityConfig = NULL;
-    ie->radioBearerConfig->drb_ToReleaseList = NULL;
     ie->radioBearerConfig->srb_ToAddModList = NULL;
     ie->radioBearerConfig->drb_ToAddModList = NULL;
   }

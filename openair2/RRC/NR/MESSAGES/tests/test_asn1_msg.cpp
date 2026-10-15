@@ -216,38 +216,63 @@ void free_RRCReconfiguration_params(nr_rrc_reconfig_param_t params)
     FREE_AND_ZERO_BYTE_ARRAY(params.dedicated_NAS_msg_list[i]);
 }
 
+static NR_SRB_ToAddModList_t *make_srb_config_list(void)
+{
+  NR_SRB_ToAddModList_t *list = (NR_SRB_ToAddModList_t *)calloc_or_fail(1, sizeof(*list));
+  for (int i = 1; i <= 2; i++) {
+    NR_SRB_ToAddMod_t *srb = (NR_SRB_ToAddMod_t *)calloc_or_fail(1, sizeof(*srb));
+    ASN_SEQUENCE_ADD(&list->list, srb);
+    srb->srb_Identity = i;
+    srb->reestablishPDCP = (long *)calloc_or_fail(1, sizeof(*srb->reestablishPDCP));
+    *srb->reestablishPDCP = 0;
+  }
+  return list;
+}
+
+static NR_DRB_ToAddModList_t *make_drb_config_list(void)
+{
+  NR_DRB_ToAddModList_t *list = (NR_DRB_ToAddModList_t *)calloc_or_fail(1, sizeof(*list));
+  for (int i = 1; i <= 2; i++) {
+    NR_DRB_ToAddMod_t *drb = (NR_DRB_ToAddMod_t *)calloc_or_fail(1, sizeof(*drb));
+    ASN_SEQUENCE_ADD(&list->list, drb);
+    drb->drb_Identity = i;
+    drb->reestablishPDCP = (long *)calloc_or_fail(1, sizeof(*drb->reestablishPDCP));
+    *drb->reestablishPDCP = 0;
+  }
+  return list;
+}
+
+// Encoding failure must not free caller-owned SRB/DRB lists.
+TEST(nr_asn1, rrc_reconfiguration_encode_failure_keeps_params_owned)
+{
+  nr_rrc_reconfig_param_t params = {};
+  params.srb_config_list = make_srb_config_list();
+  params.drb_config_list = make_drb_config_list();
+
+  int drb_rel[] = {3};
+  params.drb_rel = drb_rel;
+  params.n_drb_rel = 1;
+
+  // A transaction ID outside 0..3 forces encoding failure.
+  params.transaction_id = 4;
+
+  byte_array_t msg = do_RRCReconfiguration(&params);
+
+  EXPECT_EQ(msg.len, 0);
+  free_byte_array(msg);
+
+  free_RRCReconfiguration_params(params);
+}
+
 TEST(nr_asn1, rrc_reconfiguration)
 {
-  // SRB Configuration
-  NR_SRB_ToAddModList_t *srb_config_list = (NR_SRB_ToAddModList_t *)calloc_or_fail(1, sizeof(*srb_config_list));
-  for (int i = 0; i < 4; i++) {
-    if (i == 1 || i == 2) {
-      NR_SRB_ToAddMod_t *srb = (NR_SRB_ToAddMod_t *)calloc_or_fail(1, sizeof(*srb));
-      ASN_SEQUENCE_ADD(&srb_config_list->list, srb);
-      srb->srb_Identity = i;
-      if (i == 1 || i == 2) {
-        srb->reestablishPDCP = (long *)calloc_or_fail(1, sizeof(*srb->reestablishPDCP));
-        *srb->reestablishPDCP = 0;
-      }
-    }
-  }
-
-  // DRB Configuration
-  NR_DRB_ToAddModList_t *drb_config_list = (NR_DRB_ToAddModList_t *)calloc_or_fail(1, sizeof(*drb_config_list));
-  for (int i = 0; i < 32; i++) {
-    if (i == 1 || i == 2) {
-      NR_DRB_ToAddMod_t *drb = (NR_DRB_ToAddMod_t *)calloc_or_fail(1, sizeof(*drb));
-      ASN_SEQUENCE_ADD(&drb_config_list->list, drb);
-      drb->drb_Identity = i;
-      drb->reestablishPDCP = (long *)calloc_or_fail(1, sizeof(*drb->reestablishPDCP));
-      *drb->reestablishPDCP = 0;
-    }
-  }
-
   // nr_rrc_reconfig_param_t setup
   nr_rrc_reconfig_param_t params = {};
-  params.srb_config_list = srb_config_list;
-  params.drb_config_list = drb_config_list;
+  params.srb_config_list = make_srb_config_list();
+  params.drb_config_list = make_drb_config_list();
+  int drb_rel[] = {3};
+  params.drb_rel = drb_rel;
+  params.n_drb_rel = 1;
   params.num_nas_msg = 2;
   params.masterKeyUpdate = false;
   params.nextHopChainingCount = 1;
