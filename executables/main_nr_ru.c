@@ -19,6 +19,7 @@
 #include "common/utils/threadPool/thread-pool.h"
 #include "openair1/SCHED_NR/sched_nr.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/INIT/nr_parms.h"
 
 pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;

@@ -449,7 +449,7 @@ int get_oru_options(ORU_t *oru)
                 "codebook beamforming needs nb_rx %d <= nb_tx %d (one weight row per RX antenna)\n",
                 oru->ru->nb_rx,
                 oru->ru->nb_tx);
-    paramdef_t *wgt = gpd(param, nump, CONFIG_STRING_CODEBOOK_WEIGHTS);
+    const paramdef_t *wgt = gpd(param, nump, CONFIG_STRING_CODEBOOK_WEIGHTS);
     int expected = oru->codebook.nb_beams * oru->ru->nb_tx * oru->codebook.nb_fh_streams * 2;
     AssertFatal(wgt->numelt == expected,
                 "codebook_weights: expected %d elements (nb_beams=%d * nb_tx=%d * nb_fh_streams=%d * 2)\n",
