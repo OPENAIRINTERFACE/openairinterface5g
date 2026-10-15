@@ -57,7 +57,8 @@ uicc0 = {
 | **pdu_sessions** | list of PDU sessions to request | empty array (no PDU session) |
 
 Note that the legacy DNN and NSSAI parameters are not supported anymore, and
-`pdu_sessions` should be defined in the config style, or the UE will not start.
+`pdu_sessions` should be defined in the config style, or the UE will not
+request a PDU session.
 
 Each element within the `pdu_sessions` array takes the following parameters.
 Multiple PDU sessions can be requested.
@@ -69,6 +70,7 @@ Multiple PDU sessions can be requested.
 | `dnn`         | Specifies the name of the data network the UE wishes to connect to | `oai` |
 | `nssai_sst`   | Slice Service Type to request (1=eMBB, 2=URLLC, 3=mMTC) | `1` |
 | `nssai_sd`   | Slice Differentiator to request | `0xffffff` (meaning "no SD") |
+| `ifname`      | Interface name to be used for this PDU session | auto-generated name |
 
 For instance, to request two PDU sessions with user-defined IDs, you could
 use.
@@ -78,10 +80,38 @@ uicc0 = {
   # ...
   pdu_sessions = (
     { id=1; dnn = "oai.ipv4"; type = "IPv4", nssai_sst = 1; },
-    { id=2; dnn = "oai.ipv6"; type = "IPv6", nssai_sst = 1; },
+    { id=2; dnn = "oai.ipv6"; type = "IPv6", nssai_sst = 1; ifname = "ue.ipv6"; },
   );
 }
 ```
+
+For the second PDU session, an interface name to be used has been requested.
+By default (if not provided), the interface names follow the scheme
+`oaitun_ueX[_pY]` and `oaitap_ueX[_pY]` where
+
+-  `oaitun` is used for IP PDU sessions (TUN), and `oaitap` is used for
+   Ethernet PDU sessions (TAP)
+- `ueX` with `X` referring to the UE index, starting at 1, if multiple UEs run
+  in a single process
+- `pY` is an optional suffix that is appended for each 2nd, 3rd, ..., PDU session.
+
+An explicit interface name can be requested to allow these use cases:
+
+1. running multiple UE processes, which by default would all use `oaitun_ue1`,
+   i.e., to avoid conflicts
+2. where the existing names are not descriptive enough or need to fit into
+   existing workflows.
+3. to bind to a pre-existing, named interface. To do this, create a new
+   interface before running the UE, then configure the IP address manually that
+   is received by the UE. Example:
+   ```
+   sudo ip tuntap add name ue_wan mode tun
+   ./nr-uesoftmodem ... --uicc0.pdu_sessions.[0].ifname ue_wan
+   sudo ip addr add <IP>/24 dev ue_wan # replace with IP shown in logs
+   sudo ip link set ue_wan up
+   sudo ip tuntap delete name ue_wan mode tun # remove once not needed
+   ```
+   In this case, in RFsim, the UE does not need root privileges anymore
 
 ### Optional NR-UE command line options
 
