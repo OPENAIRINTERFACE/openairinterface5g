@@ -1764,6 +1764,21 @@ static void send_nas_tun_req_action(nr_ue_nas_t *nas, nas_tun_req_action_t actio
 }
 
 /**
+ * @brief Return the PDU session config for matching PDU session ID and type
+ */
+static const pdu_session_config_t *get_pdu_session_config(const uicc_t *uicc, int id, const pdu_session_establishment_accept_msg_t *msg)
+{
+  for (int idx = 0; idx < uicc->n_pdu_sessions; ++idx) {
+    const pdu_session_config_t *pdu = &uicc->pdu_sessions[idx];
+    bool msg_ipv4or6 = msg->pdu_type == PDU_SESSION_TYPE_IPV4 || msg->pdu_type == PDU_SESSION_TYPE_IPV6;
+    bool correct_type = pdu->type == msg->pdu_type || (pdu->type == PDU_SESSION_TYPE_IPV4V6 && msg_ipv4or6);
+    if (pdu->id == id && correct_type)
+      return pdu;
+  }
+  return NULL;
+}
+
+/**
  * @brief Handle PDU Session Establishment Accept and process decoded message
  */
 static void handle_pdu_session_accept(nr_ue_nas_t *nas, uint8_t *pdu_buffer, uint32_t msg_length)
@@ -1809,15 +1824,8 @@ static void handle_pdu_session_accept(nr_ue_nas_t *nas, uint8_t *pdu_buffer, uin
     return;
   }
 
-  int idx;
-  for (idx = 0; idx < nas->uicc->n_pdu_sessions; ++idx) {
-    const pdu_session_config_t *pdu = &nas->uicc->pdu_sessions[idx];
-    bool msg_ipv4or6 = msg.pdu_type == PDU_SESSION_TYPE_IPV4 || msg.pdu_type == PDU_SESSION_TYPE_IPV6;
-    bool correct_type = pdu->type == msg.pdu_type || (pdu->type == PDU_SESSION_TYPE_IPV4V6 && msg_ipv4or6);
-    if (pdu->id == sm_header.pdu_session_id && correct_type)
-      break;
-  }
-  if (idx == nas->uicc->n_pdu_sessions) {
+  const pdu_session_config_t *pdu = get_pdu_session_config(nas->uicc, sm_header.pdu_session_id, &msg);
+  if (!pdu) {
     LOG_E(NAS,
           "PDU session establishment accept for ID %d type %d not in list of configured PDU sessions, abort transaction\n",
           sm_header.pdu_session_id,
@@ -1834,7 +1842,7 @@ static void handle_pdu_session_accept(nr_ue_nas_t *nas, uint8_t *pdu_buffer, uin
   nr_ue_tun_store_qfi(t, msg.qos_rules.rule->qfi);
 
   // process PDU Session: pass ID -1 to not append PDU ID to interface
-  bool is_default = idx == 0;
+  bool is_default = pdu == nas->uicc->pdu_sessions; // if first index
   if (msg.pdu_type == PDU_SESSION_TYPE_ETHER) {
     nr_ue_tun_create_eth_if(t, nas->UE_id, is_default ? -1 : sm_header.pdu_session_id);
   } else if (msg.pdu_addr_ie.pdu_length) {
