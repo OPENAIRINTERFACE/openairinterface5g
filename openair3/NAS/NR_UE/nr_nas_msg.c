@@ -1843,11 +1843,13 @@ static void handle_pdu_session_accept(nr_ue_nas_t *nas, uint8_t *pdu_buffer, uin
     LOG_W(NAS, "Unhandled PDU session type %d, ignoring PDU session ID %d\n", msg.pdu_type, sm_header.pdu_session_id);
     return;
   }
-  DevAssert(t->sock >= 0);
   /* Track active PDU session for later PDU session status IE (24.501 8.2.16.3) */
   nas->psi_status[sm_header.pdu_session_id] = PDU_SESSION_ACTIVE;
   // ask RRC to start connected reader for this PSI
-  send_nas_tun_req(nas, sm_header.pdu_session_id);
+  if (t->sock > 0)
+    send_nas_tun_req(nas, sm_header.pdu_session_id);
+  else
+    LOG_W(NAS, "could not create data interface reader thread, cannot inject data traffic\n");
 }
 
 static void send_nas_uplink_data_req(nr_ue_nas_t *nas, const as_nas_info_t *initial_nas_msg)
