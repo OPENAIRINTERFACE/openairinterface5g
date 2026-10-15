@@ -116,7 +116,7 @@ void write_parsedcfg(configmodule_interface_t *cfg);
 /* free all config module memory, to be used at end of program as
  * it will free parameters values even those specified with the PARAMFLAG_NOFREE flag */
 extern void free_configmodule(void);
-#define CONFIG_PRINTF_ERROR(f, x... ) if (isLogInitDone ()) { LOG_E(ENB_APP,f,x);} else {printf(f,x);}; if ( !CONFIG_ISFLAGSET(CONFIG_NOABORTONCHKF) ) exit_fun("exit because configuration failed\n");
+#define CONFIG_PRINTF_ERROR(f, x... ) if (isLogInitDone ()) { LOG_E(UTIL,f,x);} else {printf(f,x);}; if ( !CONFIG_ISFLAGSET(CONFIG_NOABORTONCHKF) ) exit_fun("exit because configuration failed\n");
 
 #ifdef __cplusplus
 }
