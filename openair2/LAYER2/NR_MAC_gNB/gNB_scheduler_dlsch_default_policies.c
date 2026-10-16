@@ -15,9 +15,8 @@
 #include "common/utils/nr/nr_common.h"
 #include "gNB_scheduler_dlsch_default_policies.h"
 /*MAC*/
-#include "NR_MAC_COMMON/nr_mac.h"
-#include "NR_MAC_gNB/nr_mac_gNB.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "nr_mac_gNB.h"
+#include "mac_proto.h"
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
 /*TAG*/

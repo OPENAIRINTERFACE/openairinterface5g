@@ -30,8 +30,6 @@
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_gNB/nr_radio_config.h"
 #include "NR_CellGroupConfig.h"
-#include "NR_MAC_COMMON/nr_mac.h"
-#include "NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_ReconfigurationWithSync.h"
 #include "NR_RLC-BearerConfig.h"
 #include "PHY/CODING/nrLDPC_coding/nrLDPC_coding_interface.h"

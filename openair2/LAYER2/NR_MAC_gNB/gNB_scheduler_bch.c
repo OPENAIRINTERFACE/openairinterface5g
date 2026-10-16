@@ -7,8 +7,8 @@
  */
 
 #include "assertions.h"
-#include "NR_MAC_gNB/nr_mac_gNB.h"
-#include "NR_MAC_gNB/mac_proto.h"
+#include "nr_mac_gNB.h"
+#include "mac_proto.h"
 #include "common/utils/LOG/log.h"
 #include "UTIL/OPT/opt.h"
 #include "common/utils/nr/nr_common.h"

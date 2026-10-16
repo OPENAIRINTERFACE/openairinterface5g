@@ -49,7 +49,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/LAYER2/NR_MAC_UE/mac_proto.h>
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
-#include "nr_rlc/nr_rlc_oai_api.h"
+#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 /* Callbacks, globals and object handlers */
 
 //#include "stats.h"

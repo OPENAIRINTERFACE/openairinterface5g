@@ -7,7 +7,7 @@
  */
 
 #include <stdint.h>
-#include "NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 // table_7_3_1_1_2_2_3_4_5 contains values for number of layers and precoding information for tables 7.3.1.1.2-2/3/4/5 from TS 38.212 subclause 7.3.1.1.2
 // the first 6 columns contain table 7.3.1.1.2-2: Precoding information and number of layers, for 4 antenna ports, if transformPrecoder=disabled and maxRank = 2 or 3 or 4

@@ -8,7 +8,7 @@
 #include "sidelink_nr_ue_interface.h"
 #include "NR_SL-ResourcePool-r16.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
-#include "NR_MAC_COMMON/nr_mac.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 #define SL_NR_MAC_NUM_RX_RESOURCE_POOLS 1

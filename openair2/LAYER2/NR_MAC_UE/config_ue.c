@@ -9,8 +9,8 @@
 #define _GNU_SOURCE
 
 #include "mac_defs.h"
-#include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC-CellGroupConfig.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "common/utils/nr/nr_common.h"
 #include "executables/softmodem-common.h"

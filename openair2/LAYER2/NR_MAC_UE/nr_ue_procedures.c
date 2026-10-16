@@ -17,8 +17,8 @@
 #include "RRC/NR_UE/L2_interface_ue.h"
 
 /* MAC */
-#include "NR_MAC_COMMON/nr_mac.h"
-#include "NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include "common/utils/nr/nr_common.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_Packet_Drop.h"
 

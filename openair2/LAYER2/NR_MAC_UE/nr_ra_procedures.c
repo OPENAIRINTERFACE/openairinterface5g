@@ -10,7 +10,7 @@
 #include "RRC/NR_UE/L2_interface_ue.h"
 
 /* MAC */
-#include "NR_MAC_COMMON/nr_mac.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include <executables/softmodem-common.h>
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"

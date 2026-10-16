@@ -4,7 +4,7 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <nr_pdcp/nr_pdcp.h>
+#include "LAYER2/nr_pdcp/nr_pdcp.h"
 #include <softmodem-common.h>
 #include <nr-softmodem.h>
 
