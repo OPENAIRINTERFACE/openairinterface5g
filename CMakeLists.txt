@@ -2060,7 +2060,6 @@ target_link_libraries(nr_pbchsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_psbchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/psbchsim.c
-  ${NFAPI_USER_DIR}/nfapi.c
   )
 target_link_libraries(nr_psbchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_UE_NR MAC_NR_COMMON CONFIG_LIB -Wl,--end-group
@@ -2077,8 +2076,6 @@ target_link_libraries(nr_pucchsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_dlsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c
-  ${NFAPI_USER_DIR}/nfapi.c
-  ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   )
 target_link_libraries(nr_dlsim PRIVATE
@@ -2105,8 +2102,6 @@ target_link_libraries(nr_ulschsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_ulsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulsim.c
-  ${NFAPI_USER_DIR}/nfapi.c
-  ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   )
 
@@ -2118,7 +2113,6 @@ target_link_libraries(nr_ulsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_srssim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/srssim.c
-  ${NFAPI_USER_DIR}/nfapi.c
   )
 
 target_link_libraries(nr_srssim PRIVATE
@@ -2128,8 +2122,6 @@ target_link_libraries(nr_srssim PRIVATE
 
 add_executable(nr_ulsim_mu_mimo
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulsim_mu_mimo.c
-  ${NFAPI_USER_DIR}/nfapi.c
-  ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   )
 
@@ -2157,7 +2149,6 @@ foreach(myExe dlsim ulsim)
     ${OPENAIR_DIR}/common/utils/lte/ue_power.c
     ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
     ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
-    ${NFAPI_USER_DIR}/nfapi.c
     )
   target_link_libraries (${myExe} PRIVATE
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU ITTI -Wl,--end-group
