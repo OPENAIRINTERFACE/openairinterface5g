@@ -406,9 +406,6 @@ set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
 add_library(ITTI ${OCP_ITTI}/intertask_interface.cpp)
 target_link_libraries(ITTI PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
-# asn1c skeletons need this
-add_definitions(-DHAVE_NETINET_IN_H)
-
 #########################
 ##### E2 AGENT
 #########################
