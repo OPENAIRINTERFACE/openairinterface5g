@@ -3747,6 +3747,14 @@ void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
   }
 }
 
+bool is_periodic_occasion(int frame, int slot, int slots_per_frame, int period, int offset)
+{
+  // (slots_per_frame * frame + slot - offset) mod period == 0
+  // Signed arithmetic on purpose: with unsigned frame_t, a negative left operand right after SFN wrap-around
+  // would wrap to 2^32 - d and could give a spurious occasion
+  return (slots_per_frame * frame + slot - offset) % period == 0;
+}
+
 uint8_t get_BG(uint32_t A, uint16_t R)
 {
   float code_rate = (float) R / 10240.0f;

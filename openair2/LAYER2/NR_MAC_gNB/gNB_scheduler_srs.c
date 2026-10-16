@@ -644,7 +644,7 @@ void nr_schedule_periodic_srs(gNB_MAC_INST *nrmac, nr_cell_sched_t *cell, frame_
       const uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 
       // Check if UE will transmit the SRS in this frame
-      if ((sched_frame * n_slots_frame + sched_slot - offset) % period != 0)
+      if (!is_periodic_occasion(sched_frame, sched_slot, n_slots_frame, period, offset))
         continue;
       bool ret = nr_fill_nfapi_srs(nrmac, cell, UE, sched_frame, sched_slot, srs_resource_set, srs_resource);
       AssertFatal(ret, "Cannot allocate periodic SRS\n");

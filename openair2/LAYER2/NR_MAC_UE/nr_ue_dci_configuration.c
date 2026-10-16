@@ -335,7 +335,7 @@ bool is_ss_monitor_occasion(const int frame, const int slot, const int slots_per
   get_monitoring_period_offset(ss, &period, &offset);
   // The UE monitors PDCCH candidates for search space set ss for 'duration' consecutive slots
   for (int i = 0; i < duration; i++) {
-    if (((frame * slots_per_frame + slot - offset - i) % period) == 0) {
+    if (is_periodic_occasion(frame, slot, slots_per_frame, period, offset + i)) {
       monitor = true;
       break;
     }
@@ -354,7 +354,7 @@ static bool search_space_monitoring_ocasion_other_si(NR_UE_MAC_INST_t *mac,
   int period, offset;
   get_monitoring_period_offset(ss, &period, &offset);
   for (int i = 0; i < duration; i++) {
-    if (((frame * slots_per_frame + slot - offset - i) % period) == 0) {
+    if (is_periodic_occasion(frame, slot, slots_per_frame, period, offset + i)) {
       int N = mac->ssb_list.nb_tx_ssb;
       int K = mac->ssb_list.nb_ssb_per_index[mac->mib_ssb];
       // numbering current frame and slot in terms of monitoring occasions in window

@@ -358,6 +358,8 @@ void csi_period_offset(const NR_CSI_ReportConfig_t *csirep,
                        int *period,
                        int *offset);
 
+bool is_periodic_occasion(int frame, int slot, int slots_per_frame, int period, int offset);
+
 bool set_dl_ptrs_values(NR_PTRS_DownlinkConfig_t *ptrs_config,
                         uint16_t rbSize, uint8_t mcsIndex, uint8_t mcsTable,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,uint8_t *portIndex,
