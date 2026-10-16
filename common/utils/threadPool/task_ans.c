@@ -48,7 +48,7 @@ void completed_many_task_ans(task_ans_t* ans, uint num_completed_jobs)
 {
   DevAssert(ans != NULL);
   // Using atomic counter in contention scenario to avoid locking in producers
-  int num_jobs = atomic_fetch_sub_explicit(&ans->counter, num_completed_jobs, memory_order_relaxed);
+  int num_jobs = atomic_fetch_sub_explicit(&ans->counter, num_completed_jobs, memory_order_acq_rel);
   if (num_jobs == num_completed_jobs) {
     // Using semaphore to enable blocking call in join_task_ans
     sempost(ans->sem);
