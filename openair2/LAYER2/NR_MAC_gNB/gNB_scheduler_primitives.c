@@ -2719,8 +2719,8 @@ void delete_nr_ue_data(gNB_MAC_INST *mac, NR_UE_info_t *UE)
   ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->CellGroup);
   ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->reconfigCellGroup);
   ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
+  reset_periodic_info(UE, &UE->pcell->periodic_srs_config, UE->sched_srs.periodic_sched.periodic_offset);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  reset_periodic_info(UE, &UE->pcell->periodic_srs_config, sched_ctrl->sched_srs.periodic_sched.periodic_offset);
   seq_arr_free(&sched_ctrl->lc_config, NULL);
   destroy_nr_list(&sched_ctrl->available_dl_harq);
   destroy_nr_list(&sched_ctrl->feedback_dl_harq);
@@ -2917,17 +2917,15 @@ void reset_sc_info(NR_UE_ServingCell_Info_t *sc_info)
   sc_info->nrofHARQ_ProcessesForPUSCH_r17 = NULL;
 }
 
-static NR_sched_srs_t configure_sched_srs(nr_cell_sched_t *cell,
-                                          const NR_SRS_Config_t *srs_config,
-                                          NR_sched_srs_t sched_srs,
-                                          NR_UE_info_t *UE)
+static void configure_sched_srs(nr_cell_sched_t *cell, const NR_SRS_Config_t *srs_config, NR_UE_info_t *UE)
 {
+  NR_sched_srs_t *sched_srs = &UE->sched_srs;
   nr_srs_type_t srs_type = cell->radio_config.do_SRS;
   if (!srs_config || srs_type == NO_SRS) {
-    sched_srs.srs_resource = NULL;
-    reset_periodic_info(UE, &cell->periodic_srs_config, sched_srs.periodic_sched.periodic_offset);
-    sched_srs.periodic_sched.periodic_offset = -1;
-    return sched_srs;
+    sched_srs->srs_resource = NULL;
+    reset_periodic_info(UE, &cell->periodic_srs_config, sched_srs->periodic_sched.periodic_offset);
+    sched_srs->periodic_sched.periodic_offset = -1;
+    return;
   }
 
   NR_SRS_ResourceSet__resourceType_PR set_type = srs_type == PERIODIC_SRS ?
@@ -2943,11 +2941,11 @@ static NR_sched_srs_t configure_sched_srs(nr_cell_sched_t *cell,
     }
   }
   AssertFatal(srs_resource_set, "Couldn't find %s SRS resource set\n", srs_type == PERIODIC_SRS ? "periodic" : "aperiodic");
-  sched_srs.usage = srs_resource_set->usage;
+  sched_srs->usage = srs_resource_set->usage;
   if (srs_type == APERIODIC_SRS) {
     struct NR_SRS_ResourceSet__resourceType__aperiodic *aperiodic = srs_resource_set->resourceType.choice.aperiodic;
-    sched_srs.aperiodic_sched.aperiodic_slotOffset = aperiodic->slotOffset;
-    sched_srs.aperiodic_sched.aperiodic_ResourceTrigger = aperiodic->aperiodicSRS_ResourceTrigger;
+    sched_srs->aperiodic_sched.aperiodic_slotOffset = aperiodic->slotOffset;
+    sched_srs->aperiodic_sched.aperiodic_ResourceTrigger = aperiodic->aperiodicSRS_ResourceTrigger;
   }
 
   NR_SRS_Resource__resourceType_PR res_type = srs_type == PERIODIC_SRS ?
@@ -2964,20 +2962,19 @@ static NR_sched_srs_t configure_sched_srs(nr_cell_sched_t *cell,
     }
   }
   AssertFatal(srs_resource, "Couldn't find %s SRS resource\n", srs_type == PERIODIC_SRS ? "periodic" : "aperiodic");
-  sched_srs.srs_resource = srs_resource;
+  sched_srs->srs_resource = srs_resource;
   if (srs_type == PERIODIC_SRS) {
     int slot_offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
     AssertFatal(slot_offset >= 0 && slot_offset < cell->periodic_srs_config.max_period,
                 "Offset not compatible with periodicity for SRS\n");
     int idx = get_ul_period_idx_from_abs_slot(&cell->frame_structure, slot_offset, false, cell->periodic_srs_config.max_period);
     AssertFatal(idx >= 0, "SRS offset %d is not a valid UL slot\n", slot_offset);
-    sched_srs.periodic_sched.periodic_offset = set_periodic_info(UE,
-                                                                 sched_srs.periodic_sched.periodic_offset,
-                                                                 &cell->periodic_srs_config,
-                                                                 idx);
-    AssertFatal(sched_srs.periodic_sched.periodic_offset >= 0, "Couldn't configure periodic information for SRS\n");
+    sched_srs->periodic_sched.periodic_offset = set_periodic_info(UE,
+                                                                  sched_srs->periodic_sched.periodic_offset,
+                                                                  &cell->periodic_srs_config,
+                                                                  idx);
+    AssertFatal(sched_srs->periodic_sched.periodic_offset >= 0, "Couldn't configure periodic information for SRS\n");
   }
-  return sched_srs;
 }
 
 // main function to configure parameters of current BWP
@@ -3061,7 +3058,7 @@ void configure_UE_BWP(nr_cell_sched_t *cell,
   }
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  sched_ctrl->sched_srs = configure_sched_srs(cell, UL_BWP->srs_Config, sched_ctrl->sched_srs, UE);
+  configure_sched_srs(cell, UL_BWP->srs_Config, UE);
 
   // TDA lists
   if (DL_BWP->bwp_id > 0)
@@ -3282,7 +3279,7 @@ NR_UE_info_t *get_new_nr_ue_inst(uid_allocator_t *uia, rnti_t rnti, NR_CellGroup
   UE->ra = calloc(1, sizeof(*UE->ra));
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   sched_ctrl->ta_update = 31;
-  sched_ctrl->sched_srs.periodic_sched.periodic_offset = -1;
+  UE->sched_srs.periodic_sched.periodic_offset = -1;
 
   const nr_mac_config_t *config = &cell->radio_config;
   nr_mac_set_target_snrx10(&sched_ctrl->pucch_pc, config->pucch.target_snrx10);
@@ -3368,8 +3365,8 @@ bool add_connected_nr_ue(gNB_MAC_INST *nr_mac, NR_UE_info_t *UE)
   sched_ctrl->pdcch_cl_adjust = 0;
   if (UE->pcell->radio_config.do_SRS == APERIODIC_SRS) {
     // for now aperiodic hardcoded every 160 slots
-    nr_timer_setup(&sched_ctrl->sched_srs.aperiodic_sched.aperiodic_srs_timer, 160, 1);
-    nr_timer_start(&sched_ctrl->sched_srs.aperiodic_sched.aperiodic_srs_timer);
+    nr_timer_setup(&UE->sched_srs.aperiodic_sched.aperiodic_srs_timer, 160, 1);
+    nr_timer_start(&UE->sched_srs.aperiodic_sched.aperiodic_srs_timer);
   }
   reset_srs_stats(UE);
 
@@ -3987,7 +3984,7 @@ void nr_mac_update_timers(gNB_MAC_INST *mac, nr_cell_sched_t *cell)
       nr_timer_stop(&sched_ctrl->tci_beam_switch);
       beam_switching_procedure(mac, cell, UE, sched_ctrl->UE_mac_ce_ctrl.tci_state_ind.tciStateId);
     }
-    nr_timer_tick(&sched_ctrl->sched_srs.aperiodic_sched.aperiodic_srs_timer);
+    nr_timer_tick(&UE->sched_srs.aperiodic_sched.aperiodic_srs_timer);
   }
 }
 

@@ -610,9 +610,9 @@ void nr_schedule_periodic_srs(gNB_MAC_INST *nrmac, nr_cell_sched_t *cell, frame_
     NR_UE_info_t *UE = *get_periodic_ue(&cell->periodic_srs_config, idx, i);
     if (!UE || (!nr_mac_ue_is_active(UE) && !get_softmodem_params()->phy_test))
       continue;
-    if (!UE->UE_sched_ctrl.sched_srs.srs_resource) // SRS resource not configured
+    if (!UE->sched_srs.srs_resource) // SRS resource not configured
       continue;
-    bool ret = nr_fill_nfapi_srs(nrmac, cell, UE, sched_frame, sched_slot, &UE->UE_sched_ctrl.sched_srs);
+    bool ret = nr_fill_nfapi_srs(nrmac, cell, UE, sched_frame, sched_slot, &UE->sched_srs);
     AssertFatal(ret, "Cannot allocate periodic SRS\n");
     LOG_D(NR_MAC," %d.%d Scheduling SRS reception for %d.%d\n", frame, slot, sched_frame, sched_slot);
   }
@@ -624,7 +624,7 @@ bool nr_schedule_aperiodic_srs(gNB_MAC_INST *nrmac, nr_cell_sched_t *cell, NR_UE
   NR_SRS_Config_t *srs_config = current_BWP->srs_Config;
   AssertFatal(srs_config, "Attempting to schedule aperiodic SRS without SRS configuration\n");
 
-  NR_sched_srs_t *srs = &UE->UE_sched_ctrl.sched_srs;
+  NR_sched_srs_t *srs = &UE->sched_srs;
   int offset = srs->aperiodic_sched.aperiodic_slotOffset ? *srs->aperiodic_sched.aperiodic_slotOffset : 0;
   if (offset != k2) {
     LOG_E(NR_MAC, "Aperiodic SRS offset %d for trigger state %d doesn't match with K2 %d\n", offset, sched_srs, k2);

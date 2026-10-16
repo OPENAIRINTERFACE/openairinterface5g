@@ -1891,7 +1891,7 @@ static int verify_aperiodic_srs(nr_cell_sched_t *cell, int slot, int k2, NR_time
 
   // finally we check if the aperiodic SRS timer has expired
   if (nr_timer_expired(aperiodic_srs)) {
-    NR_sched_srs_t *sched_srs = &UE->UE_sched_ctrl.sched_srs;
+    NR_sched_srs_t *sched_srs = &UE->sched_srs;
     int offset = sched_srs->aperiodic_sched.aperiodic_slotOffset ? *sched_srs->aperiodic_sched.aperiodic_slotOffset : 0;
     if (offset == k2)
       return sched_srs->aperiodic_sched.aperiodic_ResourceTrigger;
@@ -2735,7 +2735,7 @@ static int collect_ul_candidates(gNB_MAC_INST *mac,
 
     cand.is_retx = false;
     if (!aperiodic_srs_scheduled) {
-      cand.sched_srs = verify_aperiodic_srs(cell, sched_slot, k2, &sched_ctrl->sched_srs.aperiodic_sched.aperiodic_srs_timer, UE);
+      cand.sched_srs = verify_aperiodic_srs(cell, sched_slot, k2, &UE->sched_srs.aperiodic_sched.aperiodic_srs_timer, UE);
       aperiodic_srs_scheduled = cand.sched_srs > 0;
     } else
       cand.sched_srs = 0;

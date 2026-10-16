@@ -753,7 +753,6 @@ typedef struct {
   /// "TransmissionActionIndicator" handling
   NR_timer_t transm_timeout;
 
-  NR_sched_srs_t sched_srs;
   /// sri, ul_ri and tpmi based on SRS
   nr_srs_feedback_t srs_feedback;
 
@@ -857,6 +856,7 @@ typedef struct NR_UE_info {
   /// scheduling control info
   nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl;
+  NR_sched_srs_t sched_srs;
   NR_UE_DL_BWP_t current_DL_BWP;
   NR_UE_UL_BWP_t current_UL_BWP;
   NR_UE_ServingCell_Info_t sc_info;
