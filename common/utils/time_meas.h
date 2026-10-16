@@ -168,12 +168,10 @@ typedef struct time_stats {
   int meas_flag;                                   /*!< \brief 1: stop_meas not called (consecutive calls of start_meas) */
   char *meas_name;                                 /*!< \brief name to use when printing the measure (not used for PHY simulators)*/
   int meas_index;                                  /*!< \brief index of this measure in the measure array (not used for PHY simulators)*/
-  int meas_enabled;                                /*!< \brief per measure enablement flag. send_meas tests this flag, unused today in start_meas and stop_meas*/
   struct notifiedFIFO_elt_s *tpoolmsg;             /*!< \brief message pushed to the cpu measurment queue to report a measure START or STOP */
   time_stats_msg_t *tstatptr;                      /*!< \brief pointer to the time_stats_msg_t data in the tpoolmsg, stored here for perf considerations */
   time_stats_sorted_list_t time_stats_sorted_list; /*!< \brief optional sorted list to get med, q1, q2 */
 } time_stats_t;
-#define MEASURE_ENABLED(X)       (X->meas_enabled)
 
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
 static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
@@ -352,16 +350,6 @@ static inline void free_sorted_list_meas(time_stats_t *ts)
 // clang-format on
 
 void init_meas(void);
-time_stats_t *register_meas(char *name);
-#define START_MEAS(X) send_meas(X, TIMESTAT_MSGID_START)
-#define STOP_MEAS(X)  send_meas(X, TIMESTAT_MSGID_STOP)
-void send_meas(time_stats_t *ts, int msgid);
 void end_meas(void);
 
-#define timeIt(a)                                           \
-  {                                                         \
-    uint64_t deb = clock_gettime_oai();                             \
-    a;                                                      \
-    LOG_W(UTIL, #a ": %llu\n", (clock_gettime_oai() - deb) / 3000); \
-  }
 #endif

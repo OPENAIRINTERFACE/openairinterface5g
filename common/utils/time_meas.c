@@ -210,26 +210,6 @@ double get_time_meas_us(time_stats_t *ts)
   return 0;
 }
 
-/* function for the asynchronous measurment module: cpu stat are sent to a dedicated thread
- * which is in charge of computing the cpu time spent in a given function/algorithm...
- */
-
-time_stats_t *register_meas(char *name)
-{
-  for (int i=0; i<max_cpumeasur; i++) {
-    if (measur_table[i] == NULL) {
-      measur_table[i] = (time_stats_t *)malloc(sizeof(time_stats_t));
-      memset(measur_table[i] ,0,sizeof(time_stats_t));
-      measur_table[i]->meas_name = strdup(name);
-      measur_table[i]->meas_index = i;
-      measur_table[i]->tpoolmsg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
-      measur_table[i]->tstatptr = (time_stats_msg_t *)NotifiedFifoData(measur_table[i]->tpoolmsg);
-      return measur_table[i];
-    }
-  }
-  return NULL;
-}
-
 void free_measurtbl(void) {
   for (int i=0; i<max_cpumeasur; i++) {
     if (measur_table[i] != NULL) {
@@ -309,15 +289,6 @@ void init_meas(void) {
   rt=pthread_create(&thid,NULL, (void *(*)(void *))run_cpumeasur, NULL);
   AssertFatal(rt==0, "couldn't create cpu measurment thread: %s\n",strerror(errno));
 }
-
-void send_meas(time_stats_t *ts, int msgid) {
-    if (MEASURE_ENABLED(ts) ) {
-      ts->tstatptr->timestat_id=ts->meas_index;
-      ts->tstatptr->msgid = msgid ;
-      ts->tstatptr->ts = clock_gettime_oai();
-      pushNotifiedFIFO(&measur_fifo, ts->tpoolmsg);
-    }
-  }
 
 void end_meas(void) {
     notifiedFIFO_elt_t *nfe = newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
