@@ -31,7 +31,6 @@
 #include <pnf.h>
 
 #include <vendor_ext.h>
-#include "fapi_stub.h"
 
 #include "common/utils/LOG/log.h"
 

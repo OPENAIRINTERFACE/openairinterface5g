@@ -701,8 +701,6 @@ include_directories("${OPENAIR3_DIR}/NAS/COMMON/UTIL")
 include_directories("${OPENAIR3_DIR}/SECU")
 include_directories("${OPENAIR3_DIR}/SCTP")
 include_directories("${OPENAIR_DIR}/radio/COMMON")
-include_directories("${OPENAIR2_DIR}/UTIL/MATH")
-include_directories("${OPENAIR2_DIR}/UTIL/OTG")
 include_directories("${OPENAIR2_DIR}/UTIL/OPT")
 include_directories("${OPENAIR_DIR}")
 
@@ -1723,9 +1721,6 @@ endif()
 
 include_directories("${NFAPI_DIR}/nfapi/public_inc")
 include_directories("${NFAPI_DIR}/common/public_inc")
-include_directories("${NFAPI_DIR}/nfapi/inc")
-include_directories("${NFAPI_DIR}/sim_common/inc")
-include_directories("${NFAPI_DIR}/pnf_sim/inc")
 
 add_library(oai_iqplayer MODULE ${OPENAIR_DIR}/radio/iqplayer/iqplayer_lib.c)
 target_link_libraries(oai_iqplayer PRIVATE log_headers)
