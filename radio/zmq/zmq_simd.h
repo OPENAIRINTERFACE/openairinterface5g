@@ -11,6 +11,7 @@
 #include "common/platform_types.h"
 #include <limits>
 #include <algorithm>
+#include <cmath>
 
 constexpr float c16_t_to_cf_t_factor = 32767.0f;
 
@@ -94,9 +95,12 @@ static inline void convert_samples_avx512_rx(const float *input_floats, int16_t 
   }
 #endif
 
-  // Cleanup loop for remaining elements
+  // Cleanup loop for remaining elements: round to nearest and saturate, like the SIMD paths above
   for (; i < total_elements; i++) {
-    output_ints[i] = (int16_t)(input_floats[i] * factor + 0.5f);
+    const float scaled = std::clamp(input_floats[i] * factor,
+                                    static_cast<float>(std::numeric_limits<int16_t>::min()),
+                                    static_cast<float>(std::numeric_limits<int16_t>::max()));
+    output_ints[i] = static_cast<int16_t>(std::lrintf(scaled));
   }
 }
 
