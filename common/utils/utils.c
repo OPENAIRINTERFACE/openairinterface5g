@@ -151,8 +151,8 @@ error:
 int read_version(const char *version, uint8_t *major, uint8_t *minor, uint8_t *patch)
 {
   int ret = sscanf(version, "%hhu.%hhu.%hhu", major, minor, patch);
-  // EOF means "end of input reached or matching failure"
+  // EOF means the input ended before the first conversion (e.g., empty string): nothing was read
   if (ret == EOF)
-    return 3;
+    return 0;
   return ret; // ret has number of items matched
 }
