@@ -21,7 +21,6 @@
 #include "NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_MAC_UE/mac_defs.h"
 #include "NR_MAC_gNB/nr_mac_gNB.h"
-#include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_ReconfigurationWithSync.h"
 #include "NR_ServingCellConfig.h"
 #include "NR_UE-NR-Capability.h"

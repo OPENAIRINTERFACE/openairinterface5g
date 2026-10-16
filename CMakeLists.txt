@@ -675,7 +675,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories("${OPENAIR_DIR}/executables")
 include_directories("${OPENAIR2_DIR}/COMMON")
 include_directories("${OPENAIR2_DIR}/UTIL")
-include_directories("${OPENAIR3_DIR}/COMMON")
 include_directories("${OPENAIR3_DIR}/UTILS")
 include_directories("${OPENAIR1_DIR}")
 include_directories("${OPENAIR2_DIR}")
@@ -1373,10 +1372,7 @@ target_link_libraries(NR_L2_UE PRIVATE nr_rlc ds alg)
 target_link_libraries(NR_L2_UE PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs nr_common nr_ue_power_procedures nr_ue_ra_procedures)
 target_link_libraries(NR_L2_UE PRIVATE nr_nas)
 
-include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
 include_directories("${OPENAIR2_DIR}/LAYER2")
-include_directories("${OPENAIR1_DIR}/SCHED_NR_UE")
-#include_directories("${NFAPI_USER_DIR}"")
 
 # L3 Libs
 ##########################

@@ -26,7 +26,6 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "PHY_INTERFACE/phy_interface_vars.h"
-#include "NR_IF_Module.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair2/RRC/NR_UE/L2_interface_ue.h"
 #include "openair1/PHY/phy_extern_nr_ue.h"

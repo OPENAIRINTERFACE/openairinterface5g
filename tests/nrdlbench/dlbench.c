@@ -32,7 +32,6 @@
 #include "NR_CellGroupConfig.h"
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "NR_MAC_COMMON/nr_mac_common.h"
-#include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_ReconfigurationWithSync.h"
 #include "NR_RLC-BearerConfig.h"
 #include "PHY/CODING/nrLDPC_coding/nrLDPC_coding_interface.h"
