@@ -278,7 +278,7 @@ void run_cpumeasur(void) {
                }
                for (int i=start ; i<stop ; i++) {
                  if (measur_table[i] != NULL) {
-                   sprintf(aline,"%s: %15.3f us ",measur_table[i]->meas_name, measur_table[i]->trials==0?0:(  (float) measur_table[i]->trials/measur_table[i]->diff  /1000 ));
+                   sprintf(aline,"%s: %15.3f us ",measur_table[i]->meas_name, measur_table[i]->trials==0?0:(  (float) measur_table[i]->diff/measur_table[i]->trials  /1000 ));
                    tsm->displayFunc(aline);
                    }
                 }
