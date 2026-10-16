@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-#include "queue_t.h"
+#include "common/utils/ds/queue_t.h"
 #include <stdio.h>
 #include <stdlib.h>
 
