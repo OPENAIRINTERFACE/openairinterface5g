@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 3.19)
 project (OpenAirInterface LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(OAI_VERSION 2.4.0)
+set(OAI_VERSION 3.0.0)
 
 option(ENABLE_CHANNEL_SIM_CUDA "Enable CUDA accelerated channel simulation" OFF)
 if(ENABLE_CHANNEL_SIM_CUDA)

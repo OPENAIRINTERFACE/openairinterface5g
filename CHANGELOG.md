@@ -2,6 +2,83 @@
 
 # RELEASE NOTES: #
 
+## [v3.0.0](https://github.com/duranta-project/openairinterface5g/releases/tag/v3.0.0) -> October 2026. ##
+
+Licensing
+- Re-license the source code from OAI Public License v1.1 to CSSL v1.0
+- Re-license documentation under CC-BY-4.0 and orchestration/CI assets under MIT
+- Repository moved to GitHub under Duranta Project
+
+Stability and bug fixes:
+- General L1 improvements for efficiency and stability, especially on ARM
+- Improve support for BladeRF radios, notably in 5G
+- T tracer can write CSV files
+- Minor cleanup, harmonization, and performance improvements all over the stack
+
+Common 5G RAN/UE changes:
+- Reimplementation of DFTs on x86/ARM for better accuracy and speed
+- Support for LDPC offload on Nvidia GPUs via CUDA
+- Support for LDPC offload on AMD GPUs via HIP
+- Support for LDPC offload on OpenRadioSystems Aurora
+- Add RFsim beam simulation
+- Improve vrtsim channel simulation and add multi-UE support
+- Add new ZMQ radio
+- Support for CN Paging procedures
+- Support for multiple QoS flows per DRB
+- Add new simulators:
+  * UE-NAS simulator against AMF
+  * CU NRPPA simulator against AMF/LMF
+
+RAN changes (gNB/CU/CU-CP/CU-UP/DU/DU-high/DU-low):
+- Support for up to 100 UEs, and general MAC scheduler improvements
+- Support for NR-DC over F1
+- New software O-RU (O-RAN 7.2 O-RU) with support for vrtsim and USRP
+- Support for E3 interface/dApps
+- Support for aperiodic SRS
+- Support for SIBs 2,3,4
+- Support for NRPPA and UE localization via SRS
+- Various improvements for 7.2 (fragmentation, (dynamic) compression, large DU
+  delay profiles, add support for xran K release, remove support for xran E/F
+  releases, FR2 support)
+- Improvements for UL power control and support for "deltaMCS"
+- Improvements for E2 agent
+
+nrUE changes:
+- Performance Improvements, notably in L1
+- Support for UCI on PUSCH
+- Support for TRS
+- Improve PDU session support: Ethernet PDU sessions, arbitrary PDU session
+  number
+- Implementation for periodical measurement reports and A3 events for serving
+  and neighbour cells
+- Support for multiple UEs per process
+- Support for multiple RF frontends per UE
+- Improved interoperability with 3rd-party gNBs
+
+Regression or removals:
+- no known regressions
+- LDPC XDMA offload has been removed
+- OSD has been removed
+
+Configuration file changes for the 5G RAN:
+- `rfsimulator` entries are now arrays
+- `gNBs.[0].cu_sibs` and `gNBs.[0].du_sibs` have been added
+- `MACRLCs.[0].num_cc` and `L1s.[0].num_cc` have been removed
+- `gNBs.[0].do_SRS` changed meaning and is now `none`, `periodic`, or
+  `aperiodic`
+- `gNBs.[0].nr_measurement_configuration.A2.timeToTrigger` changed to
+  `gNBs.[0].nr_measurement_configuration.A2.time_to_trigger`. same for A3
+- new config options for SIB2/4
+- removal of `L1s.[0].nr_flag` (implicitly inferred)
+
+Configuration file changes for the 5G UE:
+- `uicc0.dnn`, `uicc0.nssai_sst`, `uicc0.nssai_sd`, have been deprecated and
+  replaced with `uicc0.pdu_sessions` array to configure PDU sessions
+
+Documentation
+- Add NOTICE, LICENSES/, SECURITY.md, AGENTS.md, ROADMAP.md
+- Update of contribution guidelines
+
 ## [v2.4.0](https://github.com/duranta-project/openairinterface5g/releases/tag/v2.4.0) -> December 2025. ##
 
 General new features and improvements (both RAN and UE):
