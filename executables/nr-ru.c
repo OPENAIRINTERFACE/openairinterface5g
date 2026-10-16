@@ -113,7 +113,7 @@ void fh_if5_south_in(RU_t *ru, int *frame, int *tti)
   stop_meas(&ru->rx_fhaul);
   struct timespec rxmeas;
   clock_gettime(CLOCK_MONOTONIC, &rxmeas);
-  double fhtime = ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0);
+  double fhtime = ru->rx_fhaul.p_time/(1000.0);
   if (fhtime > 800)
     LOG_W(PHY,
           "IF5 %d.%d => RX %d.%d first_rx %d: time %f, rxstart %ld\n",
@@ -122,7 +122,7 @@ void fh_if5_south_in(RU_t *ru, int *frame, int *tti)
           proc->frame_rx,
           proc->tti_rx,
           proc->first_rx,
-          ru->rx_fhaul.p_time / (cpu_freq_GHz * 1000.0),
+          ru->rx_fhaul.p_time / (1000.0),
           rxmeas.tv_nsec);
   else
     LOG_D(PHY,
@@ -132,7 +132,7 @@ void fh_if5_south_in(RU_t *ru, int *frame, int *tti)
           proc->frame_rx,
           proc->tti_rx,
           proc->first_rx,
-          ru->rx_fhaul.p_time / (cpu_freq_GHz * 1000.0),
+          ru->rx_fhaul.p_time / (1000.0),
           rxmeas.tv_nsec);
 }
 

@@ -746,12 +746,12 @@ static void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   if (cpumeas(CPUMEAS_GETSTATE)) {
     LOG_D(PHY,
           " --> Unscrambling %5.3f\n",
-          ue->phy_cpu_stats.cpu_time_stats[DLSCH_UNSCRAMBLING_STATS].p_time / (cpuf * 1000.0));
+          ue->phy_cpu_stats.cpu_time_stats[DLSCH_UNSCRAMBLING_STATS].p_time / (1000.0));
     LOG_D(PHY,
           "AbsSubframe %d.%d --> LDPC Decoding %5.3f\n",
           frame_rx % 1024,
           nr_slot_rx,
-          ue->phy_cpu_stats.cpu_time_stats[DLSCH_DECODING_STATS].p_time / (cpuf * 1000.0));
+          ue->phy_cpu_stats.cpu_time_stats[DLSCH_DECODING_STATS].p_time / (1000.0));
   }
 
   // send to mac
@@ -1320,7 +1320,7 @@ void pdsch_processing(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_
 
     stop_meas_nr_ue_phy(ue, DLSCH_PROCEDURES_STATS);
     if (cpumeas(CPUMEAS_GETSTATE)) {
-      LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_slot_rx,ue->phy_cpu_stats.cpu_time_stats[DLSCH_PROCEDURES_STATS].p_time/(cpuf*1000.0));
+      LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_slot_rx,ue->phy_cpu_stats.cpu_time_stats[DLSCH_PROCEDURES_STATS].p_time/(1000.0));
     }
 
     if (ue->phy_sim_rxdataF)
@@ -1387,7 +1387,7 @@ static void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *
               "[SFN %d.%d] PRACH Proc %5.2f\n",
               proc->frame_tx,
               proc->nr_slot_tx,
-              ue->phy_cpu_stats.cpu_time_stats[PRACH_GEN_STATS].p_time / (cpuf * 1000.0));
+              ue->phy_cpu_stats.cpu_time_stats[PRACH_GEN_STATS].p_time / (1000.0));
       }
 
       LOG_D(PHY,

@@ -58,7 +58,6 @@ PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 RU_t *ru;
-double cpuf;
 //uint8_t nfapi_mode=0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int64_t uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -134,7 +133,6 @@ int main(int argc, char **argv){
 
   channel_desc_t *UE2gNB;
   SCM_t channel_model = Rayleigh1;
-  cpuf = get_cpu_freq_GHz();
 
   if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");

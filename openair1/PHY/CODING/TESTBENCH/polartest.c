@@ -364,8 +364,8 @@ int main(int argc, char *argv[])
                 SNR,
                 nBitError,
                 blockErrorState,
-                (timeEncoder.diff / (get_cpu_freq_GHz() * 1000.0)),
-                (timeDecoder.diff / (get_cpu_freq_GHz() * 1000.0)));
+                (timeEncoder.diff / (1000.0)),
+                (timeDecoder.diff / (1000.0)));
 
       if (nBitError < 0) {
         blockErrorCumulative++;
@@ -389,8 +389,8 @@ int main(int argc, char *argv[])
            SNR,
            ((double)blockErrorCumulative / iterations),
            ((double)bitErrorCumulative / (iterations * testLength)),
-           (double)timeEncoder.diff / timeEncoder.trials / (get_cpu_freq_GHz() * 1000.0),
-           (double)timeDecoder.diff / timeDecoder.trials / (get_cpu_freq_GHz() * 1000.0));
+           (double)timeEncoder.diff / timeEncoder.trials / (1000.0),
+           (double)timeDecoder.diff / timeDecoder.trials / (1000.0));
 
     if (blockErrorCumulative == 0 && bitErrorCumulative == 0) {
       ret = 0;

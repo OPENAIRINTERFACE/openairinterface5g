@@ -51,7 +51,6 @@ int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index)
   return 1;
 }
 // to solve link errors
-double cpuf;
 // void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 void get_num_re_dmrs(nfapi_nr_ue_pusch_pdu_t *pusch_pdu, uint8_t *nb_dmrs_re_per_rb, uint16_t *number_dmrs_symbols)
 {
@@ -294,7 +293,6 @@ static int freq_domain_loopback(PHY_VARS_NR_UE *UE_tx, PHY_VARS_NR_UE *UE_rx, in
 
 PHY_VARS_NR_UE *UE_TX; // for tx
 PHY_VARS_NR_UE *UE_RX; // for rx
-double cpuf;
 
 configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv)
@@ -319,8 +317,6 @@ int main(int argc, char **argv)
   int frame_length_complex_samples;
   // int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-
-  cpuf = get_cpu_freq_GHz();
 
   if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_PSBCHSIM] Error, configuration module init failed\n");

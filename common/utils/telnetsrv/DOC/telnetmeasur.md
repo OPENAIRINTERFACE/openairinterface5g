@@ -19,7 +19,7 @@ By default the oai softmodem doesn't compute cpu usage measurments, a specific c
 ```bash
 softmodem> measur cpustats enable
 softmodem> measur show phycpu
---------------------------------- cpu (4 GHz) measurements: PHY (cpustats enabled) ---------------------------------
+--------------------------------- cpu measurements: PHY (cpustats enabled) ---------------------------------
 00                   phy_proc_tx:           40.217 us;             178   | 01                   phy_proc_rx:            0.000 us;               0 |
 02                      rx_prach:           40.123 us;               9   | 03                      ofdm_mod:            0.000 us;               0 |
 04          dlsch_common_and_dci:           39.311 us;             178   | 05             dlsch_ue_specific:            0.878 us;             178 |
