@@ -773,8 +773,10 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
   // nr_generate_Msg2()). We did not mark RA as complete right away, as the
   // DLSCH scheduler might schedule in the same slot as Msg2 if RLC has data
   // (which can only happen in do-ra), so we mark it as complete now.
+  // RA is free and zero when CFRA, store values before free for later usage
   bool cfra = ra->cfra;
-  if (ra->cfra) {
+  int ra_type = ra->ra_type;
+  if (cfra) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     reset_dl_harq_list(sched_ctrl);
     reset_ul_harq_list(sched_ctrl);
@@ -802,13 +804,13 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
     if (cfra)  // no Msg3 on CFRA, no problem
       return;
 
-    if (ra->ra_type == RA_4_STEP && ra->ra_state != nrRA_WAIT_Msg3)
+    if (ra_type == RA_4_STEP && ra->ra_state != nrRA_WAIT_Msg3)
       return;
 
-    if (ra->ra_type == RA_2_STEP && ra->ra_state != nrRA_WAIT_MsgA_PUSCH)
+    if (ra_type == RA_2_STEP && ra->ra_state != nrRA_WAIT_MsgA_PUSCH)
       return;
 
-    if (ra->ra_type == RA_4_STEP && ((frame != ra->Msg3_frame) || (slot != ra->Msg3_slot)))
+    if (ra_type == RA_4_STEP && ((frame != ra->Msg3_frame) || (slot != ra->Msg3_slot)))
       return;
 
     if (ul_cqi != 0xff)
@@ -833,12 +835,12 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
 
 
   if (no_sig) {
-    LOG_W(NR_MAC, "%s ULSCH with no signal\n", ra->ra_type == RA_2_STEP ? "MsgA-PUSCH" : "MSG3");
+    LOG_W(NR_MAC, "%s ULSCH with no signal\n", ra_type == RA_2_STEP ? "MsgA-PUSCH" : "MSG3");
     if (!cfra)
       handle_msg3_failed_rx(mac, ra, UE->rnti, cell->ul_bler.harq_round_max);
     return;
   }
-  if (!cfra && ra->ra_type == RA_2_STEP) {
+  if (!cfra && ra_type == RA_2_STEP) {
     // random access pusch with RA-RNTI
     if (ra->RA_rnti != rnti) {
       LOG_E(NR_MAC, "expected RA_RNTI %04x to match current RNTI %04x\n", ra->RA_rnti, rnti);
@@ -849,19 +851,20 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
   // re-initialize ta update variables after RA procedure completion
   UE->UE_sched_ctrl.ta_frame = (frame + 100) % MAX_FRAME_NUMBER;
 
-  LOG_A(NR_MAC,
-        "%4d.%2d PUSCH with %s 0x%04x received correctly\n",
-        frame,
-        slot,
-        ra->ra_type == RA_2_STEP ? "RA_RNTI" : "TC_RNTI",
-        rnti);
+  if (!cfra)
+    LOG_I(NR_MAC,
+          "%4d.%2d PUSCH with %s 0x%04x received correctly\n",
+          frame,
+          slot,
+          ra_type == RA_2_STEP ? "RA_RNTI" : "TC_RNTI",
+          rnti);
 
   NR_UE_sched_ctrl_t *UE_scheduling_control = &UE->UE_sched_ctrl;
   DevAssert(harq_pid >= 0 && harq_pid < 8);
   if (timing_advance != 0xffff)
     UE_scheduling_control->ta_update = timing_advance;
 
-  LOG_D(NR_MAC, "[RAPROC] Received %s:\n", ra->ra_type == RA_2_STEP ? "MsgA-PUSCH" : "Msg3");
+  LOG_D(NR_MAC, "[RAPROC] Received %s:\n", ra_type == RA_2_STEP ? "MsgA-PUSCH" : "Msg3");
   for (uint32_t k = 0; k < sdu_len; k++) {
     LOG_D(NR_MAC, "(%i): 0x%x\n", k, sdu[k]);
   }
@@ -923,11 +926,11 @@ static void nr_rx_ra_sdu(gNB_MAC_INST *mac,
 
   LOG_I(NR_MAC,
         "Activating scheduling %s for %s 0x%04x (state %s)\n",
-        ra->ra_type == RA_2_STEP ? "MsgB" : "Msg4",
-        ra->ra_type == RA_2_STEP ? "MsgB_rnti" : "TC_RNTI",
-        ra->ra_type == RA_2_STEP ? UE->ra->MsgB_rnti : UE->rnti,
+        ra_type == RA_2_STEP ? "MsgB" : "Msg4",
+        ra_type == RA_2_STEP ? "MsgB_rnti" : "TC_RNTI",
+        ra_type == RA_2_STEP ? ra->MsgB_rnti : UE->rnti,
         nrra_text[ra->ra_state]);
-  ra->ra_state = ra->ra_type == RA_2_STEP ? nrRA_MsgB : nrRA_Msg4;
+  ra->ra_state = ra_type == RA_2_STEP ? nrRA_MsgB : nrRA_Msg4;
   LOG_D(NR_MAC, "TC_RNTI 0x%04x next RA state %s\n", UE->rnti, nrra_text[ra->ra_state]);
   return;
 }
