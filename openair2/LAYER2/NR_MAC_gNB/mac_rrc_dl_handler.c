@@ -12,6 +12,7 @@
 #include "F1AP_CauseRadioNetwork.h"
 #include "NR_HandoverPreparationInformation.h"
 #include "NR_CG-ConfigInfo.h"
+#include "NR_RRCReconfiguration.h"
 #include "openair3/ocp-gtpu/gtp_itf.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "lib/f1ap_rrc_message_transfer.h"
@@ -438,33 +439,59 @@ static NR_UE_NR_Capability_t *get_ue_nr_cap(int rnti, uint8_t *buf, uint32_t len
   return cap;
 }
 
-/* \brief return UE capabilties from HandoverPreparationInformation.
- *
- * The HandoverPreparationInformation contains more, but for the moment, let's
- * keep it simple and only handle that. The function asserts if other IEs are
- * present. */
-static NR_UE_NR_Capability_t *get_ue_nr_cap_from_ho_prep_info(uint8_t *buf, uint32_t len)
+static NR_CellGroupConfig_t *get_source_cellgroup(const NR_AS_Config_t *src)
 {
+  NR_RRCReconfiguration_t *reconf = NULL;
+  NR_CellGroupConfig_t *src_cg = NULL;
+  asn_dec_rval_t rv = uper_decode_complete(NULL,
+                                           &asn_DEF_NR_RRCReconfiguration,
+                                           (void **)&reconf,
+                                           src->rrcReconfiguration.buf,
+                                           src->rrcReconfiguration.size);
+  if (rv.code == RC_OK && reconf
+      && reconf->criticalExtensions.present == NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration
+      && reconf->criticalExtensions.choice.rrcReconfiguration
+      && reconf->criticalExtensions.choice.rrcReconfiguration->nonCriticalExtension
+      && reconf->criticalExtensions.choice.rrcReconfiguration->nonCriticalExtension->masterCellGroup) {
+    const OCTET_STRING_t *mcg = reconf->criticalExtensions.choice.rrcReconfiguration->nonCriticalExtension->masterCellGroup;
+    rv = uper_decode_complete(NULL, &asn_DEF_NR_CellGroupConfig, (void **)&src_cg, mcg->buf, mcg->size);
+    if (rv.code != RC_OK || !src_cg || !src_cg->spCellConfig || !src_cg->spCellConfig->spCellConfigDedicated) {
+      ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, src_cg);
+      src_cg = NULL;
+    }
+  }
+  if (!src_cg)
+    LOG_W(NR_MAC, "HO: HandoverPreparationInformation carries no usable source spCellConfigDedicated\n");
+  ASN_STRUCT_FREE(asn_DEF_NR_RRCReconfiguration, reconf);
+  return src_cg;
+}
+
+static void get_ue_cap_and_source_cg_from_ho_prep_info(uint8_t *buf,
+                                                       uint32_t len,
+                                                       NR_UE_NR_Capability_t **ue_cap,
+                                                       NR_CellGroupConfig_t **src_cg)
+{
+  *ue_cap = NULL;
+  *src_cg = NULL;
   if (buf == NULL || len == 0)
-    return NULL;
+    return;
   NR_HandoverPreparationInformation_t *hpi = NULL;
   asn_dec_rval_t dec_rval = uper_decode_complete(NULL, &asn_DEF_NR_HandoverPreparationInformation, (void **)&hpi, buf, len);
   if (dec_rval.code != RC_OK) {
-    LOG_W(NR_MAC, "cannot decode HandoverPreparationInformation, ignoring capabilities\n");
-    return NULL;
+    LOG_W(NR_MAC, "cannot decode HandoverPreparationInformation, ignoring capabilities and source configuration\n");
+    return;
   }
-  NR_UE_NR_Capability_t *cap = NULL;
-  if (hpi->criticalExtensions.present != NR_HandoverPreparationInformation__criticalExtensions_PR_c1
-      || hpi->criticalExtensions.choice.c1 == NULL
-      || hpi->criticalExtensions.choice.c1->present
-             != NR_HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation
-      || hpi->criticalExtensions.choice.c1->choice.handoverPreparationInformation == NULL) {
-  } else {
+  if (hpi->criticalExtensions.present == NR_HandoverPreparationInformation__criticalExtensions_PR_c1
+      && hpi->criticalExtensions.choice.c1 != NULL
+      && hpi->criticalExtensions.choice.c1->present
+             == NR_HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation
+      && hpi->criticalExtensions.choice.c1->choice.handoverPreparationInformation != NULL) {
     const NR_HandoverPreparationInformation_IEs_t *hpi_ie = hpi->criticalExtensions.choice.c1->choice.handoverPreparationInformation;
-    cap = get_nr_cap(&hpi_ie->ue_CapabilityRAT_List);
+    *ue_cap = get_nr_cap(&hpi_ie->ue_CapabilityRAT_List);
+    if (hpi_ie->sourceConfig)
+      *src_cg = get_source_cellgroup(hpi_ie->sourceConfig);
   }
   ASN_STRUCT_FREE(asn_DEF_NR_HandoverPreparationInformation, hpi);
-  return cap;
 }
 
 NR_CG_ConfigInfo_t *get_cg_config_info(uint8_t *buf, uint32_t len)
@@ -525,7 +552,11 @@ NR_CellGroupConfig_t *clone_CellGroupConfig(const NR_CellGroupConfig_t *orig)
   return cloned;
 }
 
-static NR_UE_info_t *create_new_UE(gNB_MAC_INST *mac, nr_cell_sched_t *cell, uint32_t cu_id, const NR_CG_ConfigInfo_t *cgci)
+static NR_UE_info_t *create_new_UE(gNB_MAC_INST *mac,
+                                   nr_cell_sched_t *cell,
+                                   uint32_t cu_id,
+                                   const NR_CG_ConfigInfo_t *cgci,
+                                   const NR_ServingCellConfig_t *source_dedicated)
 {
   const bool is_SA = IS_SA_MODE(get_softmodem_params());
   rnti_t rnti;
@@ -551,9 +582,14 @@ static NR_UE_info_t *create_new_UE(gNB_MAC_INST *mac, nr_cell_sched_t *cell, uin
   if (is_SA) {
     cellGroupConfig = get_initial_cellGroupConfig(UE->uid, UE->is_redcap, scc, cell, &mac->rlc_config, ssb_index);
     cellGroupConfig->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(UE->rnti, UE->uid, scc, mac->frame);
+    if (source_dedicated)
+      release_stale_ho_source_bwps(cellGroupConfig->spCellConfig->spCellConfigDedicated, source_dedicated);
+    UE->local_bwp_id = cell->radio_config.first_active_bwp;
   } else {
     NR_UE_NR_Capability_t *cap = get_ue_nr_cap_from_cg_config_info(cgci);
-    cellGroupConfig = get_default_secondaryCellGroup(scc, cap, 1, 1, &cell->radio_config, cell, UE->uid, ssb_index);
+    NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
+    UE->uecap_fs_ids = feature_set_ids_handler(cap, frequencyInfoDL, EN_DC);
+    cellGroupConfig = get_default_secondaryCellGroup(scc, cap, &UE->uecap_fs_ids, 1, 1, &cell->radio_config, cell, UE->uid, ssb_index);
     cellGroupConfig->spCellConfig->reconfigurationWithSync = get_reconfiguration_with_sync(UE->rnti, UE->uid, scc, mac->frame);
     // TODO: in NSA we assign capabilities here, otherwise outside => not logic
     UE->capability = cap;
@@ -689,8 +725,9 @@ void ue_context_setup_request(const f1ap_ue_context_setup_req_t *req)
   if (cu2du->cg_configinfo != NULL)
     cg_configinfo = get_cg_config_info(cu2du->cg_configinfo->buf, cu2du->cg_configinfo->len);
   NR_UE_NR_Capability_t *ue_cap = NULL;
+  NR_CellGroupConfig_t *source_cg = NULL;
   if (cu2du->ho_prep_info != NULL) {
-    ue_cap = get_ue_nr_cap_from_ho_prep_info(cu2du->ho_prep_info->buf, cu2du->ho_prep_info->len);
+    get_ue_cap_and_source_cg_from_ho_prep_info(cu2du->ho_prep_info->buf, cu2du->ho_prep_info->len, &ue_cap, &source_cg);
   } else if (cu2du->ue_cap != NULL) {
     ue_cap = get_ue_nr_cap(*req->gNB_DU_ue_id, cu2du->ue_cap->buf, cu2du->ue_cap->len);
   }
@@ -698,11 +735,15 @@ void ue_context_setup_request(const f1ap_ue_context_setup_req_t *req)
   if (cu2du->meas_timing_config != NULL)
     mtc = get_nr_mtc(cu2du->meas_timing_config->buf, cu2du->meas_timing_config->len);
 
+  const NR_ServingCellConfig_t *source_dedicated = source_cg ? source_cg->spCellConfig->spCellConfigDedicated : NULL;
+
   /* inclusion of CG-ConfigInfo in SA mode is interpreted
    * as NR-DC activation in the DU
    */
-  if (is_SA && cg_configinfo)
+  if (is_SA && cg_configinfo) {
+    ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, source_cg);
     return nrdc_ue_context_setup_request(req);
+  }
 
   AssertFatal(is_SA || (cg_configinfo != NULL), "CG-ConfigInfo needed for NSA/phy-test/do-ra\n");
 
@@ -710,7 +751,7 @@ void ue_context_setup_request(const f1ap_ue_context_setup_req_t *req)
 
   NR_UE_info_t *UE = NULL;
   if (!ue_id_provided) {
-    UE = create_new_UE(mac, cell, req->gNB_CU_ue_id, cg_configinfo);
+    UE = create_new_UE(mac, cell, req->gNB_CU_ue_id, cg_configinfo, source_dedicated);
   } else {
     DevAssert(is_SA);
     UE = find_nr_UE(&mac->UE_info, *req->gNB_DU_ue_id);
@@ -730,6 +771,8 @@ void ue_context_setup_request(const f1ap_ue_context_setup_req_t *req)
 
   // Needed for DRB Setup (e.g., RLC might reduce SN size)
   UE->capability = ue_cap;
+  NR_ServingCellConfigCommon_t *scc = cell->common_channels.ServingCellConfigCommon;
+  UE->uecap_fs_ids = feature_set_ids_handler(ue_cap, scc->downlinkConfigCommon->frequencyInfoDL, is_SA ? NR_SA : EN_DC);
 
   if (req->srbs_len > 0) {
     resp.srbs_len = handle_ue_context_srbs_setup(UE, req->srbs_len, req->srbs, &resp.srbs, new_CellGroup, &mac->rlc_config);
@@ -744,12 +787,12 @@ void ue_context_setup_request(const f1ap_ue_context_setup_req_t *req)
     handle_ue_context_rrc_container(req->rrc_container, UE->rnti);
   }
 
-  NR_ServingCellConfigCommon_t *scc = cell->common_channels.ServingCellConfigCommon;
   if (ue_cap != NULL && cg_configinfo == NULL) {
     // store the new UE capabilities, and update the cellGroupConfig
     // only to be done if we did not already update through the cg_configinfo
-    update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, cell, scc);
+    update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, &UE->uecap_fs_ids, cell, scc);
   }
+  ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, source_cg);
 
   /* During re-establishment, prepare CellGroupConfig for UE Context Setup response.
    * Per TS 38.401 §8.7: when a UE re-establishes on a different DU, the CU triggers
@@ -884,14 +927,25 @@ void ue_context_modification_request(const f1ap_ue_context_mod_req_t *req)
     // we re-configure the BWP to apply the CellGroup and to use UE specific Search Space with DCIX1
     configure_UE_BWP(cell, scc, UE, false, NR_SearchSpace__searchSpaceType_PR_ue_Specific, -1, -1);
     nr_mac_clean_cellgroup(UE->CellGroup);
+
+    // Restore dedicated BWP if configure_UE_BWP() bumped the UE to BWP0 for RA
+    if (UE->pending_bwp_restore) {
+      UE->pending_bwp_restore = false;
+      int bwp_id = cell->radio_config.first_active_bwp;
+      LOG_A(NR_MAC, "UE %04x: Restoring dedicated BWP %d after RA parking on BWP0 by RRCReconfiguration(nr_mac_trigger_reconfiguration)\n", UE->rnti, bwp_id);
+      // BWP switch (beam arg = -1); UE->local_bwp_id is updated on UE Context Modification Confirm
+      nr_mac_trigger_reconfiguration(mac, cell, UE, bwp_id, -1);
+    }
   }
 
   if (ue_cap != NULL) {
     // store the new UE capabilities, and update the cellGroupConfig
     ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
     UE->capability = ue_cap;
+    NR_FrequencyInfoDL_t *frequencyInfoDL = scc->downlinkConfigCommon->frequencyInfoDL;
+    UE->uecap_fs_ids = feature_set_ids_handler(ue_cap, frequencyInfoDL, IS_SA_MODE(get_softmodem_params()) ? NR_SA : EN_DC);
     LOG_I(NR_MAC, "UE %04x: received capabilities, updating CellGroupConfig\n", UE->rnti);
-    update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, cell, scc);
+    update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, &UE->uecap_fs_ids, cell, scc);
   }
 
   /* 3GPP TS 38.473 Clause 8.3.4: If gNB-DU Configuration Query is present, include CellGroupConfig

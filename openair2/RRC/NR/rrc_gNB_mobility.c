@@ -317,6 +317,27 @@ static void nr_rrc_cancel_f1_ho(gNB_RRC_INST *rrc, gNB_RRC_UE_t *UE)
   rrc->mac_rrc.ue_context_release_command(target_ctx->cell->assoc_id, &cmd);
 }
 
+/** @brief Generate the HandoverPreparationInformation to be carried
+ * in the RRC Container (9.3.1.29 of 3GPP TS 38.413) of the Source
+ * NG-RAN Node to Target NG-RAN Node Transparent Container IE */
+static byte_array_t rrc_gNB_generate_HandoverPreparationInformation(gNB_RRC_INST *rrc, gNB_RRC_UE_t *ue)
+{
+  nr_rrc_reconfig_param_t params = get_RRCReconfiguration_params(rrc, ue, 0, false);
+  params.ue_cap = ue->ue_cap_buffer;
+
+  byte_array_t hoPrepInfo = get_HandoverPreparationInformation(&params);
+  free_RRCReconfiguration_params(params);
+
+  if (hoPrepInfo.len < 0) {
+    LOG_E(NR_RRC, "HandoverPreparationInformation generation failed for UE %d\n", ue->rrc_ue_id);
+    return hoPrepInfo;
+  }
+
+  LOG_D(NR_RRC, "HO LOG: Handover Preparation for UE %lu Encoded (%zd bytes)\n", ue->amf_ue_ngap_id, hoPrepInfo.len);
+
+  return hoPrepInfo;
+}
+
 void nr_rrc_trigger_f1_ho(gNB_RRC_INST *rrc,
                           gNB_RRC_UE_t *ue,
                           const nr_rrc_cell_container_t *source_cell,
@@ -331,14 +352,20 @@ void nr_rrc_trigger_f1_ho(gNB_RRC_INST *rrc,
     LOG_W(NR_RRC, "UE %u: no DRB configured, cannot trigger handover\n", ue->rrc_ue_id);
     return;
   }
-  uint8_t buf[NR_RRC_BUF_SIZE];
-  int size = do_NR_HandoverPreparationInformation(ue->ue_cap_buffer.buf, ue->ue_cap_buffer.len, buf, sizeof buf);
 
   // Allocate handover context (both CU and DU)
   if (ue->ho_context != NULL) {
     LOG_E(NR_RRC, "Ongoing handover for UE %d, cannot trigger new\n", ue->rrc_ue_id);
     return;
   }
+
+  byte_array_t hpi = rrc_gNB_generate_HandoverPreparationInformation(rrc, ue);
+  if (hpi.len <= 0) {
+    free_byte_array(hpi);
+    LOG_E(NR_RRC, "UE %u: failed to generate HandoverPreparationInformation for F1 handover\n", ue->rrc_ue_id);
+    return;
+  }
+
   ue->ho_context = alloc_ho_ctx(HO_CTX_BOTH);
   ue->ho_context->target->cell = target_cell;
 
@@ -346,13 +373,12 @@ void nr_rrc_trigger_f1_ho(gNB_RRC_INST *rrc,
   // see also 38.413 Sec 9.3.1.29 for information on source-CU to target-CU
   // information (Source NG-RAN Node to Target NG-RAN Node Transparent Container)
   // here: target Cell is preselected, target CU has access to UE information
-  // and therefore also the PDU sessions. Orig RRC reconfiguration should be in
-  // handover preparation information
+  // and therefore also the PDU sessions.
   ho_req_ack_t ack = nr_rrc_f1_ho_acknowledge;
   ho_success_t success = nr_rrc_f1_ho_complete;
   ho_cancel_t cancel = nr_rrc_cancel_f1_ho;
-  byte_array_t hpi = {.buf = buf, .len = size};
   nr_initiate_handover(rrc, ue, source_cell, &hpi, ack, success, cancel, NULL);
+  free_byte_array(hpi);
 }
 
 void nr_rrc_finalize_ho(gNB_RRC_UE_t *ue)
@@ -402,27 +428,6 @@ void nr_HO_F1_trigger_telnet(gNB_RRC_INST *rrc, uint32_t rrc_ue_id)
   }
 
   nr_rrc_trigger_f1_ho(rrc, ue, source_cell, target_cell);
-}
-
-/** @brief Generate the HandoverPreparationInformation to be carried
- * in the RRC Container (9.3.1.29 of 3GPP TS 38.413) of the Source
- * NG-RAN Node to Target NG-RAN Node Transparent Container IE */
-static byte_array_t rrc_gNB_generate_HandoverPreparationInformation(gNB_RRC_INST *rrc, gNB_RRC_UE_t *ue)
-{
-  nr_rrc_reconfig_param_t params = get_RRCReconfiguration_params(rrc, ue, 0, false);
-  params.ue_cap = ue->ue_cap_buffer;
-
-  byte_array_t hoPrepInfo = get_HandoverPreparationInformation(&params);
-  free_RRCReconfiguration_params(params);
-
-  if (hoPrepInfo.len < 0) {
-    LOG_E(NR_RRC, "HandoverPreparationInformation generation failed for UE %d\n", ue->rrc_ue_id);
-    return hoPrepInfo;
-  }
-
-  LOG_D(NR_RRC, "HO LOG: Handover Preparation for UE %lu Encoded (%zd bytes)\n", ue->amf_ue_ngap_id, hoPrepInfo.len);
-
-  return hoPrepInfo;
 }
 
 static byte_array_t rrc_gNB_encode_HandoverCommand(gNB_RRC_UE_t *UE, gNB_RRC_INST *rrc)

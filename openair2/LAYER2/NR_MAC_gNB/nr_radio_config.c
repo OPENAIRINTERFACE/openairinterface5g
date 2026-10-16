@@ -640,25 +640,15 @@ static void config_csiim(int do_csirs,
 }
 
 
-long ue_supported_dl_layers(const NR_ServingCellConfigCommon_t *scc, const NR_UE_NR_Capability_t *uecap)
+long ue_supported_dl_layers(const NR_ServingCellConfigCommon_t *scc, const NR_UE_NR_Capability_t *uecap, int dl_id)
 {
   NR_SCS_SpecificCarrier_t *scs_carrier = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0];
-  int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-  const frequency_range_t freq_range = get_freq_range_from_band(band);
   const int scs = scs_carrier->subcarrierSpacing;
-  const int bw_size = scs_carrier->carrierBandwidth;
   NR_FeatureSets_t *fs = uecap ? uecap->featureSets : NULL;
-  if (fs) {
-    const int bw_mhz = get_supported_bw_mhz(freq_range, get_supported_band_index(scs, freq_range, bw_size));
-    // go through UL feature sets and look for one with current SCS
-    for (int i = 0; i < fs->featureSetsDownlinkPerCC->list.count; i++) {
-      NR_FeatureSetDownlinkPerCC_t *dl_fs = fs->featureSetsDownlinkPerCC->list.array[i];
-      if (scs == dl_fs->supportedSubcarrierSpacingDL &&
-          supported_bw_comparison(bw_mhz, &dl_fs->supportedBandwidthDL, dl_fs->channelBW_90mhz) &&
-          dl_fs->maxNumberMIMO_LayersPDSCH) {
-        return (2 << *dl_fs->maxNumberMIMO_LayersPDSCH);
-      }
-    }
+  if (fs && fs->featureSetsDownlinkPerCC && dl_id > 0 && dl_id <= fs->featureSetsDownlinkPerCC->list.count) {
+    NR_FeatureSetDownlinkPerCC_t *dl_fs = fs->featureSetsDownlinkPerCC->list.array[dl_id - 1];
+    if (scs == dl_fs->supportedSubcarrierSpacingDL && dl_fs->maxNumberMIMO_LayersPDSCH)
+      return (2 << *dl_fs->maxNumberMIMO_LayersPDSCH);
   }
   return -1;
 }
@@ -666,6 +656,7 @@ long ue_supported_dl_layers(const NR_ServingCellConfigCommon_t *scc, const NR_UE
 static void set_dl_maxmimolayers(NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig,
                                  const NR_ServingCellConfigCommon_t *scc,
                                  const NR_UE_NR_Capability_t *uecap,
+                                 int dl_id,
                                  int maxMIMO_layers)
 {
   if(!pdsch_servingcellconfig->ext1)
@@ -673,7 +664,7 @@ static void set_dl_maxmimolayers(NR_PDSCH_ServingCellConfig_t *pdsch_servingcell
   if(!pdsch_servingcellconfig->ext1->maxMIMO_Layers)
     pdsch_servingcellconfig->ext1->maxMIMO_Layers = calloc(1, sizeof(*pdsch_servingcellconfig->ext1->maxMIMO_Layers));
 
-  long l = ue_supported_dl_layers(scc, uecap);
+  long l = ue_supported_dl_layers(scc, uecap, dl_id);
   long ue_supported_layers = l > 1 ? l : 2; // min UE supported layers = 2
   if (maxMIMO_layers == -1) 
     *pdsch_servingcellconfig->ext1->maxMIMO_Layers = min(NR_MAX_SUPPORTED_DL_LAYERS, ue_supported_layers);
@@ -795,6 +786,7 @@ static NR_SRS_Resource_t *get_srs_resource(const NR_UE_NR_Capability_t *uecap,
                                            const int curr_bwp,
                                            const int uid,
                                            const int res_id,
+                                           const int ul_id,
                                            const long maxMIMO_Layers,
                                            const NR_SRS_Resource__transmissionComb_PR tx_comb,
                                            nr_srs_type_t do_srs)
@@ -803,39 +795,45 @@ static NR_SRS_Resource_t *get_srs_resource(const NR_UE_NR_Capability_t *uecap,
   srs_res->srs_ResourceId = res_id;
   srs_res->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
   long nrofSRS_Ports = 1;
-  if (uecap && uecap->featureSets && uecap->featureSets->featureSetsUplink
-      && uecap->featureSets->featureSetsUplink->list.count > 0) {
-    NR_FeatureSetUplink_t *ul_feature_setup = uecap->featureSets->featureSetsUplink->list.array[0];
-    switch (ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource) {
-      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n1:
-        nrofSRS_Ports = 1;
-        break;
-      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n2:
-        nrofSRS_Ports = 2;
-        break;
-      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n4:
-        nrofSRS_Ports = 4;
-        break;
-      default:
-        LOG_E(NR_RRC,
-              "Max Number of SRS Ports Per Resource %ld is invalid!\n",
-              ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
-    }
-    nrofSRS_Ports = min(nrofSRS_Ports, maxMIMO_Layers);
-    switch (nrofSRS_Ports) {
-      case 1:
-        srs_res->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
-        break;
-      case 2:
-        srs_res->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports2;
-        break;
-      case 4:
-        srs_res->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports4;
-        break;
-      default:
-        LOG_E(NR_RRC,
-              "Number of SRS Ports Per Resource %ld is invalid!\n",
-              ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
+  if (uecap
+      && uecap->featureSets
+      && uecap->featureSets->featureSetsUplink
+      && uecap->featureSets->featureSetsUplink->list.count > 0
+      && ul_id > 0
+      && ul_id <= uecap->featureSets->featureSetsUplink->list.count) {
+    NR_FeatureSetUplink_t *ul_feature_setup = uecap->featureSets->featureSetsUplink->list.array[ul_id - 1];
+    if (ul_feature_setup->supportedSRS_Resources) {
+      switch (ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource) {
+        case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n1:
+          nrofSRS_Ports = 1;
+          break;
+        case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n2:
+          nrofSRS_Ports = 2;
+          break;
+        case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n4:
+          nrofSRS_Ports = 4;
+          break;
+        default:
+          LOG_E(NR_RRC,
+                "Max Number of SRS Ports Per Resource %ld is invalid!\n",
+                ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
+      }
+      nrofSRS_Ports = min(nrofSRS_Ports, maxMIMO_Layers);
+      switch (nrofSRS_Ports) {
+        case 1:
+          srs_res->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
+          break;
+        case 2:
+          srs_res->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports2;
+          break;
+        case 4:
+          srs_res->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports4;
+          break;
+        default:
+          LOG_E(NR_RRC,
+                "Number of SRS Ports Per Resource %ld is invalid!\n",
+                ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
+      }
     }
   }
   LOG_I(NR_RRC, "SRS configured with %d ports\n", 1 << srs_res->nrofSRS_Ports);
@@ -887,6 +885,7 @@ static NR_SetupRelease_SRS_Config_t *get_config_srs(const NR_ServingCellConfigCo
                                                     const int curr_bwp,
                                                     const int uid,
                                                     const int res_id,
+                                                    const int ul_id,
                                                     const long maxMIMO_Layers,
                                                     const int minRXTXTIME,
                                                     nr_srs_type_t do_srs)
@@ -898,7 +897,7 @@ static NR_SetupRelease_SRS_Config_t *get_config_srs(const NR_ServingCellConfigCo
 
   srs_Config->srs_ResourceToAddModList = calloc_or_fail(1, sizeof(*srs_Config->srs_ResourceToAddModList));
   NR_SRS_Resource_t *srs_res0 =
-      get_srs_resource(uecap, cell, curr_bwp, uid, res_id, maxMIMO_Layers, NR_SRS_Resource__transmissionComb_PR_n2, do_srs);
+      get_srs_resource(uecap, cell, curr_bwp, uid, res_id, ul_id, maxMIMO_Layers, NR_SRS_Resource__transmissionComb_PR_n2, do_srs);
   asn1cSeqAdd(&srs_Config->srs_ResourceToAddModList->list, srs_res0);
 
   srs_Config->srs_ResourceSetToAddModList = calloc_or_fail(1, sizeof(*srs_Config->srs_ResourceSetToAddModList));
@@ -1561,15 +1560,17 @@ static NR_PTRS_UplinkConfig_t *config_ulptrs(const nr_ptrs_config_t *ptrs)
   return ulptrs;
 }
 
-long ue_supported_ul_layers(const NR_UE_NR_Capability_t *uecap)
+long ue_supported_ul_layers(const NR_UE_NR_Capability_t *uecap, int ul_id)
 {
   long ul_max_layers = 1;
   if (uecap
       && uecap->featureSets
       && uecap->featureSets->featureSetsUplinkPerCC
-      && uecap->featureSets->featureSetsUplinkPerCC->list.count > 0) {
-    NR_FeatureSetUplinkPerCC_t *ul_feature_setup_per_cc = uecap->featureSets->featureSetsUplinkPerCC->list.array[0];
-    if (ul_feature_setup_per_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH) {
+      && uecap->featureSets->featureSetsUplinkPerCC->list.count > 0
+      && ul_id > 0
+      && ul_id <= uecap->featureSets->featureSetsUplinkPerCC->list.count) {
+    NR_FeatureSetUplinkPerCC_t *ul_feature_setup_per_cc = uecap->featureSets->featureSetsUplinkPerCC->list.array[ul_id - 1];
+    if (ul_feature_setup_per_cc->mimo_CB_PUSCH && ul_feature_setup_per_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH) {
       switch (*ul_feature_setup_per_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH) {
         case NR_MIMO_LayersUL_twoLayers:
           ul_max_layers = 2;
@@ -1585,14 +1586,15 @@ long ue_supported_ul_layers(const NR_UE_NR_Capability_t *uecap)
   return ul_max_layers;
 }
 
-static long set_ul_max_layers(const nr_mac_config_t *configuration, const NR_UE_NR_Capability_t *uecap)
+static long set_ul_max_layers(const nr_mac_config_t *configuration, const NR_UE_NR_Capability_t *uecap, int ul_id)
 {
-  return min(ue_supported_ul_layers(uecap), configuration->pusch_AntennaPorts);
+  return min(ue_supported_ul_layers(uecap, ul_id), configuration->pusch_AntennaPorts);
 }
 
 static NR_SetupRelease_PUSCH_Config_t *config_pusch(const nr_mac_config_t *configuration,
                                                     const NR_ServingCellConfigCommon_t *scc,
-                                                    const NR_UE_NR_Capability_t *uecap)
+                                                    const NR_UE_NR_Capability_t *uecap,
+                                                    int ul_id)
 {
   NR_SetupRelease_PUSCH_Config_t *setup_puschconfig = calloc(1, sizeof(*setup_puschconfig));
   setup_puschconfig->present = NR_SetupRelease_PUSCH_Config_PR_setup;
@@ -1673,7 +1675,7 @@ static NR_SetupRelease_PUSCH_Config_t *config_pusch(const nr_mac_config_t *confi
   *pusch_Config->codebookSubset = NR_PUSCH_Config__codebookSubset_nonCoherent;
   if (!pusch_Config->maxRank)
     pusch_Config->maxRank = calloc(1, sizeof(*pusch_Config->maxRank));
-  *pusch_Config->maxRank = set_ul_max_layers(configuration, uecap);
+  *pusch_Config->maxRank = set_ul_max_layers(configuration, uecap, ul_id);
   pusch_Config->rbg_Size = NULL;
   pusch_Config->uci_OnPUSCH = NULL;
   pusch_Config->tp_pi2BPSK = NULL;
@@ -1891,7 +1893,8 @@ static NR_BWP_Uplink_t *config_uplinkBWP(bool is_SA,
                                          const nr_mac_config_t *configuration,
                                          const nr_cell_sched_t *cell,
                                          const NR_ServingCellConfigCommon_t *scc,
-                                         const NR_UE_NR_Capability_t *uecap)
+                                         const NR_UE_NR_Capability_t *uecap,
+                                         const NR_feature_set_ids_t *fs_ids)
 {
   NR_BWP_Uplink_t *ubwp = calloc_or_fail(1, sizeof(*ubwp));
   ubwp->bwp_Id = 1;
@@ -1936,7 +1939,8 @@ static NR_BWP_Uplink_t *config_uplinkBWP(bool is_SA,
   set_pucch_power_config(pucch_Config);
   scheduling_request_config(cell, pucch_Config, ubwp->bwp_Common->genericParameters.subcarrierSpacing);
   set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME);
-  ubwp->bwp_Dedicated->pusch_Config = config_pusch(configuration, scc, uecap);
+  int id = fs_ids ? fs_ids->ul_feature_set_percc_id : 0;
+  ubwp->bwp_Dedicated->pusch_Config = config_pusch(configuration, scc, uecap, id);
 
   ubwp->bwp_Dedicated->srs_Config = get_config_srs(scc,
                                                    NULL,
@@ -1944,6 +1948,7 @@ static NR_BWP_Uplink_t *config_uplinkBWP(bool is_SA,
                                                    curr_bwp,
                                                    uid,
                                                    ubwp->bwp_Id,
+                                                   fs_ids ? fs_ids->ulset_id : 0,
                                                    maxMIMO_Layers,
                                                    configuration->minRXTXTIME,
                                                    configuration->do_SRS);
@@ -3377,6 +3382,7 @@ static NR_BWP_UplinkDedicated_t *configure_initial_ul_bwp(const NR_ServingCellCo
                                                           const nr_cell_sched_t *cell,
                                                           int maxMIMO_Layers,
                                                           const NR_UE_NR_Capability_t *uecap,
+                                                          const NR_feature_set_ids_t *fs_ids,
                                                           int id)
 {
   NR_BWP_UplinkDedicated_t *initialUplinkBWP = calloc(1, sizeof(*initialUplinkBWP));
@@ -3393,14 +3399,14 @@ static NR_BWP_UplinkDedicated_t *configure_initial_ul_bwp(const NR_ServingCellCo
   config_pucch_resset0(scc, pucch_Config, id, curr_bwp, uecap, &configuration->pdsch_AntennaPorts);
   config_pucch_resset1(scc, pucch_Config, id, curr_bwp, uecap, &configuration->pdsch_AntennaPorts);
   set_pucch_power_config(pucch_Config);
-
-  initialUplinkBWP->pusch_Config = config_pusch(configuration, scc, uecap);
+  initialUplinkBWP->pusch_Config = config_pusch(configuration, scc, uecap, fs_ids ? fs_ids->ul_feature_set_percc_id : 0);
   initialUplinkBWP->srs_Config = get_config_srs(scc,
                                                 uecap,
                                                 cell,
                                                 curr_bwp,
                                                 id,
                                                 0,
+                                                fs_ids ? fs_ids->ulset_id : 0,
                                                 maxMIMO_Layers,
                                                 configuration->minRXTXTIME,
                                                 configuration->do_SRS);
@@ -3621,7 +3627,7 @@ static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
   pdsch_servingcellconfig->xOverhead = NULL;
   asn1cCallocOne(pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH, NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n16);
   pdsch_servingcellconfig->pucch_Cell = NULL;
-  set_dl_maxmimolayers(pdsch_servingcellconfig, scc, NULL, configuration->maxMIMO_layers);
+  set_dl_maxmimolayers(pdsch_servingcellconfig, scc, NULL, 0, configuration->maxMIMO_layers);
 
   uint64_t bitmap = get_ssb_bitmap(scc);
   int first_active_bwp = 0;
@@ -3630,15 +3636,16 @@ static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
 
   asn1cCallocOne(configDedicated->firstActiveDownlinkBWP_Id, first_active_bwp);
   asn1cCallocOne(uplinkConfig->firstActiveUplinkBWP_Id, first_active_bwp);
-  if (first_active_bwp == 0) {
-    uplinkConfig->initialUplinkBWP = configure_initial_ul_bwp(scc, configuration, cell, maxMIMO_Layers, NULL, uid);
-    configDedicated->initialDownlinkBWP = configure_initial_dl_bwp(scc, bitmap, NULL, configuration);
-  } else {
+  uplinkConfig->initialUplinkBWP = configure_initial_ul_bwp(scc, configuration, cell, maxMIMO_Layers, NULL, NULL, uid);
+  configDedicated->initialDownlinkBWP = configure_initial_dl_bwp(scc, bitmap, NULL, configuration);
+  if (first_active_bwp != 0) {
+    // BWP0 (the initial BWP) also gets a real dedicated PDCCH config (ue-Specific search
+    // space, via configure_initial_dl/ul_bwp above) even though it isn't the first active BWP.
     configDedicated->downlinkBWP_ToAddModList = calloc(1, sizeof(*configDedicated->downlinkBWP_ToAddModList));
     NR_BWP_Downlink_t *bwp = config_downlinkBWP(scc, NULL, false, true, configuration);
     asn1cSeqAdd(&configDedicated->downlinkBWP_ToAddModList->list, bwp);
     uplinkConfig->uplinkBWP_ToAddModList = calloc(1, sizeof(*uplinkConfig->uplinkBWP_ToAddModList));
-    NR_BWP_Uplink_t *ubwp = config_uplinkBWP(true, uid, maxMIMO_Layers, configuration, cell, scc, NULL);
+    NR_BWP_Uplink_t *ubwp = config_uplinkBWP(true, uid, maxMIMO_Layers, configuration, cell, scc, NULL, NULL);
     asn1cSeqAdd(&uplinkConfig->uplinkBWP_ToAddModList->list, ubwp);
   }
 
@@ -3872,6 +3879,7 @@ NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
 NR_CellGroupConfig_t *update_cellGroupConfig_for_reconfig(NR_CellGroupConfig_t *cellGroupConfig,
                                                           const nr_cell_sched_t *cell,
                                                           const NR_UE_NR_Capability_t *uecap,
+                                                          const NR_feature_set_ids_t *fs_ids,
                                                           const NR_ServingCellConfigCommon_t *scc,
                                                           int uid,
                                                           int old_bwp,
@@ -3887,7 +3895,7 @@ NR_CellGroupConfig_t *update_cellGroupConfig_for_reconfig(NR_CellGroupConfig_t *
   if (new_bwp >= 0) {
     *configDedicated->firstActiveDownlinkBWP_Id = new_bwp != 0;  // 1 for any BWP != 0
     *uplinkConfig->firstActiveUplinkBWP_Id = new_bwp != 0;  // 1 for any BWP != 0
-    long ul_maxMIMO_Layers = set_ul_max_layers(configuration, uecap);
+    long ul_maxMIMO_Layers = set_ul_max_layers(configuration, uecap, fs_ids ? fs_ids->ul_feature_set_percc_id : 0);
     local_config.first_active_bwp = new_bwp;
     // add new BWP
     if (new_bwp == 0) {
@@ -3895,7 +3903,7 @@ NR_CellGroupConfig_t *update_cellGroupConfig_for_reconfig(NR_CellGroupConfig_t *
         configDedicated->initialDownlinkBWP = calloc_or_fail(1, sizeof(*configDedicated->initialDownlinkBWP));
       if (!uplinkConfig->initialUplinkBWP)
         uplinkConfig->initialUplinkBWP = calloc_or_fail(1, sizeof(*uplinkConfig->initialUplinkBWP));
-      uplinkConfig->initialUplinkBWP = configure_initial_ul_bwp(scc, &local_config, cell, ul_maxMIMO_Layers, uecap, uid);
+      uplinkConfig->initialUplinkBWP = configure_initial_ul_bwp(scc, &local_config, cell, ul_maxMIMO_Layers, uecap, fs_ids, uid);
       configDedicated->initialDownlinkBWP = configure_initial_dl_bwp(scc, bitmap, uecap, &local_config);
     } else {
       if (!configDedicated->downlinkBWP_ToAddModList)
@@ -3904,7 +3912,7 @@ NR_CellGroupConfig_t *update_cellGroupConfig_for_reconfig(NR_CellGroupConfig_t *
       asn1cSeqAdd(&configDedicated->downlinkBWP_ToAddModList->list, dl_bwp);
       if (!uplinkConfig->uplinkBWP_ToAddModList)
         uplinkConfig->uplinkBWP_ToAddModList = calloc_or_fail(1, sizeof(*uplinkConfig->uplinkBWP_ToAddModList));
-      NR_BWP_Uplink_t *ul_bwp = config_uplinkBWP(true, uid, ul_maxMIMO_Layers, &local_config, cell, scc, uecap);
+      NR_BWP_Uplink_t *ul_bwp = config_uplinkBWP(true, uid, ul_maxMIMO_Layers, &local_config, cell, scc, uecap, fs_ids);
       asn1cSeqAdd(&uplinkConfig->uplinkBWP_ToAddModList->list, ul_bwp);
     }
   }
@@ -3924,14 +3932,56 @@ NR_CellGroupConfig_t *update_cellGroupConfig_for_reconfig(NR_CellGroupConfig_t *
                                                                            bitmap,
                                                                            ssb_index);
 
-  if (new_bwp >= 0 && old_bwp > 0)
+  if (new_bwp >= 0)
     clean_bwp_structures(clone_cg->spCellConfig);
   return clone_cg;
+}
+
+/* Handover target: CellGroupConfig is a delta over what the UE already has, so a
+ * source dedicated BWP the target doesn't itself configure is never dropped. Release
+ * whatever the source had that the target doesn't. */
+void release_stale_ho_source_bwps(NR_ServingCellConfig_t *target_cd, const NR_ServingCellConfig_t *source_cd)
+{
+  if (source_cd->downlinkBWP_ToAddModList) {
+    for (int i = 0; i < source_cd->downlinkBWP_ToAddModList->list.count; i++) {
+      long bwp_id = source_cd->downlinkBWP_ToAddModList->list.array[i]->bwp_Id;
+      bool target_has_it = false;
+      if (target_cd->downlinkBWP_ToAddModList)
+        for (int j = 0; j < target_cd->downlinkBWP_ToAddModList->list.count && !target_has_it; j++)
+          target_has_it = target_cd->downlinkBWP_ToAddModList->list.array[j]->bwp_Id == bwp_id;
+      if (target_has_it)
+        continue;
+      if (!target_cd->downlinkBWP_ToReleaseList)
+        target_cd->downlinkBWP_ToReleaseList = calloc_or_fail(1, sizeof(*target_cd->downlinkBWP_ToReleaseList));
+      asn1cSequenceAdd(target_cd->downlinkBWP_ToReleaseList->list, NR_BWP_Id_t, id);
+      *id = bwp_id;
+      LOG_I(NR_MAC, "HO: releasing source DL BWP %ld, not configured in target cell\n", bwp_id);
+    }
+  }
+  NR_UplinkConfig_t *target_uc = target_cd->uplinkConfig;
+  AssertFatal(target_uc, "HO target ServingCellConfig has no uplinkConfig\n");
+  if (source_cd->uplinkConfig && source_cd->uplinkConfig->uplinkBWP_ToAddModList) {
+    for (int i = 0; i < source_cd->uplinkConfig->uplinkBWP_ToAddModList->list.count; i++) {
+      long bwp_id = source_cd->uplinkConfig->uplinkBWP_ToAddModList->list.array[i]->bwp_Id;
+      bool target_has_it = false;
+      if (target_uc->uplinkBWP_ToAddModList)
+        for (int j = 0; j < target_uc->uplinkBWP_ToAddModList->list.count && !target_has_it; j++)
+          target_has_it = target_uc->uplinkBWP_ToAddModList->list.array[j]->bwp_Id == bwp_id;
+      if (target_has_it)
+        continue;
+      if (!target_uc->uplinkBWP_ToReleaseList)
+        target_uc->uplinkBWP_ToReleaseList = calloc_or_fail(1, sizeof(*target_uc->uplinkBWP_ToReleaseList));
+      asn1cSequenceAdd(target_uc->uplinkBWP_ToReleaseList->list, NR_BWP_Id_t, id);
+      *id = bwp_id;
+      LOG_I(NR_MAC, "HO: releasing source UL BWP %ld, not configured in target cell\n", bwp_id);
+    }
+  }
 }
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             const int uid,
                             const NR_UE_NR_Capability_t *uecap,
+                            const NR_feature_set_ids_t *fs_ids,
                             const nr_cell_sched_t *cell,
                             const NR_ServingCellConfigCommon_t *scc)
 {
@@ -3946,7 +3996,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
   NR_ServingCellConfig_t *spCellConfigDedicated = SpCellConfig->spCellConfigDedicated;
   NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup;
-  set_dl_maxmimolayers(pdsch_servingcellconfig, scc, uecap, configuration->maxMIMO_layers);
+  set_dl_maxmimolayers(pdsch_servingcellconfig, scc, uecap, fs_ids->dl_feature_set_percc_id, configuration->maxMIMO_layers);
 
   if (configuration->disable_harq) {
     if (!pdsch_servingcellconfig->ext3)
@@ -3979,7 +4029,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   }
 
   NR_UplinkConfig_t *uplinkConfig = spCellConfigDedicated->uplinkConfig;
-  long maxMIMO_Layers = set_ul_max_layers(configuration, uecap);
+  long maxMIMO_Layers = set_ul_max_layers(configuration, uecap, fs_ids ? fs_ids->ul_feature_set_percc_id : 0);
   if (!uplinkConfig->pusch_ServingCellConfig)
     uplinkConfig->pusch_ServingCellConfig = calloc(1, sizeof(*uplinkConfig->pusch_ServingCellConfig));
   uplinkConfig->pusch_ServingCellConfig->present = NR_SetupRelease_PUSCH_ServingCellConfig_PR_setup;
@@ -3994,16 +4044,17 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   NR_BWP_UplinkDedicated_t *ul_bwp_Dedicated = NULL;
   int curr_bwp = 0;
   int bwp_id = 0;
-  if (uplinkConfig && uplinkConfig->initialUplinkBWP) {
-    ul_bwp_Dedicated = uplinkConfig->initialUplinkBWP;
-    curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  } else if (uplinkConfig && uplinkConfig->uplinkBWP_ToAddModList) {
+  if (uplinkConfig && uplinkConfig->firstActiveUplinkBWP_Id && *uplinkConfig->firstActiveUplinkBWP_Id > 0
+      && uplinkConfig->uplinkBWP_ToAddModList) {
     struct NR_UplinkConfig__uplinkBWP_ToAddModList *UL_BWP_list = uplinkConfig->uplinkBWP_ToAddModList;
     AssertFatal(UL_BWP_list->list.count == 1, "We should only have 1 BWP configured at a given time\n");
     NR_BWP_Uplink_t *ul_bwp = UL_BWP_list->list.array[0];
     curr_bwp = NRRIV2BW(ul_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     ul_bwp_Dedicated = ul_bwp->bwp_Dedicated;
     bwp_id = ul_bwp->bwp_Id;
+  } else if (uplinkConfig && uplinkConfig->initialUplinkBWP) {
+    ul_bwp_Dedicated = uplinkConfig->initialUplinkBWP;
+    curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   }
   if (ul_bwp_Dedicated) {
     NR_PUSCH_Config_t *pusch_Config = ul_bwp_Dedicated->pusch_Config->choice.setup;
@@ -4018,6 +4069,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                                                     curr_bwp,
                                                     uid,
                                                     bwp_id,
+                                                    fs_ids ? fs_ids->ulset_id : 0,
                                                     maxMIMO_Layers,
                                                     configuration->minRXTXTIME,
                                                     configuration->do_SRS);
@@ -4028,15 +4080,16 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   // Update DL BWP
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = NULL;
   int scs = -1;
-  if (spCellConfigDedicated->initialDownlinkBWP) {
-    bwp_Dedicated = spCellConfigDedicated->initialDownlinkBWP;
-    scs = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
-  } else if (spCellConfigDedicated->downlinkBWP_ToAddModList) {
+  if (spCellConfigDedicated->firstActiveDownlinkBWP_Id && *spCellConfigDedicated->firstActiveDownlinkBWP_Id > 0
+      && spCellConfigDedicated->downlinkBWP_ToAddModList) {
     struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = spCellConfigDedicated->downlinkBWP_ToAddModList;
     AssertFatal(DL_BWP_list->list.count == 1, "We should only have 1 BWP configured at a given time\n");
     NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[0];
     bwp_Dedicated = bwp->bwp_Dedicated;
     scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+  } else if (spCellConfigDedicated->initialDownlinkBWP) {
+    bwp_Dedicated = spCellConfigDedicated->initialDownlinkBWP;
+    scs = scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
   }
   if (bwp_Dedicated) {
     set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp_Dedicated, scc);
@@ -4070,6 +4123,7 @@ static NR_ServingCellConfigCommon_t *clone_ServingCellConfigCommon(const NR_Serv
 
 NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                                                      const NR_UE_NR_Capability_t *uecap,
+                                                     const NR_feature_set_ids_t *fs_ids,
                                                      int scg_id,
                                                      int servCellIndex,
                                                      const nr_mac_config_t *configuration,
@@ -4131,9 +4185,9 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
   ulConfig->initialUplinkBWP = initialUplinkBWP;
   initialUplinkBWP->pucch_Config = NULL;
 
-  initialUplinkBWP->pusch_Config = config_pusch(configuration, servingcellconfigcommon, uecap);
-
-  long maxMIMO_Layers = set_ul_max_layers(configuration, uecap);
+  int perccid = fs_ids ? fs_ids->ul_feature_set_percc_id : 0;
+  initialUplinkBWP->pusch_Config = config_pusch(configuration, servingcellconfigcommon, uecap, perccid);
+  long maxMIMO_Layers = set_ul_max_layers(configuration, uecap, perccid);
   int curr_bwp = NRRIV2BW(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
                           MAX_BWP_SIZE);
   initialUplinkBWP->srs_Config = get_config_srs(servingcellconfigcommon,
@@ -4142,6 +4196,7 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
                                                 curr_bwp,
                                                 uid,
                                                 0,
+                                                fs_ids ? fs_ids->ulset_id : 0,
                                                 maxMIMO_Layers,
                                                 configuration->minRXTXTIME,
                                                 configuration->do_SRS);
@@ -4163,7 +4218,7 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
   // Uplink BWPs
   int firstActiveUplinkBWP_Id = 1;
   ulConfig->uplinkBWP_ToAddModList = calloc(1, sizeof(*ulConfig->uplinkBWP_ToAddModList));
-  NR_BWP_Uplink_t *ubwp = config_uplinkBWP(false, uid, maxMIMO_Layers, configuration, cell, servingcellconfigcommon, uecap);
+  NR_BWP_Uplink_t *ubwp = config_uplinkBWP(false, uid, maxMIMO_Layers, configuration, cell, servingcellconfigcommon, uecap, fs_ids);
   asn1cSeqAdd(&ulConfig->uplinkBWP_ToAddModList->list, ubwp);
   ulConfig->firstActiveUplinkBWP_Id = calloc(1, sizeof(*ulConfig->firstActiveUplinkBWP_Id));
   *ulConfig->firstActiveUplinkBWP_Id = firstActiveUplinkBWP_Id;
@@ -4198,7 +4253,11 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
   pdsch_servingcellconfig->xOverhead = NULL;
   asn1cCallocOne(pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH, NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n16);
   pdsch_servingcellconfig->pucch_Cell = NULL;
-  set_dl_maxmimolayers(pdsch_servingcellconfig, servingcellconfigcommon, uecap, configuration->maxMIMO_layers);
+  set_dl_maxmimolayers(pdsch_servingcellconfig,
+                       servingcellconfigcommon,
+                       uecap,
+                       fs_ids->dl_feature_set_percc_id,
+                       configuration->maxMIMO_layers);
   pdsch_servingcellconfig->ext1->processingType2Enabled = NULL;
   if (configuration->disable_harq) {
     if (!pdsch_servingcellconfig->ext3)

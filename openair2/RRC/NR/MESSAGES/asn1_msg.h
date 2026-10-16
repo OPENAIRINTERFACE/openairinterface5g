@@ -88,7 +88,7 @@ int do_NR_SecurityModeCommand(uint8_t *const buffer,
                               const uint8_t cipheringAlgorithm,
                               NR_IntegrityProtAlgorithm_t integrityProtAlgorithm);
 
-int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transaction_id);
+int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transaction_id, const int band);
 
 int do_NR_RRCRelease(uint8_t *buffer, size_t buffer_size, uint8_t Transaction_id);
 
@@ -102,8 +102,6 @@ int do_RRCSetupComplete(uint8_t *buffer,
                         uint64_t fiveG_S_TMSI,
                         const int dedicatedInfoNASLength,
                         const char *dedicatedInfoNAS);
-
-int do_NR_HandoverPreparationInformation(const uint8_t *uecap_buf, int uecap_buf_size, uint8_t *buf, int buf_size);
 
 int do_NR_MeasConfig(const NR_MeasConfig_t *measconfig, uint8_t *buf, int buf_size);
 

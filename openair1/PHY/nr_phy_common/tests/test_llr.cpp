@@ -21,6 +21,7 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 }
 #include "openair1/PHY/TOOLS/tools_defs.h"
+#include "openair1/SIMULATION/TOOLS/sim.h"
 }
 #include <cstdio>
 #include "common/utils/LOG/log.h"
@@ -396,6 +397,82 @@ TEST(test_llr, check_2_res_256_qam)
   }
   EXPECT_EQ(num_errors, 0) << " Errors during testing 256qam llr " << num_errors << " nb res " << 2;
 }
+
+// Integer in [lo, hi] from the OAI Tausworthe generator
+static int16_t taus_range(int lo, int hi)
+{
+  return lo + taus() % (hi - lo + 1);
+}
+
+// 2-layer ML LLRs are computed independently per RE, so running nr_compute_ML_llr() on nb_re REs must give the
+// same LLRs for those REs as running it on nb_re rounded up to 16. Callers pad per-symbol buffers to 16 REs, so
+// the LLRs must not be written past that padding.
+void test_function_ml_llr(uint8_t mod_order, uint32_t nb_re)
+{
+  SCOPED_TRACE(::testing::Message() << "mod_order " << int(mod_order) << " nb_re " << nb_re);
+  const uint32_t len = (nb_re + 15) & ~15U;
+  AlignedVector512<c16_t> comp0(len), comp1(len), mag0(len), mag1(len), rho0(len), rho1(len);
+  for (auto i = 0U; i < len; i++) {
+    comp0[i] = {taus_range(-2000, 2000), taus_range(-2000, 2000)};
+    comp1[i] = {taus_range(-2000, 2000), taus_range(-2000, 2000)};
+    const int16_t m0 = taus_range(500, 1500), m1 = taus_range(500, 1500);
+    mag0[i] = {m0, m0};
+    mag1[i] = {m1, m1};
+    rho0[i] = {taus_range(-300, 300), taus_range(-300, 300)};
+    rho1[i] = {rho0[i].r, (int16_t)-rho0[i].i};
+  }
+
+  auto run = [&](uint32_t n, AlignedVector512<int16_t> &llr0, AlignedVector512<int16_t> &llr1) {
+    std::fill(llr0.begin(), llr0.end(), llr_sentinel);
+    std::fill(llr1.begin(), llr1.end(), llr_sentinel);
+    nr_compute_ML_llr(comp0.data(),
+                      comp1.data(),
+                      mag0.data(),
+                      mag1.data(),
+                      llr0.data(),
+                      llr1.data(),
+                      rho0.data(),
+                      rho1.data(),
+                      n,
+                      mod_order);
+  };
+
+  // one extra LLR past the padded length for the sentinel
+  const uint32_t nb_llr = len * mod_order + 1;
+  AlignedVector512<int16_t> llr0(nb_llr), llr1(nb_llr), ref0(nb_llr), ref1(nb_llr);
+  run(len, ref0, ref1);
+  run(nb_re, llr0, llr1);
+  for (auto k = 0U; k < nb_re * mod_order; k++) {
+    ASSERT_EQ(llr0[k], ref0[k]) << "layer 0, RE " << k / mod_order << " bit " << k % mod_order;
+    ASSERT_EQ(llr1[k], ref1[k]) << "layer 1, RE " << k / mod_order << " bit " << k % mod_order;
+  }
+  EXPECT_EQ(llr0[len * mod_order], llr_sentinel) << "ML llr layer 0 written past the padded end";
+  EXPECT_EQ(llr1[len * mod_order], llr_sentinel) << "ML llr layer 1 written past the padded end";
+}
+
+class test_ml_llr : public ::testing::TestWithParam<uint8_t> {};
+
+// any number of REs should work
+TEST_P(test_ml_llr, any_number_of_re)
+{
+  set_taus_seed(GetParam());
+  for (uint32_t nb_re = 1; nb_re <= 96; nb_re++)
+    test_function_ml_llr(GetParam(), nb_re);
+}
+
+// PUSCH/PDSCH symbol sizes: type-1 DMRS symbol (6 data REs per PRB) and full symbols
+TEST_P(test_ml_llr, symbol_sizes)
+{
+  set_taus_seed(100 + GetParam());
+  for (uint32_t nb_rb : {1u, 3u, 7u, 105u, 106u, 107u, 272u, 273u}) {
+    test_function_ml_llr(GetParam(), 6 * nb_rb);
+    test_function_ml_llr(GetParam(), 12 * nb_rb);
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(nr_compute_ML_llr, test_ml_llr, ::testing::Values(2, 4, 6), [](const auto &info) {
+  return "qam" + std::to_string(1 << info.param);
+});
 
 int main(int argc, char **argv)
 {

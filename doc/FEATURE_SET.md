@@ -41,6 +41,10 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Highly efficient 3GPP compliant polar encoder and decoder
 *  Encoder and decoder for short blocks
 *  Support for UL transform precoding (SC-FDMA)
+*  LDPC offload (see [LDPC offload setup](LDPC_OFFLOAD_SETUP.md)):
+   - Intel ACCs, Amd/Xilinx T2 via O-RAN AAL/DPDK BBDEV
+   - NVIDIA GPUs via CUDA, AMD GPUs via HIP
+   - OpenRadioSystems Aurora (decoding only)
 
 These modes of operation are supported:
 
@@ -90,9 +94,9 @@ These modes of operation are supported:
    - Support for 256 QAM
 *  NR-PUCCH
    - Format 0 (2 bits, for ACK/NACK and SR)
-   - Format 2 (mainly for CSI feedback)
+   - Format 2 (mainly for CSI feedback, SR)
 *  NR-SRS
-    - SRS signal reception
+    - SRS signal reception (periodic and aperiodic)
     - Channel estimation (with T tracer real time monitoring)
     - Power noise estimation
 *  NR-PRS
@@ -155,6 +159,7 @@ These modes of operation are supported:
     - Measurement gaps are automatically computed at the DU if the CU has neighbor information and the configured
       neighbors include cells operating on different frequencies
     - DUs must be synchronized with each other for the measurements to be properly performed
+- NR-DC (see [NR-DC](nr-dc.md))
 - Initial support for RedCap
   - RedCap SIB1 v17 IEs supported
   - Coexistence of RedCap and Normal UEs
@@ -192,6 +197,7 @@ These modes of operation are supported:
   - Establishment/Handling of SDAP entities.
   - Transfer of User Plane Data
   - Mapping between a QoS flow and a DRB for both DL and UL
+  - Multiple QoS flows per DRB, multiple DRBs per PDU session
   - Marking QoS flow ID in both DL and UL packets
   - Reflective QoS flow to DRB mapping for UL SDAP data PDUs
 
@@ -241,6 +247,7 @@ These modes of operation are supported:
   - NGAP PDU session resource setup request/response
   - NGAP PDU session resource modify request/response
   - NGAP PDU session resource release command/response
+  - NGAP PDU session resource notify
   - NGAP Mobility Management Procedures:
     * NGAP Handover Required
     * NGAP Handover Request
@@ -257,6 +264,13 @@ These modes of operation are supported:
     * Downlink Non UE Associated NRPPa Transport
     * Uplink Non UE Associated NRPPa Transport
 - Interface with RRC
+
+### gNB XnAP
+
+- Initial XnAP implementation according to 38.423
+  - Xn Setup request/response/failure
+  - Message encoding/decoding (with unit tests) for Xn RAN Paging and Xn
+    Retrieve UE Context request/response/failure
 
 ### gNB F1AP
 
@@ -303,6 +317,9 @@ These modes of operation are supported:
       - E1 Bearer Context Modification Request
       - E1 Bearer Context Modification Response
       - E1 Bearer Context Modification Failure
+  - Bearer Context Modification (gNB-CU-UP initiated)
+      - E1 Bearer Context Modification Required
+      - E1 Bearer Context Modification Confirm
   - Bearer Context Release (gNB-CU-CP initiated)
       - E1 Bearer Context Release Command
       - E1 Bearer Context Release Complete
@@ -316,6 +333,7 @@ These modes of operation are supported:
   - TRP Information Exchange:
      - TRP Information Request
      - TRP Information Response
+     - TRP Information Failure
   - Positioning Information Exchange:
      - Positioning Information Request (SRS Configuration)
      - Positioning Information Response
@@ -325,6 +343,7 @@ These modes of operation are supported:
   - Measurement Information Transfer:
      - Measurement Request (UL-RTOA measurement)
      - Measurement Response
+     - Measurement Failure
 - Support for Uplink Time Difference of Arrival (UL-TDOA) based positioning
 - Support for distributed antenna systems, where a single DU manages multiple
   antennas acting as individual Transmission and Reception Points (TRPs)
@@ -336,12 +355,21 @@ These modes of operation are supported:
 - New GTP-U implementation supporting both N3 and F1-U interfaces according to 29.281 Rel.15
   - Interfaces with RRC, F1AP for tunnel creation
   - Interfaces with PDCP and RLC for data send/receive at the CU and DU respectively (F1-U interface)
-  - Interface with SDAP for data send/receive, capture of GTP-U Optional Header, GTP-U Extension Header and PDU Session Container.
+  - Interface with SDAP for data send/receive, capture of GTP-U Optional Header, GTP-U Extension Header and PDU Session Container
+  - GTP Error Indication (TS 29.281)
+
+### gNB E2 and E3 agents
+
+- O-RAN E2 agent (with [FlexRIC](https://github.com/duranta-project/flexric))
+  - E2SM-KPM, E2SM-RC
+- O-RAN E3 agent for dApps (opt-in `E3_AGENT` build option, see
+  [E3AP README](../openair2/E3AP/README.md))
+  - Spectrum sensing and L1-KPM service models
 
 ### Number of supported UEs
 
 * 16 by default (as defined in `MAX_MOBILES_PER_GNB`)
-* up to 64 if the configured bandwidth is sufficient (at leat 40 MHz)
+* up to 100 (`MAX_MOBILES_PER_GNB` needs to be increased)
 
 ## OpenAirInterface 5G-NR UE Feature Set
 
@@ -410,6 +438,8 @@ These modes of operation are supported:
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
 *  Highly efficient 3GPP compliant polar encoder and decoder
 *  Encoder and decoder for short block
+*  Multiple UEs per process (`--num-ues`) and multiple RF frontends per UE (see
+   [nrUE usage](runmodem-nrue.md))
 
 ### NR UE FAPI
 
@@ -496,6 +526,7 @@ These modes of operation are supported:
   - Transfer of User Plane Data
   - Reflective Mapping
   - RRC Signaling Mapping
+  - UL packet filter matching for multiple QoS flows
 
 ### UE RRC
 
@@ -531,6 +562,9 @@ These modes of operation are supported:
   - Uplink NAS Transport
 * 5GSM (5G Session Management) messages:
   - PDU Session Establishment Request/Accept
+  - PDU Session Modification Command/Complete
+  - PDU session types IPv4, IPv6, IPv4v6, Ethernet; multiple PDU sessions
+    configured via `uicc0.pdu_sessions`
 * Security Features:
   - NAS message integrity protection and ciphering
   - Security context establishment and management
@@ -539,6 +573,23 @@ These modes of operation are supported:
   - Integration with SDAP for user plane data transfer
 
 For detailed implementation status, encoding/decoding support, and unit test coverage, see [5G NAS Implementation Documentation](5Gnas.md).
+
+## Radio and Fronthaul Support
+
+* O-RAN 7.2 fronthaul (O-DU), see [FHI 7.2 tutorial](ORAN_FHI7.2_Tutorial.md)
+  - xran K release
+  - Block floating point compression (including dynamic compression),
+    U-plane fragmentation
+  - Large DU delay profiles, M-plane (with Benetel RUs), FR2
+* Software O-RU (O-RAN 7.2) with vrtsim and USRP radios, see
+  [O-RU tutorial](ORAN_FHI7.2_ORU_Tutorial.md)
+  - Digital codebook beamforming
+* virtual radios
+  - [rfsimulator](../radio/rfsimulator/README.md)
+  - [vrtsim](../radio/vrtsim/README.md)
+  - [ZMQ radio](../radio/zmq/README.md)
+* SDRs: USRP, BladeRF, and others (see
+  [supported hardware](Supported_Hardware_Operating_System.md))
 
 ## OpenAirInterface 4G LTE eNB Feature Set
 

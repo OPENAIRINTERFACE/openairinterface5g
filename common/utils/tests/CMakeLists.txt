@@ -10,6 +10,11 @@ add_dependencies(tests test_fsn)
 target_link_libraries(test_fsn PRIVATE utils GTest::gtest)
 add_test(NAME test_fsn COMMAND ./test_fsn)
 
+add_executable(test_utils test_utils.cpp)
+add_dependencies(tests test_utils)
+target_link_libraries(test_utils PRIVATE utils GTest::gtest)
+add_test(NAME test_utils COMMAND ./test_utils)
+
 add_executable(test_bits test_bits.c)
 add_dependencies(tests test_bits)
 add_test(NAME test_bits COMMAND ./test_bits)

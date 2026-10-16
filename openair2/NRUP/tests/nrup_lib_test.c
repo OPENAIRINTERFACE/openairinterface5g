@@ -130,6 +130,11 @@ static void test_dl_data_delivery_status(void)
       .desired_buffer_size = taus(),
   });
 
+  /* Desired Buffer Size with the most significant octet >= 0x80, independent of the seed */
+  nrup_dl_data_delivery_status_encdec_test(&(const nrup_dl_data_delivery_status_t){
+      .desired_buffer_size = 0xdb000000,
+  });
+
   nrup_sn_range_t lost_range = {.start = rand_pdcp_sn(), .end = rand_pdcp_sn()};
   nrup_sn_range_t delivered_range = {.start = rand_pdcp_sn(), .end = rand_pdcp_sn()};
 

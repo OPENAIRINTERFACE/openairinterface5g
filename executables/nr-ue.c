@@ -6,6 +6,8 @@
 #include "PHY/impl_defs_nr.h"
 #define _GNU_SOURCE // For pthread_setname_np
 #include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 #include "executables/nr-ue-ru.h"
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/INIT/nr_phy_init.h"
@@ -21,6 +23,7 @@
 #include "openair1/PHY/TOOLS/phy_scope_interface.h"
 #include "instrumentation.h"
 #include "common/utils/threadPool/notified_fifo.h"
+#include "actor.h"
 #include "position_interface.h"
 #include "nr_phy_common.h"
 #include "PHY/MODULATION/nr_modulation.h"
@@ -89,7 +92,7 @@ static void start_process_slot_tx(void* arg) {
   nr_rxtx_thread_data_t *curMsgTx = NotifiedFifoData(newTx);
   int num_ul_actors = get_nrUE_params()->num_ul_actors;
   if (num_ul_actors > 0) {
-    pushNotifiedFIFO(&curMsgTx->UE->ul_actors[curMsgTx->proc.nr_slot_tx % num_ul_actors].fifo, newTx);
+    pushNotifiedFIFO(&curMsgTx->ul_actors[curMsgTx->proc.nr_slot_tx % num_ul_actors].fifo, newTx);
   } else {
     newTx->processingFunc(curMsgTx);
   }
@@ -475,7 +478,7 @@ static uint64_t get_carrier_frequency(const int N_RB, const int mu, const uint32
   return carrier_freq;
 }
 
-static int handle_sync_req_from_mac(PHY_VARS_NR_UE *UE)
+static int handle_sync_req_from_mac(PHY_VARS_NR_UE *UE, Actor_t *dl_actors, Actor_t *ul_actors)
 {
   NR_DL_FRAME_PARMS *fp = &UE->frame_parms;
   // Start synchronization with a target gNB
@@ -490,32 +493,35 @@ static int handle_sync_req_from_mac(PHY_VARS_NR_UE *UE)
 
     const fapi_nr_config_request_t *config = &UE->nrUE_config;
     const fapi_nr_ue_carrier_config_t *cfg = &config->carrier_config;
-    uint64_t dl_CarrierFreq = get_carrier_frequency(fp->N_RB_DL, fp->numerology_index, cfg->dl_frequency);
-    uint64_t ul_CarrierFreq = get_carrier_frequency(fp->N_RB_UL, fp->numerology_index, cfg->uplink_frequency);
-    if (dl_CarrierFreq != fp->dl_CarrierFreq || ul_CarrierFreq != fp->ul_CarrierFreq) {
-      LOG_I(NR_PHY,
-            "[UE %d] SYNC REQ: RF frequency change: dl %lu->%lu Hz, ul %lu->%lu Hz (from dl_frequency=%u kHz, target_Nid_cell=%d)\n",
-            UE->Mod_id,
-            fp->dl_CarrierFreq,
-            dl_CarrierFreq,
-            fp->ul_CarrierFreq,
-            ul_CarrierFreq,
-            cfg->dl_frequency,
-            UE->target_Nid_cell);
-      nrue_ru_set_freq(UE, ul_CarrierFreq, dl_CarrierFreq, 0);
-      fp->dl_CarrierFreq = dl_CarrierFreq;
-      fp->ul_CarrierFreq = ul_CarrierFreq;
-      init_symbol_rotation(fp);
-    }
+    if (cfg->dl_frequency != 0) {
+      uint64_t dl_CarrierFreq = get_carrier_frequency(fp->N_RB_DL, fp->numerology_index, cfg->dl_frequency);
+      uint64_t ul_CarrierFreq = get_carrier_frequency(fp->N_RB_UL, fp->numerology_index, cfg->uplink_frequency);
+      if (dl_CarrierFreq != fp->dl_CarrierFreq || ul_CarrierFreq != fp->ul_CarrierFreq) {
+        LOG_I(NR_PHY,
+              "[UE %d] SYNC REQ: RF frequency change: dl %lu->%lu Hz, ul %lu->%lu Hz (from dl_frequency=%u kHz, "
+              "target_Nid_cell=%d)\n",
+              UE->Mod_id,
+              fp->dl_CarrierFreq,
+              dl_CarrierFreq,
+              fp->ul_CarrierFreq,
+              ul_CarrierFreq,
+              cfg->dl_frequency,
+              UE->target_Nid_cell);
+        nrue_ru_set_freq(UE, ul_CarrierFreq, dl_CarrierFreq, 0);
+        fp->dl_CarrierFreq = dl_CarrierFreq;
+        fp->ul_CarrierFreq = ul_CarrierFreq;
+        init_symbol_rotation(fp);
+      }
 
-    int ssb_start_subcarrier = nr_get_ssb_start_sc(fp->numerology_index,
-                                                   config->ssb_table.ssb_offset_point_a,
-                                                   config->ssb_table.ssb_subcarrier_offset,
-                                                   fp->freq_range);
-    // SSB location can change during for ex: handover on the target cell
-    if (ssb_start_subcarrier != fp->ssb_start_subcarrier) {
-      fp->ssb_start_subcarrier = ssb_start_subcarrier;
-      LOG_I(NR_PHY, "SYNC REQ: SSB location changed:%d\n", fp->ssb_start_subcarrier);
+      int ssb_start_subcarrier = nr_get_ssb_start_sc(fp->numerology_index,
+                                                     config->ssb_table.ssb_offset_point_a,
+                                                     config->ssb_table.ssb_subcarrier_offset,
+                                                     fp->freq_range);
+      // SSB location can change during for ex: handover on the target cell
+      if (ssb_start_subcarrier != fp->ssb_start_subcarrier) {
+        fp->ssb_start_subcarrier = ssb_start_subcarrier;
+        LOG_I(NR_PHY, "SYNC REQ: SSB location changed:%d\n", fp->ssb_start_subcarrier);
+      }
     }
 
     // Apply Doppler based on NTN-Config for target cell
@@ -527,10 +533,10 @@ static int handle_sync_req_from_mac(PHY_VARS_NR_UE *UE)
     /* Clearing UE harq while DL actors are active causes race condition.
         So we let the current execution to complete here.*/
     for (int i = 0; i < get_nrUE_params()->num_dl_actors; i++) {
-      flush_actor(UE->dl_actors + i);
+      flush_actor(&dl_actors[i]);
     }
     for (int i = 0; i < get_nrUE_params()->num_ul_actors; i++) {
-      flush_actor(UE->ul_actors + i);
+      flush_actor(&ul_actors[i]);
     }
 
     clean_UE_harq(UE);
@@ -776,6 +782,62 @@ void trs_freq_correction(PHY_VARS_NR_UE *ue, int cfo)
   }
 }
 
+/* Parse --actor-affinity into cores[]. Returns number of cores. Empty/NULL -> 0. */
+static int parse_actor_affinity(const char *params, int *cores, int max_cores)
+{
+  if (params == NULL || params[0] == '\0')
+    return 0;
+
+  char *cpy = strdup(params);
+  AssertFatal(cpy != NULL, "Memory exhausted\n");
+  int n = 0;
+  char *saveptr = NULL;
+  for (char *tok = strtok_r(cpy, ",", &saveptr); tok != NULL; tok = strtok_r(NULL, ",", &saveptr)) {
+    AssertFatal(n < max_cores, "actor-affinity has more than %d entries\n", max_cores);
+    cores[n++] = atoi(tok);
+  }
+  free(cpy);
+  return n;
+}
+
+/* Assign one core from the shared pool to each DL actor, then each UL actor.
+ * If a spare remains, pin SYNC too. Leave everyone at -1 when actor-affinity is unset.
+ * The actors are UE_thread-owned stack arrays: they live exactly as long as the thread. */
+static void init_ue_actors(Actor_t *sync_actor, Actor_t *dl_actors, Actor_t *ul_actors)
+{
+  const nrUE_params_t *p = get_nrUE_params();
+  const int need = p->num_dl_actors + p->num_ul_actors;
+  int cores[64];
+  const int have = parse_actor_affinity(p->actor_affinity, cores, sizeof(cores) / sizeof(cores[0]));
+  AssertFatal(have == 0 || have >= need,
+              "actor-affinity has %d entries but needs at least num-dl-actors (%d) + num-ul-actors (%d) = %d\n",
+              have,
+              p->num_dl_actors,
+              p->num_ul_actors,
+              need);
+
+  int idx = 0;
+  const int sync_core = (have > need) ? cores[need] : -1;
+  init_actor(sync_actor, "SYNC_", sync_core);
+
+  for (int i = 0; i < p->num_dl_actors; i++) {
+    const int core = (have > 0) ? cores[idx++] : -1;
+    init_actor(&dl_actors[i], "DL_", core);
+  }
+  for (int i = 0; i < p->num_ul_actors; i++) {
+    const int core = (have > 0) ? cores[idx++] : -1;
+    init_actor(&ul_actors[i], "UL_", core);
+  }
+  if (have > 0)
+    LOG_I(PHY,
+          "Pinned actors from actor-affinity=%s (DL %d, UL %d, SYNC %d)%s\n",
+          p->actor_affinity,
+          p->num_dl_actors,
+          p->num_ul_actors,
+          sync_core,
+          have > need + 1 ? " (extra cores unused)" : "");
+}
+
 void *UE_thread(void *arg)
 {
   //this thread should be over the processing thread to keep in real time
@@ -798,6 +860,14 @@ void *UE_thread(void *arg)
 
   notifiedFIFO_t freeBlocks;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
+
+  const int num_dl_actors = get_nrUE_params()->num_dl_actors;
+  const int num_ul_actors = get_nrUE_params()->num_ul_actors;
+  Actor_t sync_actor;
+  // zero-length VLAs are undefined (C11 6.7.6.2), hence the size-1 floor
+  Actor_t dl_actors[num_dl_actors > 0 ? num_dl_actors : 1];
+  Actor_t ul_actors[num_ul_actors > 0 ? num_ul_actors : 1];
+  init_ue_actors(&sync_actor, dl_actors, ul_actors);
 
   const double ntn_init_time_drift = get_nrUE_params()->ntn_init_time_drift;
   if (get_nrUE_params()->time_sync_I)
@@ -921,7 +991,7 @@ void *UE_thread(void *arg)
       }
       syncMsg->UE = UE;
       memset(&syncMsg->proc, 0, sizeof(syncMsg->proc));
-      pushNotifiedFIFO(&UE->sync_actor.fifo, Msg);
+      pushNotifiedFIFO(&sync_actor.fifo, Msg);
       skipped_frames = UE->sl_mode == 2 ? SL_NR_PSBCH_REPETITION_IN_FRAMES : 2; // the capture for decoding
       out_of_sync_rrc_timer_tick(UE, skipped_frames, &out_of_sync_rrc_tick_frame, &out_of_sync_rrc_tick_hfn);
       syncRunning = true;
@@ -982,7 +1052,7 @@ void *UE_thread(void *arg)
     }
 
     /* check if MAC has sent sync request */
-    if (handle_sync_req_from_mac(UE) == 0)
+    if (handle_sync_req_from_mac(UE, dl_actors, ul_actors) == 0)
       continue;
 
     // start of normal case, the UE is in sync
@@ -1101,8 +1171,8 @@ void *UE_thread(void *arg)
     int ret = UE_dl_preprocessing(UE, &curMsgRx->proc, tx_wait_for_dlsch, &curMsgRx->phy_data, &stats_printed);
     if (ret != INT_MAX)
       shiftForNextFrame = ret;
-    if (get_nrUE_params()->num_dl_actors > 0) {
-      pushNotifiedFIFO(&UE->dl_actors[curMsg.proc.nr_slot_rx % get_nrUE_params()->num_dl_actors].fifo, newRx);
+    if (num_dl_actors > 0) {
+      pushNotifiedFIFO(&dl_actors[curMsg.proc.nr_slot_rx % num_dl_actors].fifo, newRx);
     } else {
       newRx->processingFunc(curMsgRx);
     }
@@ -1127,6 +1197,7 @@ void *UE_thread(void *arg)
     curMsgTx->writeBlockSize = writeBlockSize;
     curMsgTx->proc.timestamp_tx = writeTimestamp;
     curMsgTx->UE = UE;
+    curMsgTx->ul_actors = ul_actors;
     curMsgTx->absolute_deadline_us = absolute_deadline_us;
 
     int slot = curMsgTx->proc.nr_slot_tx;
@@ -1144,6 +1215,11 @@ void *UE_thread(void *arg)
     tx_wait_for_dlsch[slot] = 0;
   }
   LOG_W(NR_PHY, "UE main thread is ending\n");
+  for (int i = 0; i < num_ul_actors; i++)
+    shutdown_actor(&ul_actors[i]);
+  for (int i = 0; i < num_dl_actors; i++)
+    shutdown_actor(&dl_actors[i]);
+  destroy_actor(&sync_actor);
   return NULL;
 }
 

@@ -2918,34 +2918,26 @@ static void handle_mac_uecap_info(NR_UE_MAC_INST_t *mac, NR_UE_NR_Capability_t *
 {
   if (!ue_Capability->featureSets)
     return;
-  if (ue_Capability->featureSets->featureSetsDownlinkPerCC) {
-    struct NR_FeatureSets__featureSetsDownlinkPerCC *fs_dlcc_list = ue_Capability->featureSets->featureSetsDownlinkPerCC;
-    for (int i = 0; i < fs_dlcc_list->list.count; i++) {
-      NR_FeatureSetDownlinkPerCC_t *fs_dl_cc = fs_dlcc_list->list.array[i];
-      if (mac->current_DL_BWP->scs != fs_dl_cc->supportedSubcarrierSpacingDL)
-        continue;
-      int dl_bw_mhz = mac->phy_config.config_req.carrier_config.dl_bandwidth;
-      if (!supported_bw_comparison(dl_bw_mhz, &fs_dl_cc->supportedBandwidthDL, fs_dl_cc->channelBW_90mhz))
-        continue;
-      // No "oneLayer" value exists: single-layer PDSCH is baseline and never reported,
-      // so absence here means 1 layer, not "unknown" (PDSCH always needs >= 1).
-      mac->uecap_maxMIMO_PDSCH_layers = fs_dl_cc->maxNumberMIMO_LayersPDSCH ? 2 << *fs_dl_cc->maxNumberMIMO_LayersPDSCH : 1;
-    }
+  struct NR_FeatureSets__featureSetsDownlinkPerCC *fs_dlcc_list = ue_Capability->featureSets->featureSetsDownlinkPerCC;
+  int dl_id = mac->uecap_fs_ids.dl_feature_set_percc_id;
+  if (fs_dlcc_list && dl_id > 0 && dl_id <= fs_dlcc_list->list.count) {
+    NR_FeatureSetDownlinkPerCC_t *fs_dl_cc = fs_dlcc_list->list.array[dl_id - 1];
+    AssertFatal(mac->current_DL_BWP->scs == fs_dl_cc->supportedSubcarrierSpacingDL,
+                "BWP subcarrier spacing doesn't match with featureSetsDownlinkPerCC\n");
+    // No "oneLayer" value exists: single-layer PDSCH is baseline and never reported,
+    // so absence here means 1 layer, not "unknown" (PDSCH always needs >= 1).
+    mac->uecap_maxMIMO_PDSCH_layers = fs_dl_cc->maxNumberMIMO_LayersPDSCH ? 2 << *fs_dl_cc->maxNumberMIMO_LayersPDSCH : 1;
   }
-  if (ue_Capability->featureSets->featureSetsUplinkPerCC) {
-    struct NR_FeatureSets__featureSetsUplinkPerCC *fs_ulcc_list = ue_Capability->featureSets->featureSetsUplinkPerCC;
-    for (int i = 0; i < fs_ulcc_list->list.count; i++) {
-      NR_FeatureSetUplinkPerCC_t *fs_ul_cc = fs_ulcc_list->list.array[i];
-      if (mac->current_UL_BWP->scs != fs_ul_cc->supportedSubcarrierSpacingUL)
-        continue;
-      int ul_bw_mhz = mac->phy_config.config_req.carrier_config.uplink_bandwidth;
-      if (!supported_bw_comparison(ul_bw_mhz, &fs_ul_cc->supportedBandwidthUL, fs_ul_cc->channelBW_90mhz))
-        continue;
-      if (fs_ul_cc->maxNumberMIMO_LayersNonCB_PUSCH)
-        mac->uecap_maxMIMO_PUSCH_layers_nocb = 1 << *fs_ul_cc->maxNumberMIMO_LayersNonCB_PUSCH;
-      if (fs_ul_cc->mimo_CB_PUSCH && fs_ul_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH)
-        mac->uecap_maxMIMO_PUSCH_layers_cb = 1 << *fs_ul_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH;
-    }
+  struct NR_FeatureSets__featureSetsUplinkPerCC *fs_ulcc_list = ue_Capability->featureSets->featureSetsUplinkPerCC;
+  int ul_id = mac->uecap_fs_ids.ul_feature_set_percc_id;
+  if (fs_ulcc_list && ul_id > 0 && ul_id <= fs_ulcc_list->list.count) {
+    NR_FeatureSetUplinkPerCC_t *fs_ul_cc = fs_ulcc_list->list.array[ul_id - 1];
+    AssertFatal(mac->current_UL_BWP->scs == fs_ul_cc->supportedSubcarrierSpacingUL,
+                "BWP subcarrier spacing doesn't match with featureSetsUplinkPerCC\n");
+    if (fs_ul_cc->maxNumberMIMO_LayersNonCB_PUSCH)
+      mac->uecap_maxMIMO_PUSCH_layers_nocb = 1 << *fs_ul_cc->maxNumberMIMO_LayersNonCB_PUSCH;
+    if (fs_ul_cc->mimo_CB_PUSCH && fs_ul_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH)
+      mac->uecap_maxMIMO_PUSCH_layers_cb = 1 << *fs_ul_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH;
   }
 }
 
@@ -2991,8 +2983,14 @@ void nr_rrc_mac_config_req_cg(module_id_t module_id,
 
   configure_logicalChannelBearer(mac, cell_group_config->rlc_BearerToAddModList, cell_group_config->rlc_BearerToReleaseList);
 
-  if (ue_Capability)
+  if (ue_Capability) {
+    mac->uecap_fs_ids = get_feature_set_ids(ue_Capability,
+                                            mac->nr_band,
+                                            mac->current_DL_BWP->scs,
+                                            mac->phy_config.config_req.carrier_config.dl_bandwidth,
+                                            IS_SA_MODE(get_softmodem_params()) ? NR_SA : EN_DC);
     handle_mac_uecap_info(mac, ue_Capability);
+  }
 
   if (!mac->dl_config_request || !mac->ul_config_request)
     ue_init_config_request(mac, mac->frame_structure.numb_slots_frame);

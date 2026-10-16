@@ -841,6 +841,7 @@ typedef struct NR_UE_info {
   /// in case of reconfiguration, new CellConfig to apply
   NR_CellGroupConfig_t *reconfigCellGroup;
   NR_UE_NR_Capability_t *capability;
+  NR_feature_set_ids_t uecap_fs_ids;
   measgap_config_t measgap_config;
   // UE selected beam index
   uint16_t UE_beam_index;
@@ -856,6 +857,8 @@ typedef struct NR_UE_info {
   long pdsch_HARQ_ACK_Codebook;
   bool is_redcap;
   bool reestablish_rlc;
+  /// set when UE is moved to BWP0 for RA, switch back to first_active_bwp after next RRCReconfigurationComplete
+  bool pending_bwp_restore;
   NR_RA_t *ra;
   // 3GPP mandates that BWPs are enumerated consecutively, but we only send one (dedicated)
   // BWP to the UE (and modify that BWP on reconfiguration); consequently, the BWP ID for a

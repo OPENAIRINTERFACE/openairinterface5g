@@ -17,8 +17,6 @@
 #include <rte_ether.h>
 #include <rte_mbuf.h>
 
-#include "xran_pkt.h"
-#include "xran_pkt_cp.h"
 #include "xran_pkt_api.h"
 
 #include "common/utils/LOG/log.h"

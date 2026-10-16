@@ -3009,6 +3009,9 @@ void configure_UE_BWP(nr_cell_sched_t *cell,
   // as described in 5.15 of 38.321
   if (is_RA && !UL_BWP->rach_ConfigCommon) {
     LOG_I(NR_MAC, "Cannot perform RA in current BWP, switching to initial BWP\n");
+    UE->local_bwp_id = 0;
+    /* Move the UE back to its dedicated BWP once RA/reconfiguration completes */
+    UE->pending_bwp_restore = true;
     configure_UE_BWP(cell, scc, UE, is_RA, target_ss, 0, 0);
     return;
   }
@@ -3744,6 +3747,22 @@ void nr_mac_clean_cellgroup(NR_CellGroupConfig_t *cell_group)
   /* remove reestablishRLC, we don't need it anymore */
   for (int i = 0; i < cell_group->rlc_BearerToAddModList->list.count; ++i)
     free_and_zero(cell_group->rlc_BearerToAddModList->list.array[i]->reestablishRLC);
+  /* remove the BWP release lists */
+  NR_ServingCellConfig_t *scd = spCellConfig ? spCellConfig->spCellConfigDedicated : NULL;
+  if (scd && scd->downlinkBWP_ToReleaseList) {
+    struct NR_ServingCellConfig__downlinkBWP_ToReleaseList *l = scd->downlinkBWP_ToReleaseList;
+    while (l->list.count > 0)
+      ASN_STRUCT_FREE(asn_DEF_NR_BWP_Id, l->list.array[--l->list.count]);
+    free(l->list.array);
+    free_and_zero(scd->downlinkBWP_ToReleaseList);
+  }
+  if (scd && scd->uplinkConfig && scd->uplinkConfig->uplinkBWP_ToReleaseList) {
+    struct NR_UplinkConfig__uplinkBWP_ToReleaseList *l = scd->uplinkConfig->uplinkBWP_ToReleaseList;
+    while (l->list.count > 0)
+      ASN_STRUCT_FREE(asn_DEF_NR_BWP_Id, l->list.array[--l->list.count]);
+    free(l->list.array);
+    free_and_zero(scd->uplinkConfig->uplinkBWP_ToReleaseList);
+  }
 }
 
 int nr_mac_get_reconfig_delay_slots(NR_SubcarrierSpacing_t scs)
@@ -4248,6 +4267,7 @@ void nr_mac_trigger_reconfiguration(const gNB_MAC_INST *nrmac, nr_cell_sched_t *
     cellGroup_for_UE = update_cellGroupConfig_for_reconfig(UE->CellGroup,
                                                            cell,
                                                            UE->capability,
+                                                           &UE->uecap_fs_ids,
                                                            cell->common_channels.ServingCellConfigCommon,
                                                            UE->uid,
                                                            UE->current_DL_BWP.bwp_id,
@@ -4263,6 +4283,7 @@ void nr_mac_trigger_reconfiguration(const gNB_MAC_INST *nrmac, nr_cell_sched_t *
       cellGroup_for_UE = update_cellGroupConfig_for_reconfig(UE->CellGroup,
                                                              cell,
                                                              UE->capability,
+                                                             &UE->uecap_fs_ids,
                                                              cell->common_channels.ServingCellConfigCommon,
                                                              UE->uid,
                                                              UE->current_DL_BWP.bwp_id,

@@ -414,7 +414,7 @@ int do_NR_SecurityModeCommand(uint8_t *const buffer,
   return((enc_rval.encoded+7)/8);
 }
 
-int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transaction_id)
+int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transaction_id, const int band)
 {
   NR_UE_CapabilityRequestFilterNR_t *sa_band_filter;
   NR_FreqBandList_t *sa_band_list;
@@ -437,7 +437,7 @@ int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transactio
   ue_capabilityrat_request->rat_Type = NR_RAT_Type_nr;
 
   sa_band_infoNR = (NR_FreqBandInformationNR_t*)calloc(1,sizeof(NR_FreqBandInformationNR_t));
-  sa_band_infoNR->bandNR = 78;
+  sa_band_infoNR->bandNR = band;
   sa_band_info = (NR_FreqBandInformation_t*)calloc(1,sizeof(NR_FreqBandInformation_t));
   sa_band_info->present = NR_FreqBandInformation_PR_bandInformationNR;
   sa_band_info->choice.bandInformationNR = sa_band_infoNR;
@@ -591,18 +591,16 @@ static byte_array_t do_HO_RRCReconfiguration(nr_rrc_reconfig_param_t *params)
   int val = uper_encode_to_new_buffer(&asn_DEF_NR_RRCReconfiguration, NULL, &rrcReconf, (void **)&msg.buf);
   if (val <= 0) {
     LOG_E(NR_RRC, "ASN1 RRCReconfiguration message encoding failed\n");
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_RRCReconfiguration, &rrcReconf);
-    return msg;
+  } else {
+    msg.len = val;
+    LOG_D(NR_RRC, "RRCReconfiguration: Encoded (%ld bytes)\n", msg.len);
   }
-  msg.len = val;
-  LOG_D(NR_RRC, "RRCReconfiguration: Encoded (%ld bytes)\n", msg.len);
 
   // don't free what we did not allocate, so set fields with pointers to NULL
   // if memory comes from outside
   ie->measConfig = NULL;
   if (ie->radioBearerConfig) {
     ie->radioBearerConfig->srb3_ToRelease = NULL;
-    ie->radioBearerConfig->drb_ToReleaseList = NULL;
     ie->radioBearerConfig->drb_ToAddModList = NULL;
     ie->radioBearerConfig->srb_ToAddModList = NULL;
     ie->radioBearerConfig->securityConfig = NULL;
@@ -683,17 +681,15 @@ byte_array_t do_RRCReconfiguration(const nr_rrc_reconfig_param_t *params)
   int val = uper_encode_to_new_buffer(&asn_DEF_NR_DL_DCCH_Message, NULL, &dl_dcch_msg, (void **)&msg.buf);
   if (val <= 0) {
     LOG_E(NR_RRC, "Failed to encode DL-DCCH message\n");
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_DCCH_Message, &dl_dcch_msg);
-    return msg;
+  } else {
+    msg.len = val;
+    LOG_D(NR_RRC, "RRCReconfiguration: Encoded (%ld bytes)\n", msg.len);
   }
-  msg.len = val;
-  LOG_D(NR_RRC, "RRCReconfiguration: Encoded (%ld bytes)\n", msg.len);
 
   // Do not free what is not allocated in this context
   ie->measConfig = NULL;
   if (ie->radioBearerConfig) {
     ie->radioBearerConfig->securityConfig = NULL;
-    ie->radioBearerConfig->drb_ToReleaseList = NULL;
     ie->radioBearerConfig->srb_ToAddModList = NULL;
     ie->radioBearerConfig->drb_ToAddModList = NULL;
   }
@@ -1683,42 +1679,6 @@ int nr_pcch_decode(const byte_array_t pcch, nr_paging_params_t *out_params, int 
   *out_count = n;
   ASN_STRUCT_FREE(asn_DEF_NR_PCCH_Message, pcch_msg);
   return 0;
-}
-
-/* \brief generate HandoverPreparationInformation to be sent to the DU for
- * handover. Takes uecap_buf in encoded form as (1) this is the form present at
- * the CU already (2) we have to clone this information anyway, so can take it
- * in encoded form which we decode + add to the handoverPreparationInformation */
-int do_NR_HandoverPreparationInformation(const uint8_t *uecap_buf, int uecap_buf_size, uint8_t *buf, int buf_size)
-{
-  NR_HandoverPreparationInformation_t *hpi = calloc_or_fail(1, sizeof(*hpi));
-  hpi->criticalExtensions.present = NR_HandoverPreparationInformation__criticalExtensions_PR_c1;
-  hpi->criticalExtensions.choice.c1 = calloc_or_fail(1, sizeof(*hpi->criticalExtensions.choice.c1));
-  hpi->criticalExtensions.choice.c1->present =
-      NR_HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation;
-  NR_HandoverPreparationInformation_IEs_t *hpi_ie = calloc_or_fail(1, sizeof(*hpi_ie));
-  hpi->criticalExtensions.choice.c1->choice.handoverPreparationInformation = hpi_ie;
-
-  NR_UE_CapabilityRAT_ContainerList_t *list = NULL;
-  asn_dec_rval_t dec_rval =
-      uper_decode_complete(NULL, &asn_DEF_NR_UE_CapabilityRAT_ContainerList, (void **)&list, uecap_buf, uecap_buf_size);
-  if (dec_rval.code == RC_OK) {
-    hpi_ie->ue_CapabilityRAT_List = *list;
-    free(list); /* list itself is not needed, members below will be freed in ASN_STRUCT_FREE */
-  } else {
-    /* problem with decoding, don't put a capability */
-    ASN_STRUCT_FREE(asn_DEF_NR_UE_CapabilityRAT_ContainerList, list);
-    list = NULL;
-  }
-
-  if (LOG_DEBUGFLAG(DEBUG_ASN1))
-    xer_fprint(stdout, &asn_DEF_NR_HandoverPreparationInformation, hpi);
-
-  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_HandoverPreparationInformation, NULL, hpi, buf, buf_size);
-  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
-
-  ASN_STRUCT_FREE(asn_DEF_NR_HandoverPreparationInformation, hpi);
-  return (enc_rval.encoded + 7) / 8;
 }
 
 int do_NR_MeasConfig(const NR_MeasConfig_t *measconfig, uint8_t *buf, int buf_size)

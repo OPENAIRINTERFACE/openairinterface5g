@@ -46,6 +46,7 @@ services:
                                     --gNBs.[0].gNB_ID 0xe01
                                     --gNBs.[0].servingCellConfigCommon.[0].physCellId 1
                                     --gNBs.[0].servingCellConfigCommon.[0].ssb_PositionsInBurst_Bitmap 2
+                                    --gNBs.[0].first_active_bwp 0
                                     --gNBs.[0].NETWORK_INTERFACES.GNB_IPV4_ADDRESS_FOR_NG_AMF 172.21.19.99
                                     --gNBs.[0].NETWORK_INTERFACES.GNB_IPV4_ADDRESS_FOR_NGU 172.21.19.99
                                     --telnetsrv --telnetsrv.shrmod ci

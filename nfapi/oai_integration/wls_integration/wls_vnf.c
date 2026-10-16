@@ -462,7 +462,7 @@ bool wls_vnf_nr_send_p7_message(vnf_p7_t *vnf_p7, nfapi_nr_p7_message_header_t *
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "fapi_p7_message_pack failed (%d)\n", packed_len);
     return false;
   }
-  fill_fapi_list_elem(fapiMsgElem, NULL, message_id, 1, packed_len + NFAPI_HEADER_LENGTH);
+  fill_fapi_list_elem(fapiMsgElem, NULL, message_id, 1, packed_len);
   uint8_t retval = wls_msg_send(pWls->hWls, headerElem);
   return retval;
   //return wls_send_fapi_msg(pWls, msg->message_id, packed_len, _vnf->tx_message_buffer);

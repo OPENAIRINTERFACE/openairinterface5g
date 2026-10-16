@@ -55,5 +55,6 @@ RUN /bin/sh oaienv && \
     taskset -c 0-$(grep ^processor /proc/cpuinfo | wc -l) \
     cmake -B build/ -GNinja -DOAI_FHI72=ON \
           -Dxran_LOCATION=/opt/phy/fhi_lib/lib \
-          -DENABLE_LDPC_AAL=ON && \
+          -DENABLE_LDPC_AAL=ON \
+          -DCMAKE_C_FLAGS=-Werror -DCMAKE_CXX_FLAGS=-Werror && \
     ninja -C build/

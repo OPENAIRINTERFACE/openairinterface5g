@@ -227,7 +227,7 @@ bool wls_pnf_nr_send_p7_message(pnf_p7_t *pnf_p7, nfapi_nr_p7_message_header_t *
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "nfapi_p7_message_pack failed (%d)\n", packed_len);
     return false;
   }
-  fill_fapi_list_elem(fapiMsgElem, NULL, msg->message_id, 1, packed_len + NFAPI_HEADER_LENGTH);
+  fill_fapi_list_elem(fapiMsgElem, NULL, msg->message_id, 1, packed_len);
   const uint8_t retval = wls_msg_send(pWls->hWls, headerElem);
   return retval;
 }

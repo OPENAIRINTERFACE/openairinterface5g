@@ -545,7 +545,7 @@ int main(int argc, char **argv){
 
   nfapi_nr_prach_pdu_t prach_pdu = {0};
   prach_pdu.num_cs                                                                      = get_NCS(NCS_config, format0, restrictedSetConfig);
-  prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value        = 1+(64/(N_ZC/prach_pdu.num_cs));
+  prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value        = prach_pdu.num_cs == 0 ? 64 : (64 + N_ZC / prach_pdu.num_cs - 1) / (N_ZC / prach_pdu.num_cs);
   prach_pdu.prach_format                                                                = prach_format;
 
   // Configure UE
