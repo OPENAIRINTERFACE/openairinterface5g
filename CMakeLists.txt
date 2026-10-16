@@ -454,7 +454,6 @@ target_link_libraries(nr_rrc PUBLIC asn1_nr_rrc asn1_lte_rrc rrc_cell_management
 # S1AP
 ##############
 set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
-include_directories ("${S1AP_DIR}")
 add_library(s1ap
   ${S1AP_DIR}/s1ap_eNB.c
   ${S1AP_DIR}/s1ap_eNB_context_management_procedures.c
@@ -469,13 +468,13 @@ add_library(s1ap
   ${S1AP_DIR}/s1ap_eNB_trace.c
   ${S1AP_DIR}/s1ap_eNB_ue_context.c
   )
+target_include_directories(s1ap PUBLIC ${S1AP_DIR})
 target_link_libraries(s1ap PUBLIC asn1_s1ap)
 target_link_libraries(s1ap PRIVATE nr_rrc asn1_nr_rrc_hdrs lte_rrc)
 
 # NGAP
 ##############
 set(NGAP_DIR ${OPENAIR3_DIR}/NGAP)
-include_directories ("${NGAP_DIR}")
 add_library(ngap
   ${NGAP_DIR}/ngap_gNB.c
   ${NGAP_DIR}/ngap_common.c
@@ -494,6 +493,7 @@ add_library(ngap
   ${NGAP_DIR}/ngap_gNB_ue_context.c
   ${NGAP_DIR}/ngap_gNB_NRPPa_transport_procedures.c
   )
+target_include_directories(ngap PUBLIC ${NGAP_DIR})
 target_link_libraries(ngap PUBLIC asn1_ngap)
 target_link_libraries(ngap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 if(ENABLE_TESTS)
@@ -526,7 +526,7 @@ add_library(m2ap
  )
 target_link_libraries(m2ap PUBLIC asn1_m2ap)
 target_link_libraries(m2ap PRIVATE lte_rrc nr_rrc)
-target_include_directories(m2ap PRIVATE "${M2AP_DIR}")
+target_include_directories(m2ap PUBLIC "${M2AP_DIR}")
 
 #M3AP
 ##############
@@ -555,7 +555,6 @@ target_include_directories(m3ap PUBLIC "${M3AP_DIR}")
 #X2AP
 ##############
 set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
-include_directories ("${X2AP_DIR}")
 add_library(x2ap
   ${X2AP_DIR}/x2ap_common.c
   ${X2AP_DIR}/x2ap_eNB.c
@@ -683,7 +682,6 @@ include_directories("${OPENAIR2_DIR}")
 include_directories("${OPENAIR3_DIR}/NAS/TOOLS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/GNB_APP")
-include_directories("${OPENAIR2_DIR}/MCE_APP")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC")
 include_directories("${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0")
 include_directories("${OPENAIR2_DIR}/RRC/LTE/MESSAGES")
@@ -702,12 +700,7 @@ include_directories("${OPENAIR3_DIR}/NAS/COMMON/IES")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/UTIL")
 include_directories("${OPENAIR3_DIR}/SECU")
 include_directories("${OPENAIR3_DIR}/SCTP")
-include_directories("${OPENAIR3_DIR}/S1AP")
-include_directories("${OPENAIR2_DIR}/X2AP")
-include_directories("${OPENAIR2_DIR}/M2AP")
 include_directories("${OPENAIR2_DIR}/F1AP")
-include_directories("${OPENAIR3_DIR}/M3AP")
-include_directories("${OPENAIR3_DIR}/MME_APP")
 include_directories("${OPENAIR_DIR}/radio/COMMON")
 include_directories("${OPENAIR2_DIR}/UTIL/MATH")
 include_directories("${OPENAIR2_DIR}/UTIL/OTG")
@@ -1343,7 +1336,7 @@ add_library(L2
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
   )
-target_link_libraries(L2 PRIVATE x2ap s1ap lte_rrc m2ap)
+target_link_libraries(L2 PRIVATE x2ap s1ap lte_rrc m2ap m3ap)
 target_link_libraries(L2 PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 target_link_libraries(L2 PRIVATE nfapi_lte_user_lib nfapi_pnf_lib)
 if(E2_AGENT)

@@ -41,7 +41,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "nfapi_pnf.h"
 #include "vnf/nfapi_nr_vnf.h"
-#include "ngap_gNB.h"
+#include "openair3/NGAP/ngap_gNB.h"
 #include "nr_common.h"
 #include "oai_asn1.h"
 #include "prs_nr_paramdef.h"

@@ -70,7 +70,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "system.h"
 #include "time_meas.h"
 #include "utils.h"
-#include "x2ap_eNB.h"
+#include "openair2/X2AP/x2ap_eNB.h"
 #include "openair1/SCHED_NR/sched_nr.h"
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 #include "openair3/NRPPA/nrppa_gNB.h"

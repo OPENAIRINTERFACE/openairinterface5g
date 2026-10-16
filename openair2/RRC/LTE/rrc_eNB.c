@@ -51,7 +51,6 @@
 #include "NR_RadioBearerConfig.c"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "x2ap_eNB.h"
 
 #include "T.h"
 #include "LTE_MeasResults.h"

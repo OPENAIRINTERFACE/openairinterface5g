@@ -9,17 +9,14 @@
 # include "common/ran_context.h"
 
     #include "sctp_eNB_task.h"
-    #include "x2ap_eNB.h"
-    #include "s1ap_eNB.h"
-    #include "openair3/ocp-gtpu/gtp_itf.h"
     #include "m2ap_eNB.h"
     #include "m2ap_MCE.h"
     #include "m3ap_MME.h"
     #include "m3ap_MCE.h"
   #include "RRC/LTE/rrc_defs.h"
 # include "enb_app.h"
-# include "mce_app.h"
-# include "mme_app.h"
+# include "openair2/MCE_APP/mce_app.h"
+# include "openair3/MME_APP/mme_app.h"
 
 #include <openair3/ocp-gtpu/gtp_itf.h>
 //extern RAN_CONTEXT_t RC;
