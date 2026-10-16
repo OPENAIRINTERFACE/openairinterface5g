@@ -11,10 +11,7 @@
 #include "queue.h"
 #include "tree.h"
 
-#include "sctp_eNB_defs.h"
-#include "s1ap_messages_types.h"
 #include "x2ap_messages_types.h"
-
 #include "x2ap_ids.h"
 #include "x2ap_timers.h"
 

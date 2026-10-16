@@ -13,8 +13,6 @@
 #include "queue.h"
 #include "tree.h"
 
-#include "sctp_eNB_defs.h"
-
 #include "m2ap_default_values.h"
 #include "m2ap_ids.h" //looks X2AP specific for HO
 #include "m2ap_timers.h"

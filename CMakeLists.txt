@@ -470,7 +470,7 @@ add_library(s1ap
   )
 target_include_directories(s1ap PUBLIC ${S1AP_DIR})
 target_link_libraries(s1ap PUBLIC asn1_s1ap)
-target_link_libraries(s1ap PRIVATE nr_rrc asn1_nr_rrc_hdrs lte_rrc)
+target_link_libraries(s1ap PRIVATE nr_rrc asn1_nr_rrc_hdrs lte_rrc SCTP_CLIENT)
 
 # NGAP
 ##############
@@ -525,7 +525,7 @@ add_library(m2ap
   ${M2AP_DIR}/m2ap_eNB_interface_management.c
  )
 target_link_libraries(m2ap PUBLIC asn1_m2ap)
-target_link_libraries(m2ap PRIVATE lte_rrc nr_rrc)
+target_link_libraries(m2ap PRIVATE lte_rrc nr_rrc SCTP_CLIENT)
 target_include_directories(m2ap PUBLIC "${M2AP_DIR}")
 
 #M3AP
@@ -548,7 +548,7 @@ add_library(m3ap
   ${M3AP_DIR}/m3ap_timers.c
 )
 target_link_libraries(m3ap PUBLIC asn1_m3ap)
-target_link_libraries(m3ap PRIVATE m2ap)
+target_link_libraries(m3ap PRIVATE m2ap SCTP_CLIENT)
 target_link_libraries(m3ap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 target_include_directories(m3ap PUBLIC "${M3AP_DIR}")
 
@@ -568,7 +568,7 @@ add_library(x2ap
   ${X2AP_DIR}/x2ap_timers.c
  )
 target_link_libraries(x2ap PUBLIC asn1_x2ap)
-target_link_libraries(x2ap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
+target_link_libraries(x2ap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs SCTP_CLIENT)
 
 # F1AP
 ##############
@@ -698,7 +698,6 @@ include_directories("${OPENAIR3_DIR}/NAS/UE/EMM")
 include_directories("${OPENAIR3_DIR}/NAS/UE/API/USER")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/IES")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/UTIL")
-include_directories("${OPENAIR3_DIR}/SCTP")
 include_directories("${OPENAIR_DIR}/radio/COMMON")
 include_directories("${OPENAIR2_DIR}/UTIL/OPT")
 include_directories("${OPENAIR_DIR}")
@@ -1308,7 +1307,7 @@ add_library(L2
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
   )
-target_link_libraries(L2 PRIVATE x2ap s1ap lte_rrc m2ap m3ap)
+target_link_libraries(L2 PRIVATE x2ap s1ap lte_rrc m2ap m3ap SCTP_CLIENT)
 target_link_libraries(L2 PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 target_link_libraries(L2 PRIVATE nfapi_lte_user_lib nfapi_pnf_lib)
 if(E2_AGENT)
@@ -1393,16 +1392,6 @@ add_library(MME_APP ${MME_APP_SRC})
 target_link_libraries(MME_APP PRIVATE m2ap m3ap)
 target_link_libraries(MME_APP PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 target_link_libraries(MME_APP PRIVATE nfapi_lte_user_lib)
-
-find_package(sctp REQUIRED)
-set(SCTP_SRC
-  ${OPENAIR3_DIR}/SCTP/sctp_common.c
-  ${OPENAIR3_DIR}/SCTP/sctp_eNB_task.c
-  ${OPENAIR3_DIR}/SCTP/sctp_eNB_itti_messaging.c
-)
-add_library(SCTP_CLIENT ${SCTP_SRC})
-target_link_libraries(SCTP_CLIENT PRIVATE sctp::sctp)
-target_link_libraries(SCTP_CLIENT PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 set(NAS_SRC ${OPENAIR3_DIR}/NAS/)
 

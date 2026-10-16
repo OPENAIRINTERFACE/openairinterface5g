@@ -48,7 +48,7 @@
 #include "radio/ETHERNET/if_defs.h"
 #include "rrc_messages_types.h"
 #include "s1ap_messages_types.h"
-#include "sctp_default_values.h"
+#include "openair3/SCTP/sctp_default_values.h"
 #include "seq_arr.h"
 #include "common/utils/alg/find.h"
 #include "uper_encoder.h"

@@ -17,7 +17,6 @@
 #include "openair2/X2AP/x2ap_eNB.h"
 #include "intertask_interface.h"
 #include "openair3/NGAP/ngap_gNB.h"
-#include "sctp_eNB_task.h"
 #include "openair3/ocp-gtpu/gtp_itf.h"
 #include "PHY/INIT/phy_init.h" 
 #include "f1ap_du_task.h"
