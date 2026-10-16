@@ -17,6 +17,7 @@ target_link_libraries(nr_nas PUBLIC
     nas_utils
     ds
     UTIL
+    SECURITY
     nr_ue_tun
 )
 

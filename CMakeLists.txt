@@ -441,7 +441,7 @@ add_library(lte_rrc
     ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1_msg.c
     ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1_msg_NB_IoT.c)
 target_link_libraries(lte_rrc PUBLIC asn1_lte_rrc)
-target_link_libraries(lte_rrc PRIVATE nr_rrc)
+target_link_libraries(lte_rrc PRIVATE nr_rrc SECURITY)
 
 
 #NR RRC
@@ -698,7 +698,6 @@ include_directories("${OPENAIR3_DIR}/NAS/UE/EMM")
 include_directories("${OPENAIR3_DIR}/NAS/UE/API/USER")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/IES")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/UTIL")
-include_directories("${OPENAIR3_DIR}/SECU")
 include_directories("${OPENAIR3_DIR}/SCTP")
 include_directories("${OPENAIR_DIR}/radio/COMMON")
 include_directories("${OPENAIR2_DIR}/UTIL/OPT")
@@ -730,30 +729,6 @@ if (cap_FOUND)
 endif()
 target_link_libraries(UTIL PUBLIC ${T_LIB} pthread LOG thread-pool utils barrier actor)
 target_link_libraries(UTIL PUBLIC instrumentation)
-
-set(SECURITY_SRC
-  ${OPENAIR3_DIR}/SECU/secu_defs.c
-  ${OPENAIR3_DIR}/SECU/curve_25519.c
-  ${OPENAIR3_DIR}/SECU/x963_kdf.c
-  ${OPENAIR3_DIR}/SECU/kdf.c
-  ${OPENAIR3_DIR}/SECU/aes_128_ctr.c
-  ${OPENAIR3_DIR}/SECU/aes_128_cbc_cmac.c
-  ${OPENAIR3_DIR}/SECU/aes_128_ecb.c
-  ${OPENAIR3_DIR}/SECU/sha_256_hmac.c
-  ${OPENAIR3_DIR}/SECU/rijndael.c
-  ${OPENAIR3_DIR}/SECU/snow3g.c
-  ${OPENAIR3_DIR}/SECU/key_nas_deriver.c
-  ${OPENAIR3_DIR}/SECU/nas_stream_eea0.c
-  ${OPENAIR3_DIR}/SECU/nas_stream_eea1.c
-  ${OPENAIR3_DIR}/SECU/nas_stream_eia1.c
-  ${OPENAIR3_DIR}/SECU/nas_stream_eea2.c
-  ${OPENAIR3_DIR}/SECU/nas_stream_eia2.c
-  )
-
-pkg_check_modules(OpenSSL openssl REQUIRED)
-add_library(SECURITY ${SECURITY_SRC} $<TARGET_OBJECTS:ds>)
-target_include_directories(SECURITY PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
-target_link_libraries(SECURITY PRIVATE ${OpenSSL_LIBRARIES})
 
 # Physical Channel Procedures Scheduling
 ################################"
@@ -1678,7 +1653,7 @@ add_library(LIB_NAS_UE
   )
 target_include_directories(LIB_NAS_UE PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
 set(NAS_UE_LIB LIB_NAS_UE)
-target_link_libraries(LIB_NAS_UE PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
+target_link_libraries(LIB_NAS_UE PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs SECURITY)
 
 include_directories(${NAS_SRC}NR_UE)
 include_directories(${NAS_SRC}UE)
