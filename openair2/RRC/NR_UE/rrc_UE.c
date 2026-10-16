@@ -33,7 +33,6 @@
 
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "nr-uesoftmodem.h"
-#include "plmn_data.h"
 #include "LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "openair3/SECU/secu_defs.h"
 #include "openair3/SECU/key_nas_deriver.h"

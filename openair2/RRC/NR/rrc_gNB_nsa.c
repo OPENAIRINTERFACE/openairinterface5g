@@ -40,7 +40,6 @@
 #include "openair2/SDAP/nr_sdap/nr_sdap_entity.h"
 #include "rrc_gNB_du.h"
 #include "rrc_cell_management.h"
-#include "rlc.h"
 #include "s1ap_messages_types.h"
 #include "tree.h"
 #include "uper_decoder.h"

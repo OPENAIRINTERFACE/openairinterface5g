@@ -31,7 +31,6 @@ Description Defines functions used to handle EPS bearer contexts.
 #include "emm_sap.h"
 #include "system.h"
 #include "assertions.h"
-#include "pdcp.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "executables/softmodem-common.h"
 

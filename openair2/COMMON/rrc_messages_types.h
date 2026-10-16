@@ -11,7 +11,7 @@
 #include "common/utils/mem/oai_memory.h"
 #include "openair1/PHY/defs_common.h"
 #include "as_message.h"
-#include "rrc_types.h"
+#include "openair2/RRC/LTE/rrc_types.h"
 #include "s1ap_messages_types.h"
 #include "f1ap_messages_types.h"
 #include "LTE_SystemInformationBlockType2.h"

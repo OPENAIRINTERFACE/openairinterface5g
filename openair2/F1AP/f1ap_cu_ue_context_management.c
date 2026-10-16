@@ -9,7 +9,6 @@
 #include "lib/f1ap_ue_context.h"
 #include <string.h>
 
-#include "rrc_extern.h"
 #include "openair2/RRC/NR/rrc_gNB_NGAP.h"
 
 #include "F1AP_UEContextModificationRequired.h"

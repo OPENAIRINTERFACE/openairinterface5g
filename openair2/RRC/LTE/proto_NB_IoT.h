@@ -11,8 +11,6 @@
 #ifndef __PROTO_NB_IOT_H
 #define __PROTO_NB_IOT_H
 #include "RRC/LTE/defs_NB_IoT.h"
-#include "pdcp.h"
-#include "rlc.h"
 #include "extern_NB_IoT.h"
 #include "LAYER2/MAC/defs_NB_IoT.h"
 /*NOTE: no static function should be declared in this header file (e.g. init_SI_NB)*/

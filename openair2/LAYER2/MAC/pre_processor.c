@@ -18,7 +18,7 @@
 #include "UTIL/OPT/opt.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "rlc.h"
+#include "openair2/LAYER2/RLC/rlc.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 #include "common/ran_context.h"

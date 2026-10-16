@@ -41,7 +41,7 @@
 #include "openair2/F1AP/f1ap_common.h"
 #include "openair2/F1AP/f1ap_ids.h"
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
-#include "pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "pdcp_messages_types.h"
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "utils.h"

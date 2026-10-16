@@ -23,7 +23,6 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "assertions.h"
-#include "pdcp.h"
 
 #include "intertask_interface.h"
 

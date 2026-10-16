@@ -27,7 +27,6 @@
 
 #include "SCHED/sched_common.h"
 //#include "LAYER2/MAC/pre_processor.c"
-#include "pdcp.h"
 
 #include "intertask_interface.h"
 

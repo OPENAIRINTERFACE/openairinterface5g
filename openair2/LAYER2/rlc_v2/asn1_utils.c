@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
-#include "rlc.h"
+#include "openair2/LAYER2/RLC/rlc.h"
 
 int decode_t_reordering(int v)
 {

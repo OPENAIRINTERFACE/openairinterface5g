@@ -15,11 +15,9 @@
 #include "NR_DL-DCCH-Message.h"
 #include "NR_UL-DCCH-Message.h"
 // for SRB1_logicalChannelConfig_defaultValue
-#include "rrc_extern.h"
 #include "common/ran_context.h"
 
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
-#include "asn1_msg.h"
 #include "intertask_interface.h"
 
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
