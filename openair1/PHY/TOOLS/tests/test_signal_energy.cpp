@@ -24,6 +24,26 @@ TEST(signal_energy_nodc, size_6)
             signal_energy_nodc_ref(input.data(), input.size()));
 }
 
+// samples (a, -a) have re + im = 0, so the DC term vanishes and signal_energy() is the mean power 2 * a^2
+TEST(signal_energy, length_not_multiple_of_4)
+{
+  const double expected = 2 * 42 * 42;
+  for (uint32_t length = 1; length <= 16; length++) {
+    std::vector<c16_t> input(length, (c16_t){42, -42});
+    EXPECT_NEAR(signal_energy((int32_t *)input.data(), length), expected, expected / 100) << "length " << length;
+  }
+}
+
+TEST(signal_energy, last_samples_counted)
+{
+  const uint32_t length = 839;
+  std::vector<c16_t> input(length, (c16_t){0, 0});
+  for (auto i = length - 3; i < length; i++)
+    input[i] = (c16_t){1000, -1000};
+  const double expected = 3 * 2 * 1000.0 * 1000.0 / length;
+  EXPECT_NEAR(signal_energy((int32_t *)input.data(), length), expected, expected / 100);
+}
+
 int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);
