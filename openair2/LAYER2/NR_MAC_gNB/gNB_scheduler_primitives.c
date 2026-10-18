@@ -3840,28 +3840,27 @@ void beam_switching_procedure(gNB_MAC_INST *mac, nr_cell_sched_t *cell, NR_UE_in
 
 void nr_mac_update_timers(gNB_MAC_INST *mac, nr_cell_sched_t *cell)
 {
-
-  NR_UEs_t *UE_info = &mac->UE_info;
-  UE_iterator(UE_info->connected_ue_list, UE) {
+  // releasing a UE modifies connected_ue_list, and nr_mac_trigger_release_complete() drops sched_lock:
+  // collect the UEs to release and release them by RNTI after the loop
+  typedef struct {
+    rnti_t rnti;
+    bool send_complete;
+  } ue_release_t;
+  ue_release_t to_release[MAX_MOBILES_PER_GNB];
+  int num_release = 0;
+  UE_iterator (mac->UE_info.connected_ue_list, UE) {
     if (UE->pcell != cell)
       continue;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
     if (nr_mac_check_release(sched_ctrl)) {
-      // trigger release first as nr_mac_release_ue() invalidates UE ptr
-      nr_mac_trigger_release_complete(mac, UE->rnti);
-      nr_mac_release_ue(mac, UE->rnti);
-      // go back to examine the next UE, which is at the position the
-      // current UE was
-      UE--;
+      to_release[num_release++] = (ue_release_t){.rnti = UE->rnti, .send_complete = true};
       continue;
     }
 
     /* check if UL failure and trigger release request if necessary */
-    bool released = nr_mac_check_ul_failure(mac, UE->rnti, sched_ctrl);
-    if (released) {
-      // go back to examine the next UE, which is at the position the current UE was
-      UE--;
+    if (nr_mac_check_ul_failure(mac, UE->rnti, sched_ctrl)) {
+      to_release[num_release++] = (ue_release_t){.rnti = UE->rnti, .send_complete = false};
       continue;
     }
 
@@ -3879,6 +3878,13 @@ void nr_mac_update_timers(gNB_MAC_INST *mac, nr_cell_sched_t *cell)
       beam_switching_procedure(mac, cell, UE, sched_ctrl->UE_mac_ce_ctrl.tci_state_ind.tciStateId);
     }
     nr_timer_tick(&sched_ctrl->aperiodic_srs_trigger);
+  }
+
+  for (int i = 0; i < num_release; i++) {
+    // confirm the release to the CU, then remove the RLC and MAC contexts
+    if (to_release[i].send_complete)
+      nr_mac_trigger_release_complete(mac, to_release[i].rnti);
+    nr_mac_release_ue(mac, to_release[i].rnti);
   }
 }
 
@@ -4215,6 +4221,7 @@ bool nr_mac_request_release_ue(const gNB_MAC_INST *nrmac, int rnti)
   return true;
 }
 
+// returns true if the UE must be dropped (nr_mac_release_ue()) by the caller
 bool nr_mac_check_ul_failure(gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ctrl_t *sched_ctrl)
 {
   if (!sched_ctrl->ul_failure)
@@ -4232,7 +4239,6 @@ bool nr_mac_check_ul_failure(gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ctrl_t *
   }
   if (sched_ctrl->ul_failure_timer == 0) {
     LOG_W(NR_MAC, "UE %04x: no answer for release request, dropping UE\n", rnti);
-    nr_mac_release_ue(nrmac, rnti);
     return true;
   }
   return false;
