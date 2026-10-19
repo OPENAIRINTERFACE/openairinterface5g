@@ -1271,8 +1271,8 @@ static inline void sr_combine_simd(c16_t *E, c16_t *O1, c16_t *O3, c16_t *y, int
 
     simde__m256i t2 = c16_mul_q15_simd256(O3v, tw->W3_RE_NEGIM[b], tw->W3_IM_RE[b]);
 
-    simde__m256i a = simde_mm256_add_epi16(t1, t2);
-    simde__m256i d = simde_mm256_sub_epi16(t1, t2);
+    simde__m256i a = simde_mm256_adds_epi16(t1, t2);
+    simde__m256i d = simde_mm256_subs_epi16(t1, t2);
 
     simde__m256i bval = simde_mm256_shuffle_epi8(d, swap_mask);
     bval = simde_mm256_sign_epi16(bval, sign_mask);
@@ -1283,10 +1283,10 @@ static inline void sr_combine_simd(c16_t *E, c16_t *O1, c16_t *O3, c16_t *y, int
     E0 = simde_mm256_mulhrs_epi16(E0, sqrt2_inv);
     E1 = simde_mm256_mulhrs_epi16(E1, sqrt2_inv);
 
-    simde__m256i Y0 = simde_mm256_add_epi16(E0, a);
-    simde__m256i Y2 = simde_mm256_sub_epi16(E0, a);
-    simde__m256i Y1 = simde_mm256_add_epi16(E1, bval);
-    simde__m256i Y3 = simde_mm256_sub_epi16(E1, bval);
+    simde__m256i Y0 = simde_mm256_adds_epi16(E0, a);
+    simde__m256i Y2 = simde_mm256_subs_epi16(E0, a);
+    simde__m256i Y1 = simde_mm256_adds_epi16(E1, bval);
+    simde__m256i Y3 = simde_mm256_subs_epi16(E1, bval);
 
     simde_mm256_store_si256((simde__m256i *)&y[k], Y0);
     simde_mm256_store_si256((simde__m256i *)&y[k + quarter], Y1);

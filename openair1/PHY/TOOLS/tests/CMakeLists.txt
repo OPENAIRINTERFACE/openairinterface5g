@@ -37,6 +37,13 @@ add_dependencies(dft_test dfts) # trigger build of dfts (shared lib for DFT)
 add_test(NAME dft_test COMMAND ./dft_test)
 set_tests_properties(dft_test PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}")
 
+add_executable(test_dft_saturation test_dft_saturation.c ../dfts_load.c)
+target_link_libraries(test_dft_saturation minimal_lib shlib_loader m)
+add_dependencies(tests test_dft_saturation)
+add_dependencies(test_dft_saturation dfts)
+add_test(NAME test_dft_saturation COMMAND ./test_dft_saturation)
+set_tests_properties(test_dft_saturation PROPERTIES ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}")
+
 add_executable(test_vector_op test_vector_op.cpp)
 target_link_libraries(test_vector_op PRIVATE LOG minimal_lib)
 add_dependencies(tests test_vector_op)
