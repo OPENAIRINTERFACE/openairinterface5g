@@ -238,7 +238,7 @@ static inline long long clock_gettime_oai()
 #else
   clock_gettime(CLOCK_REALTIME, &time);
 #endif
-  return 1e+9 * time.tv_sec + time.tv_nsec;
+  return 1000000000LL * time.tv_sec + time.tv_nsec;
 }
 
 #define CPUMEAS_DISABLE  0
