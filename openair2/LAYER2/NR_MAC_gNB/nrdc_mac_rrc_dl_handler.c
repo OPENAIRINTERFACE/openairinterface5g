@@ -50,7 +50,7 @@ static NR_UE_info_t *nrdc_create_new_UE(gNB_MAC_INST *mac, nr_cell_sched_t *cell
   UE->nrdc_mode = true;
 
   if (!add_new_UE_RA(mac, UE)) {
-    delete_nr_ue_data(UE, &mac->UE_info.uid_allocator);
+    delete_nr_ue_data(mac, UE);
     LOG_E(NR_MAC, "UE list full while creating new UE\n");
     return NULL;
   }
