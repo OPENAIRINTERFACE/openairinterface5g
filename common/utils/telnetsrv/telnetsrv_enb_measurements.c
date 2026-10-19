@@ -50,7 +50,6 @@ static telnet_measurgroupdef_t enbmeasurgroups[] = {
 #define TELNET_NUM_ENBMEASURGROUPS (sizeof(enbmeasurgroups)/sizeof(telnet_measurgroupdef_t))
 
 static int                     eNB_id =0;
-static double                  cpufreq;
 
 
 #define HDR "---------------------------------"
@@ -65,7 +64,7 @@ int get_measurgroups(telnet_measurgroupdef_t **measurgroups) {
 void measurcmd_display_phycpu(telnet_printfunc_t prnt) {
   PHY_VARS_eNB *phyvars = RC.eNB[eNB_id][0];
   telnet_cpumeasurdef_t  cpumeasur[]=CPU_PHYENB_MEASURE;
-  prnt("%s cpu (%1.1g GHz) measurements: PHY (cpustats %s) %s\n",HDR,cpufreq,
+  prnt("%s cpu measurements: PHY (cpustats %s) %s\n",HDR,
        PRINT_CPUMEAS_STATE,HDR);
   measurcmd_display_cpumeasures(prnt, cpumeasur, sizeof(cpumeasur)/sizeof(telnet_cpumeasurdef_t));
 }
@@ -73,7 +72,7 @@ void measurcmd_display_phycpu(telnet_printfunc_t prnt) {
 void measurcmd_display_maccpu(telnet_printfunc_t prnt) {
   eNB_MAC_INST *macvars = RC.mac[eNB_id];
   telnet_cpumeasurdef_t  cpumeasur[]=CPU_MACENB_MEASURE;
-  prnt("%s cpu (%1.1g GHz) measurements: MAC (cpustats %s) %s\n",HDR,cpufreq,
+  prnt("%s cpu measurements: MAC (cpustats %s) %s\n",HDR,
        PRINT_CPUMEAS_STATE,HDR);
   measurcmd_display_cpumeasures(prnt, cpumeasur, sizeof(cpumeasur)/sizeof(telnet_cpumeasurdef_t));
 }
@@ -81,7 +80,7 @@ void measurcmd_display_maccpu(telnet_printfunc_t prnt) {
 void measurcmd_display_pdcpcpu(telnet_printfunc_t prnt) {
   pdcp_stats_t *pdcpvars = &(eNB_pdcp_stats[eNB_id]);
   telnet_cpumeasurdef_t  cpumeasur[]=CPU_PDCPENB_MEASURE;
-  prnt("%s cpu (%1.1g GHz) measurements: PDCP (cpustats %s) %s \n",HDR,cpufreq,
+  prnt("%s cpu measurements: PDCP (cpustats %s) %s \n",HDR,
        PRINT_CPUMEAS_STATE,HDR);
   measurcmd_display_cpumeasures(prnt, cpumeasur, sizeof(cpumeasur)/sizeof(telnet_cpumeasurdef_t));
 }

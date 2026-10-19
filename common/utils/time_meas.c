@@ -14,26 +14,10 @@
 #include "common/utils/threadPool/notified_fifo.h"
 // global var for openair performance profiler
 int cpu_meas_enabled = 0;
-double cpu_freq_GHz  __attribute__ ((aligned(32)));
 
-double cpu_freq_GHz  __attribute__ ((aligned(32)))=0.0;
 static uint32_t    max_cpumeasur;
 static time_stats_t  **measur_table;
 notifiedFIFO_t measur_fifo;
-double get_cpu_freq_GHz(void)
-{
-  if (cpu_freq_GHz <0.01 ) {
-    time_stats_t ts = {0};
-    reset_meas(&ts);
-    ts.trials++;
-    ts.in = clock_gettime_oai();
-    sleep(1);
-    ts.diff = (clock_gettime_oai()-ts.in);
-    cpu_freq_GHz = (double)ts.diff/1000000000;
-  } 
-  return cpu_freq_GHz;
-}
-
 
 double get_std_dev(time_stats_t *ptr)
 {
@@ -56,7 +40,7 @@ void print_meas_header(time_stats_t *total_exec_time,
 {
   if ((total_exec_time == NULL) || (sf_exec_time== NULL))
     fprintf(stderr,
-            "%25s   %18s  %18s  %18s  %15s  %18s  %18s  %18s  %18s  %18s  %18s %9s %6f\n",
+            "%25s   %18s  %18s  %18s  %15s  %18s  %18s  %18s  %18s  %18s  %18s\n",
             "Name",
             "Total",
             "Max",
@@ -67,18 +51,14 @@ void print_meas_header(time_stats_t *total_exec_time,
             "q1",
             "median",
             "q3",
-            "d9",
-            "CPU_F_GHz",
-            cpu_freq_GHz);
+            "d9");
   else
     fprintf(stderr,
-            "%25s   %18s  %18s  %15s %9s %6f\n",
+            "%25s   %18s  %18s  %15s\n",
             "Name",
             "Total",
             "Average/Frame",
-            "Trials",
-            "CPU_F_GHz",
-            cpu_freq_GHz);
+            "Trials");
 }
 
 void print_meas(time_stats_t *ts,
@@ -137,7 +117,7 @@ size_t print_meas_log_header(time_stats_t *total_exec_time,
     if(cpu_meas_enabled == TIME_STATS_ADVANCED_MODE)
       output += snprintf(output,
                          end - output,
-                         "%25s   %18s  %18s  %18s  %15s  %18s  %18s  %18s  %18s  %18s  %18s %9s %6f\n",
+                         "%25s   %18s  %18s  %18s  %15s  %18s  %18s  %18s  %18s  %18s  %18s\n",
                          "Name",
                          "Total",
                          "Max",
@@ -148,30 +128,24 @@ size_t print_meas_log_header(time_stats_t *total_exec_time,
                          "q1",
                          "median",
                          "q3",
-                         "d9",
-                         "CPU_F_GHz",
-                         cpu_freq_GHz);
+                         "d9");
     else
       output += snprintf(output,
                          end - output,
-                         "%25s   %18s  %18s  %18s  %15s %9s %6f\n",
+                         "%25s   %18s  %18s  %18s  %15s\n",
                          "Name",
                          "Total",
                          "Max",
                          "Std",
-                         "Num Trials",
-                         "CPU_F_GHz",
-                         cpu_freq_GHz);
+                         "Num Trials");
   else
     output += snprintf(output,
                        end - output,
-                       "%25s   %18s  %18s  %15s %9s %6f\n",
+                       "%25s   %18s  %18s  %15s\n",
                        "Name",
                        "Total",
                        "Average/Frame",
-                       "Trials",
-                       "CPU_F_GHz",
-                       cpu_freq_GHz);
+                       "Trials");
 
   return output - begin;
 }
@@ -230,35 +204,10 @@ size_t print_meas_log(time_stats_t *ts,
 
 double get_time_meas_us(time_stats_t *ts)
 {
-  static double cpu_freq_GHz = 0.0;
-
-  if (cpu_freq_GHz == 0.0)
-    cpu_freq_GHz = get_cpu_freq_GHz();
-
   if (ts->trials > 0)
     return  (ts->diff / ts->trials / 1000.0);
 
   return 0;
-}
-
-/* function for the asynchronous measurment module: cpu stat are sent to a dedicated thread
- * which is in charge of computing the cpu time spent in a given function/algorithm...
- */
-
-time_stats_t *register_meas(char *name)
-{
-  for (int i=0; i<max_cpumeasur; i++) {
-    if (measur_table[i] == NULL) {
-      measur_table[i] = (time_stats_t *)malloc(sizeof(time_stats_t));
-      memset(measur_table[i] ,0,sizeof(time_stats_t));
-      measur_table[i]->meas_name = strdup(name);
-      measur_table[i]->meas_index = i;
-      measur_table[i]->tpoolmsg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
-      measur_table[i]->tstatptr = (time_stats_msg_t *)NotifiedFifoData(measur_table[i]->tpoolmsg);
-      return measur_table[i];
-    }
-  }
-  return NULL;
 }
 
 void free_measurtbl(void) {
@@ -309,7 +258,7 @@ void run_cpumeasur(void) {
                }
                for (int i=start ; i<stop ; i++) {
                  if (measur_table[i] != NULL) {
-                   sprintf(aline,"%s: %15.3f us ",measur_table[i]->meas_name, measur_table[i]->trials==0?0:(  (measur_table[i]->trials/measur_table[i]->diff )/ cpu_freq_GHz /1000 ));
+                   sprintf(aline,"%s: %15.3f us ",measur_table[i]->meas_name, measur_table[i]->trials==0?0:(  (float) measur_table[i]->diff/measur_table[i]->trials  /1000 ));
                    tsm->displayFunc(aline);
                    }
                 }
@@ -340,15 +289,6 @@ void init_meas(void) {
   rt=pthread_create(&thid,NULL, (void *(*)(void *))run_cpumeasur, NULL);
   AssertFatal(rt==0, "couldn't create cpu measurment thread: %s\n",strerror(errno));
 }
-
-void send_meas(time_stats_t *ts, int msgid) {
-    if (MEASURE_ENABLED(ts) ) {
-      ts->tstatptr->timestat_id=ts->meas_index;
-      ts->tstatptr->msgid = msgid ;
-      ts->tstatptr->ts = clock_gettime_oai();
-      pushNotifiedFIFO(&measur_fifo, ts->tpoolmsg);
-    }
-  }
 
 void end_meas(void) {
     notifiedFIFO_elt_t *nfe = newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);

@@ -846,7 +846,7 @@ uint32_t nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           nr_slot_rx,
           slot,
           symbol,
-          ue->phy_cpu_stats.cpu_time_stats[DLSCH_EXTRACT_RBS_STATS].p_time / (cpuf * 1000.0));
+          ue->phy_cpu_stats.cpu_time_stats[DLSCH_EXTRACT_RBS_STATS].p_time / (1000.0));
   }
   if (ue->phy_sim_pdsch_rxdataF_ext)
     memcpy(ue->phy_sim_pdsch_rxdataF_ext + symbol * sizeof(rxdataF_ext), rxdataF_ext, sizeof(rxdataF_ext));
@@ -911,7 +911,7 @@ uint32_t nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           slot,
           symbol,
           first_symbol_flag,
-          ue->phy_cpu_stats.cpu_time_stats[DLSCH_CHANNEL_LEVEL_STATS].p_time / (cpuf * 1000.0));
+          ue->phy_cpu_stats.cpu_time_stats[DLSCH_CHANNEL_LEVEL_STATS].p_time / (1000.0));
   }
 
   //----------------------------------------------------------
@@ -942,7 +942,7 @@ uint32_t nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           slot,
           symbol,
           *log2_maxh,
-          ue->phy_cpu_stats.cpu_time_stats[DLSCH_CHANNEL_COMPENSATION_STATS].p_time / (cpuf * 1000.0));
+          ue->phy_cpu_stats.cpu_time_stats[DLSCH_CHANNEL_COMPENSATION_STATS].p_time / (1000.0));
   }
   // Please keep it: useful for debugging
 #ifdef DEBUG_PDSCH_RX
@@ -1002,7 +1002,7 @@ uint32_t nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           nr_slot_rx,
           slot,
           symbol,
-          ue->phy_cpu_stats.cpu_time_stats[DLSCH_MRC_MMSE_STATS].p_time / (cpuf * 1000.0));
+          ue->phy_cpu_stats.cpu_time_stats[DLSCH_MRC_MMSE_STATS].p_time / (1000.0));
   }
 
   /* LLR computation and layer demapping per symbol: channel compensation has
@@ -1093,8 +1093,8 @@ uint32_t nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           nr_slot_rx,
           slot,
           symbol,
-          ue->phy_cpu_stats.cpu_time_stats[DLSCH_LLR_STATS].p_time / (cpuf * 1000.0),
-          ue->phy_cpu_stats.cpu_time_stats[DLSCH_LAYER_DEMAPPING].p_time / (cpuf * 1000.0));
+          ue->phy_cpu_stats.cpu_time_stats[DLSCH_LLR_STATS].p_time / (1000.0),
+          ue->phy_cpu_stats.cpu_time_stats[DLSCH_LAYER_DEMAPPING].p_time / (1000.0));
   }
 
 #if T_TRACER

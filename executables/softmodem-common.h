@@ -318,7 +318,6 @@ struct timespec timespec_sub(struct timespec lhs, struct timespec rhs);
 extern uint8_t nfapi_mode;
 extern char *parallel_config;
 extern char *worker_config;
-extern double cpuf;
 
 #ifdef __cplusplus
 }

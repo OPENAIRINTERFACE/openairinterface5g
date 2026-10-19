@@ -27,7 +27,6 @@
 
 
 static char                    *grouptypes[] = {"ltestats","cpustats"};
-static double                  cpufreq;
 extern notifiedFIFO_t          measur_fifo;
 #define TELNET_NUM_MEASURTYPES (sizeof(grouptypes)/sizeof(char *))
 
@@ -62,7 +61,7 @@ void measurcmd_display_cpumeasures(telnet_printfunc_t prnt, telnet_cpumeasurdef_
       {
       prnt("%02d %*s%s%s:  %15.3f us; %15d %s",p,TELNET_MAXMEASURNAME_LEN+7,(cpumeasure+i)->statname,
             stridx(cpumeasure[i].num_occur1,o1,stridx1),stridx(cpumeasure[i].num_occur2,o2,stridx2),
-           ((cpumeasure+i+o1+o2)->astatptr->trials!=0)?(((cpumeasure+i+o1+o2)->astatptr->diff)/((cpumeasure+i+o1+o2)->astatptr->trials))/cpufreq/1000:0,
+           ((cpumeasure+i+o1+o2)->astatptr->trials!=0)?(((cpumeasure+i+o1+o2)->astatptr->diff)/((cpumeasure+i+o1+o2)->astatptr->trials))/1000.0:0,
            (cpumeasure+i+o1+o2)->astatptr->trials, ((p%2)==1)?"|\n":"  | " );
       p++;
       }
@@ -268,5 +267,4 @@ int measurcmd_async(char *buf, int debug, telnet_printfunc_t prnt) {
 /* function called at telnet server init to add the measur command */
 void add_measur_cmds(void) {
   add_telnetcmd("measur",measur_vardef,measur_cmdarray);
-  cpufreq = get_cpu_freq_GHz();
 }

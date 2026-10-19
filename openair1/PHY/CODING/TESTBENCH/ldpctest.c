@@ -646,23 +646,22 @@ int main(int argc, char *argv[])
     printf("SNR %f, Max iterations: %d\n", SNR, dec_iter[i].n_iter_max);
     printf("\n");
 
-    double cpu_freq = get_cpu_freq_GHz();
     time_stats_t *t_optim = &res.time_optim;
-    printf("Encoding time mean: %15.3f us\n", (double)t_optim->diff / t_optim->trials / 1000.0 / cpu_freq);
+    printf("Encoding time mean: %15.3f us\n", (double)t_optim->diff / t_optim->trials / 1000.0);
     printf("Encoding time std: %15.3f us\n",
-           sqrt((double)t_optim->diff_square / t_optim->trials / pow(1000, 2) / pow(cpu_freq, 2)
-                - pow((double)t_optim->diff / t_optim->trials / 1000.0 / cpu_freq, 2)));
-    printf("Encoding time max: %15.3f us\n", (double)t_optim->max / 1000.0 / cpu_freq);
+           sqrt((double)t_optim->diff_square / t_optim->trials / pow(1000, 2)
+                - pow((double)t_optim->diff / t_optim->trials / 1000.0, 2)));
+    printf("Encoding time max: %15.3f us\n", (double)t_optim->max / 1000.0);
     printf("\n");
 
     time_stats_t *t_decoder = &res.time_decoder;
     if (use32bit)
       printf("use32bit: decoding time mean per segment in average!\n");
-    printf("Decoding time mean: %15.3f us\n", (double)t_decoder->diff / t_decoder->trials / 1000.0 / cpu_freq);
+    printf("Decoding time mean: %15.3f us\n", (double)t_decoder->diff / t_decoder->trials / 1000.0);
     printf("Decoding time std: %15.3f us\n",
-           sqrt((double)t_decoder->diff_square / t_decoder->trials / pow(1000, 2) / pow(cpu_freq, 2)
-                - pow((double)t_decoder->diff / t_decoder->trials / 1000.0 / cpu_freq, 2)));
-    printf("Decoding time max: %15.3f us\n", (double)t_decoder->max / 1000.0 / cpu_freq);
+           sqrt((double)t_decoder->diff_square / t_decoder->trials / pow(1000, 2)
+                - pow((double)t_decoder->diff / t_decoder->trials / 1000.0, 2)));
+    printf("Decoding time max: %15.3f us\n", (double)t_decoder->max / 1000.0);
 
     fprintf(fd,
             "%f %f %f %f %f %f %f %f %f %f %f %f %d \n",
@@ -670,14 +669,14 @@ int main(int argc, char *argv[])
             (double)decoded_errors[i] / (double)n_trials,
             (double)res.errors_bit / (double)n_trials / (double)Kprime / (double)n_segments,
             res.errors_bit_uncoded / (double)n_trials / (double)n_segments,
-            (double)t_optim->diff / t_optim->trials / 1000.0 / cpu_freq,
-            sqrt((double)t_optim->diff_square / t_optim->trials / pow(1000, 2) / pow(cpu_freq, 2)
-                 - pow((double)t_optim->diff / t_optim->trials / 1000.0 / cpu_freq, 2)),
-            (double)t_optim->max / 1000.0 / cpu_freq,
-            (double)t_decoder->diff / t_decoder->trials / 1000.0 / cpu_freq,
-            sqrt((double)t_decoder->diff_square / t_decoder->trials / pow(1000, 2) / pow(cpu_freq, 2)
-                 - pow((double)t_decoder->diff / t_decoder->trials / 1000.0 / cpu_freq, 2)),
-            (double)t_decoder->max / 1000.0 / cpu_freq,
+            (double)t_optim->diff / t_optim->trials / 1000.0 ,
+            sqrt((double)t_optim->diff_square / t_optim->trials / pow(1000, 2)
+                 - pow((double)t_optim->diff / t_optim->trials / 1000.0, 2)),
+            (double)t_optim->max / 1000.0,
+            (double)t_decoder->diff / t_decoder->trials / 1000.0,
+            sqrt((double)t_decoder->diff_square / t_decoder->trials / pow(1000, 2)
+                 - pow((double)t_decoder->diff / t_decoder->trials / 1000.0, 2)),
+            (double)t_decoder->max / 1000.0,
             dec_iter[i].n_iter_mean,
             dec_iter[i].n_iter_std,
             dec_iter[i].n_iter_max);

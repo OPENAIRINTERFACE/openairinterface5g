@@ -50,9 +50,6 @@ static telnet_measurgroupdef_t nrUEmeasurgroups[] = {
 #define TELNET_NUM_NRUEMEASURGROUPS (sizeof(nrUEmeasurgroups)/sizeof(telnet_measurgroupdef_t))
 
 
-static double                  cpufreq;
-
-
 #define HDR "---------------------------------"
 
 
@@ -73,8 +70,7 @@ void measurcmd_display_phycpu(telnet_printfunc_t prnt) {
     cpumeasur[i].num_occur2 = 0;
     cpumeasur[i].num_occur3 = 0;
   }
-  prnt("%s cpu (%1.1g GHz) measurements: PHY (cpustats %s) %s\n",HDR,cpufreq,
-       PRINT_CPUMEAS_STATE,HDR);
+  prnt("%s cpu measurements: PHY (cpustats %s) %s\n", HDR, PRINT_CPUMEAS_STATE, HDR);
   measurcmd_display_cpumeasures(prnt, cpumeasur, sizeof(cpumeasur)/sizeof(telnet_cpumeasurdef_t));
 }
 void measurcmd_display_phyta(telnet_printfunc_t prnt)

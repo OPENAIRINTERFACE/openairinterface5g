@@ -34,8 +34,7 @@ const char *__asan_default_options()
   return "detect_leaks=0";
 }
 
-double cpuf;
-#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
+#define inMicroS(a) (((double)(a))/(1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
 #include <openair1/SIMULATION/LTE_PHY/common_sim.h>
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -333,7 +332,6 @@ int main(int argc, char **argv) {
   static uint8_t tdd_config=3,frame_type=FDD;
   static int N0=30;
   static double tx_gain=1.0;
-  double cpu_freq_GHz;
   int iter_trials;
   uint32_t UL_alloc_pdu;
   int dump_perf=0;
@@ -355,10 +353,7 @@ int main(int argc, char **argv) {
   memset((void *)&TX_req,0,sizeof(TX_req));
   UL_req.ul_config_request_body.ul_config_pdu_list = ul_config_pdu_list;
   TX_req.tx_request_body.tx_pdu_list = tx_pdu_list;
-  cpu_freq_GHz = (double)get_cpu_freq_GHz();
-  cpuf = cpu_freq_GHz;
   set_parallel_conf("PARALLEL_SINGLE_THREAD");
-  printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
   uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY);
   AssertFatal(uniqCfg != NULL, "Cannot load configuration module, exiting\n");
   logInit();
@@ -1281,7 +1276,7 @@ int main(int argc, char **argv) {
               round_trials[2],
               errs[3],
               round_trials[3]);
-      double timeBase=1/(1000*cpu_freq_GHz);
+      double timeBase = 1e-3;
 
       if (dump_perf==1) {
         printf("UE TX function statistics (per 1ms subframe)\n\n");

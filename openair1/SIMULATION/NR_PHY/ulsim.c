@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <bits/getopt_core.h>
 #include "common/utils/nr/nr_common.h"
-#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
+#define inMicroS(a) (((double)(a))/(1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 #include "common/utils/assertions.h"
 #include "executables/softmodem-common.h"
@@ -89,7 +89,6 @@ RAN_CONTEXT_t RC;
 char *uecap_file;
 int64_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-double cpuf;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
@@ -180,7 +179,6 @@ int main(int argc, char *argv[])
   int start_rb = 0;
   int UE_id = 0;
   int print_perf = 0;
-  cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
   bool uci_on_pusch = false;
   bool no_phase_pre_comp = false;

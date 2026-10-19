@@ -51,7 +51,6 @@ NR_IF_Module_t *NR_IF_Module_init(int Mod_id) { return (NULL); }
 nfapi_mode_t nfapi_getmode(void) { return NFAPI_MODE_UNKNOWN; }
 
 uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
-double cpuf;
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
@@ -113,8 +112,6 @@ int main(int argc, char **argv)
   uint8_t mcs_table = 0;
 
   double DS_TDL = .03;
-
-  cpuf = get_cpu_freq_GHz();
 
   if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_ULSCHSIM] Error, configuration module init failed\n");

@@ -77,7 +77,6 @@ int64_t         uplink_frequency_offset[MAX_NUM_CCs][4];
 uint64_t        sidelink_frequency[MAX_NUM_CCs][4];
 
 // UE and OAI config variables
-double            cpuf;
 
 int create_tasks_nrue(uint32_t ue_nb) {
   LOG_D(NR_RRC, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
@@ -248,7 +247,6 @@ int main(int argc, char **argv)
     LOG_W(UTIL,
           "no SYS_NICE capability: cannot set thread priority and affinity, consider running with sudo for optimum performance\n");
 
-  cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, tasks_info);
 
   init_opt();

@@ -125,8 +125,6 @@ eth_params_t *eth_params;
 
 openair0_config_t openair0_cfg_g[MAX_CARDS] = {};
 
-double cpuf;
-
 extern char uecap_xer[1024];
 char uecap_xer_in=0;
 
@@ -458,7 +456,6 @@ int main( int argc, char **argv ) {
   T_Config_Init();
 #endif
   set_taus_seed (0);
-  cpuf=get_cpu_freq_GHz();
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
 
@@ -509,8 +506,6 @@ int main( int argc, char **argv ) {
     }
   } else init_openair0(frame_parms[0],(int)rx_gain[0][0]);
 
-
-  cpuf=get_cpu_freq_GHz();
 
   if (create_tasks_ue(NB_UE_INST) < 0) {
     printf("cannot create ITTI tasks\n");

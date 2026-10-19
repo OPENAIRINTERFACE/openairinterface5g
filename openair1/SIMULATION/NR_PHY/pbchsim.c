@@ -39,8 +39,6 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int64_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-double cpuf;
-
 // needed for some functions
 openair0_config_t openair0_cfg_g[MAX_CARDS] = {};
 
@@ -147,8 +145,6 @@ int main(int argc, char **argv)
   int loglvl=OAILOG_WARNING;
 
   float target_error_rate = 0.01;
-
-  cpuf = get_cpu_freq_GHz();
 
   if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_PBCHSIM] Error, configuration module init failed\n");

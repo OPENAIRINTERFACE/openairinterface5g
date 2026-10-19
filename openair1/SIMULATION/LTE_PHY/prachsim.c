@@ -23,8 +23,6 @@ PHY_VARS_UE *UE;
 
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
-double cpuf;
-
 void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 int main(int argc, char **argv) {
@@ -63,7 +61,6 @@ int main(int argc, char **argv) {
   double ue_speed = 0;
   int NCS_config = 1,rootSequenceIndex=0;
   int threequarter_fs = 0;
-  cpuf = get_cpu_freq_GHz();
   logInit();
   number_of_cards = 1;
 
