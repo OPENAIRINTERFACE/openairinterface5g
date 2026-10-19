@@ -17,7 +17,6 @@
 
 import cls_oaicitest		 #main class for OAI CI test framework
 import cls_containerize	 #class Containerize for all container-based operations on RAN/UE objects
-import cls_static_code_analysis as SCA
 import cls_cluster		 # class for building/deploying on cluster
 import cls_native        # class for all native/source-based operations
 from cls_ci_helper import TestCaseCtx
@@ -169,9 +168,6 @@ def ExecuteActionWithParam(action, test, ctx, node, oc):
 				# Do not create a working directory when running locally. Current repo directory will be used
 				return True
 			success = cls_containerize.Containerize.Create_Workspace(ctx, node, HTML)
-
-	elif action == 'LicenceAndFormattingCheck':
-		success = SCA.StaticCodeAnalysis.LicenceAndFormattingCheck(ctx, node, HTML)
 
 	elif action == 'Push_Local_Registry':
 		tag_prefix = test.findtext('tag_prefix') or ""
