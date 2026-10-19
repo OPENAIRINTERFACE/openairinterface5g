@@ -24,7 +24,9 @@ The `vrtsim` architecture follows a server-client model:
 
 # Limitations
 
- - Only 1gNB to 1nrUE: gNB as a server, UE as a client.
+- 1 gNB supports multiple nrUEs (gNB as a server, UEs as clients), 
+- UEs limited to what the system can support in terms of real-time 
+  processing requirements.
 
 # Usage
 
@@ -103,3 +105,51 @@ Example:
 ```
 
 Samples in bin 0 indicate realtime issues.
+
+
+# Multi-UE Demo
+ 
+Each UE can have different antenna configurations. 
+Antenna offset multiplexing handles UL combining and DL distribution across UEs.
+
+For a demo on how to run multiple UEs with channel models see:
+https://gitlab.eurecom.fr/oai/raytracing-channel-emulator/-/blob/develop/server/external_taps/README.md?ref_type=heads 
+
+## Build VRTSIM
+```bash
+cd openairinterface
+cmake -B build -GNinja  # the other options you have are not really required
+cmake --build build --target vrtsim rfsimulator nr-softmodem nr-uesoftmodem ldpc params_yaml params_libconfig -j"$(nproc)" # also -j not necessarily required
+```
+
+## Start 5G core network
+```bash
+cd oai-cn5g
+docker compose up -d
+```
+ 
+### Create network namespaces
+```bash
+sudo ip netns add ue0
+sudo ip netns add ue1
+```
+ 
+## Start gNB (e.g. 2x1 and 2x2 multi-UE)
+
+On the gNB, set the number of UEs with `vrtsim.num_ues`. 
+
+```bash
+sudo ./nr-softmodem -O ../ci-scripts/conf_files/gnb.sa.band78.106prb.vrtsim.2x2.yaml \
+  --device.name vrtsim --vrtsim.num_ues 2
+```
+
+On each UE, select its slot with `vrtsim.ue_id` and match the antenna counts
+configured on the gNB.
+
+```bash
+sudo ip netns exec ue0 ./nr-uesoftmodem -O ../ci-scripts/conf_files/nrue.vrtsim.chanmod.yaml -C 3319680000 \
+  --device.name vrtsim --vrtsim.ue_id 0 --ue-nb-ant-tx 2 --ue-nb-ant-rx 2
+
+sudo ip netns exec ue1 ./nr-uesoftmodem -O ../ci-scripts/conf_files/nrue.vrtsim.chanmod.yaml -C 3319680000 \
+  --device.name vrtsim --vrtsim.ue_id 1 --ue-nb-ant-tx 1 --ue-nb-ant-rx 2
+```
