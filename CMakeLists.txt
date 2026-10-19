@@ -633,10 +633,9 @@ target_link_libraries(CONFIG_LIB PRIVATE config_internals dl UTIL)
 
 # CONFIG_LIB is a wrapper around a particular config implementation, default is
 # libconfig in params_libconfig below
-pkg_check_modules(libconfig REQUIRED libconfig)
+pkg_check_modules(libconfig REQUIRED IMPORTED_TARGET libconfig)
 add_library(params_libconfig MODULE ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c)
-target_include_directories(params_libconfig PRIVATE ${libconfig_INCLUDE_DIRS})
-target_link_libraries(params_libconfig PRIVATE config_internals ${libconfig_LIBRARIES})
+target_link_libraries(params_libconfig PRIVATE config_internals PkgConfig::libconfig)
 
 # shared library loader
 add_library(shlib_loader OBJECT common/utils/load_module_shlib.c)
@@ -740,10 +739,10 @@ add_library(UTIL
   ${OPENAIR2_DIR}/UTIL/OPT/probe.c
 )
 
-pkg_check_modules(cap libcap)
+pkg_check_modules(cap IMPORTED_TARGET libcap)
 if (cap_FOUND)
   # see system.c for more info
-  target_link_libraries(UTIL PRIVATE cap)
+  target_link_libraries(UTIL PRIVATE PkgConfig::cap)
   target_compile_definitions(UTIL PRIVATE HAVE_LIB_CAP)
 endif()
 target_link_libraries(UTIL PUBLIC ${T_LIB} pthread LOG thread-pool utils barrier actor)
@@ -768,10 +767,10 @@ set(SECURITY_SRC
   ${OPENAIR3_DIR}/SECU/nas_stream_eia2.c
   )
 
-pkg_check_modules(OpenSSL openssl REQUIRED)
+pkg_check_modules(OpenSSL REQUIRED IMPORTED_TARGET openssl)
 add_library(SECURITY ${SECURITY_SRC} $<TARGET_OBJECTS:ds>)
 target_include_directories(SECURITY PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
-target_link_libraries(SECURITY PRIVATE ${OpenSSL_LIBRARIES})
+target_link_libraries(SECURITY PRIVATE PkgConfig::OpenSSL)
 
 # Physical Channel Procedures Scheduling
 ################################"
@@ -1387,7 +1386,7 @@ add_library(e1_if
   ${NR_RRC_DIR}/cucp_cuup_e1ap.c
   )
 
-target_link_libraries(e1_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs asn1_f1ap SECURITY ${OPENSSL_LIBRARIES} e1ap GTPV1U)
+target_link_libraries(e1_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs asn1_f1ap SECURITY PkgConfig::OpenSSL e1ap GTPV1U)
 
 target_link_libraries(L2_NR PRIVATE f1ap x2ap s1ap ngap nr_rrc e1ap nr_rlc nr_common xnap)
 target_compile_definitions(L2_NR PRIVATE PDCP_CUCP_CUUP)
