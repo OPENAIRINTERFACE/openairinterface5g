@@ -1990,15 +1990,6 @@ target_link_libraries(nr-uesoftmodem PRIVATE
 #  pthread m rt CONFIG_LIB ${T_LIB}
 #  )
 
-add_executable(rftest
-  ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_test.c
-  ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_scope.c
-)
-target_link_libraries(rftest PRIVATE
-  minimal_lib PHY_NR_COMMON UTIL forms pthread dl m ${T_LIB}
-  radio_common softmodem_common)
-target_link_libraries(rftest PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
-
 add_executable(polartest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
   )
