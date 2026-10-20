@@ -319,7 +319,26 @@ int phy_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind)
    * messages from queue into which messages have been copied.
    * TODO we should have different callbacks for received messages and call
    * into the scheduler separately for each message instead of one big one. */
-  NR_UL_IND_t ul_ind = {.frame = ind->sfn, .slot = ind->slot, };
+#define INIT_UL_IND(X, FIELD, SFN, SLOT) \
+    do {                                 \
+      (X).sfn = SFN;                     \
+      (X).slot = SLOT;                   \
+      (X).FIELD = 0;                     \
+    } while (0)
+  // Intentionally not zero-initialized: each indication fills only its used PDUs.
+  NR_UL_IND_t ul_ind;
+  ul_ind.frame = ind->sfn;
+  ul_ind.slot = ind->slot;
+  ul_ind.phy_id = 0;
+  ul_ind.module_id = 0;
+  INIT_UL_IND(ul_ind.crc_ind, number_crcs, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.rx_ind, number_of_pdus, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.rach_ind, number_of_pdus, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.srs_ind, number_of_pdus, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.uci_ind, num_ucis, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.srs_toa_vendor_ext_ind, num_ta, ind->sfn, ind->slot);
+
+  // the callback is picking up messages from queues
   ifi->NR_UL_indication(&ul_ind);
 
   return 1;
