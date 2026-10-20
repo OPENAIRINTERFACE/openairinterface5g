@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <arpa/inet.h> // ntohs()
 #include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "NR_CellGroupConfig.h"

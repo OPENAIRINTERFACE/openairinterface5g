@@ -4,7 +4,7 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <nr_pdcp/nr_pdcp.h>
+#include "LAYER2/nr_pdcp/nr_pdcp.h"
 #include <softmodem-common.h>
 #include <nr-softmodem.h>
 
@@ -14,10 +14,9 @@
 
 #include "common/utils/LOG/log.h"
 
-#include "x2ap_eNB.h"
+#include "openair2/X2AP/x2ap_eNB.h"
 #include "intertask_interface.h"
-#include "ngap_gNB.h"
-#include "sctp_eNB_task.h"
+#include "openair3/NGAP/ngap_gNB.h"
 #include "openair3/ocp-gtpu/gtp_itf.h"
 #include "PHY/INIT/phy_init.h" 
 #include "f1ap_du_task.h"

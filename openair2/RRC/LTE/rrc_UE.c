@@ -46,7 +46,7 @@
 
 #include "openair3/SECU/key_nas_deriver.h"
 
-#include "pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "plmn_data.h"
 #include <common/utils/system.h>
 

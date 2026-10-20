@@ -10,7 +10,6 @@
 #include "nfapi_interface.h"
 #include "nfapi_nr_interface_scf.h"
 #include "nfapi_nr_interface.h"
-#include "openair2/PHY_INTERFACE/queue_t.h"
 
 #include "debug.h"
 

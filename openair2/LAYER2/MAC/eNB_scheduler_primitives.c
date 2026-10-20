@@ -21,7 +21,6 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
-#include "pdcp.h"
 
 #include "intertask_interface.h"
 #include "executables/softmodem-common.h"

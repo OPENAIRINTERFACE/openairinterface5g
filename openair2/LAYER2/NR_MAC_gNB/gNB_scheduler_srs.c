@@ -9,8 +9,8 @@
  */
 
 #include <softmodem-common.h>
-#include "NR_MAC_gNB/nr_mac_gNB.h"
-#include "NR_MAC_gNB/mac_proto.h"
+#include "nr_mac_gNB.h"
+#include "mac_proto.h"
 #include "common/ran_context.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/nr/nr_common.h"

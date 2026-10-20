@@ -6,6 +6,7 @@
 #define GTPV1_U_MESSAGES_TYPES_H_
 
 #include <stdint.h>
+#include <netinet/in.h>
 #include "common/platform_types.h"
 
 #define LTE_GTPV1U_MAX_BEARERS_PER_UE 32 // same as LTE ASN.1 def max_val_LTE_DRB_Identity

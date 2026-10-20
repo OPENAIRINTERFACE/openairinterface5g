@@ -13,12 +13,12 @@
 #include "f1ap_messages_types.h"
 #include "F1AP_F1AP-PDU.h"
 
-#include "lib/f1ap_lib_common.h"
-#include "lib/f1ap_rrc_message_transfer.h"
-#include "lib/f1ap_interface_management.h"
-#include "lib/f1ap_ue_context.h"
-#include "lib/f1ap_positioning.h"
-#include "lib/f1ap_paging.h"
+#include "f1ap_lib_common.h"
+#include "f1ap_rrc_message_transfer.h"
+#include "f1ap_interface_management.h"
+#include "f1ap_ue_context.h"
+#include "f1ap_positioning.h"
+#include "f1ap_paging.h"
 
 void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
 {

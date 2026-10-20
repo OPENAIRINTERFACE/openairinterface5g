@@ -7,7 +7,6 @@
 #include "common/config/config_userapi.h"
 #include "RRC_nr_paramsvalues.h"
 #include "gnb_paramdef.h"
-#include "sctp_default_values.h"
 
 uint16_t set_snssai_config(nssai_t *nssai, const int max_num_ssi, uint8_t k, uint8_t l)
 {

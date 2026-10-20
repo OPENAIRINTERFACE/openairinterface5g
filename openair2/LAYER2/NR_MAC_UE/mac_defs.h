@@ -17,7 +17,7 @@
 #include "common/utils/threadPool/notified_fifo.h"
 
 /* IF */
-#include "NR_IF_Module.h"
+#include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 #include "fapi_nr_ue_interface.h"
 
 /* MAC */

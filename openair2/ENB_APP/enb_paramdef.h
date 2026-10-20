@@ -10,7 +10,7 @@
 #define ENB_PARAMDEF_H_
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
-#include "s1ap_eNB_default_values.h"
+#include "openair3/S1AP/s1ap_eNB_default_values.h"
 
 #ifdef LIBCONFIG_LONG
   #define libconfig_int long

@@ -17,7 +17,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "GNB_APP/gnb_config.h"
 #include "NR_MIB.h"
-#include "NR_MAC_gNB/nr_mac_gNB.h"
+#include "nr_mac_gNB.h"
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_MIB.h"

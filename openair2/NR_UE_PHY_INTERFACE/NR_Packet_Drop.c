@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "openair2/NR_UE_PHY_INTERFACE/NR_Packet_Drop.h"
 #include "executables/softmodem-common.h"
-#include "NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 
 nr_bler_struct nr_bler_data[NR_NUM_MCS];

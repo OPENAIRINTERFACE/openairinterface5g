@@ -9,9 +9,8 @@
 # include "common/ran_context.h"
 
   #include "sctp_eNB_task.h"
-  #include "x2ap_eNB.h"
-  #include "s1ap_eNB.h"
-  #include "openair3/ocp-gtpu/gtp_itf.h"
+  #include "openair2/X2AP/x2ap_eNB.h"
+  #include "openair3/S1AP/s1ap_eNB.h"
   #include "RRC/LTE/rrc_defs.h"
 # include "enb_app.h"
 # include "openair2/LAYER2/MAC/mac_proto.h"

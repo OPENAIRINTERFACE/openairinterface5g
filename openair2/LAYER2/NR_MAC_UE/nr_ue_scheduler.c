@@ -14,9 +14,9 @@
 #include <common/utils/nr/nr_common.h>
 
 /* MAC */
-#include "NR_MAC_COMMON/nr_mac.h"
-#include "NR_MAC_COMMON/nr_mac_common.h"
-#include "NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 /* utils */
 #include "assertions.h"

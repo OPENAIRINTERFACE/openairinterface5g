@@ -26,7 +26,7 @@
 #endif
 
 #include "LAYER2/MAC/mac.h"
-#include "rrc_proto.h"
+#include "openair2/RRC/LTE/rrc_proto.h"
 #include "common/utils/LOG/log.h"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"

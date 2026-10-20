@@ -11,7 +11,6 @@
 #include "rrc_extern.h"
 #include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
-#include "pdcp.h"
 #include "common/ran_context.h"
 #include "uper_encoder.h"
 

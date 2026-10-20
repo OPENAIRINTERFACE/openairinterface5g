@@ -45,7 +45,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "create_tasks.h"
 
-#include "pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 
 #include "PHY/INIT/phy_init.h"
 

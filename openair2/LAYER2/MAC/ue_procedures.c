@@ -24,7 +24,7 @@
 #include "UTIL/OPT/opt.h"
 #include "openair2/PHY_INTERFACE/phy_stub_UE.h"
 
-#include "pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "executables/lte-softmodem.h"
 
 #include "intertask_interface.h"

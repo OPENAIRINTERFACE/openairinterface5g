@@ -11,7 +11,7 @@
 
 #include <LTE_DRX-Config.h>
 #include "OCTET_STRING.h"
-#include "NR_MAC_gNB/mac_config.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_config.h"
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.

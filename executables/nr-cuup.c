@@ -13,7 +13,7 @@
 #include "openair2/F1AP/f1ap_common.h"
 #include "openair2/F1AP/f1ap_ids.h"
 #include "openair2/GNB_APP/gnb_config.h"
-#include "nr_pdcp/nr_pdcp_oai_api.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "common/utils/time_manager/time_manager.h"
 
 RAN_CONTEXT_t RC;

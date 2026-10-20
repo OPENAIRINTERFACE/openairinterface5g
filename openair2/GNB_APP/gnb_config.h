@@ -11,7 +11,7 @@
 #include "common/ngran_types.h"
 #include "f1ap_messages_types.h"
 #include "intertask_interface.h"
-#include "NR_MAC_gNB/nr_mac_gNB.h"
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 
 void RCconfig_verify(configmodule_interface_t *cfg, ngran_node_t node_type);
 void RCconfig_nr_prs(void);

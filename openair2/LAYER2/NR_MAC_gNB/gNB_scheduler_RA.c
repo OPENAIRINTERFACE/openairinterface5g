@@ -10,7 +10,7 @@
 
 /* MAC */
 #include "nr_mac_gNB.h"
-#include "NR_MAC_gNB/mac_proto.h"
+#include "mac_proto.h"
 #include "openair2/COMMON/mac_messages_types.h"
 
 /* Utils */
