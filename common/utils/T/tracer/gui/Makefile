@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-CSSL-1.0
 
 CC=gcc
-CFLAGS=-Wall -g -pthread -I/usr/include/X11/Xft -I/usr/include/freetype2
+CFLAGS=-Wall -Wunused-parameter -g -pthread -I/usr/include/X11/Xft -I/usr/include/freetype2
 
 OBJS=init.o loop.o toplevel_window.o x.o container.o widget.o \
      gui.o label.o textarea.o event.o xy_plot.o textlist.o notify.o \

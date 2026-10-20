@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "gui_defs.h"
 #include "x.h"
+#include "../utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,7 @@ static void paint(gui *_gui, widget *_w)
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)
 {
+  UNUSED(_gui);
   struct label_widget *l = _w;
   LOGD("HINTS label '%s'\n", l->t);
   *width = l->width;
@@ -53,6 +55,7 @@ widget *new_label(gui *_gui, const char *label)
 static void button(gui *gui, widget *_this, int x, int y,
     int key_modifiers, int button, int up)
 {
+  UNUSED(key_modifiers);
   LOGD("BUTTON label %p xy %d %d button %d up %d\n", _this, x, y, button, up);
 
   if (up != 0) return;
@@ -64,6 +67,13 @@ static void button(gui *gui, widget *_this, int x, int y,
 static void no_button(gui *gui, widget *_this, int x, int y,
     int key_modifiers, int button, int up)
 {
+  UNUSED(gui);
+  UNUSED(_this);
+  UNUSED(x);
+  UNUSED(y);
+  UNUSED(key_modifiers);
+  UNUSED(button);
+  UNUSED(up);
   /* do nothing */
 }
 

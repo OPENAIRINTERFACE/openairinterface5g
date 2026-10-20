@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "gui_defs.h"
 #include "x.h"
+#include "../utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -26,6 +27,7 @@ static void repack(gui *g, widget *_this)
 
 static void add_child(gui *_gui, widget *_this, widget *child, int position)
 {
+  UNUSED(position);
   LOGD("ADD_CHILD toplevel_window\n");
   struct widget *this = _this;
   if (this->children != NULL) {
@@ -39,6 +41,8 @@ static void add_child(gui *_gui, widget *_this, widget *child, int position)
 static void allocate(
     gui *_gui, widget *_this, int x, int y, int width, int height)
 {
+  UNUSED(x);
+  UNUSED(y);
   LOGD("ALLOCATE toplevel_window\n");
   struct toplevel_window_widget *this = _this;
   this->common.width = width;
