@@ -948,8 +948,12 @@ static void handle_srs(fsn_t now,
   srs_indication->timing_advance_offset = srs_est >= 0 ? timing_advance_offset : 0xFFFF;
   // TODO: currently we fill timing_advance_offset_nsec for antenna 0. Need to extend it for other antennas
   srs_indication->timing_advance_offset_nsec = srs_est >= 0 ? timing_advance_offset_nsec[0] : 0x8000;
+  srs_indication->srs_usage = NFAPI_NR_SRS_BEAMMANAGEMENT;
   switch (srs_pdu->srs_parameters_v4.usage) {
     case 0:
+      srs_indication->report_type = 0;
+      srs_indication->report_tlv.tag = 0;
+      srs_indication->report_tlv.length = 0;
       LOG_W(NR_PHY, "SRS report was not requested by MAC\n");
       return;
     case 1 << NFAPI_NR_SRS_BEAMMANAGEMENT:
@@ -1049,6 +1053,7 @@ static void handle_pucch(PHY_VARS_gNB *gNB, c16_t **rxdataF, const NR_gNB_PUCCH_
       uci->pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
       uci->pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
       nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu_format0 = &uci->pucch_pdu_format_0_1;
+      uci_pdu_format0->handle = 0;
       start_meas(&gNB->pucch01_proc_rx);
       nr_decode_pucch0(gNB, rxdataF, pucch->frame, pucch->slot, uci_pdu_format0, pucch_pdu);
       stop_meas(&gNB->pucch01_proc_rx);
@@ -1057,6 +1062,9 @@ static void handle_pucch(PHY_VARS_gNB *gNB, c16_t **rxdataF, const NR_gNB_PUCCH_
       uci->pdu_type = NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE;
       uci->pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_2_3_4_t);
       nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu_format2 = &uci->pucch_pdu_format_2_3_4;
+      uci_pdu_format2->csi_part2.csi_part2_crc = 0;
+      uci_pdu_format2->csi_part2.csi_part2_bit_len = 0;
+      uci_pdu_format2->csi_part2.csi_part2_payload = NULL;
       start_meas(&gNB->pucch23_proc_rx);
       nr_decode_pucch2(gNB, rxdataF, pucch->frame, pucch->slot, uci_pdu_format2, pucch_pdu);
       stop_meas(&gNB->pucch23_proc_rx);
@@ -1313,6 +1321,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, N
 
   int slot_type = nr_slot_select(&gNB->gNB_config, frame_rx, slot_rx);
   START_MEAS_FULL_SLOT(&gNB->phy_proc_rx, slot_type, NR_UPLINK_SLOT);
+  UL_INFO->uci_ind.header.transmit_timestamp = 0;
   UL_INFO->uci_ind.uci_list = UL_INFO->uci_pdu_list;
   UL_INFO->uci_ind.sfn = frame_rx;
   UL_INFO->uci_ind.slot = slot_rx;
@@ -1329,12 +1338,16 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, N
   }
 
 
+  UL_INFO->crc_ind.header.transmit_timestamp = 0;
   UL_INFO->crc_ind.sfn = frame_rx;
   UL_INFO->crc_ind.slot = slot_rx;
   UL_INFO->crc_ind.crc_list = UL_INFO->crc_pdu_list;
+  UL_INFO->crc_ind.number_crcs = 0;
+  UL_INFO->rx_ind.header.transmit_timestamp = 0;
   UL_INFO->rx_ind.sfn = frame_rx;
   UL_INFO->rx_ind.slot = slot_rx;
   UL_INFO->rx_ind.pdu_list = UL_INFO->rx_pdu_list;
+  UL_INFO->rx_ind.number_of_pdus = 0;
   int ulsch_idx_to_decode[MAX_UL_PDUS_PER_SLOT];
   int num_pusch = 0;
 
@@ -1386,10 +1399,17 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, N
     STOP_MEAS_FULL_SLOT(&gNB->ulsch_decoding_stats, slot_type, NR_UPLINK_SLOT);
   }
 
+  UL_INFO->srs_ind.header.transmit_timestamp = 0;
   UL_INFO->srs_ind.sfn = frame_rx;
   UL_INFO->srs_ind.slot = slot_rx;
   UL_INFO->srs_ind.pdu_list = UL_INFO->srs_pdu_list;
   UL_INFO->srs_ind.number_of_pdus = n_srs;
+  UL_INFO->srs_ind.control_length = 0;
+  UL_INFO->srs_toa_vendor_ext_ind.header.transmit_timestamp = 0;
+  UL_INFO->srs_toa_vendor_ext_ind.sfn = frame_rx;
+  UL_INFO->srs_toa_vendor_ext_ind.slot = slot_rx;
+  UL_INFO->srs_toa_vendor_ext_ind.rnti = 0;
+  UL_INFO->srs_toa_vendor_ext_ind.num_ta = 0;
   for (int i = 0; i < n_srs; ++i) {
     start_meas(&gNB->rx_srs_stats);
     handle_srs(now, gNB, &srs[i], &UL_INFO->srs_ind.pdu_list[i], &UL_INFO->srs_toa_vendor_ext_ind);
