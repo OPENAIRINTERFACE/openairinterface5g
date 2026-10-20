@@ -915,6 +915,129 @@ static int _pdn_connectivity_set_pti(esm_data_t *esm_data, int pid, int pti)
     return (RETURNerror);
 }
 
+/* 3GPP TS 23.003 section 9.1: an APN is at most 100 octets, and the dotted
+   form of a label-encoded one is never longer than the encoding. */
+#define PDN_APN_NI_MAX 101
+
+/****************************************************************************
+ **                                                                        **
+ ** Name:    _pdn_connectivity_apn_labelled()                          **
+ **                                                                        **
+ ** Description: true if the APN is in the label encoding of 3GPP TS       **
+ **      24.008 section 10.5.6.1 rather than dotted text.          **
+ **                                                                        **
+ **      Decided by walking it, not by looking at the first octet: **
+ **      that octet is the first label's length, and a label may   **
+ **      be up to 63 octets (TS 23.003 section 9.1), so for an APN **
+ **      whose first label is 32 to 63 characters long it is a     **
+ **      printable character and indistinguishable from text. The  **
+ **      encoding is self-describing, so walk it instead - a       **
+ **      dotted name cannot consume itself exactly.                **
+ **                                                                        **
+ ***************************************************************************/
+static bool _pdn_connectivity_apn_labelled(const uint8_t *value, size_t length)
+{
+    size_t i = 0;
+
+    while (i < length) {
+        size_t label = value[i];
+
+        /* A label is 1 to 63 octets and must not run past the end
+         * (3GPP TS 23.003 section 9.1). */
+        if ((label == 0) || (label > 63) || (i + 1 + label > length)) {
+            return false;
+        }
+
+        i += 1 + label;
+    }
+
+    return (length > 0) && (i == length);
+}
+
+/****************************************************************************
+ **                                                                        **
+ ** Name:    _pdn_connectivity_apn_ni()                                **
+ **                                                                        **
+ ** Description: Writes the APN Network Identifier of the given APN as a   **
+ **      lower-case, dot-separated, NUL-terminated string.         **
+ **                                                                        **
+ **      Accepts either form this file sees: the label encoding    **
+ **      the network sends (3GPP TS 24.008 section 10.5.6.1) and   **
+ **      the dotted text AT+CGDCONT supplies. Any APN Operator     **
+ **      Identifier - "mnc<MNC>.mcc<MCC>.gprs", 3GPP TS 23.003     **
+ **      section 9.1.2 - is dropped, since the network appends it  **
+ **      to the name the UE asked for and it is the same APN.      **
+ **                                                                        **
+ ***************************************************************************/
+static void _pdn_connectivity_apn_ni(const uint8_t *value, size_t length,
+                                     char *out, size_t out_size)
+{
+    size_t n = 0;
+    size_t i;
+    char *mcc;
+    char *mnc;
+
+    if (out_size == 0) {
+        return;
+    }
+
+    if (_pdn_connectivity_apn_labelled(value, length)) {
+        /* Label form: every label is preceded by its length. */
+        i = 0;
+
+        while (i < length) {
+            size_t label = value[i];
+            size_t j;
+
+            if ((label == 0) || (i + 1 + label > length)) {
+                break;
+            }
+
+            if ((n != 0) && (n + 1 < out_size)) {
+                out[n++] = '.';
+            }
+
+            for (j = 0; (j < label) && (n + 1 < out_size); j++) {
+                out[n++] = tolower(value[i + 1 + j]);
+            }
+
+            i += 1 + label;
+        }
+    } else {
+        for (i = 0; (i < length) && (n + 1 < out_size); i++) {
+            out[n++] = tolower(value[i]);
+        }
+    }
+
+    out[n] = '\0';
+
+    /* Drop the Operator Identifier, and only a whole one. Each step is undone
+     * if the next does not hold, so an APN that merely ends in "gprs" is
+     * returned unchanged. */
+    if ((n <= 5) || (strcmp(out + n - 5, ".gprs") != 0)) {
+        return;
+    }
+
+    out[n - 5] = '\0';
+    mcc = strrchr(out, '.');
+
+    if ((mcc == NULL) || (strncmp(mcc + 1, "mcc", 3) != 0)) {
+        out[n - 5] = '.';
+        return;
+    }
+
+    *mcc = '\0';
+    mnc = strrchr(out, '.');
+
+    if ((mnc == NULL) || (strncmp(mnc + 1, "mnc", 3) != 0)) {
+        *mcc = '.';
+        out[n - 5] = '.';
+        return;
+    }
+
+    *mnc = '\0';
+}
+
 /****************************************************************************
  **                                                                        **
  ** Name:    _pdn_connectivity_find_apn()                              **
@@ -933,15 +1056,19 @@ static int _pdn_connectivity_set_pti(esm_data_t *esm_data, int pid, int pti)
 static int _pdn_connectivity_find_apn(esm_data_t *esm_data, const OctetString *apn)
 {
     int i;
+    /* Network Identifiers, not names: see _pdn_connectivity_apn_ni(). */
+    char wanted[PDN_APN_NI_MAX];
+    char defined[PDN_APN_NI_MAX];
+
+    _pdn_connectivity_apn_ni(apn->value, apn->length, wanted, sizeof(wanted));
 
     for (i = 0; i < ESM_DATA_PDN_MAX; i++) {
         if ( (esm_data->pdn[i].pid != -1) && esm_data->pdn[i].data ) {
-            if (esm_data->pdn[i].data->apn.length != apn->length) {
-                continue;
-            }
+            _pdn_connectivity_apn_ni(esm_data->pdn[i].data->apn.value,
+                                     esm_data->pdn[i].data->apn.length,
+                                     defined, sizeof(defined));
 
-            if (memcmp(esm_data->pdn[i].data->apn.value,
-                       apn->value, apn->length) != 0) {
+            if (strcmp(wanted, defined) != 0) {
                 continue;
             }
 
@@ -974,6 +1101,13 @@ static int _pdn_connectivity_find_pdn(esm_data_t *esm_data, const OctetString *a
                                       const esm_proc_pdn_type_t pdn_type)
 {
     int i;
+    /* The name the network returned carries an APN Operator Identifier this UE
+       never asked for, so both sides are compared as Network Identifiers: see
+       _pdn_connectivity_apn_ni(). */
+    char granted[PDN_APN_NI_MAX];
+    char defined[PDN_APN_NI_MAX];
+
+    _pdn_connectivity_apn_ni(apn->value, apn->length, granted, sizeof(granted));
 
     for (i = 0; i < ESM_DATA_PDN_MAX; i++) {
         if ( (esm_data->pdn[i].pid != -1) && esm_data->pdn[i].data ) {
@@ -983,12 +1117,11 @@ static int _pdn_connectivity_find_pdn(esm_data_t *esm_data, const OctetString *a
             }
 
             /* Subsequent PDN connection established for the specified APN */
-            if (esm_data->pdn[i].data->apn.length != apn->length) {
-                continue;
-            }
+            _pdn_connectivity_apn_ni(esm_data->pdn[i].data->apn.value,
+                                     esm_data->pdn[i].data->apn.length,
+                                     defined, sizeof(defined));
 
-            if (memcmp(esm_data->pdn[i].data->apn.value,
-                       apn->value, apn->length) != 0) {
+            if (strcmp(granted, defined) != 0) {
                 continue;
             }
 
