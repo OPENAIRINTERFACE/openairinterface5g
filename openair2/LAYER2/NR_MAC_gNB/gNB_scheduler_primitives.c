@@ -3582,7 +3582,7 @@ void nr_csirs_scheduling(gNB_MAC_INST *gNB_mac, nr_cell_sched_t *cell, frame_t f
           int period, offset;
           csi_period_offset(NULL, nzpcsi->periodicityAndOffset, &period, &offset);
 
-          if ((frame * n_slots_frame + slot - offset) % period != 0)
+          if (!is_periodic_occasion(frame, slot, n_slots_frame, period, offset))
             continue;
 
           LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d Resource ID %ld\n", frame, slot, nzpcsi->nzp_CSI_RS_ResourceId);
