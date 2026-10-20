@@ -18,20 +18,18 @@ void nr_ue_tun_create_ip_if(nas_ue_pdu_tun_t *t, const char *ipv4, const char *i
   if (t->sock >= 0)
     return;
 
-  tuntap_generate_ue_ifname(t->ifname, IFF_TUN, ue_id, pdu_session_id);
   t->sock = tuntap_alloc(IFF_TUN, t->ifname);
   tun_config(t->ifname, ipv4, ipv6);
   if (ipv4)
     setup_ue_ipv4_route(t->ifname, ue_id, pdu_session_id, ipv4);
 }
 
-void nr_ue_tun_create_eth_if(nas_ue_pdu_tun_t *t, int ue_id, int pdu_session_id)
+void nr_ue_tun_create_eth_if(nas_ue_pdu_tun_t *t)
 {
   DevAssert(t != NULL);
   if (t->sock >= 0)
     return;
 
-  tuntap_generate_ue_ifname(t->ifname, IFF_TAP, ue_id, pdu_session_id);
   t->sock = tuntap_alloc(IFF_TAP, t->ifname);
   tap_config(t->ifname);
 }

@@ -31,9 +31,6 @@ typedef struct {
   char *opcStr;
   char *amfStr;
   char *sqnStr;
-  char *dnnStr;
-  int  nssai_sst;
-  int  nssai_sd;
   pdu_session_config_t pdu_sessions[256];
   int n_pdu_sessions;
   char *routing_indicatorStr;

@@ -59,7 +59,6 @@ ngran_node_t get_node_type()
 nrUE_params_t *get_nrUE_params(void)
 {
   static nrUE_params_t params = {0};
-  params.extra_pdu_id = -1;
   return &params;
 }
 

@@ -26,9 +26,6 @@ extern uint16_t NB_UE_INST;
       {"opc",                        "USIM OPc\n",                   0, .strptr=&uicc->opcStr,                     .defstrval="c42449363bbad02b66d16bc975d77cc1", TYPE_STRING, 0}, \
       {"amf",                        "USIM amf\n",                   0, .strptr=&uicc->amfStr,                     .defstrval="8000",                             TYPE_STRING, 0}, \
       {"sqn",                        "USIM sqn\n",                   0, .strptr=&uicc->sqnStr,                     .defstrval="000000",                           TYPE_STRING, 0}, \
-      {"dnn",                        "UE dnn (apn)\n",               0, .strptr=&uicc->dnnStr,                     .defstrval="oai",                              TYPE_STRING, 0}, \
-      {"nssai_sst",                  "UE nssai\n",                   0, .iptr=&uicc->nssai_sst,                    .defintval=1,                                  TYPE_INT,    0}, \
-      {"nssai_sd",                   "UE nssai\n",                   0, .iptr=&uicc->nssai_sd,                     .defintval=0xffffff,                           TYPE_INT,    0}, \
       {"imeisv",                     "IMEISV\n",                     0, .strptr=&uicc->imeisvStr,                  .defstrval="6754567890123413",                 TYPE_STRING, 0}, \
       {"routing_indicator", "Routing Indicator\n",                   0, .strptr = &uicc->routing_indicatorStr,     .defstrval="0000",                             TYPE_STRING, 0}, \
       {"protection_scheme", "SUCI Profile Scheme\n",                 0, .iptr = &uicc->protection_scheme,          .defintval=0,                                  TYPE_INT,    0}, \
@@ -98,24 +95,11 @@ uicc_t * checkUicc(int Mod_id) {
     uiccArray[Mod_id]=(void*)init_uicc(uiccName);
     uicc_t *uicc = uiccArray[Mod_id];
     uicc->n_pdu_sessions = get_pdu_session_configs(uiccName, uicc->pdu_sessions, sizeof(uicc->pdu_sessions));
-    if (uicc->n_pdu_sessions > 0) {
-      LOG_I(SIM, "overriding potential %s.dnn/nssai_sst/nssai_sd from %s.pdu_sessions\n", uiccName, uiccName);
-    } else if (uicc->n_pdu_sessions < 0) {
-      // we could not load from "new" pdu_sessions list, so read from "legacy"
-      // config
+    if (uicc->n_pdu_sessions < 0)
       LOG_W(SIM,
-            "loading PDU session parameters from legacy UICC configuration. Please update to use %s.pdu_sessions instead to make this warning disappear\n",
+            "could not load PDU session parameters. Make sure to define %s.pdu_sessions option in config file\n"
+            "for further info, see doc/runmodem-nrue.md\n",
             uiccName);
-      sleep(3);
-      uicc->n_pdu_sessions = 1;
-      pdu_session_config_t *pdu = &uicc->pdu_sessions[0];
-      AssertFatal(uicc->dnnStr != NULL, "no default DNN, cannot create\n");
-      pdu->id = DEFAULT_NOS1_PDU_ID; // any default would do
-      pdu->dnn = strdup(uicc->dnnStr);
-      pdu->nssai.sst = uicc->nssai_sst;
-      pdu->nssai.sd = uicc->nssai_sd;
-      pdu->type = 1; /* = PDU_SESSION_TYPE_IPV4 */
-    } // else: uicc->n_pdu_sessions == 0 => don't request a PDU session
     for (int i = 0; i < uicc->n_pdu_sessions; ++i) {
       const pdu_session_config_t *pdu = &uicc->pdu_sessions[i];
       LOG_I(SIM,

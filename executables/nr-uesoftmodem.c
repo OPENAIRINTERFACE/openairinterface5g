@@ -102,7 +102,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
 
 void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
 {
-  LOG_W(NR_PHY, "called by: %s:%d %s() Exiting OAI softmodem: %s\n", file, line, function, s ? s : "no msg");
+  LOG_W(UTIL, "called by: %s:%d %s() Exiting OAI softmodem: %s\n", file, line, function, s ? s : "no msg");
 
   oai_exit = 1;
 
@@ -134,8 +134,6 @@ static void get_options(configmodule_interface_t *cfg)
   paramdef_t cmdline_params[] = CMDLINE_NRUEPARAMS_DESC;
   int numparams = sizeofArray(cmdline_params);
   config_get(cfg, cmdline_params, numparams, NULL);
-  AssertFatal(nrUE_params.extra_pdu_id == -1,
-              "Add additional PDU sessions in uicc.pdu_sessions array instead\n");
 }
 
 // set PHY vars from command line
