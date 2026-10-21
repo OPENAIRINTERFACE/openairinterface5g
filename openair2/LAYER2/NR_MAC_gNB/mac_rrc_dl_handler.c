@@ -949,9 +949,16 @@ void ue_context_modification_request(const f1ap_ue_context_mod_req_t *req)
   }
 
   /* 3GPP TS 38.473 Clause 8.3.4: If gNB-DU Configuration Query is present, include CellGroupConfig
-   * (CU requested CellGroupConfig for transparent forwarding) */
-  if (req->gNB_DU_Configuration_Query != NULL && *req->gNB_DU_Configuration_Query) {
-    LOG_I(NR_MAC, "UE %04x: gNB-DU Configuration Query received, will include CellGroupConfig in response\n", UE->rnti);
+   * (CU requested CellGroupConfig for transparent forwarding), or when SRB/DRB/cap change needs an
+   * RLC update. */
+  const bool query = req->gNB_DU_Configuration_Query != NULL && *req->gNB_DU_Configuration_Query;
+  const bool nrdc_mcg_drb_rel_only = req->drbs_rel_len == 1 && req->srbs_len == 0 && req->drbs_len == 0
+                                     && req->cu_to_du_rrc_info == NULL && req->rrc_container == NULL;
+  const bool has_bearer_or_cap = req->srbs_len > 0 || req->drbs_len > 0 || req->drbs_rel_len > 0 || ue_cap != NULL;
+  const bool include_cgc = query || (has_bearer_or_cap && !nrdc_mcg_drb_rel_only);
+
+  if (include_cgc) {
+    LOG_I(NR_MAC, "UE %04x: include CellGroupConfig in DU to CU transfer IE (query %d)\n", UE->rnti, query);
 
     if (UE->reestablish_rlc) {
       update_cellgroup_for_reestablishment(UE, new_CellGroup);
@@ -974,8 +981,7 @@ void ue_context_modification_request(const f1ap_ue_context_mod_req_t *req)
      * This hack has to be removed in the future. (No other solution
      * was found.)
      */
-    if (req->drbs_rel_len == 1 && req->srbs_len == 0 && req->drbs_len == 0
-        && req->cu_to_du_rrc_info == NULL && req->rrc_container == NULL) {
+    if (nrdc_mcg_drb_rel_only) {
       /* remove the RLC from UE->CellGroup->rlc_BearerToAddModList */
       long lcid = get_lcid_from_drbid(req->drbs_rel[0].id);
       LOG_I(NR_MAC, "NR-DC hack: remove RLC lcid %ld from UE cell group config\n", lcid);
