@@ -75,6 +75,7 @@ static int cg_config_info_from_ue_cap_file(uint32_t maxlen, uint8_t buf[maxlen])
 
     uint8_t *buf = NULL;
     int sizebuf = uper_encode_to_new_buffer(&asn_DEF_NR_UE_NR_Capability, NULL, cap, (void **)&buf);
+    DevAssert(sizebuf > 0);
     NR_UE_CapabilityRAT_Container_t *cont = calloc_or_fail(1, sizeof(*cont));
     cont->rat_Type = NR_RAT_Type_nr;
     cont->ue_CapabilityRAT_Container.buf = buf;
@@ -82,7 +83,9 @@ static int cg_config_info_from_ue_cap_file(uint32_t maxlen, uint8_t buf[maxlen])
     NR_UE_CapabilityRAT_ContainerList_t *clist = calloc_or_fail(1, sizeof(*clist));
     asn1cSeqAdd(&clist->list, cont);
     list_buf = calloc_or_fail(1, sizeof(*list_buf));
-    list_buf->size = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList, NULL, clist, (void **)&list_buf->buf);
+    ssize_t encoded = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList, NULL, clist, (void **)&list_buf->buf);
+    DevAssert(encoded > 0);
+    list_buf->size = encoded;
     ASN_STRUCT_FREE(asn_DEF_NR_UE_CapabilityRAT_ContainerList, clist);
   }
 
@@ -406,16 +409,14 @@ static NR_CG_Config_t *generate_CG_Config(const NR_RRCReconfiguration_t *reconfi
   NR_CG_Config_IEs_t *cgc_ie = calloc_or_fail(1, sizeof(*cgc_ie));
   cg_Config->criticalExtensions.choice.c1->choice.cg_Config = cgc_ie;
   cgc_ie->scg_CellGroupConfig = calloc_or_fail(1, sizeof(*cgc_ie->scg_CellGroupConfig));
-  cgc_ie->scg_CellGroupConfig->size =
-      uper_encode_to_new_buffer(&asn_DEF_NR_RRCReconfiguration, NULL, reconfig, (void **)&cgc_ie->scg_CellGroupConfig->buf);
-  AssertFatal(cgc_ie->scg_CellGroupConfig->size > 0,
-              "ASN1 message encoding of RRCReconfiguration failed (%ld)!\n",
-              cgc_ie->scg_CellGroupConfig->size);
+  ssize_t encoded = uper_encode_to_new_buffer(&asn_DEF_NR_RRCReconfiguration, NULL, reconfig, (void **)&cgc_ie->scg_CellGroupConfig->buf);
+  AssertFatal(encoded > 0, "ASN1 message encoding of RRCReconfiguration failed (%ld)!\n", encoded);
+  cgc_ie->scg_CellGroupConfig->size = encoded;
 
   cgc_ie->scg_RB_Config = calloc_or_fail(1, sizeof(*cgc_ie->scg_RB_Config));
-  cgc_ie->scg_RB_Config->size =
-      uper_encode_to_new_buffer(&asn_DEF_NR_RadioBearerConfig, NULL, rbconfig, (void **)&cgc_ie->scg_RB_Config->buf);
-  AssertFatal(cgc_ie->scg_RB_Config->size > 0, "ASN1 message encoding failed (%ld)!\n", cgc_ie->scg_RB_Config->size);
+  encoded = uper_encode_to_new_buffer(&asn_DEF_NR_RadioBearerConfig, NULL, rbconfig, (void **)&cgc_ie->scg_RB_Config->buf);
+  AssertFatal(encoded > 0, "ASN1 message encoding failed (%ld)!\n", encoded);
+  cgc_ie->scg_RB_Config->size = encoded;
 
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra > 0) {
     // This is for phytest only, emulate first X2 message if uecap.raw file is present
