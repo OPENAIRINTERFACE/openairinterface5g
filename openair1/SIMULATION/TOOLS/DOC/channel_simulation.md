@@ -73,8 +73,8 @@ channelmod = {
     {
       model_name     = "rfsimu_channel_enB0"
       type           = "AWGN";
-      ploss_dB       = 20;
-      noise_power_dB = -4;
+      ploss_dB       = 0;
+      noise_power_dB = -14;
       forgetfact     = 0;
       offset         = 0;
       ds_tdl         = 0;
@@ -82,8 +82,8 @@ channelmod = {
     {
       model_name     = "rfsimu_channel_ue0"
       type           = "AWGN";
-      ploss_dB       = 20;
-      noise_power_dB = -2;
+      ploss_dB       = 0;
+      noise_power_dB = -12;
       forgetfact     = 0;
       offset         = 0;
       ds_tdl         = 0;
@@ -103,12 +103,12 @@ The server could be either the UE or the gNB, the channel name suffix does not d
 How simulate noise of a AWGN channel? Starting from the configuration file in the previous section, in the `rfsimu_channel_enB0` model part, set the noise power to:
 
 ```bash
-  noise_power_dB  = -10
+  noise_power_dB  = -20
 ```
 
 In the `rfsimu_channel_ue0` model part, set the noise power to:
 ```bash
-  noise_power_dB  = -20;
+  noise_power_dB  = -30;
 ```
 
 and the rest of the `channelmod_rfsimu.conf` remains unchanged.
@@ -162,13 +162,13 @@ Several model lists can be defined in the OAI channel simulation configuration f
 |:---             |:---:        |---:       |:----       |
 | `model_name`    |char string  | mandatory |name of the model, as used in the code to retrieve a model definition.|
 | `type`          |char string  | `AWGN`    |name of the channel modelization algorithm applied on RF signal. The list of available models is defined in [`sim.h`](../sim.h]|
-| `ploss_dB`      |real (float) |          0|total path loss of the channel including shadow fading, in dB |
+| `ploss_dB`      |real (float) |          0|net coupling loss of the link in dB: propagation losses (including shadow fading) minus TX/RX antenna gains. Positive values attenuate the signal; a negative value is a net gain |
 | `noise_power_dB`|real (double)|        -50|Noise power in dB, used to compute the SNR. Its value is proportional to the noise added.|
 | `forgetfact`    |real (double)|          0|Forgetting factor, allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time|
 | `offset`        |integer      |          0|channel offset for accessing the input signal, in samples|
 | `ds_tdl`        |real double  |          0|delay spread for TDL models|
 
-`ploss_dB` and `noise_power_dB` are applied to each IQ sample in order to scale the received signal.
+`ploss_dB` and `noise_power_dB` are applied to each IQ sample in order to scale the received signal: the signal amplitude is multiplied by `10^(-ploss_dB/20)` and white Gaussian noise of standard deviation `256 * 10^(noise_power_dB/10)` is added. Increasing `ploss_dB` by 1 dB lowers the SNR by 1 dB; increasing `noise_power_dB` by 1 dB lowers it by 2 dB.
 
 Example usage, set the offset for the selected model of the selected `modellist`:
 ```bash
@@ -236,7 +236,7 @@ Where `<param>` in the `channelmod modify` command can be:
 |`riceanf`       |double|0 to 1   |Ricean factor, of first tap w.r.t. other taps (where 0 means AWGN and 1 means Rayleigh channel)|
 |`aoa`           |double|0 to 2*Pi|Angle of arrival of wavefront (in radians). For Ricean channel only. This assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. Also it is assumed that the arrays are parallel to each other and that they are far enough apart so that we can safely assume plane wave propagation.      |
 |`randaoa`       |bool  |0 or 1   |randomized angle of arrival according to a uniform random distribution|
-|`ploss`         |double|-        |same as ploss_dB in [Model lists](#model-lists)|
+|`ploss`         |double|-        |same as ploss_dB in [Model lists](#model-lists) (coupling loss in dB, positive = attenuation)|
 |`noise_power_dB`|int   |-        |same as noise_power_dB in [Model lists](#model-lists)|
 |`forgetf`       |double|0 to 1   |same as forgetfact in [Model lists](#model-lists)|
 

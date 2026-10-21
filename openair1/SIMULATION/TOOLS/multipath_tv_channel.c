@@ -21,11 +21,11 @@ void multipath_tv_channel(channel_desc_t *desc,
 {
 
   double complex **tx,**rx,***H_t;
-  double path_loss = pow(10,desc->path_loss_dB/20);
+  double path_gain = pow(10, -desc->path_loss_dB / 20);
   int i,j;
   uint64_t dd = desc->channel_offset;
 #ifdef DEBUG_CH
-  printf("[TV CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %lu, len %d max_doppler %g\n",keep_channel,path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length,
+  printf("[TV CHANNEL] keep = %d : path_gain = %g (path_loss_dB %f), nb_rx %d, nb_tx %d, dd %lu, len %d max_doppler %g\n",keep_channel,path_gain,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length,
          desc->max_Doppler);
 #endif
   tx = (double complex **)malloc(desc->nb_tx*sizeof(double complex *));
@@ -68,8 +68,8 @@ void multipath_tv_channel(channel_desc_t *desc,
 
   for(i=0; i<desc->nb_rx; i++) {
     for(j=0; j<length; j++) {
-      rx_sig_re[i][j] = creal(rx[i][j])*path_loss;
-      rx_sig_im[i][j] = cimag(rx[i][j])*path_loss;
+      rx_sig_re[i][j] = creal(rx[i][j])*path_gain;
+      rx_sig_im[i][j] = cimag(rx[i][j])*path_gain;
     }
   }
 

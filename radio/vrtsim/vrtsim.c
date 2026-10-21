@@ -826,13 +826,13 @@ static int vrtsim_write_with_chanmod(vrtsim_state_t *vrtsim_state,
     cf_t *channel_impulse_response_p[nb_rx * nb_tx] __attribute__((aligned(32)));
     int channel_index = 0;
     if (!vrtsim_state->taps_socket && !vrtsim_state->use_cirdb) {
-      const float pathloss_linear = powf(10, chan_desc->path_loss_dB / 20.0);
+      const float path_gain_linear = powf(10, -chan_desc->path_loss_dB / 20.0);
       for (int aarx = 0; aarx < nb_rx; aarx++) {
         for (int aatx = 0; aatx < nb_tx; aatx++) {
           const cf_t *channelModel = chan_desc->ch_ps[aarx + (aatx * chan_desc->nb_rx)];
           for (int i = 0; i < channel_length; i++) {
-            channel_impulse_response[channel_index][i].r = channelModel[i].r * pathloss_linear;
-            channel_impulse_response[channel_index][i].i = channelModel[i].i * pathloss_linear;
+            channel_impulse_response[channel_index][i].r = channelModel[i].r * path_gain_linear;
+            channel_impulse_response[channel_index][i].i = channelModel[i].i * path_gain_linear;
           }
           channel_impulse_response_p[channel_index] = channel_impulse_response[channel_index];
           channel_index++;
