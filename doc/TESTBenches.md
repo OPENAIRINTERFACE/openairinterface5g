@@ -90,7 +90,6 @@ please also refer to the [dedicated documentation](../docker/README.md).
     https://github.com/duranta-project/openairinterface5g/labels/nrUE
     https://github.com/duranta-project/openairinterface5g/labels/O-RU
   - Images:
-    - run formatting check from [`Dockerfile.formatting.ubuntu`](../ci-scripts/docker/Dockerfile.formatting.ubuntu)
     - base image from [`Dockerfile.base.ubuntu`](../docker/Dockerfile.base.ubuntu)
     - build image from [`Dockerfile.build.ubuntu`](../docker/Dockerfile.build.ubuntu), followed by
       - target image from [`Dockerfile.eNB.ubuntu`](../docker/Dockerfile.eNB.ubuntu)
