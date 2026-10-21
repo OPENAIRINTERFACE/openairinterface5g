@@ -8,7 +8,7 @@
 
 #include "PHY/defs_nr_UE.h"
 #include "NR_IF_Module.h"
-#include "NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include "assertions.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 #include "bits.h"

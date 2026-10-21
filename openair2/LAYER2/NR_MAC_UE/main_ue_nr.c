@@ -7,7 +7,7 @@
 #include "radio/COMMON/common_lib.h"
 #include "assertions.h"
 #include "executables/nr-uesoftmodem.h"
-#include "nr_rlc/nr_rlc_oai_api.h"
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "RRC/NR_UE/rrc_proto.h"
 #include <pthread.h>
 static NR_UE_MAC_INST_t *nr_ue_mac_inst[MAX_NUM_NR_UE_INST] = {0};

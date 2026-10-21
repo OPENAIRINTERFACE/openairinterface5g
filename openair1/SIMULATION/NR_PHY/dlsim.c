@@ -23,9 +23,6 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_BWP-Downlink.h"
 #include "NR_CellGroupConfig.h"
-#include "NR_MAC_COMMON/nr_mac.h"
-#include "NR_MAC_COMMON/nr_mac_common.h"
-#include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_ReconfigurationWithSync.h"
 #include "NR_ServingCellConfig.h"
 #include "NR_SetupRelease.h"
@@ -68,7 +65,7 @@
 #include "thread-pool.h"
 #include "time_meas.h"
 #include "utils.h"
-#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
+#define inMicroS(a) (((double)(a))/(1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 
 #ifdef CHANNEL_SIM_CUDA
@@ -87,7 +84,6 @@ PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int64_t uplink_frequency_offset[MAX_NUM_CCs][4];
-double cpuf;
 char *uecap_file;
 
 //uint8_t nfapi_mode = 0;
@@ -421,7 +417,6 @@ int main(int argc, char **argv)
   int loglvl=OAILOG_WARNING;
 
   //float target_error_rate = 0.01;
-  cpuf = get_cpu_freq_GHz();
   int8_t enable_ptrs = 0;
   int8_t modify_dmrs = 0;
 

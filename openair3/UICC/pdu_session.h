@@ -12,6 +12,7 @@ typedef struct {
   int type;
   nssai_t nssai;
   char *dnn; // [103]?
+  char *ifname;
 } pdu_session_config_t;
 
 int get_pdu_session_configs(const char *uiccName, pdu_session_config_t *configs, int max_len);

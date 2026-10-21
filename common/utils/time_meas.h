@@ -16,7 +16,6 @@
 #include <linux/types.h>
 // global var to enable openair performance profiler
 extern int cpu_meas_enabled;
-extern double cpu_freq_GHz  __attribute__ ((aligned(32)));
 // structure to store data to compute cpu measurment
 #if defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__aarch64__)
   typedef long long oai_cputime_t;
@@ -169,12 +168,10 @@ typedef struct time_stats {
   int meas_flag;                                   /*!< \brief 1: stop_meas not called (consecutive calls of start_meas) */
   char *meas_name;                                 /*!< \brief name to use when printing the measure (not used for PHY simulators)*/
   int meas_index;                                  /*!< \brief index of this measure in the measure array (not used for PHY simulators)*/
-  int meas_enabled;                                /*!< \brief per measure enablement flag. send_meas tests this flag, unused today in start_meas and stop_meas*/
   struct notifiedFIFO_elt_s *tpoolmsg;             /*!< \brief message pushed to the cpu measurment queue to report a measure START or STOP */
   time_stats_msg_t *tstatptr;                      /*!< \brief pointer to the time_stats_msg_t data in the tpoolmsg, stored here for perf considerations */
   time_stats_sorted_list_t time_stats_sorted_list; /*!< \brief optional sorted list to get med, q1, q2 */
 } time_stats_t;
-#define MEASURE_ENABLED(X)       (X->meas_enabled)
 
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
 static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
@@ -198,7 +195,6 @@ size_t print_meas_log(time_stats_t *ts,
                       char *output,
                       size_t outputlen);
 double get_time_meas_us(time_stats_t *ts);
-double get_cpu_freq_GHz(void);
 
 #if defined(__i386__)
 static inline unsigned long long rdtsc_oai(void) __attribute__((always_inline));
@@ -242,7 +238,7 @@ static inline long long clock_gettime_oai()
 #else
   clock_gettime(CLOCK_REALTIME, &time);
 #endif
-  return 1e+9 * time.tv_sec + time.tv_nsec;
+  return 1000000000LL * time.tv_sec + time.tv_nsec;
 }
 
 #define CPUMEAS_DISABLE  0
@@ -354,16 +350,6 @@ static inline void free_sorted_list_meas(time_stats_t *ts)
 // clang-format on
 
 void init_meas(void);
-time_stats_t *register_meas(char *name);
-#define START_MEAS(X) send_meas(X, TIMESTAT_MSGID_START)
-#define STOP_MEAS(X)  send_meas(X, TIMESTAT_MSGID_STOP)
-void send_meas(time_stats_t *ts, int msgid);
 void end_meas(void);
 
-#define timeIt(a)                                           \
-  {                                                         \
-    uint64_t deb = clock_gettime_oai();                             \
-    a;                                                      \
-    LOG_W(UTIL, #a ": %llu\n", (clock_gettime_oai() - deb) / 3000); \
-  }
 #endif

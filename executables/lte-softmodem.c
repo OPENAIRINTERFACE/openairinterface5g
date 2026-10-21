@@ -45,7 +45,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "create_tasks.h"
 
-#include "pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 
 #include "PHY/INIT/phy_init.h"
 
@@ -118,9 +118,6 @@ int numerology = 0;
 THREAD_STRUCT thread_struct;
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
-
-double cpuf;
-
 
 /* hardcoded into gtp_itf.cpp */
 bool sdap_data_req(protocol_ctxt_t *ctxt_p,
@@ -395,7 +392,6 @@ int main ( int argc, char **argv )
   set_taus_seed (0);
   printf("configuring for RAU/RRU\n");
 
-  cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n", !IS_SOFTMODEM_NOS1);
   itti_init(TASK_MAX, tasks_info);
 

@@ -14,7 +14,7 @@
 #include "common/utils/T/T.h"
 #include "gtpv1_u_messages_types.h"
 #include "intertask_interface.h"
-#include "rlc.h"
+#include "openair2/LAYER2/RLC/rlc.h"
 #include "nr_sdap.h"
 #include "tuntap_if.h"
 #include "utils.h"

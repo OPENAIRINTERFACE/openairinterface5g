@@ -220,8 +220,12 @@ static int add_pdu_session(char *buf, int debug, telnet_printfunc_t prnt)
     ERROR_MSG_RET("No NAS context found for UE_ID %d\n", ue_id);
 
   DevAssert(nas->uicc);
-  nssai_t nssai = {nas->uicc->nssai_sst, nas->uicc->nssai_sd};
-  pdu_session_config_t c = {pdusession_id, 1 /* = PDU_SESSION_TYPE_IPV4 */, nssai, nas->uicc->dnnStr};
+  if (nas->uicc->n_pdu_sessions == 0)
+    ERROR_MSG_RET("no existing PDU session: no NSSAI info available, reject request\n");
+
+  const pdu_session_config_t *pdu = &nas->uicc->pdu_sessions[0];
+  nssai_t nssai = {pdu->nssai.sst, pdu->nssai.sd};
+  pdu_session_config_t c = {pdusession_id, 1 /* = PDU_SESSION_TYPE_IPV4 */, nssai, pdu->dnn};
   nas->uicc->pdu_sessions[nas->uicc->n_pdu_sessions++] = c;
   request_pdusession(nas, &c);
   prnt("Triggered PDU session request for UE %d with ID %d\n", ue_id, pdusession_id);

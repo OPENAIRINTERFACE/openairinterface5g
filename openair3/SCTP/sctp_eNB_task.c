@@ -1014,6 +1014,7 @@ static void sctp_eNB_process_itti_msg()
 //------------------------------------------------------------------------------
 void *sctp_eNB_task(void *arg)
 {
+  UNUSED(arg);
     sctp_eNB_init();
 
     while (1) {

@@ -42,7 +42,6 @@ RAN_CONTEXT_t RC;
 int64_t uplink_frequency_offset[MAX_NUM_CCs][4];
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
-double cpuf;
 uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 // needed for some functions
 static softmodem_params_t softmodem_params;
@@ -133,7 +132,6 @@ int main(int argc, char **argv)
   int loglvl = OAILOG_WARNING;
   int sr_flag = 0;
   int pucch_DTX_thres = 0;
-  cpuf = get_cpu_freq_GHz();
   bool print_perf = false;
 
   if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {

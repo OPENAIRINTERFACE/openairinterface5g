@@ -25,8 +25,6 @@ PHY_VARS_UE *UE;
 
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
-double cpuf;
-
 int main(int argc, char **argv) {
   int i,l,aa;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
@@ -68,7 +66,6 @@ int main(int argc, char **argv) {
   uint16_t n3_pucch = 20;
   uint16_t n_rnti=0x1234;
   number_of_cards = 1;
-  cpuf = get_cpu_freq_GHz();
 
   int c;
   while ((c = getopt (argc, argv, "har:pf:g:n:s:S:x:y:z:N:F:T:R:")) != -1) {

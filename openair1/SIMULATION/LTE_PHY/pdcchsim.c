@@ -29,8 +29,6 @@ PHY_VARS_UE *UE;
 #define CCCH_RB_ALLOC computeRIV(eNB->frame_parms.N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC ((uint16_t)0x1fbf) // igore DC component,RB13
 
-double cpuf;
-
 DCI_PDU DCI_pdu;
 
 DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2Lcommon, DCI_format_t format_selector[MAX_NUM_DCI], uint8_t num_dci, uint32_t rnti) {
@@ -404,7 +402,6 @@ int main(int argc, char **argv) {
   uint32_t perfect_ce = 0;
   int CCE_table[800];
   number_of_cards = 1;
-  cpuf = get_cpu_freq_GHz();
   logInit();
 
   int c;

@@ -7,7 +7,7 @@
  */
 
 #include "nr_mac_gNB.h"
-#include "NR_MAC_gNB/mac_proto.h"
+#include "mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "executables/nr-softmodem.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"

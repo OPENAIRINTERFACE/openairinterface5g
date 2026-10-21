@@ -22,8 +22,8 @@
 #include "s1ap_eNB_ue_context.h"
 #include "oai_asn1.h"
 #include "intertask_interface.h"
-#include "pdcp.h"
-#include "pdcp_primitives.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp_primitives.h"
 
 #include "LTE_UERadioAccessCapabilityInformation.h"
 #include "uper_encoder.h"

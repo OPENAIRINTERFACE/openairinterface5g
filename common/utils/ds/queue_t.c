@@ -5,14 +5,10 @@
 #include "queue_t.h"
 #include <string.h>
 #include <assert.h>
-
-#ifdef UNITTEST
 #include <stdio.h>
-#define LOG_ERROR(MSG) printf(MSG "\n")
-#else
-#include "common/utils/LOG/log.h"
-#define LOG_ERROR(MSG) LOG_E(PHY, MSG "\n")
-#endif
+#include <stdlib.h>
+
+#define LOG_ERROR(MSG) fprintf(stderr, MSG "\n")
 
 void init_queue(queue_t *q)
 {

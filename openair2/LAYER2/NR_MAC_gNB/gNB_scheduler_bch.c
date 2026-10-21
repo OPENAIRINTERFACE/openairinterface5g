@@ -7,8 +7,8 @@
  */
 
 #include "assertions.h"
-#include "NR_MAC_gNB/nr_mac_gNB.h"
-#include "NR_MAC_gNB/mac_proto.h"
+#include "nr_mac_gNB.h"
+#include "mac_proto.h"
 #include "common/utils/LOG/log.h"
 #include "UTIL/OPT/opt.h"
 #include "common/utils/nr/nr_common.h"
@@ -527,7 +527,7 @@ struct NR_SchedulingInfo2_r17 *find_sib19_sched_info(const struct NR_SI_Scheduli
 static void other_sib_sched_control(nr_cell_sched_t *cell,
                                     frame_t frame,
                                     slot_t slot,
-                                    int beam_index,
+                                    int ssb_index,
                                     NR_SearchSpace_t *ss,
                                     nfapi_nr_dl_tti_request_t *DL_req,
                                     nfapi_nr_tx_data_request_t *TX_req,
@@ -538,15 +538,14 @@ static void other_sib_sched_control(nr_cell_sched_t *cell,
               slot);
   NR_ServingCellConfigCommon_t *scc = cell->common_channels.ServingCellConfigCommon;
   int n_slots_frame = cell->frame_structure.numb_slots_frame;
-  beam_index = get_beam_from_ssbidx(cell, beam_index);
-  int ssb_index = get_ssbidx_from_beam(cell, beam_index);
+  int beam_index = get_beam_from_ssbidx(cell, ssb_index);
   NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = &cell->type0_PDCCH_CSS_config[ssb_index];
   if (type0_PDCCH_CSS_config->num_rbs == 0) {
     return;
   }
   NR_beam_alloc_t beam = beam_allocation_procedure(&cell->beam_info, frame, slot, beam_index, n_slots_frame);
-  AssertFatal(beam.idx >= 0, "Cannot allocate otherSIB corresponding for SSB number %d in any available beam\n", beam_index);
-  LOG_D(NR_MAC, "(%d.%d) otherSIB payload %d transmission for ssb number %d\n", frame, slot, payload_idx, beam_index);
+  AssertFatal(beam.idx >= 0, "Cannot allocate otherSIB corresponding for SSB index %d in any available beam\n", ssb_index);
+  LOG_D(NR_MAC, "(%d.%d) otherSIB payload %d transmission for SSB index %d\n", frame, slot, payload_idx, ssb_index);
 
   NR_COMMON_channels_t *cc = &cell->common_channels;
   NR_PDSCH_ConfigCommon_t *pdsch_ConfigCommon = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup;
@@ -736,7 +735,7 @@ void schedule_nr_other_sib(nr_cell_sched_t *cell,
                                         rel_slot[ssb]))
         continue;
 
-      other_sib_sched_control(cell, frame, slot, ssb, ss, DL_req, TX_req, 0);
+      other_sib_sched_control(cell, frame, slot, cc->ssb_index[ssb], ss, DL_req, TX_req, 0);
     }
     if (!schedInfo17)
       continue;
@@ -752,7 +751,7 @@ void schedule_nr_other_sib(nr_cell_sched_t *cell,
                                         rel_slot[ssb]))
         continue;
 
-      other_sib_sched_control(cell, frame, slot, ssb, ss, DL_req, TX_req, 1);
+      other_sib_sched_control(cell, frame, slot, cc->ssb_index[ssb], ss, DL_req, TX_req, 1);
     }
   }
 }

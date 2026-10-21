@@ -53,6 +53,14 @@ static void rotate_add_cpx_vector_ref(const c16_t *x, c16_t alpha, c16_t *y, uin
   }
 }
 
+// On aarch64, rotate_cpx_vector() rounds for output_shift == 15 (NEON vqrdmulh/vqrshrn), while
+// rotate_add_cpx_vector() truncates like the reference above, so the two can differ by 1 LSB there.
+#ifdef __aarch64__
+static const int rotate_q15_tolerance = 1;
+#else
+static const int rotate_q15_tolerance = 0;
+#endif
+
 static AlignedVector512<c16_t> small_c16(size_t num, int16_t base)
 {
   AlignedVector512<c16_t> vec;
@@ -127,7 +135,8 @@ TEST(RotateAddCpxVector, SaturatesInsteadOfWrapping)
   }
 }
 
-// Equivalence with rotate_cpx_vector(): accumulating onto zero must be bit-identical to overwrite.
+// Equivalence with rotate_cpx_vector(): accumulating onto zero must match overwrite (bit-identical
+// except for the aarch64 rounding difference, see rotate_q15_tolerance).
 TEST(RotateAddCpxVector, EquivalentToRotateWhenStartingFromZero)
 {
   const int N = 37; // spans the SIMD tier and the scalar tail
@@ -142,8 +151,8 @@ TEST(RotateAddCpxVector, EquivalentToRotateWhenStartingFromZero)
   rotate_cpx_vector(x.data(), alpha, y_overwrite.data(), N, shift);
 
   for (int i = 0; i < N; i++) {
-    EXPECT_EQ(y_fused[i].r, y_overwrite[i].r) << "index " << i;
-    EXPECT_EQ(y_fused[i].i, y_overwrite[i].i) << "index " << i;
+    EXPECT_NEAR(y_fused[i].r, y_overwrite[i].r, rotate_q15_tolerance) << "index " << i;
+    EXPECT_NEAR(y_fused[i].i, y_overwrite[i].i, rotate_q15_tolerance) << "index " << i;
   }
 }
 
@@ -165,8 +174,8 @@ TEST(RotateAddCpxVector, EquivalentToRotateThenAdd)
   add_cpx_vector(term.data(), y_twopass.data(), N);
 
   for (int i = 0; i < N; i++) {
-    EXPECT_EQ(y_fused[i].r, y_twopass[i].r) << "index " << i;
-    EXPECT_EQ(y_fused[i].i, y_twopass[i].i) << "index " << i;
+    EXPECT_NEAR(y_fused[i].r, y_twopass[i].r, rotate_q15_tolerance) << "index " << i;
+    EXPECT_NEAR(y_fused[i].i, y_twopass[i].i, rotate_q15_tolerance) << "index " << i;
   }
 }
 

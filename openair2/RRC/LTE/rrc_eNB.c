@@ -31,7 +31,7 @@
 #include "LTE_TDD-Config.h"
 #include "LTE_HandoverPreparationInformation.h"
 #include "LTE_HandoverCommand.h"
-#include "rlc.h"
+#include "openair2/LAYER2/RLC/rlc.h"
 #include "rrc_eNB_UE_context.h"
 #include "common/platform_types.h"
 #include "LTE_SL-CommConfig-r12.h"
@@ -51,7 +51,6 @@
 #include "NR_RadioBearerConfig.c"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "x2ap_eNB.h"
 
 #include "T.h"
 #include "LTE_MeasResults.h"
@@ -62,7 +61,7 @@
 #include "rrc_eNB_GTPV1U.h"
 #include "rrc_eNB_M2AP.h"
 
-#include "pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "openair3/SECU/key_nas_deriver.h"
 #include "openair3/SECU/secu_defs.h"
 #include "openair3/ocp-gtpu/gtp_itf.h"

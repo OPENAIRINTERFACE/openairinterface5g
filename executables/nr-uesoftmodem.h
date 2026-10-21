@@ -32,7 +32,6 @@ extern uint16_t ue_id_g;
 #define CONFIG_HLP_ACTOR_AFFINITY                                                                                          \
   "Comma-separated cores for DL then UL actors (and SYNC if one spare). Must have at least num-dl-actors + num-ul-actors " \
   "entries; omit for no affinity\n"
-#define  CONFIG_HLP_EXTRA_PDU_ID           "ID of an additional PDU session to configure alongside default PDU session\n"
 #define  CONFIG_HLP_DISABLE_BLIND_SEARCH   "Disable blind search for UE searches by neighboring cells\n"
 #define  CONFIG_HLP_RX2TX                  "Defines ue capability in slots to produce an UL feedback from its relative DL meassage (DCI->ULSCH or PDSCH->PUCCH)"
 
@@ -84,7 +83,6 @@ extern uint16_t ue_id_g;
   {"num-ul-actors",                CONFIG_HLP_NUM_UL_ACTORS,   0,               .iptr=&nrUE_params.num_ul_actors,            .defintval=2,      TYPE_INT,      0}, \
   {"num-dl-actors",                CONFIG_HLP_NUM_DL_ACTORS,   0,               .iptr=&nrUE_params.num_dl_actors,            .defintval=4,      TYPE_INT,      0}, \
   {"actor-affinity",               CONFIG_HLP_ACTOR_AFFINITY,  0,               .strptr=&nrUE_params.actor_affinity,         .defstrval=NULL,   TYPE_STRING,   0}, \
-  {"extra-pdu-id",                 CONFIG_HLP_EXTRA_PDU_ID,    0,               .iptr=&nrUE_params.extra_pdu_id,             .defintval=-1,     TYPE_INT,      0}, \
   {"disable-blind-search",         CONFIG_HLP_DISABLE_BLIND_SEARCH, PARAMFLAG_BOOL, .iptr=&nrUE_params.disable_blind_search, .defintval=0,      TYPE_INT,      0}, \
   {"ue-capability-rx2tx",          CONFIG_HLP_RX2TX,           0,               .iptr=&nrUE_params.ue_capability_rx2tx,      .defintval=3,      TYPE_INT,      0}, \
 }
@@ -129,7 +127,6 @@ typedef struct {
   int num_dl_actors;
   /* Shared core pool for actors (see --actor-affinity). NULL means leave them unpinned. */
   char *actor_affinity;
-  int extra_pdu_id;
   int disable_blind_search;
   int ue_capability_rx2tx;
 } nrUE_params_t;

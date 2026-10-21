@@ -2,8 +2,8 @@
  * SPDX-License-Identifier: LicenseRef-CSSL-1.0
  */
 
+#include "assertions.h"
 #include "nr_rlc_asn1_utils.h"
-#include "rlc.h"
 #include "nr_rlc_configuration.h"
 
 #define ENCODE_DECODE(a, b)                         \

@@ -21,7 +21,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
-#include "pdcp.h"
+#include "LAYER2/PDCP_v10.1.0/pdcp.h"
 
 /* for fair round robin SCHED */
 #include "eNB_scheduler_fairRR.h"

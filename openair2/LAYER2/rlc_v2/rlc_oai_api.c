@@ -3,8 +3,8 @@
  */
 
 /* from openair */
-#include "rlc.h"
-#include "pdcp.h"
+#include "openair2/LAYER2/RLC/rlc.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 
 /* from new rlc module */
 #include "rlc_asn1_utils.h"

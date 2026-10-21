@@ -14,9 +14,9 @@
 #include <common/utils/nr/nr_common.h>
 
 /* MAC */
-#include "NR_MAC_COMMON/nr_mac.h"
-#include "NR_MAC_COMMON/nr_mac_common.h"
-#include "NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 
 /* utils */
 #include "assertions.h"
@@ -1082,11 +1082,13 @@ static bool nr_ue_periodic_srs_scheduling(NR_UE_MAC_INST_t *mac, frame_t frame, 
     }
 
     uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
-    uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
+    int offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
+    if (offset < 0)
+      continue;
     int n_slots_frame = mac->frame_structure.numb_slots_frame;
 
     // Check if UE should transmit the SRS
-    if((frame*n_slots_frame+slot-offset)%period == 0) {
+    if (is_periodic_occasion(frame, slot, n_slots_frame, period, offset)) {
       fapi_nr_ul_config_request_pdu_t *pdu = lockGet_ul_config(mac, frame, slot, FAPI_NR_UL_CONFIG_TYPE_SRS);
       if (!pdu)
         return false;
@@ -1217,7 +1219,7 @@ static void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int sl
     NR_NZP_CSI_RS_Resource_t *nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
     int period, offset;
     csi_period_offset(NULL, nzpcsi->periodicityAndOffset, &period, &offset);
-    if((frame * mac->frame_structure.numb_slots_frame + slot-offset) % period != 0)
+    if (!is_periodic_occasion(frame, slot, mac->frame_structure.numb_slots_frame, period, offset))
       continue;
     bool is_last_res = false;
     NR_CSI_ResourceConfigId_t csi_res_id = find_CSI_resourceconfig(csi_measconfig, dl_bwp_id, nzpcsi->nzp_CSI_RS_ResourceId, &is_last_res);
@@ -1274,7 +1276,7 @@ static void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot)
   for (int id = 0; id < csi_measconfig->csi_IM_ResourceToAddModList->list.count; id++){
     imcsi = csi_measconfig->csi_IM_ResourceToAddModList->list.array[id];
     csi_period_offset(NULL,imcsi->periodicityAndOffset,&period,&offset);
-    if((frame * mac->frame_structure.numb_slots_frame + slot - offset ) %period != 0)
+    if (!is_periodic_occasion(frame, slot, mac->frame_structure.numb_slots_frame, period, offset))
       continue;
     fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csiim_config_pdu.csiim_config_rel15;
     csiim_config_pdu->bwp_size = bwp_size;

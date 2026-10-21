@@ -14,7 +14,7 @@
 #   include "oai_asn1.h"
 #   include "intertask_interface.h"
 # include "common/ran_context.h"
-#include "pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "uper_encoder.h"
 
 extern RAN_CONTEXT_t RC;

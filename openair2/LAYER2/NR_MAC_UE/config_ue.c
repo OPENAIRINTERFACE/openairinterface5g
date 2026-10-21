@@ -9,8 +9,8 @@
 #define _GNU_SOURCE
 
 #include "mac_defs.h"
-#include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC-CellGroupConfig.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "common/utils/nr/nr_common.h"
 #include "executables/softmodem-common.h"
@@ -2070,7 +2070,7 @@ void nr_rrc_mac_start_ra(module_id_t module_id, nr_mac_ra_start_cause_t cause)
   AssertFatal(!ret, "mutex failed %d\n", ret);
 }
 
-void nr_rrc_mac_config_req_sib1(module_id_t module_id, int cc_idP, NR_SIB1_t *sib1, bool can_start_ra)
+void nr_rrc_mac_config_req_sib1(module_id_t module_id, int cc_idP, NR_SIB1_t *sib1, bool can_start_ra, bool dedicated_sib1)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   int ret = pthread_mutex_lock(&mac->if_mutex);
@@ -2081,32 +2081,39 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id, int cc_idP, NR_SIB1_t *si
       && sib1->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension) {
     si_SchedulingInfo_v1700 = sib1->nonCriticalExtension->nonCriticalExtension->nonCriticalExtension->si_SchedulingInfo_v1700;
   }
+
+  configure_si_schedulingInfo(mac, si_SchedulingInfo, si_SchedulingInfo_v1700);
   NR_ServingCellConfigCommonSIB_t *scc = sib1->servingCellConfigCommon;
   AssertFatal(scc, "SIB1 SCC should not be NULL\n");
-  UPDATE_IE(mac->tdd_UL_DL_ConfigurationCommon, scc->tdd_UL_DL_ConfigurationCommon, NR_TDD_UL_DL_ConfigCommon_t);
-  configure_si_schedulingInfo(mac, si_SchedulingInfo, si_SchedulingInfo_v1700);
   configure_pcch_config(mac, scc);
 
-  config_common_ue_sa(mac, scc, cc_idP);
-
-  // Build the list of all the valid/transmitted SSBs according to the config
-  LOG_D(NR_MAC, "Build SSB list\n");
-  build_ssb_list(mac);
-
-  int bwp_id = 0;
-  configure_common_BWP_dl(mac, bwp_id, &scc->downlinkConfigCommon.initialDownlinkBWP);
-  if (scc->uplinkConfigCommon) {
+  if (scc->uplinkConfigCommon)
     mac->timeAlignmentTimerCommon = scc->uplinkConfigCommon->timeAlignmentTimerCommon;
-    configure_common_BWP_ul(mac, bwp_id, &scc->uplinkConfigCommon->initialUplinkBWP);
-  }
-  // set current BWP only if coming from non-connected state
-  // otherwise it is just a periodically update of the SIB1 content
-  if (mac->state < UE_CONNECTED) {
-    mac->current_DL_BWP = get_dl_bwp_structure(mac, 0, false);
-    AssertFatal(mac->current_DL_BWP, "Couldn't find DL-BWP0\n");
-    mac->current_UL_BWP = get_ul_bwp_structure(mac, 0, false);
-    AssertFatal(mac->current_UL_BWP, "Couldn't find DL-BWP0\n");
-    configure_timeAlignmentTimer(&mac->time_alignment_timer, mac->timeAlignmentTimerCommon, mac->current_UL_BWP->scs);
+
+  // If dedicatedSIB1-Delivery together with reconfigurationWithSync
+  // The field has the same values as the corresponding configuration in servingCellConfigCommon
+  if (!dedicated_sib1) {
+    UPDATE_IE(mac->tdd_UL_DL_ConfigurationCommon, scc->tdd_UL_DL_ConfigurationCommon, NR_TDD_UL_DL_ConfigCommon_t);
+
+    config_common_ue_sa(mac, scc, cc_idP);
+
+    // Build the list of all the valid/transmitted SSBs according to the config
+    LOG_D(NR_MAC, "Build SSB list\n");
+    build_ssb_list(mac);
+
+    int bwp_id = 0;
+    configure_common_BWP_dl(mac, bwp_id, &scc->downlinkConfigCommon.initialDownlinkBWP);
+    if (scc->uplinkConfigCommon)
+      configure_common_BWP_ul(mac, bwp_id, &scc->uplinkConfigCommon->initialUplinkBWP);
+    // set current BWP only if coming from non-connected state
+    // otherwise it is just a periodically update of the SIB1 content
+    if (mac->state < UE_CONNECTED) {
+      mac->current_DL_BWP = get_dl_bwp_structure(mac, 0, false);
+      AssertFatal(mac->current_DL_BWP, "Couldn't find DL-BWP0\n");
+      mac->current_UL_BWP = get_ul_bwp_structure(mac, 0, false);
+      AssertFatal(mac->current_UL_BWP, "Couldn't find DL-BWP0\n");
+      configure_timeAlignmentTimer(&mac->time_alignment_timer, mac->timeAlignmentTimerCommon, mac->current_UL_BWP->scs);
+    }
   }
   if (mac->state == UE_RECEIVING_SIB && can_start_ra)
     mac->state = UE_PERFORMING_RA;

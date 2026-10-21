@@ -26,8 +26,6 @@
 #   include "sctp_eNB_task.h"
 #   include "openair3/ocp-gtpu/gtp_itf.h"
 
-#   include "x2ap_eNB.h"
-#   include "x2ap_messages_types.h"
 #   include "m2ap_eNB.h"
 #   include "m2ap_MCE.h"
 #   include "m2ap_messages_types.h"

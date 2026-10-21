@@ -49,6 +49,7 @@
 #include "fgs_nas_utils.h"
 #include "fgmm_service_accept.h"
 #include "fgmm_service_reject.h"
+#include "tuntap_if.h"
 #include "fgmm_registration_reject.h"
 #include "fgmm_authentication_reject.h"
 #include "ds/byte_array.h"
@@ -1684,26 +1685,24 @@ static int capture_ipv6_addr(const uint8_t *addr, char *ip, size_t len)
  *        and configure the tun interface
  */
 static void process_pdu_session_addr(pdu_session_establishment_accept_msg_t *msg,
-                                     nr_ue_nas_t *nas,
+                                     int ue_id,
                                      int pdu_session_id,
-                                     bool is_default)
+                                     nas_ue_pdu_tun_t *t)
 {
   uint8_t *addr = msg->pdu_addr_ie.pdu_addr_oct;
   AssertFatal(pdu_session_id > 0 && pdu_session_id < MAX_NUM_PSI, "invalid PDU session ID %d\n", pdu_session_id);
-  nas_ue_pdu_tun_t *t = &nas->pdu_tun[pdu_session_id];
-  const int ifname_pdu_id = is_default ? -1 : pdu_session_id;
 
   switch (msg->pdu_addr_ie.pdu_type) {
     case PDU_SESSION_TYPE_IPV4: {
       char ip[20];
       capture_ipv4_addr(&addr[0], ip, sizeof(ip));
-      nr_ue_tun_create_ip_if(t, ip, NULL, nas->UE_id, ifname_pdu_id);
+      nr_ue_tun_create_ip_if(t, ip, NULL, ue_id, pdu_session_id);
     } break;
 
     case PDU_SESSION_TYPE_IPV6: {
       char ipv6[40];
       capture_ipv6_addr(addr, ipv6, sizeof(ipv6));
-      nr_ue_tun_create_ip_if(t, NULL, ipv6, nas->UE_id, ifname_pdu_id);
+      nr_ue_tun_create_ip_if(t, NULL, ipv6, ue_id, pdu_session_id);
     } break;
 
     case PDU_SESSION_TYPE_IPV4V6: {
@@ -1711,7 +1710,7 @@ static void process_pdu_session_addr(pdu_session_establishment_accept_msg_t *msg
       capture_ipv6_addr(addr, ipv6, sizeof(ipv6));
       char ipv4[20];
       capture_ipv4_addr(&addr[IPv6_INTERFACE_ID_LENGTH], ipv4, sizeof(ipv4));
-      nr_ue_tun_create_ip_if(t, ipv4, ipv6, nas->UE_id, ifname_pdu_id);
+      nr_ue_tun_create_ip_if(t, ipv4, ipv6, ue_id, pdu_session_id);
     } break;
 
     default:
@@ -1764,6 +1763,21 @@ static void send_nas_tun_req_action(nr_ue_nas_t *nas, nas_tun_req_action_t actio
 }
 
 /**
+ * @brief Return the PDU session config for matching PDU session ID and type
+ */
+static const pdu_session_config_t *get_pdu_session_config(const uicc_t *uicc, int id, const pdu_session_establishment_accept_msg_t *msg)
+{
+  for (int idx = 0; idx < uicc->n_pdu_sessions; ++idx) {
+    const pdu_session_config_t *pdu = &uicc->pdu_sessions[idx];
+    bool msg_ipv4or6 = msg->pdu_type == PDU_SESSION_TYPE_IPV4 || msg->pdu_type == PDU_SESSION_TYPE_IPV6;
+    bool correct_type = pdu->type == msg->pdu_type || (pdu->type == PDU_SESSION_TYPE_IPV4V6 && msg_ipv4or6);
+    if (pdu->id == id && correct_type)
+      return pdu;
+  }
+  return NULL;
+}
+
+/**
  * @brief Handle PDU Session Establishment Accept and process decoded message
  */
 static void handle_pdu_session_accept(nr_ue_nas_t *nas, uint8_t *pdu_buffer, uint32_t msg_length)
@@ -1809,15 +1823,8 @@ static void handle_pdu_session_accept(nr_ue_nas_t *nas, uint8_t *pdu_buffer, uin
     return;
   }
 
-  int idx;
-  for (idx = 0; idx < nas->uicc->n_pdu_sessions; ++idx) {
-    const pdu_session_config_t *pdu = &nas->uicc->pdu_sessions[idx];
-    bool msg_ipv4or6 = msg.pdu_type == PDU_SESSION_TYPE_IPV4 || msg.pdu_type == PDU_SESSION_TYPE_IPV6;
-    bool correct_type = pdu->type == msg.pdu_type || (pdu->type == PDU_SESSION_TYPE_IPV4V6 && msg_ipv4or6);
-    if (pdu->id == sm_header.pdu_session_id && correct_type)
-      break;
-  }
-  if (idx == nas->uicc->n_pdu_sessions) {
+  const pdu_session_config_t *pdu = get_pdu_session_config(nas->uicc, sm_header.pdu_session_id, &msg);
+  if (!pdu) {
     LOG_E(NAS,
           "PDU session establishment accept for ID %d type %d not in list of configured PDU sessions, abort transaction\n",
           sm_header.pdu_session_id,
@@ -1834,20 +1841,34 @@ static void handle_pdu_session_accept(nr_ue_nas_t *nas, uint8_t *pdu_buffer, uin
   nr_ue_tun_store_qfi(t, msg.qos_rules.rule->qfi);
 
   // process PDU Session: pass ID -1 to not append PDU ID to interface
-  bool is_default = idx == 0;
+  bool is_default = pdu == nas->uicc->pdu_sessions; // if first index
+  // if a name has been provided, use that, else auto-generate interface name
+  if (pdu->ifname) {
+    int ret = snprintf(t->ifname, IFNAMSIZ, "%s", pdu->ifname);
+    if (ret >= IFNAMSIZ) {
+      LOG_E(NAS, "could not format interface name '%s': resulting length is %d\n", pdu->ifname, ret);
+      return;
+    }
+  } else {
+    const int ifname_pdu_id = is_default ? -1 : sm_header.pdu_session_id;
+    bool is_eth = msg.pdu_type == PDU_SESSION_TYPE_ETHER;
+    tuntap_generate_ue_ifname(t->ifname, is_eth ? IFF_TAP : IFF_TUN, nas->UE_id, ifname_pdu_id);
+  }
   if (msg.pdu_type == PDU_SESSION_TYPE_ETHER) {
-    nr_ue_tun_create_eth_if(t, nas->UE_id, is_default ? -1 : sm_header.pdu_session_id);
+    nr_ue_tun_create_eth_if(t);
   } else if (msg.pdu_addr_ie.pdu_length) {
-    process_pdu_session_addr(&msg, nas, sm_header.pdu_session_id, is_default);
+    process_pdu_session_addr(&msg, nas->UE_id, sm_header.pdu_session_id, t);
   } else {
     LOG_W(NAS, "Unhandled PDU session type %d, ignoring PDU session ID %d\n", msg.pdu_type, sm_header.pdu_session_id);
     return;
   }
-  DevAssert(t->sock >= 0);
   /* Track active PDU session for later PDU session status IE (24.501 8.2.16.3) */
   nas->psi_status[sm_header.pdu_session_id] = PDU_SESSION_ACTIVE;
   // ask RRC to start connected reader for this PSI
-  send_nas_tun_req(nas, sm_header.pdu_session_id);
+  if (t->sock > 0)
+    send_nas_tun_req(nas, sm_header.pdu_session_id);
+  else
+    LOG_W(NAS, "could not create data interface reader thread, cannot inject data traffic\n");
 }
 
 static void send_nas_uplink_data_req(nr_ue_nas_t *nas, const as_nas_info_t *initial_nas_msg)
@@ -2889,11 +2910,11 @@ void *nas_nrue(void *args_p)
         const int pdu_session_id = DEFAULT_NOS1_PDU_ID;
         const char *ip = "10.0.1.2";
         const int qfi = 7;
-        const bool is_default = true;
         AssertFatal(pdu_session_id > 0 && pdu_session_id < MAX_NUM_PSI, "invalid PDU session ID %d\n", pdu_session_id);
         nas_ue_pdu_tun_t *t = &nas->pdu_tun[pdu_session_id];
         nr_ue_tun_store_qfi(t, qfi);
-        nr_ue_tun_create_ip_if(t, ip, NULL, nas->UE_id, is_default ? -1 : pdu_session_id);
+        tuntap_generate_ue_ifname(t->ifname, IFF_TUN, nas->UE_id, -1);
+        nr_ue_tun_create_ip_if(t, ip, NULL, nas->UE_id, pdu_session_id);
         DevAssert(t->sock >= 0);
         nas->psi_status[pdu_session_id] = PDU_SESSION_ACTIVE;
         send_nas_tun_req(nas, pdu_session_id);

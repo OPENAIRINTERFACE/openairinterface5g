@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
            SNR,
            ((double)bitErrorCumulative / (iterations * messageLength)),
            ((double)blockErrorCumulative / iterations),
-           ((double)timeEncoder.diff / timeEncoder.trials) / (get_cpu_freq_GHz()),
-           ((double)timeDecoder.diff / timeDecoder.trials) / (get_cpu_freq_GHz() * 1000.0));
+           ((double)timeEncoder.diff / timeEncoder.trials),
+           ((double)timeDecoder.diff / timeDecoder.trials) / (1000.0));
   }
 
   print_meas(&timeEncoder, "smallblock_encoder", NULL, NULL);

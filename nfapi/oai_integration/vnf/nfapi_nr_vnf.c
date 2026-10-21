@@ -23,11 +23,10 @@
 
 #include "openair1/PHY/defs_gNB.h"
 #include "common/ran_context.h"
-#include "openair2/PHY_INTERFACE/queue_t.h"
 #include "gnb_ind_vars.h"
 #include "nr_fapi_p7_utils.h"
 #include "nr_fapi_p5_utils.h"
-#include <NR_MAC_gNB/mac_proto.h>
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 
 #ifdef ENABLE_AERIAL
 #include "aerial/fapi_nvIPC.h"

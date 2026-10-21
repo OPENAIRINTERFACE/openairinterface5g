@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "common/utils/nr/nr_common.h"
-#define inMicroS(a) (((double)(a)) / (get_cpu_freq_GHz() * 1000.0))
+#define inMicroS(a) (((double)(a)) / (1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
 #include "common/utils/assertions.h"
 #include "PHY/INIT/nr_phy_init.h"
@@ -32,7 +32,6 @@ RAN_CONTEXT_t RC;
 char *uecap_file = NULL;
 int64_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-double cpuf;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 uint64_t uplink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
@@ -97,7 +96,6 @@ int main(int argc, char *argv[])
   int print_perf = 0;
   int slot = 8;
   int frame = 1;
-  cpuf = get_cpu_freq_GHz();
   double DS_TDL = .03;
   int threequarter_fs = 0;
   uint64_t SSB_positions = 0x01;

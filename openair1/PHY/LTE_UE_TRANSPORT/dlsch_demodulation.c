@@ -608,7 +608,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
         symbol,
         ue->high_speed_flag,
         type,
-        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (get_cpu_freq_GHz() * 1000.0));
+        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (1000.0));
 #endif
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
@@ -641,7 +641,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
         subframe,
         slot,
         symbol,
-        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (get_cpu_freq_GHz() * 1000.0));
+        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (1000.0));
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
 
@@ -757,7 +757,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
         slot,
         symbol,
         first_symbol_flag,
-        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (get_cpu_freq_GHz() * 1000.0));
+        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (1000.0));
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
 
@@ -990,7 +990,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
         slot,
         symbol,
         pdsch_vars[eNB_id]->log2_maxh,
-        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (get_cpu_freq_GHz() * 1000.0));
+        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (1000.0));
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
 
@@ -1061,7 +1061,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
         subframe,
         slot,
         symbol,
-        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (get_cpu_freq_GHz() * 1000.0));
+        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (1000.0));
   start_meas(&ue->generic_stat_bis[ue->current_thread_id[subframe]][slot]);
 #endif
   //printf("LLR dlsch0_harq->Qm %d rx_type %d cw0 %d cw1 %d symbol %d \n",dlsch0_harq->Qm,rx_type,codeword_TB0,codeword_TB1,symbol);
@@ -1430,7 +1430,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
         subframe,
         slot,
         symbol,
-        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (get_cpu_freq_GHz() * 1000.0));
+        ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time / (1000.0));
 #endif
   // Please keep it: useful for debugging
 #if 0

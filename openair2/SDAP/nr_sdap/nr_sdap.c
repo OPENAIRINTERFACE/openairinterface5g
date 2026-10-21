@@ -15,7 +15,7 @@
 #include "nr_sdap_entity.h"
 #include "common/utils/LOG/log.h"
 #include "intertask_interface.h"
-#include "rlc.h"
+#include "openair2/LAYER2/RLC/rlc.h"
 #include "tuntap_if.h"
 #include "system.h"
 

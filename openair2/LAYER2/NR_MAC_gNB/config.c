@@ -17,7 +17,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "GNB_APP/gnb_config.h"
 #include "NR_MIB.h"
-#include "NR_MAC_gNB/nr_mac_gNB.h"
+#include "nr_mac_gNB.h"
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_MIB.h"
@@ -404,6 +404,38 @@ int get_ul_slot_offset(const frame_structure_t *fs, int idx, bool count_mixed)
   int ul_slot_idx_in_period = idx % ul_slot_count; // wrap up the UL slot index within the current TDD period
 
   return ul_slot_idxs[ul_slot_idx_in_period] + period_idx * fs->numb_slots_period;
+}
+
+/**
+ * @brief Get the UL slot index for a slot in a TDD period using the frame structure bitmap
+ * @param fs frame structure
+ * @param slot slot
+ * @param count_mixed indicates whether counting mixed slot with UL symbols or only full UL slots
+ * @param max_period size of the vector to be indicized
+ * @return UL slot index in period
+ */
+int get_ul_period_idx_from_abs_slot(const frame_structure_t *fs, int abs_slot, bool count_mixed, int max_period)
+{
+  DevAssert(fs);
+  // FDD: every slot is UL, compacted index == raw offset
+  if (fs->frame_type == FDD)
+    return abs_slot % max_period;
+  // UL slot indexes in period (same construction as get_ul_slot_offset)
+  int ul_slot_idxs[fs->numb_slots_period];
+  int ul_slot_count = 0;
+  for (int i = 0; i < fs->numb_slots_period; i++) {
+    ul_slot_idxs[ul_slot_count] = -1; // init to invalid value
+    if ((count_mixed && is_ul_slot(i, fs)) || fs->period_cfg.tdd_slot_bitmap[i].slot_type == TDD_NR_UPLINK_SLOT)
+      ul_slot_idxs[ul_slot_count++] = i;
+  }
+  AssertFatal(fs->numb_slots_period <= max_period, "Invalid max period, smaller than TDD period\n");
+  int slot_period = abs_slot % fs->numb_slots_period;
+  int num_period = (abs_slot % max_period) / fs->numb_slots_period;
+  for (int i = 0; i < ul_slot_count; i++) {
+    if (ul_slot_idxs[i] == slot_period)
+      return i + ul_slot_count * num_period;
+  }
+  return -1; // slot_in_period is not a UL slot under this count_mixed setting
 }
 
 static void config_common(nr_cell_sched_t *cell, const nr_mac_config_t *config, NR_ServingCellConfigCommon_t *scc)
@@ -965,6 +997,8 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac, nr_cell_sched_t *cell, NR_ServingCel
   LOG_D(NR_MAC, "Configuring common parameters from NR ServingCellConfig\n");
 
   config_common(cell, config, scc);
+  if (cell->radio_config.do_SRS == PERIODIC_SRS)
+    cell->periodic_srs_config = create_period_structure(cell, SRS);
   fill_beam_index_list(scc, config, cell);
 
   if (NFAPI_MODE == NFAPI_MONOLITHIC) {
@@ -1279,7 +1313,7 @@ bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, nr_cell_sched_t *cell, uint32_t rnt
   bool res = add_connected_nr_ue(nrmac, UE);
   if (!res) {
     LOG_E(NR_MAC, "Error adding UE %04x\n", rnti);
-    delete_nr_ue_data(UE, &nrmac->UE_info.uid_allocator);
+    delete_nr_ue_data(nrmac, UE);
     NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return false;
   }

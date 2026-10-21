@@ -11,7 +11,7 @@
 #include "common/utils/mem/oai_memory.h"
 #include "openair1/PHY/defs_common.h"
 #include "as_message.h"
-#include "rrc_types.h"
+#include "openair2/RRC/LTE/rrc_types.h"
 #include "s1ap_messages_types.h"
 #include "f1ap_messages_types.h"
 #include "LTE_SystemInformationBlockType2.h"
@@ -454,6 +454,7 @@ typedef struct {
 typedef struct {
   NR_SIB1_t *sib1;
   bool can_start_ra;
+  bool is_dedicated_sib1;
 } nr_mac_rrc_config_sib1_t;
 typedef struct {
   NR_SIB19_r17_t *sib19;

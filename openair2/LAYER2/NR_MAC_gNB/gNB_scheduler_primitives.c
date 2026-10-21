@@ -10,8 +10,8 @@
 #include <softmodem-common.h>
 #include "assertions.h"
 
-#include "NR_MAC_gNB/nr_mac_gNB.h"
-#include "NR_MAC_gNB/mac_proto.h"
+#include "nr_mac_gNB.h"
+#include "mac_proto.h"
 #include "common/utils/bits.h"
 #include "common/utils/LOG/log.h"
 #include "UTIL/OPT/opt.h"
@@ -2674,11 +2674,52 @@ NR_UE_info_t *find_ra_UE(NR_UEs_t *UEs, rnti_t rntiP)
   return NULL;
 }
 
-void delete_nr_ue_data(NR_UE_info_t *UE, uid_allocator_t *uia)
+NR_UE_info_t **get_periodic_ue(periodic_ue_sched_t *p, int ul_idx, int index)
+{
+  return &p->list[ul_idx * p->max_ue_per_slot + index];
+}
+
+static void reset_periodic_info(const NR_UE_info_t *UE, periodic_ue_sched_t *periodic_config, int ue_periodic_offset)
+{
+  if (periodic_config->list && ue_periodic_offset >= 0) {
+    for (int i = 0; i < periodic_config->max_ue_per_slot; i++) {
+      if (*get_periodic_ue(periodic_config, ue_periodic_offset, i) != UE)
+        continue;
+      *get_periodic_ue(periodic_config, ue_periodic_offset, i) = NULL;
+    }
+  }
+}
+
+static int set_periodic_info(NR_UE_info_t *UE, int ue_offset, periodic_ue_sched_t *periodic_config, int idx)
+{
+  bool reset = false;
+  if (ue_offset != -1) {
+    if (ue_offset == idx) {
+      for (int i = 0; i < periodic_config->max_ue_per_slot; i++) {
+        if (*get_periodic_ue(periodic_config, idx, i) == UE)
+          return ue_offset; // info already set for this UE
+      }
+      reset = true;
+    } else
+      reset = true;
+  }
+  if (reset)
+    reset_periodic_info(UE, periodic_config, ue_offset); // need to re-configure
+  for (int i = 0; i < periodic_config->max_ue_per_slot; i++) {
+    if (*get_periodic_ue(periodic_config, idx, i) != NULL)
+      continue;
+    *get_periodic_ue(periodic_config, idx, i) = UE;
+    return idx;
+  }
+  return -1;
+}
+
+void delete_nr_ue_data(gNB_MAC_INST *mac, NR_UE_info_t *UE)
 {
   ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->CellGroup);
   ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->reconfigCellGroup);
   ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
+  reset_periodic_info(UE, &UE->pcell->periodic_srs_config, UE->sched_srs.periodic_sched.periodic_offset);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   seq_arr_free(&sched_ctrl->lc_config, NULL);
   destroy_nr_list(&sched_ctrl->available_dl_harq);
@@ -2690,6 +2731,7 @@ void delete_nr_ue_data(NR_UE_info_t *UE, uid_allocator_t *uia)
   for (int i = 0; i < NR_MAX_HARQ_PROCESSES; ++i)
     free_transportBlock_buffer(&sched_ctrl->harq_processes[i].transportBlock);
   free_sched_pucch_list(sched_ctrl);
+  uid_allocator_t *uia = &mac->UE_info.uid_allocator;
   uid_linear_allocator_free(uia, UE->uid);
   LOG_I(NR_MAC, "Remove NR rnti 0x%04x\n", UE->rnti);
   free_and_zero(UE->ra);
@@ -2875,6 +2917,66 @@ void reset_sc_info(NR_UE_ServingCell_Info_t *sc_info)
   sc_info->nrofHARQ_ProcessesForPUSCH_r17 = NULL;
 }
 
+static void configure_sched_srs(nr_cell_sched_t *cell, const NR_SRS_Config_t *srs_config, NR_UE_info_t *UE)
+{
+  NR_sched_srs_t *sched_srs = &UE->sched_srs;
+  nr_srs_type_t srs_type = cell->radio_config.do_SRS;
+  if (!srs_config || srs_type == NO_SRS) {
+    sched_srs->srs_resource = NULL;
+    reset_periodic_info(UE, &cell->periodic_srs_config, sched_srs->periodic_sched.periodic_offset);
+    sched_srs->periodic_sched.periodic_offset = -1;
+    return;
+  }
+
+  NR_SRS_ResourceSet__resourceType_PR set_type = srs_type == PERIODIC_SRS ?
+                                                 NR_SRS_ResourceSet__resourceType_PR_periodic :
+                                                 NR_SRS_ResourceSet__resourceType_PR_aperiodic;
+
+  NR_SRS_ResourceSet_t *srs_resource_set = NULL;
+  for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
+    // Find resource set
+    if (srs_config->srs_ResourceSetToAddModList->list.array[rs]->resourceType.present == set_type) {
+      srs_resource_set = srs_config->srs_ResourceSetToAddModList->list.array[rs];
+      break;
+    }
+  }
+  AssertFatal(srs_resource_set, "Couldn't find %s SRS resource set\n", srs_type == PERIODIC_SRS ? "periodic" : "aperiodic");
+  sched_srs->usage = srs_resource_set->usage;
+  if (srs_type == APERIODIC_SRS) {
+    struct NR_SRS_ResourceSet__resourceType__aperiodic *aperiodic = srs_resource_set->resourceType.choice.aperiodic;
+    sched_srs->aperiodic_sched.aperiodic_slotOffset = aperiodic->slotOffset;
+    sched_srs->aperiodic_sched.aperiodic_ResourceTrigger = aperiodic->aperiodicSRS_ResourceTrigger;
+  }
+
+  NR_SRS_Resource__resourceType_PR res_type = srs_type == PERIODIC_SRS ?
+                                              NR_SRS_Resource__resourceType_PR_periodic :
+                                              NR_SRS_Resource__resourceType_PR_aperiodic;
+
+  NR_SRS_Resource_t *srs_resource = NULL;
+  for (int r1 = 0; r1 < srs_resource_set->srs_ResourceIdList->list.count; r1++) {
+    for (int r2 = 0; r2 < srs_config->srs_ResourceToAddModList->list.count; r2++) {
+      if ((*srs_resource_set->srs_ResourceIdList->list.array[r1] ==
+          srs_config->srs_ResourceToAddModList->list.array[r2]->srs_ResourceId) &&
+          (srs_config->srs_ResourceToAddModList->list.array[r2]->resourceType.present == res_type))
+        srs_resource = srs_config->srs_ResourceToAddModList->list.array[r2];
+    }
+  }
+  AssertFatal(srs_resource, "Couldn't find %s SRS resource\n", srs_type == PERIODIC_SRS ? "periodic" : "aperiodic");
+  sched_srs->srs_resource = srs_resource;
+  if (srs_type == PERIODIC_SRS) {
+    int slot_offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
+    AssertFatal(slot_offset >= 0 && slot_offset < cell->periodic_srs_config.max_period,
+                "Offset not compatible with periodicity for SRS\n");
+    int idx = get_ul_period_idx_from_abs_slot(&cell->frame_structure, slot_offset, false, cell->periodic_srs_config.max_period);
+    AssertFatal(idx >= 0, "SRS offset %d is not a valid UL slot\n", slot_offset);
+    sched_srs->periodic_sched.periodic_offset = set_periodic_info(UE,
+                                                                  sched_srs->periodic_sched.periodic_offset,
+                                                                  &cell->periodic_srs_config,
+                                                                  idx);
+    AssertFatal(sched_srs->periodic_sched.periodic_offset >= 0, "Couldn't configure periodic information for SRS\n");
+  }
+}
+
 // main function to configure parameters of current BWP
 void configure_UE_BWP(nr_cell_sched_t *cell,
                       NR_ServingCellConfigCommon_t *scc,
@@ -2955,6 +3057,9 @@ void configure_UE_BWP(nr_cell_sched_t *cell,
     UL_BWP->configuredGrantConfig = NULL;
   }
 
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  configure_sched_srs(cell, UL_BWP->srs_Config, UE);
+
   // TDA lists
   if (DL_BWP->bwp_id > 0)
     DL_BWP->tdaList_Common = dl_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
@@ -3020,7 +3125,6 @@ void configure_UE_BWP(nr_cell_sched_t *cell,
   if (old_ul_bwp_id != UL_BWP->bwp_id)
     LOG_I(NR_MAC, "Switching to UL-BWP %li\n", UL_BWP->bwp_id);
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   // Reset required fields in sched_ctrl (e.g. ul_ri and tpmi)
   reset_sched_ctrl(sched_ctrl);
   if(!is_RA) {
@@ -3175,6 +3279,7 @@ NR_UE_info_t *get_new_nr_ue_inst(uid_allocator_t *uia, rnti_t rnti, NR_CellGroup
   UE->ra = calloc(1, sizeof(*UE->ra));
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   sched_ctrl->ta_update = 31;
+  UE->sched_srs.periodic_sched.periodic_offset = -1;
 
   const nr_mac_config_t *config = &cell->radio_config;
   nr_mac_set_target_snrx10(&sched_ctrl->pucch_pc, config->pucch.target_snrx10);
@@ -3251,7 +3356,7 @@ bool add_connected_nr_ue(gNB_MAC_INST *nr_mac, NR_UE_info_t *UE)
   bool success = add_UE_to_list(MAX_MOBILES_PER_GNB, UE_info->connected_ue_list, UE);
   if (!success) {
     LOG_E(NR_MAC,"Try to add UE %04x but the list is full\n", UE->rnti);
-    delete_nr_ue_data(UE, &UE_info->uid_allocator);
+    delete_nr_ue_data(nr_mac, UE);
     return false;
   }
 
@@ -3259,8 +3364,9 @@ bool add_connected_nr_ue(gNB_MAC_INST *nr_mac, NR_UE_info_t *UE)
   sched_ctrl->dl_max_mcs = 28; /* do not limit MCS for individual UEs */
   sched_ctrl->pdcch_cl_adjust = 0;
   if (UE->pcell->radio_config.do_SRS == APERIODIC_SRS) {
-    nr_timer_setup(&sched_ctrl->aperiodic_srs_trigger, 160, 1); // for now aperiodic hardcoded every 160 slots
-    nr_timer_start(&sched_ctrl->aperiodic_srs_trigger);
+    // for now aperiodic hardcoded every 160 slots
+    nr_timer_setup(&UE->sched_srs.aperiodic_sched.aperiodic_srs_timer, 160, 1);
+    nr_timer_start(&UE->sched_srs.aperiodic_sched.aperiodic_srs_timer);
   }
   reset_srs_stats(UE);
 
@@ -3320,7 +3426,7 @@ void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
   NR_UEs_t *UE_info = &nr_mac->UE_info;
   NR_UE_info_t *UE = remove_UE_from_list(MAX_MOBILES_PER_GNB + 1, UE_info->connected_ue_list, rnti);
   if (UE)
-    delete_nr_ue_data(UE, &UE_info->uid_allocator);
+    delete_nr_ue_data(nr_mac, UE);
   else
     nr_release_ra_UE(nr_mac, rnti);
 }
@@ -3476,7 +3582,7 @@ void nr_csirs_scheduling(gNB_MAC_INST *gNB_mac, nr_cell_sched_t *cell, frame_t f
           int period, offset;
           csi_period_offset(NULL, nzpcsi->periodicityAndOffset, &period, &offset);
 
-          if ((frame * n_slots_frame + slot - offset) % period != 0)
+          if (!is_periodic_occasion(frame, slot, n_slots_frame, period, offset))
             continue;
 
           LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d Resource ID %ld\n", frame, slot, nzpcsi->nzp_CSI_RS_ResourceId);
@@ -3840,28 +3946,27 @@ void beam_switching_procedure(gNB_MAC_INST *mac, nr_cell_sched_t *cell, NR_UE_in
 
 void nr_mac_update_timers(gNB_MAC_INST *mac, nr_cell_sched_t *cell)
 {
-
-  NR_UEs_t *UE_info = &mac->UE_info;
-  UE_iterator(UE_info->connected_ue_list, UE) {
+  // releasing a UE modifies connected_ue_list, and nr_mac_trigger_release_complete() drops sched_lock:
+  // collect the UEs to release and release them by RNTI after the loop
+  typedef struct {
+    rnti_t rnti;
+    bool send_complete;
+  } ue_release_t;
+  ue_release_t to_release[MAX_MOBILES_PER_GNB];
+  int num_release = 0;
+  UE_iterator (mac->UE_info.connected_ue_list, UE) {
     if (UE->pcell != cell)
       continue;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
     if (nr_mac_check_release(sched_ctrl)) {
-      // trigger release first as nr_mac_release_ue() invalidates UE ptr
-      nr_mac_trigger_release_complete(mac, UE->rnti);
-      nr_mac_release_ue(mac, UE->rnti);
-      // go back to examine the next UE, which is at the position the
-      // current UE was
-      UE--;
+      to_release[num_release++] = (ue_release_t){.rnti = UE->rnti, .send_complete = true};
       continue;
     }
 
     /* check if UL failure and trigger release request if necessary */
-    bool released = nr_mac_check_ul_failure(mac, UE->rnti, sched_ctrl);
-    if (released) {
-      // go back to examine the next UE, which is at the position the current UE was
-      UE--;
+    if (nr_mac_check_ul_failure(mac, UE->rnti, sched_ctrl)) {
+      to_release[num_release++] = (ue_release_t){.rnti = UE->rnti, .send_complete = false};
       continue;
     }
 
@@ -3878,7 +3983,14 @@ void nr_mac_update_timers(gNB_MAC_INST *mac, nr_cell_sched_t *cell)
       nr_timer_stop(&sched_ctrl->tci_beam_switch);
       beam_switching_procedure(mac, cell, UE, sched_ctrl->UE_mac_ce_ctrl.tci_state_ind.tciStateId);
     }
-    nr_timer_tick(&sched_ctrl->aperiodic_srs_trigger);
+    nr_timer_tick(&UE->sched_srs.aperiodic_sched.aperiodic_srs_timer);
+  }
+
+  for (int i = 0; i < num_release; i++) {
+    // confirm the release to the CU, then remove the RLC and MAC contexts
+    if (to_release[i].send_complete)
+      nr_mac_trigger_release_complete(mac, to_release[i].rnti);
+    nr_mac_release_ue(mac, to_release[i].rnti);
   }
 }
 
@@ -4215,6 +4327,7 @@ bool nr_mac_request_release_ue(const gNB_MAC_INST *nrmac, int rnti)
   return true;
 }
 
+// returns true if the UE must be dropped (nr_mac_release_ue()) by the caller
 bool nr_mac_check_ul_failure(gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ctrl_t *sched_ctrl)
 {
   if (!sched_ctrl->ul_failure)
@@ -4232,7 +4345,6 @@ bool nr_mac_check_ul_failure(gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ctrl_t *
   }
   if (sched_ctrl->ul_failure_timer == 0) {
     LOG_W(NR_MAC, "UE %04x: no answer for release request, dropping UE\n", rnti);
-    nr_mac_release_ue(nrmac, rnti);
     return true;
   }
   return false;

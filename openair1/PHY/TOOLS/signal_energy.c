@@ -37,6 +37,17 @@ int32_t signal_energy(int32_t *input,uint32_t length)
     num1 = simde_mm_add_ps(num1, simde_mm_cvtepi32_ps(simde_mm_madd_epi16(in, coe1)));//DC
     input += 4;
   }
+  // last length % 4 samples, same clipping as above
+  const c16_t *tail = (const c16_t *)input;
+  float pow_tail = 0, dc_tail = 0;
+  for (i = 0; i < (length & 3); i++) {
+    const int r = tail[i].r == SHRT_MIN ? SHRT_MIN + 1 : tail[i].r;
+    const int im = tail[i].i == SHRT_MIN ? SHRT_MIN + 1 : tail[i].i;
+    pow_tail += r * r + im * im;
+    dc_tail += tail[i].r + tail[i].i;
+  }
+  num0 = simde_mm_add_ss(num0, simde_mm_set_ss(pow_tail));
+  num1 = simde_mm_add_ss(num1, simde_mm_set_ss(dc_tail));
   //Ave
   num2 = simde_mm_dp_ps(num0, recp1, 0xFF);//AC power
   num3 = simde_mm_dp_ps(num1, recp1, 0xFF);//DC

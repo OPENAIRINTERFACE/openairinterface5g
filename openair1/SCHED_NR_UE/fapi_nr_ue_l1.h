@@ -9,7 +9,6 @@
 #ifndef __FAPI_NR_UE_L1_H__
 #define __FAPI_NR_UE_L1_H__
 
-#include "NR_IF_Module.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 

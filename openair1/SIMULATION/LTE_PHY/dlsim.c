@@ -39,8 +39,7 @@ const char *__asan_default_options()
 }
 
 
-double cpuf;
-#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
+#define inMicroS(a) (((double)(a))/(1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
 #include <openair1/SIMULATION/LTE_PHY/common_sim.h>
 
@@ -524,7 +523,6 @@ int main(int argc, char **argv) {
   //int dci_length_bytes=0,dci_length=0;
   //double channel_bandwidth = 5.0, sampling_rate=7.68;
   int common_flag=0,TPC=0;
-  double cpu_freq_GHz;
   //  time_stats_t ts;//,sts,usts;
   int avg_iter,iter_trials;
   int rballocset=0;
@@ -555,8 +553,6 @@ int main(int argc, char **argv) {
   nfapi_tx_request_t TX_req;
   Sched_Rsp_t sched_resp;
   int pa=dB0;
-  cpu_freq_GHz = get_cpu_freq_GHz();
-  printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
   memset((void *)&sched_resp,0,sizeof(sched_resp));
   sched_resp.DL_req = &DL_req;
   sched_resp.UL_req = &UL_req;
@@ -569,7 +565,6 @@ int main(int argc, char **argv) {
   DL_req.dl_config_request_body.dl_config_pdu_list = dl_config_pdu_list;
   TX_req.tx_request_body.tx_pdu_list = tx_pdu_list;
   set_parallel_conf("PARALLEL_SINGLE_THREAD");
-  cpuf = cpu_freq_GHz;
   //signal(SIGSEGV, handler);
   //signal(SIGABRT, handler);
   // default parameters
@@ -1784,7 +1779,7 @@ int main(int argc, char **argv) {
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
              (double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
-      double timeBase=1/(1000*cpu_freq_GHz);
+      double timeBase = 1e-3;
 
       if (print_perf==1) {
         printf("\neNB TX function statistics (per 1ms subframe)\n");

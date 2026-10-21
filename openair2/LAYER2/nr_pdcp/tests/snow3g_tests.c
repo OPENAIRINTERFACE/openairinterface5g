@@ -12,7 +12,7 @@
  */
 #include "openair3/SECU/snow3g.c"
 
-#include "nr_pdcp/nr_pdcp_security_nea1.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_security_nea1.h"
 #include "common/utils/assertions.h"
 #include "common/utils/LOG/log.h"
 

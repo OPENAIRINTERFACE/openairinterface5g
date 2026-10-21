@@ -26,7 +26,6 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "PHY_INTERFACE/phy_interface_vars.h"
-#include "NR_IF_Module.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair2/RRC/NR_UE/L2_interface_ue.h"
 #include "openair1/PHY/phy_extern_nr_ue.h"
@@ -50,7 +49,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/LAYER2/NR_MAC_UE/mac_proto.h>
 #include <openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h>
 #include <openair1/SCHED_NR_UE/fapi_nr_ue_l1.h>
-#include "nr_rlc/nr_rlc_oai_api.h"
+#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 /* Callbacks, globals and object handlers */
 
 //#include "stats.h"
@@ -77,7 +76,6 @@ int64_t         uplink_frequency_offset[MAX_NUM_CCs][4];
 uint64_t        sidelink_frequency[MAX_NUM_CCs][4];
 
 // UE and OAI config variables
-double            cpuf;
 
 int create_tasks_nrue(uint32_t ue_nb) {
   LOG_D(NR_RRC, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
@@ -104,7 +102,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
 
 void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
 {
-  LOG_W(NR_PHY, "called by: %s:%d %s() Exiting OAI softmodem: %s\n", file, line, function, s ? s : "no msg");
+  LOG_W(UTIL, "called by: %s:%d %s() Exiting OAI softmodem: %s\n", file, line, function, s ? s : "no msg");
 
   oai_exit = 1;
 
@@ -136,8 +134,6 @@ static void get_options(configmodule_interface_t *cfg)
   paramdef_t cmdline_params[] = CMDLINE_NRUEPARAMS_DESC;
   int numparams = sizeofArray(cmdline_params);
   config_get(cfg, cmdline_params, numparams, NULL);
-  AssertFatal(nrUE_params.extra_pdu_id == -1,
-              "Add additional PDU sessions in uicc.pdu_sessions array instead\n");
 }
 
 // set PHY vars from command line
@@ -248,7 +244,6 @@ int main(int argc, char **argv)
     LOG_W(UTIL,
           "no SYS_NICE capability: cannot set thread priority and affinity, consider running with sudo for optimum performance\n");
 
-  cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, tasks_info);
 
   init_opt();

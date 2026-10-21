@@ -11,8 +11,8 @@
 #include "NR_DRB-ToAddModList.h"
 #include "NR_PDCP-Config.h"
 #include "NR_SRB-ToAddModList.h"
-#include "nr_pdcp/nr_pdcp_entity.h"
-#include "nr_pdcp/nr_pdcp_integrity_data.h"
+#include "nr_pdcp_entity.h"
+#include "nr_pdcp_integrity_data.h"
 #include "nr_pdcp_ue_manager.h"
 struct NR_DRB_ToAddMod;
 struct NR_SRB_ToAddMod;

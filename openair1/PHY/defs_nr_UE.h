@@ -69,7 +69,7 @@
 #endif
 
 #include <pthread.h>
-#include "NR_IF_Module.h"
+#include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 /// Context data structure for gNB subframe processing
 typedef struct {

@@ -30,9 +30,6 @@
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_gNB/nr_radio_config.h"
 #include "NR_CellGroupConfig.h"
-#include "NR_MAC_COMMON/nr_mac.h"
-#include "NR_MAC_COMMON/nr_mac_common.h"
-#include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_ReconfigurationWithSync.h"
 #include "NR_RLC-BearerConfig.h"
 #include "PHY/CODING/nrLDPC_coding/nrLDPC_coding_interface.h"
@@ -61,7 +58,6 @@
 PHY_VARS_gNB *gNB;
 RAN_CONTEXT_t RC;
 int64_t uplink_frequency_offset[MAX_NUM_CCs][4];
-double cpuf;
 char *uecap_file;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
@@ -118,15 +114,14 @@ static int cmp_double(const void *a, const void *b)
  * Shows: total time across all slots, per-trial average, max, and trial count. */
 static void print_meas_row(const char *name, time_stats_t *ts, int n_slots)
 {
-  double cpu_ghz = get_cpu_freq_GHz();
   if (ts->trials == 0) {
     printf("  %-34s       -           -           -       0\n", name);
     return;
   }
-  double total_us = (double)ts->diff / cpu_ghz / 1000.0;
+  double total_us = (double)ts->diff / 1000.0;
   double per_slot_us = total_us / n_slots;
   double avg_us = total_us / ts->trials;
-  double max_us = (double)ts->max / cpu_ghz / 1000.0;
+  double max_us = (double)ts->max / 1000.0;
   printf("  %-34s %7.1f   %7.1f   %7.1f   %5d\n", name, per_slot_us, avg_us, max_us, ts->trials);
 }
 
@@ -217,7 +212,6 @@ int main(int argc, char **argv)
   sigaction(SIGINT, &sigint_action, &oldaction);
 
   setbuf(stdout, NULL);
-  cpuf = get_cpu_freq_GHz();
 
   /* defaults */
   int N_RB_DL = 106;

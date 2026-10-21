@@ -39,6 +39,7 @@ void zmq_tx_channel::transmit(c16_t *samples, size_t nsamps, uint64_t timestamp)
 
     std::lock_guard<std::mutex> q_lock(queue_mutex_);
     queue_.push(std::move(msg));
+    queue_cvar_.notify_one();
   }
 
   sample_count_ += nsamps;
@@ -50,6 +51,18 @@ void zmq_tx_channel::transmit(c16_t *samples, size_t nsamps, uint64_t timestamp)
 bool zmq_tx_channel::pop_message(zmq_msg_t *msg)
 {
   std::lock_guard<std::mutex> lock(queue_mutex_);
+  if (queue_.empty()) {
+    return false;
+  }
+  *msg = std::move(queue_.front());
+  queue_.pop();
+  return true;
+}
+
+bool zmq_tx_channel::wait_and_pop_message(zmq_msg_t *msg, std::chrono::milliseconds timeout, std::atomic<bool> *running)
+{
+  std::unique_lock<std::mutex> lock(queue_mutex_);
+  queue_cvar_.wait_for(lock, timeout, [this, running] { return !queue_.empty() || !running->load(); });
   if (queue_.empty()) {
     return false;
   }
@@ -87,6 +100,7 @@ bool zmq_tx_channel::align(uint64_t timestamp, std::chrono::milliseconds timeout
       std::lock_guard<std::mutex> q_lock(queue_mutex_);
       queue_.push(std::move(msg));
     }
+    queue_cvar_.notify_one();
     sample_count_ = timestamp;
   }
   return false;

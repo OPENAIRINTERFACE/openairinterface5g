@@ -2364,10 +2364,19 @@ static uint8_t pack_nr_srs_report_tlv(const nfapi_srs_report_tlv_t *report_tlv, 
     return 0;
   }
 
-  for (int i = 0; i < (report_tlv->length + 3) / 4; i++) {
+  const uint32_t full_words = report_tlv->length / sizeof(report_tlv->value[0]);
+  for (uint32_t i = 0; i < full_words; i++) {
     if (!push32(report_tlv->value[i], ppWritePackedMsg, end)) {
       return 0;
     }
+  }
+
+  const uint8_t remaining_bytes = report_tlv->length % sizeof(report_tlv->value[0]);
+  if (remaining_bytes > 0) {
+    uint32_t last_word = 0;
+    memcpy(&last_word, &report_tlv->value[full_words], remaining_bytes);
+    if (!push32(last_word, ppWritePackedMsg, end))
+      return 0;
   }
 
   return 1;

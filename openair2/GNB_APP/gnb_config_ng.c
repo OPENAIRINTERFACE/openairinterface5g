@@ -8,7 +8,7 @@
 #include "common/ran_context.h"
 #include "openair2/GNB_APP/gnb_config_common.h"
 #include "common/config/config_paramdesc.h"
-#include "sctp_default_values.h"
+#include "openair3/SCTP/sctp_default_values.h"
 #include "gnb_paramdef.h"
 #include "common/config/config_userapi.h"
 

@@ -8,7 +8,7 @@ if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0
 endif()
 
 # use env var PKG_CONFIG_PATH to override paths to libdpdk.pc
-pkg_check_modules(dpdk REQUIRED libdpdk)
+pkg_check_modules(dpdk_fh REQUIRED IMPORTED_TARGET libdpdk)
 pkg_check_modules(numa REQUIRED numa)
 
 add_library(oran_fhlib_5g MODULE
@@ -29,16 +29,16 @@ if(xran_FOUND)
   elseif(xran_VERSION VERSION_GREATER_EQUAL 6 AND xran_VERSION VERSION_LESS 7)
     message(FATAL_ERROR "xran F release not supported starting from tag 2026.w29.\nPlease switch to K version ${K_VERSION}")
   elseif(xran_VERSION VERSION_EQUAL K_VERSION)
-    if(dpdk_VERSION VERSION_LESS 20.11)
-      message(FATAL_ERROR "We require min DPDK version 20.11, but found ${dpdk_VERSION}")
+    if(dpdk_fh_VERSION VERSION_LESS 20.11)
+      message(FATAL_ERROR "We require min DPDK version 20.11, but found ${dpdk_fh_VERSION}")
     endif()
     target_compile_definitions(oran_fhlib_5g PRIVATE K_RELEASE)
   else()
     message(FATAL_ERROR "Found xran version ${xran_VERSION} but needed ${K_VERSION} (K release)")
   endif()
 elseif(NOT xran_FOUND AND xran_DOWNLOAD)
-  if(dpdk_VERSION VERSION_LESS 20.11)
-    message(FATAL_ERROR "We require min DPDK version 20.11, but found ${dpdk_VERSION}")
+  if(dpdk_fh_VERSION VERSION_LESS 20.11)
+    message(FATAL_ERROR "We require min DPDK version 20.11, but found ${dpdk_fh_VERSION}")
   endif()
   include(ExternalProject)
   set(xran_DIR "${CMAKE_BINARY_DIR}/.deps/src/extern_xran/fhi_lib/lib")
@@ -47,7 +47,7 @@ elseif(NOT xran_FOUND AND xran_DOWNLOAD)
       GIT_REPOSITORY https://github.com/openairinterface/o-du-phy.git
       GIT_TAG ${K_VERSION}
       CONFIGURE_COMMAND ""  # nothing to configure
-      BUILD_COMMAND cd fhi_lib/lib && WIRELESS_SDK_TOOLCHAIN=gcc RTE_SDK=${dpdk_PREFIX} XRAN_DIR=.. make XRAN_LIB_SO=1
+      BUILD_COMMAND cd fhi_lib/lib && WIRELESS_SDK_TOOLCHAIN=gcc RTE_SDK=${dpdk_fh_PREFIX} XRAN_DIR=.. make XRAN_LIB_SO=1
       BUILD_IN_SOURCE ON
       INSTALL_COMMAND ""
       BUILD_BYPRODUCTS ${xran_DIR}/build/libxran.so
@@ -75,9 +75,8 @@ endif()
 add_compile_options(-Wno-packed-not-aligned)
 
 set_target_properties(oran_fhlib_5g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -march=native")
-target_link_libraries(oran_fhlib_5g PRIVATE xran::xran ${dpdk_LINK_LIBRARIES} pthread dl rt m numa)
+target_link_libraries(oran_fhlib_5g PRIVATE xran::xran PkgConfig::dpdk_fh pthread dl rt m numa)
 target_link_libraries(oran_fhlib_5g PRIVATE log_headers)
-target_include_directories(oran_fhlib_5g PRIVATE ${dpdk_INCLUDE_DIRS})
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
   find_package(armral REQUIRED)
   target_sources(oran_fhlib_5g PRIVATE armral_bfp_compression.c)

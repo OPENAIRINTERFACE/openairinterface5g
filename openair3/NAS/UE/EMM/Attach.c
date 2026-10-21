@@ -81,6 +81,52 @@ static void *_emm_attach_t3411_handler(void *args);
  */
 static void _emm_attach_abnormal_cases_bcd(nas_user_t *user, emm_sap_t *);
 
+/*
+ * The APN defined for a PDN context, copied into the caller's buffer.
+ *
+ * Returns NULL - which is what the attach used to pass unconditionally - when
+ * no context is defined for this identifier, or when it carries no name. That
+ * is the ordinary case: AT+CGDCONT is the only thing that names one, and it is
+ * only sent when this UE is asked to reach a particular APN.
+ *
+ * The copy matters. esm_sap_send() hands the pointer back down to
+ * _pdn_connectivity_create(), which frees pdn->apn.value before memcpy()ing
+ * from the pointer it was given.
+ */
+#define EMM_ATTACH_APN_SIZE 100 /* 3GPP TS 23.003 section 9.1 */
+static const char *_emm_attach_apn(nas_user_t *user, int cid, char *buf, size_t size)
+{
+  if ( (user == NULL) || (user->esm_data == NULL) || (buf == NULL) ) {
+    return NULL;
+  }
+
+  int pid = cid - 1;
+
+  if ( (pid < 0) || (pid >= ESM_DATA_PDN_MAX) ) {
+    return NULL;
+  }
+
+  if (pid != user->esm_data->pdn[pid].pid) {
+    return NULL;
+  }
+
+  const esm_pdn_t *pdn = user->esm_data->pdn[pid].data;
+
+  if ( (pdn == NULL) || (pdn->apn.value == NULL) || (pdn->apn.length == 0) ) {
+    return NULL;
+  }
+
+  if (pdn->apn.length >= size) {
+    LOG_TRACE(WARNING, "EMM-PROC  - APN defined for cid=%d is %u octets and "
+              "does not fit; attaching without it", cid, pdn->apn.length);
+    return NULL;
+  }
+
+  memcpy(buf, pdn->apn.value, pdn->apn.length);
+  buf[pdn->apn.length] = '\0';
+  return buf;
+}
+
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
@@ -216,7 +262,19 @@ int emm_proc_attach(nas_user_t *user, emm_proc_attach_type_t type)
   esm_sap.data.pdn_connect.cid = 1;
   /* TODO: PDN type should be set according to the IP capability of the UE */
   esm_sap.data.pdn_connect.pdn_type = NET_PDN_TYPE_IPV4;
-  esm_sap.data.pdn_connect.apn = NULL;
+
+  /* This was apn = NULL, unconditionally. The buffer has to outlive
+     esm_sap_send(), which encodes the message before it returns; it does,
+     being scoped to this function. */
+  char attach_apn[EMM_ATTACH_APN_SIZE + 1];
+  esm_sap.data.pdn_connect.apn =
+    _emm_attach_apn(user, esm_sap.data.pdn_connect.cid, attach_apn, sizeof(attach_apn));
+
+  if (esm_sap.data.pdn_connect.apn != NULL) {
+    LOG_TRACE(INFO, "EMM-PROC  - Attaching to APN %s (cid=%d)",
+              esm_sap.data.pdn_connect.apn, esm_sap.data.pdn_connect.cid);
+  }
+
   esm_sap.data.pdn_connect.is_emergency = user->emm_data->is_emergency;
   rc = esm_sap_send(user, &esm_sap);
 

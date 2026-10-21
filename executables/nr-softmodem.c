@@ -64,13 +64,13 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "ngap_gNB.h"
 #include "nr-softmodem-common.h"
 #include "openair2/E1AP/e1ap_common.h"
-#include "pdcp.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "s1ap_eNB.h"
 #include "sctp_eNB_task.h"
 #include "system.h"
 #include "time_meas.h"
 #include "utils.h"
-#include "x2ap_eNB.h"
+#include "openair2/X2AP/x2ap_eNB.h"
 #include "openair1/SCHED_NR/sched_nr.h"
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 #include "openair3/NRPPA/nrppa_gNB.h"
@@ -89,8 +89,6 @@ int oai_exit = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 int64_t uplink_frequency_offset[MAX_NUM_CCs][4];
 char *uecap_file;
-
-double cpuf;
 
 /*------------------------------------------------------------------------*/
 
@@ -527,7 +525,6 @@ int main( int argc, char **argv ) {
 #endif
   set_taus_seed (0);
 
-  cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, tasks_info);
   // initialize mscgen log after ITTI
   init_opt();

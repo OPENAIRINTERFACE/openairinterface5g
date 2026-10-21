@@ -18,10 +18,10 @@
 #   include "sctp_eNB_task.h"
 #   include "openair3/ocp-gtpu/gtp_itf.h"
 
-#   include "x2ap_eNB.h"
-#   include "x2ap_messages_types.h"
-#   include "m2ap_eNB.h"
-#   include "m2ap_messages_types.h"
+#   include "openair2/X2AP/x2ap_eNB.h"
+#   include "openair2/COMMON/x2ap_messages_types.h"
+#   include "openair2/M2AP/m2ap_eNB.h"
+#   include "openair2/COMMON/m2ap_messages_types.h"
 #   define X2AP_ENB_REGISTER_RETRY_DELAY   10
 
 #include "openair1/PHY/INIT/phy_init.h"

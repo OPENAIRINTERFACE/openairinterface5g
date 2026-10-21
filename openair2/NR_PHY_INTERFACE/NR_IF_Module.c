@@ -17,7 +17,6 @@
 #include "nfapi/oai_integration/gnb_ind_vars.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "nfapi_interface.h"
-#include "openair2/PHY_INTERFACE/queue_t.h"
 #include "utils.h"
 #include "nfapi/oai_integration/nfapi_pnf.h"
 

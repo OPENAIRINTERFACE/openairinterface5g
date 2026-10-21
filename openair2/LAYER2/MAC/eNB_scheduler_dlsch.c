@@ -23,7 +23,6 @@
 #include "openair2/RRC/LTE/rrc_eNB_UE_context.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
-#include "pdcp.h"
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 

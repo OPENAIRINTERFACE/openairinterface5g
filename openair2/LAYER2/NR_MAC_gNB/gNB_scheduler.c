@@ -4,7 +4,7 @@
 
 #include "assertions.h"
 
-#include "NR_MAC_gNB/mac_proto.h"
+#include "mac_proto.h"
 #ifdef E3_AGENT
 #include "openair2/E3AP/ran_func_spectrum_extern.h"
 #endif /* E3_AGENT */
@@ -12,10 +12,6 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/nr/nr_common.h"
 #include "UTIL/OPT/opt.h"
-
-#include "openair2/X2AP/x2ap_eNB.h"
-
-#include "nr_pdcp/nr_pdcp_oai_api.h"
 
 #include "intertask_interface.h"
 

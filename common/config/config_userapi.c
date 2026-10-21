@@ -168,10 +168,10 @@ int config_getlist(configmodule_interface_t *cfg, paramlist_def_t *ParamList, pa
         if (valid_idx == num) {
           valid_idx++;
         } else if (num > valid_idx) {
-          LOG_E(HW, "Out of Order Element Creation\n index: %s, valid_idx: %d, num: %ld\n", cfg->argv[i], valid_idx, num);
+          LOG_E(UTIL, "Out of Order Element Creation\n index: %s, valid_idx: %d, num: %ld\n", cfg->argv[i], valid_idx, num);
           return -1;
         } else {
-          LOG_E(HW, "[CONFIG] Invalid Configuration\n index: %s, valid_idx: %d, num: %ld\n", cfg->argv[i], valid_idx, num);
+          LOG_E(UTIL, "[CONFIG] Invalid Configuration\n index: %s, valid_idx: %d, num: %ld\n", cfg->argv[i], valid_idx, num);
           return -1;
         }
       }

@@ -69,21 +69,9 @@ struct zmq_state_t {
 static void tx_poll_thread(zmq_tx_channel *chan, size_t i, std::atomic<bool> *poll_thread_running)
 {
   zmq_pollitem_t item = {chan->socket_, 0, ZMQ_POLLIN, 0};
-  bool reply_requested = false;
 
   while (*poll_thread_running) {
-    if (reply_requested) {
-      zmq_msg_t msg;
-      if (chan->pop_message(&msg)) {
-        int rc = zmq_msg_send(&msg, chan->socket_, 0);
-        if (rc < 0) {
-          LOG_E(HW, "[ZMQ] tx_poll_thread zmq_msg_send for TX antenna %d failed: %s\n", (int)i, zmq_strerror(errno));
-        }
-        zmq_msg_close(&msg);
-        reply_requested = false;
-      }
-    }
-
+    // Wait for a REQ from the peer.
     int rc = zmq_poll(&item, 1, 10); // 10ms timeout
     if (rc < 0) {
       if (errno == EINTR)
@@ -91,21 +79,30 @@ static void tx_poll_thread(zmq_tx_channel *chan, size_t i, std::atomic<bool> *po
       LOG_E(HW, "[ZMQ] tx_poll_thread zmq_poll failed for TX antenna %d: %s\n", (int)i, zmq_strerror(errno));
       break;
     }
-    if (rc == 0) {
-      continue; // timeout
+    if (rc == 0 || !(item.revents & ZMQ_POLLIN)) {
+      continue; // timeout, no request
+    }
+    char dummy;
+    rc = zmq_recv(chan->socket_, &dummy, 1, 0);
+    if (rc < 0) {
+      LOG_E(HW, "[ZMQ] tx_poll_thread zmq_recv for TX antenna %d failed: %s\n", (int)i, zmq_strerror(errno));
+      continue;
     }
 
-    if (item.revents & ZMQ_POLLIN) {
-      char dummy;
-      rc = zmq_recv(chan->socket_, &dummy, 1, 0);
-      if (rc < 0) {
-        LOG_E(HW, "[ZMQ] tx_poll_thread zmq_recv for TX antenna %d failed: %s\n", (int)i, zmq_strerror(errno));
-        continue;
+    // Got a REQ: block until a message is ready (woken by queue_cvar_ the moment
+    // transmit()/align() enqueues one), then reply. Replaces re-checking the queue
+    // only on the 10ms poll timeout, which stalled every slot the PHY was briefly
+    // behind the peer's prefetched request.
+    zmq_msg_t msg;
+    while (*poll_thread_running) {
+      if (chan->wait_and_pop_message(&msg, std::chrono::milliseconds(10), poll_thread_running)) {
+        rc = zmq_msg_send(&msg, chan->socket_, 0);
+        if (rc < 0) {
+          LOG_E(HW, "[ZMQ] tx_poll_thread zmq_msg_send for TX antenna %d failed: %s\n", (int)i, zmq_strerror(errno));
+        }
+        zmq_msg_close(&msg);
+        break;
       }
-      if (reply_requested) {
-        LOG_E(HW, "[ZMQ] Error, unexpected REQ before REP on TX antenna %d\n", (int)i);
-      }
-      reply_requested = true;
     }
   }
 }
