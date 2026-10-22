@@ -276,12 +276,17 @@ In the `MACRLCs` section of the gNB/DU configuration file:
   (see `ulsch_max_frame_inactivity`) or after scheduling request (SR)
 * `identity_precoding_matrix` (default 0=false): flag to enable to use only
   the identity precoding matrix in DL precoding
-* `set_analog_beamforming` (default "none"): parameter to enable analog
-  beamforming (for more information [`analog_beamforming.md`](../analog_beamforming.md))
+* `bf_method` (default "straight-wire"): selects the beamforming method, one of
+  "straight-wire", "das", "predefined" or "dynamic" (for more information
+  [`beamforming.md`](../beamforming.md))
 * `beam_duration` (default 1): duration/number of consecutive slots for a given set of
   beams, depending on hardware switching performance
 * `beams_per_period` (default 1): set of beams that can be simultaneously allocated in a
   period (`beam_duration`)
+* `ssb_beams`: beam indices statically allocated to SSB/PRACH, one per transmitted SSB
+  (required for `bf_method = "predefined"`; with a digital beam table, each index
+  must name one of its beams)
+* `dbt_file`: path to a CSV file holding the digital beam table
 * `pusch_RSSI_Threshold`: Value between -1280 and 0 which maps to range
    from -128.0 dBm/dBFS to 0.0 dBm/dBFS. This limits PUSCH TPC commands in
    case RSSI reaches the threshold and prevents ADC railing. Unit depends on

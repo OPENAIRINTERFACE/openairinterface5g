@@ -100,7 +100,6 @@ void phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   common_vars->analog_bf = cfg->analog_beamforming_ve.analog_bf_vendor_ext.value;
   LOG_I(PHY, "L1 configured with%s analog beamforming\n", common_vars->analog_bf ? "" : "out");
   if (common_vars->analog_bf) {
-    // True only if nrmac->beam_info.beam_mode == FAPI_ANALOG_BEAM, thus analog_beamforming=2
     common_vars->num_beams_period = cfg->analog_beamforming_ve.num_beams_period_vendor_ext.value;
     LOG_I(PHY, "Max number of concurrent beams: %d\n", common_vars->num_beams_period);
   } else

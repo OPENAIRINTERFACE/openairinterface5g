@@ -62,7 +62,7 @@ static void clear_beam_information(NR_beam_info_t *beam_info, int frame, int slo
 {
   // for now we use the same logic of UL_tti_req_ahead
   // reset after 1 frame with the exception of 15kHz
-  if (beam_info->beam_mode == NO_BEAM_MODE)
+  if (beam_info->bf_method == BF_METHOD_STRAIGHT_WIRE)
     return;
   // initialization done only once
   AssertFatal(beam_info->beam_allocation_size >= 0, "Beam information not initialized\n");
@@ -146,7 +146,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, const int cell_id, frame_
   start_meas(&cell->gNB_scheduler);
 
   int num_beams = 1;
-  if (cell->beam_info.beam_mode != NO_BEAM_MODE)
+  if (cell->beam_info.bf_method != BF_METHOD_STRAIGHT_WIRE)
     num_beams = cell->beam_info.beams_per_period;
   // clear vrb_maps
   for (int i = 0; i < num_beams; i++)

@@ -177,6 +177,14 @@ typedef struct nr_beam_table {
   double complex **beam_weights;
 } nr_beam_table_t;
 
+/// Physical antenna counts advertised to an Aerial L1 in CONFIG.request
+/// (numTxAnt/numRxAnt), decoupled from the logical antenna ports carried in
+/// numTxPort/numRxPort; 0 = derive from the logical ports as before
+typedef struct nr_aerial_config {
+  int num_tx_ant;
+  int num_rx_ant;
+} nr_aerial_config_t;
+
 typedef struct nr_power_config {
   /// target SNR
   int target_snrx10;
@@ -213,6 +221,7 @@ typedef struct nr_mac_config_s {
   /// SNR threshold needed to put or not a PRB in the black list
   int ul_prbblack_SNR_threshold;
   nr_power_config_t pucch;
+  nr_aerial_config_t aerial;
   nr_mac_timers_t timer_config;
   int num_dlharq;
   int num_ulharq;
@@ -220,9 +229,9 @@ typedef struct nr_mac_config_s {
   int num_additional_bwps;
   int first_active_bwp;
   nr_bwp_config_t bwp_config[4];
-  /// beamforming weight matrix size
-  int nb_bfw[2];
-  int32_t *bw_list;
+  /// beam IDs statically allocated to SSB/PRACH, one per transmitted SSB
+  int num_ssb_beams;
+  int32_t *ssb_beams;
   int num_agg_level_candidates[NUM_PDCCH_AGG_LEVELS];
   nr_redcap_config_t *redcap;
   nr_ptrs_config_t *ptrs;
@@ -907,10 +916,16 @@ typedef struct {
 } NR_UEs_t;
 
 typedef enum {
-  NO_BEAM_MODE,
-  PRECONFIGURED_BEAM_IDX,
-  LOPHY_BEAM_IDX,
-} nr_beam_mode_t;
+  /// no beamforming, each logical antenna port maps straight onto a physical one
+  BF_METHOD_STRAIGHT_WIRE = 0,
+  /// each beam is one or more logical antenna ports
+  /// OAI-specific, to be removed once the digital beam table is fully supported
+  BF_METHOD_DAS,
+  /// L2 signals beam IDs to L1, resolved through the digital beam table if there is one
+  BF_METHOD_PREDEFINED,
+  /// SRS-based precoding, not implemented yet
+  BF_METHOD_DYNAMIC,
+} nr_bf_method_e;
 
 typedef struct {
   /// list of allocated beams per period
@@ -918,7 +933,9 @@ typedef struct {
   int beam_duration; // in slots
   int beams_per_period;
   int beam_allocation_size;
-  nr_beam_mode_t beam_mode;
+  nr_bf_method_e bf_method;
+  /// beam IDs are consumed by the RU or the fronthaul rather than resolved by L1
+  bool beam_id_to_ru;
 } NR_beam_info_t;
 
 #define UE_iterator(BaSe, VaR) for (NR_UE_info_t **VaR##pptr = BaSe, *VaR = *VaR##pptr; VaR; VaR = *(++VaR##pptr))

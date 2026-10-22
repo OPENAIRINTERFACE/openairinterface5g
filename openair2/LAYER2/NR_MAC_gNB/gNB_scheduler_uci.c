@@ -80,7 +80,7 @@ static void nr_fill_nfapi_pucch(nr_cell_sched_t *cell, frame_t frame, slot_t slo
                      pucch->dai_c,
                      pucch->sr_flag,
                      pucch->r_pucch,
-                     cell->beam_info.beam_mode,
+                     &cell->beam_info,
                      ant_ports_to_use,
                      cell->radio_config.spatial_stream_index,
                      cell->radio_config.pusch_AntennaPorts);
