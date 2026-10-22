@@ -180,49 +180,48 @@ static NRPPA_GeographicalCoordinates_t encode_geographical_coordinates_nrppa(nrp
   return out;
 }
 
-NRPPA_TRPInformationItem_t encode_trp_info_type_response_item_nrppa(nrppa_trp_information_type_response_item_t *in)
+NRPPA_TRPInformationTypeResponseItem_t encode_trp_info_type_response_item_nrppa(nrppa_trp_information_type_response_item_t *in)
 {
-  NRPPA_TRPInformationItem_t out = {0};
+  NRPPA_TRPInformationTypeResponseItem_t out = {0};
   switch (in->present) {
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_NOTHING:
-      out.present = NRPPA_TRPInformationItem_PR_NOTHING;
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_NOTHING;
       break;
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_PCI_NR:
-      out.present = NRPPA_TRPInformationItem_PR_pCI_NR;
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_pCI_NR;
       out.choice.pCI_NR = in->choice.pci_nr;
       break;
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_NG_RAN_CGI:
-      out.present = NRPPA_TRPInformationItem_PR_nG_RAN_CGI;
-      asn1cCalloc(out.choice.nG_RAN_CGI, nG_RAN_CGI);
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_cGI_NR;
+      asn1cCalloc(out.choice.cGI_NR, cgi_nr);
       MCC_MNC_TO_PLMNID(in->choice.ng_ran_cgi.plmn.mcc,
                         in->choice.ng_ran_cgi.plmn.mnc,
                         in->choice.ng_ran_cgi.plmn.mnc_digit_length,
-                        &(nG_RAN_CGI->pLMN_Identity));
-      nG_RAN_CGI->nG_RANcell.present = NRPPA_NG_RANCell_PR_nR_CellID;
-      NR_CELL_ID_TO_BIT_STRING(in->choice.ng_ran_cgi.nr_cellid, &(nG_RAN_CGI->nG_RANcell.choice.nR_CellID));
+                        &(cgi_nr->pLMN_Identity));
+      NR_CELL_ID_TO_BIT_STRING(in->choice.ng_ran_cgi.nr_cellid, &(cgi_nr->nRcellIdentifier));
       break;
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_NRARFCN:
-      out.present = NRPPA_TRPInformationItem_PR_aRFCN;
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_aRFCN;
       out.choice.aRFCN = in->choice.nr_arfcn;
       break;
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_PRSCONFIGURATION:
-      out.present = NRPPA_TRPInformationItem_PR_pRSConfiguration;
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_pRSConfiguration;
       AssertFatal(false, "TRP information type response item PRS configuration unsupported\n");
       break;
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_SSBINFORMATION:
-      out.present = NRPPA_TRPInformationItem_PR_sSBinformation;
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_sSBinformation;
       AssertFatal(false, "TRP information type response item SSB Information unsupported\n");
       break;
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_SFNINITIALISATIONTIME:
-      out.present = NRPPA_TRPInformationItem_PR_sFNInitialisationTime;
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_sFNInitialisationTime;
       AssertFatal(false, "TRP information type response item SFN Initialization Time unsupported\n");
       break;
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_SPATIALDIRECTIONINFORMATION:
-      out.present = NRPPA_TRPInformationItem_PR_spatialDirectionInformation;
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_spatialDirectionInformation;
       AssertFatal(false, "TRP information type response item Spatial Direction Information unsupported\n");
       break;
     case NRPPA_TRP_INFORMATION_TYPE_RESPONSE_ITEM_PR_GEOGRAPHICALCOORDINATES:
-      out.present = NRPPA_TRPInformationItem_PR_geographicalCoordinates;
+      out.present = NRPPA_TRPInformationTypeResponseItem_PR_geographicalCoordinates;
       asn1cCalloc(out.choice.geographicalCoordinates, nrppa_geo_coord);
       nrppa_geographical_coordinates_t *geo_coord = &in->choice.geographical_coordinates;
       *nrppa_geo_coord = encode_geographical_coordinates_nrppa(geo_coord);
@@ -789,7 +788,7 @@ static NRPPA_SRSConfig_t encode_srs_config(const nrppa_srs_config_t *in_config)
       nrppa_pos_srs_resource_set->possrsResourceSetID = pos_srs_resource_set->pos_srs_resource_set_id;
       uint8_t pos_srs_resource_id_list_length = pos_srs_resource_set->pos_srs_resource_id_list.pos_srs_resource_id_list_length;
       for (int j = 0; j < pos_srs_resource_id_list_length; j++) {
-        asn1cSequenceAdd(nrppa_pos_srs_resource_set->possRSResourceID_List.list,
+        asn1cSequenceAdd(nrppa_pos_srs_resource_set->possRSResourceIDPerSet_List.list,
                          NRPPA_SRSPosResourceID_t,
                          nrppa_pos_srs_resource_id);
         *nrppa_pos_srs_resource_id = pos_srs_resource_set->pos_srs_resource_id_list.srs_pos_resource_id[j];
@@ -1037,19 +1036,21 @@ int nrppa_gNB_handle_trp_information_request(nrppa_gnb_ue_info_t *nrppa_msg_info
   NRPPA_FIND_PROTOCOLIE_BY_ID(NRPPA_TRPInformationRequest_IEs_t,
                               ie,
                               container,
-                              NRPPA_ProtocolIE_ID_id_TRPInformationTypeList,
+                              NRPPA_ProtocolIE_ID_id_TRPInformationTypeListTRPReq,
                               false);
 
   if (ie == NULL) {
     LOG_W(NRPPA, "TRPInformationRequest IE TRP Information Type List is mandatory but not handled\n");
   } else {
-    uint8_t trp_info_list_len = ie->value.choice.TRPInformationTypeList.list.count;
+    uint8_t trp_info_list_len = ie->value.choice.TRPInformationTypeListTRPReq.list.count;
     AssertError(trp_info_list_len > 0, return false, "at least 1 TRP Information Type must be present");
     nrppa_trp_information_type_list_t *trp_info_list = &req->trp_information_type_list;
     trp_info_list->trp_information_type_list_length = trp_info_list_len;
     trp_info_list->trp_information_type_item = calloc_or_fail(trp_info_list_len, sizeof(*trp_info_list->trp_information_type_item));
     for (int i = 0; i < trp_info_list_len; i++) {
-      trp_info_list->trp_information_type_item[i] = *ie->value.choice.TRPInformationTypeList.list.array[i];
+      NRPPA_TRPInformationTypeItemTRPReq_t *item =
+          (NRPPA_TRPInformationTypeItemTRPReq_t *)ie->value.choice.TRPInformationTypeListTRPReq.list.array[i];
+      trp_info_list->trp_information_type_item[i] = item->value.choice.TRPInformationTypeItem;
     }
   }
 
@@ -1093,26 +1094,24 @@ int nrppa_gNB_trp_information_response(instance_t instance, MessageDef *msg_p)
   // IE TRP Information List : mandatory
   {
     asn1cSequenceAdd(out->protocolIEs.list, NRPPA_TRPInformationResponse_IEs_t, ie);
-    ie->id = NRPPA_ProtocolIE_ID_id_TRPInformationList;
+    ie->id = NRPPA_ProtocolIE_ID_id_TRPInformationListTRPResp;
     ie->criticality = NRPPA_Criticality_ignore;
-    ie->value.present = NRPPA_TRPInformationResponse_IEs__value_PR_TRPInformationList;
+    ie->value.present = NRPPA_TRPInformationResponse_IEs__value_PR_TRPInformationListTRPResp;
 
     uint32_t trp_info_item_len = resp->trp_information_list.trp_information_item_length;
     for (int i = 0; i < trp_info_item_len; i++) {
-      // TRPInformationItem (M)
-      asn1cSequenceAdd(ie->value.choice.TRPInformationList.list, TRPInformationList__Member, trpinfolist_member);
+      asn1cSequenceAdd(ie->value.choice.TRPInformationListTRPResp.list, TRPInformationListTRPResp__Member, trpinfolist_member);
       nrppa_trp_information_t *nrppa_tRPInformation = &resp->trp_information_list.trp_information_item[i];
 
-      trpinfolist_member->tRP_ID = nrppa_tRPInformation->trp_id;
-
       NRPPA_TRPInformation_t *trp_info = &trpinfolist_member->tRPInformation;
+      trp_info->tRP_ID = nrppa_tRPInformation->trp_id;
 
       nrppa_trp_information_type_response_list_t *nrppa_tRPInformationTypeResponseList =
           &nrppa_tRPInformation->trp_information_type_response_list;
       uint8_t trp_info_type_resp_item_len = nrppa_tRPInformationTypeResponseList->trp_information_type_response_item_length;
 
       for (int j = 0; j < trp_info_type_resp_item_len; j++) {
-        asn1cSequenceAdd(trp_info->list, NRPPA_TRPInformationItem_t, trp_info_item);
+        asn1cSequenceAdd(trp_info->tRPInformationTypeResponseList.list, NRPPA_TRPInformationTypeResponseItem_t, trp_info_item);
         nrppa_trp_information_type_response_item_t *resp_item =
             &nrppa_tRPInformationTypeResponseList->trp_information_type_response_item[j];
         *trp_info_item = encode_trp_info_type_response_item_nrppa(resp_item);
