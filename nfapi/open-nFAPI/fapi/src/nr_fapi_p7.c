@@ -6,6 +6,17 @@
 #include "nr_fapi_p7_utils.h"
 #include "nr_nfapi_p7.h"
 #include "debug.h"
+#include "common/utils/utils.h"
+
+/* Reject a count decoded from a P7 message that does not fit the array it indexes: trace an error
+ * and return 0 from the calling unpacker, as it does on a short buffer. */
+#define NR_FAPI_CHECK_COUNT(count, array)                                                                           \
+  do {                                                                                                              \
+    if ((count) > sizeofArray(array)) {                                                                             \
+      NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s %u exceeds max %zu\n", #count, (unsigned int)(count), sizeofArray(array)); \
+      return 0;                                                                                                     \
+    }                                                                                                               \
+  } while (0)
 
 uint8_t fapi_nr_p7_message_body_pack(nfapi_nr_p7_message_header_t *header,
                                      uint8_t **ppWritePackedMsg,
@@ -526,6 +537,8 @@ static uint8_t unpack_nr_tx_beamforming_pdu(nfapi_nr_tx_precoding_and_beamformin
         && pull8(ppReadPackedMsg, &beamforming_pdu->dig_bf_interfaces, end))) {
     return 0;
   }
+  NR_FAPI_CHECK_COUNT(beamforming_pdu->num_prgs, beamforming_pdu->prgs_list);
+  NR_FAPI_CHECK_COUNT(beamforming_pdu->dig_bf_interfaces, beamforming_pdu->prgs_list[0].dig_bf_interface_list);
   for (int prg = 0; prg < beamforming_pdu->num_prgs; prg++) {
     if (!(pull16(ppReadPackedMsg, &beamforming_pdu->prgs_list[prg].pm_idx, end))) {
       return 0;
@@ -553,6 +566,7 @@ static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void *tlv, uint8_t **ppReadPa
         && pull16(ppReadPackedMsg, &value->numDlDci, end))) {
     return 0;
   }
+  NR_FAPI_CHECK_COUNT(value->numDlDci, value->dci_pdu);
 
   for (uint16_t i = 0; i < value->numDlDci; ++i) {
     if (!(pull16(ppReadPackedMsg, &value->dci_pdu[i].RNTI, end) && pull16(ppReadPackedMsg, &value->dci_pdu[i].ScramblingId, end)
@@ -580,6 +594,7 @@ static uint8_t unpack_dl_tti_pdcch_pdu_rel15_value(void *tlv, uint8_t **ppReadPa
   nfapi_v4_pdcch_pdu_parameters_t *p = &value->param_v4;
   if (!pull16(ppReadPackedMsg, &p->numSpatialStreams, end))
     return 0;
+  NR_FAPI_CHECK_COUNT(p->numSpatialStreams, p->dci_spatialStreamIndices);
 
   for (uint_fast16_t i = 0; i < p->numSpatialStreams; i++) {
     if (!(pull16(ppReadPackedMsg, &p->dci_spatialStreamIndices[i].dci_index, end)
@@ -611,6 +626,7 @@ static uint8_t unpack_dl_tti_pdsch_pdu_rel15_value(void *tlv, uint8_t **ppReadPa
         && pull8(ppReadPackedMsg, &value->CyclicPrefix, end) && pull8(ppReadPackedMsg, &value->NrOfCodewords, end))) {
     return 0;
   }
+  NR_FAPI_CHECK_COUNT(value->NrOfCodewords, value->targetCodeRate);
   for (int i = 0; i < value->NrOfCodewords; ++i) {
     if (!(pull16(ppReadPackedMsg, &value->targetCodeRate[i], end) && pull8(ppReadPackedMsg, &value->qamModOrder[i], end)
           && pull8(ppReadPackedMsg, &value->mcsIndex[i], end) && pull8(ppReadPackedMsg, &value->mcsTable[i], end)
@@ -664,6 +680,7 @@ static uint8_t unpack_dl_tti_pdsch_pdu_rel15_value(void *tlv, uint8_t **ppReadPa
   // PDSCH parameter in FAPI v4 for MU-MIMO spatial stream indexing
   if (!pull8(ppReadPackedMsg, &value->param_v4.numberCodewords, end))
     return 0;
+  NR_FAPI_CHECK_COUNT(value->param_v4.numberCodewords, value->param_v4.spatialStreamsCw);
 
   for (uint_fast8_t c = 0; c < value->param_v4.numberCodewords; c++)
     if (!unpack_spatial_stream_indices(value->param_v4.spatialStreamsCw + c, ppReadPackedMsg, end))
@@ -780,6 +797,10 @@ uint8_t unpack_dl_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg
         && pull8(ppReadPackedMsg, &pNfapiMsg->dl_tti_request_body.nGroup, end))) {
     return 0;
   }
+  NR_FAPI_CHECK_COUNT(pNfapiMsg->dl_tti_request_body.nPDUs, pNfapiMsg->dl_tti_request_body.dl_tti_pdu_list);
+  /* nGroup is a uint8_t and cannot exceed nUe[256], and a check would trigger clang's
+   * -Wtautological-constant-out-of-range-compare. SCF 222.10.04 widens it to uint16_t
+   * (max 3822): add NR_FAPI_CHECK_COUNT(nGroup, nUe) here when that change lands. */
   for (int i = 0; i < pNfapiMsg->dl_tti_request_body.nPDUs; i++) {
     if (!unpack_dl_tti_request_body_value(ppReadPackedMsg, end, &pNfapiMsg->dl_tti_request_body.dl_tti_pdu_list[i]))
       return 0;
@@ -789,6 +810,7 @@ uint8_t unpack_dl_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg
     if (!pull8(ppReadPackedMsg, &pNfapiMsg->dl_tti_request_body.nUe[i], end)) {
       return 0;
     }
+    NR_FAPI_CHECK_COUNT(pNfapiMsg->dl_tti_request_body.nUe[i], pNfapiMsg->dl_tti_request_body.PduIdx[i]);
     for (int j = 0; j < pNfapiMsg->dl_tti_request_body.nUe[i]; j++) {
       if (!pull8(ppReadPackedMsg, &pNfapiMsg->dl_tti_request_body.PduIdx[i][j], end)) {
         return 0;
@@ -1153,6 +1175,8 @@ static uint8_t unpack_nr_rx_beamforming_pdu(nfapi_nr_ul_beamforming_t *beamformi
         && pull8(ppReadPackedMsg, &beamforming_pdu->dig_bf_interface, end))) {
     return 0;
   }
+  NR_FAPI_CHECK_COUNT(beamforming_pdu->num_prgs, beamforming_pdu->prgs_list);
+  NR_FAPI_CHECK_COUNT(beamforming_pdu->dig_bf_interface, beamforming_pdu->prgs_list[0].dig_bf_interface_list);
   for (int prg = 0; prg < beamforming_pdu->num_prgs; prg++) {
     for (int digBFInterface = 0; digBFInterface < beamforming_pdu->dig_bf_interface; digBFInterface++) {
       if (!pull16(ppReadPackedMsg, &beamforming_pdu->prgs_list[prg].dig_bf_interface_list[digBFInterface].beam_idx, end)) {
@@ -1425,6 +1449,7 @@ static uint8_t unpack_ul_tti_groups_list_value(uint8_t **ppReadPackedMsg, uint8_
 
   if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_ue, end))
     return 0;
+  NR_FAPI_CHECK_COUNT(pNfapiMsg->n_ue, pNfapiMsg->ue_list);
 
   for (int i = 0; i < pNfapiMsg->n_ue; i++) {
     if (!pull8(ppReadPackedMsg, &pNfapiMsg->ue_list[i].pdu_idx, end))
@@ -1444,6 +1469,7 @@ uint8_t unpack_ul_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg
     return 0;
   if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_pdus, end))
     return 0;
+  NR_FAPI_CHECK_COUNT(pNfapiMsg->n_pdus, pNfapiMsg->pdus_list);
   if (!pull8(ppReadPackedMsg, &pNfapiMsg->rach_present, end))
     return 0;
   if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_ulsch, end))
@@ -1452,6 +1478,7 @@ uint8_t unpack_ul_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg
     return 0;
   if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_group, end))
     return 0;
+  NR_FAPI_CHECK_COUNT(pNfapiMsg->n_group, pNfapiMsg->groups_list);
   for (int i = 0; i < pNfapiMsg->n_pdus; i++) {
     if (!unpack_ul_tti_pdu_list_value(ppReadPackedMsg, end, &pNfapiMsg->pdus_list[i]))
       return 0;
@@ -1585,6 +1612,7 @@ static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
         && pull16(ppReadPackedMsg, &value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, end))) {
     return 0;
   }
+  NR_FAPI_CHECK_COUNT(value->pdcch_pdu.pdcch_pdu_rel15.numDlDci, value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu);
 
   for (uint16_t i = 0; i < value->pdcch_pdu.pdcch_pdu_rel15.numDlDci; ++i) {
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &value->pdcch_pdu.pdcch_pdu_rel15.dci_pdu[i];
@@ -1599,6 +1627,8 @@ static uint8_t unpack_ul_dci_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t *
           && pull8(ppReadPackedMsg, &beamforming->dig_bf_interfaces, end))) {
       return 0;
     }
+    NR_FAPI_CHECK_COUNT(beamforming->num_prgs, beamforming->prgs_list);
+    NR_FAPI_CHECK_COUNT(beamforming->dig_bf_interfaces, beamforming->prgs_list[0].dig_bf_interface_list);
 
     for (int prg = 0; prg < beamforming->num_prgs; prg++) {
       if (!pull16(ppReadPackedMsg, &beamforming->prgs_list[prg].pm_idx, end)) {
@@ -1626,6 +1656,7 @@ uint8_t unpack_ul_dci_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg
   if (!(pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end) && pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end)
         && pull8(ppReadPackedMsg, &pNfapiMsg->numPdus, end)))
     return 0;
+  NR_FAPI_CHECK_COUNT(pNfapiMsg->numPdus, pNfapiMsg->ul_dci_pdu_list);
 
   for (int i = 0; i < pNfapiMsg->numPdus; i++) {
     if (!unpack_ul_dci_pdu_list_value(ppReadPackedMsg, end, &pNfapiMsg->ul_dci_pdu_list[i]))
@@ -1721,6 +1752,7 @@ static uint8_t unpack_tx_data_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t 
   if (!(pull32(ppReadPackedMsg, &pNfapiMsg->PDU_length, end) && pull16(ppReadPackedMsg, &pNfapiMsg->PDU_index, end)
         && pull32(ppReadPackedMsg, &pNfapiMsg->num_TLV, end)))
     return 0;
+  NR_FAPI_CHECK_COUNT(pNfapiMsg->num_TLV, pNfapiMsg->TLVs);
 
   for (int i = 0; i < pNfapiMsg->num_TLV; ++i) {
     if (!(pull16(ppReadPackedMsg, &pNfapiMsg->TLVs[i].tag, end) && pull32(ppReadPackedMsg, &pNfapiMsg->TLVs[i].length, end)))
@@ -1761,6 +1793,7 @@ uint8_t unpack_tx_data_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *ms
   if (!(pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end) && pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end)
         && pull16(ppReadPackedMsg, &pNfapiMsg->Number_of_PDUs, end)))
     return 0;
+  NR_FAPI_CHECK_COUNT(pNfapiMsg->Number_of_PDUs, pNfapiMsg->pdu_list);
 
   for (int i = 0; i < pNfapiMsg->Number_of_PDUs; i++) {
     if (!unpack_tx_data_pdu_list_value(ppReadPackedMsg, end, &pNfapiMsg->pdu_list[i])) {
@@ -2205,6 +2238,7 @@ static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *valu
   if (((value->pduBitmap >> 1) & 0x01)) { // HARQ
     if (!(pull8(ppReadPackedMsg, &value->harq.num_harq, end) && pull8(ppReadPackedMsg, &value->harq.harq_confidence_level, end)))
       return 0;
+    NR_FAPI_CHECK_COUNT(value->harq.num_harq, value->harq.harq_list);
     if (value->harq.num_harq > 0) {
       for (int i = 0; i < value->harq.num_harq; i++) {
         if (!pull8(ppReadPackedMsg, &value->harq.harq_list[i].harq_value, end)) {
@@ -2534,10 +2568,7 @@ uint8_t unpack_nr_srs_toa_vendor_ext_indication(uint8_t **ppReadPackedMsg, uint8
     return 0;
   }
 
-  AssertFatal(pNfapiMsg->num_ta <= NFAPI_NR_MAX_NUM_TA_NSEC,
-              "pNfapiMsg->num_ta %d cannot be greater than %d\n",
-              pNfapiMsg->num_ta,
-              NFAPI_NR_MAX_NUM_TA_NSEC);
+  NR_FAPI_CHECK_COUNT(pNfapiMsg->num_ta, pNfapiMsg->ta_offset_nsec);
 
   for (int i = 0; i < pNfapiMsg->num_ta; i++) {
     if (!pulls16(ppReadPackedMsg, &pNfapiMsg->ta_offset_nsec[i], end)) {
@@ -2590,6 +2621,7 @@ static uint8_t unpack_nr_rach_indication_body(nfapi_nr_prach_indication_pdu_t *v
         && pull8(ppReadPackedMsg, &value->num_preamble, end))) {
     return 0;
   }
+  NR_FAPI_CHECK_COUNT(value->num_preamble, value->preamble_list);
 
   for (int i = 0; i < value->num_preamble; i++) {
     nfapi_nr_prach_indication_preamble_t *preamble = &(value->preamble_list[i]);
