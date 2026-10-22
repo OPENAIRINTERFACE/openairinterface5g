@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: LicenseRef-CSSL-1.0 -->
 
 <testCaseList>
-  <htmlTabName>CUCP-CUUP-DU E1+F1 split</htmlTabName>
+  <htmlTabName>CUCP-CUUP-DU E1+F1 split + 2-Step RA</htmlTabName>
 
   <testCase>
     <class>Pull_Local_Registry</class>

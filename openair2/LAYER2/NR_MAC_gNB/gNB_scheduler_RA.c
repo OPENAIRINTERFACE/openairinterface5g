@@ -86,15 +86,14 @@ static int16_t ssb_index_from_prach(nr_cell_sched_t *cell,
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &cell->config;
   NR_RACH_ConfigCommon_t *rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-  uint8_t config_index = rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
+  uint8_t config_index = 0;
   uint8_t fdm = cfg->prach_config.num_prach_fd_occasions.value;
   
   uint8_t total_RApreambles = MAX_NUM_NR_PRACH_PREAMBLES;
   if (rach_ConfigCommon->totalNumberOfRA_Preambles != NULL)
     total_RApreambles = *rach_ConfigCommon->totalNumberOfRA_Preambles;
 
-  ssb_ro_preambles_t ssb_ro = get_ssb_ro_preambles_4step(rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB);
-  float num_ssb_per_RO = ssb_ro.ssb_per_ro;
+  ssb_ro_preambles_t ssb_ro;
   uint16_t start_symbol_index = 0;
   uint8_t temp_start_symbol = 0;
   uint16_t RA_sfn_index = -1;
@@ -103,6 +102,8 @@ static int16_t ssb_index_from_prach(nr_cell_sched_t *cell,
   NR_MsgA_ConfigCommon_r16_t *msgacc = NULL;
   if (scc->uplinkConfigCommon->initialUplinkBWP->ext1 && scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16)
     msgacc = scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup;
+  get_config_index_and_ssb_ro(msgacc, rach_ConfigCommon, &config_index, &ssb_ro);
+  float num_ssb_per_RO = ssb_ro.ssb_per_ro;
   const int ul_mu = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
   const int mu = nr_get_prach_or_ul_mu(msgacc, rach_ConfigCommon, ul_mu);
   frequency_range_t freq_range = get_freq_range_from_arfcn(scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
@@ -157,11 +158,14 @@ void find_SSB_and_RO_available(nr_cell_sched_t *cell)
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &cell->config;
   NR_RACH_ConfigCommon_t *rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-  uint8_t config_index = rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
+  uint8_t config_index = 0;
   uint16_t unused_RA_occasion, repetition = 0;
   uint8_t num_active_ssb = 0;
-
-  ssb_ro_preambles_t ssb_ro = get_ssb_ro_preambles_4step(rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB);
+  ssb_ro_preambles_t ssb_ro;
+  NR_MsgA_ConfigCommon_r16_t *msgacc = NULL;
+  if (scc->uplinkConfigCommon->initialUplinkBWP->ext1 && scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16)
+    msgacc = scc->uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup;
+  get_config_index_and_ssb_ro(msgacc, rach_ConfigCommon, &config_index, &ssb_ro);
   cc->cb_preambles_per_ssb = ssb_ro.preambles_per_ssb;
 
   // prach is scheduled according to configuration index and tables 6.3.3.2.2 to 6.3.3.2.4
@@ -223,8 +227,8 @@ static void schedule_nr_MsgA_pusch(NR_UplinkConfigCommon_t *uplinkConfigCommon,
                                    NR_PhysCellId_t physCellId)
 {
 
-  NR_MsgA_PUSCH_Resource_r16_t *msgA_PUSCH_Resource = uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice
-                                                          .setup->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16;
+  NR_MsgA_ConfigCommon_r16_t *msgacc = uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup;
+  NR_MsgA_PUSCH_Resource_r16_t *msgA_PUSCH_Resource = msgacc->msgA_PUSCH_Config_r16->msgA_PUSCH_ResourceGroupA_r16;
 
   const int n_slots_frame = cell->frame_structure.numb_slots_frame;
   slot_t msgA_pusch_slot = (slotP + msgA_PUSCH_Resource->msgA_PUSCH_TimeDomainOffset_r16) % n_slots_frame;
@@ -266,50 +270,83 @@ static void schedule_nr_MsgA_pusch(NR_UplinkConfigCommon_t *uplinkConfigCommon,
   pusch_pdu->pusch_data.new_data_indicator = 1;
   pusch_pdu->nrOfLayers = 1;
   pusch_pdu->num_dmrs_cdm_grps_no_data = L <= 2 ? 1 : 2; // no data in dmrs symbols as in 6.2.2 in 38.214
-  pusch_pdu->ul_dmrs_symb_pos = get_l_prime(3, 0, pusch_dmrs_pos2, pusch_len1, 10, dmrs_TypeA_Position);
-  pusch_pdu->transform_precoding = *uplinkConfigCommon->initialUplinkBWP->ext1->msgA_ConfigCommon_r16->choice.setup->msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16;
+  pusch_pdu->ul_dmrs_symb_pos =
+      get_l_prime(L, *msgA_PUSCH_Resource->mappingTypeMsgA_PUSCH_r16, pusch_dmrs_pos2, pusch_len1, S, dmrs_TypeA_Position);
+  pusch_pdu->transform_precoding = *msgacc->msgA_PUSCH_Config_r16->msgA_TransformPrecoder_r16;
   pusch_pdu->rb_bitmap[0] = 0;
   pusch_pdu->rb_start = msgA_PUSCH_Resource->frequencyStartMsgA_PUSCH_r16; // rb_start depends on the RO
   int locationAndBandwidth = uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth;
   pusch_pdu->bwp_size = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE);
   pusch_pdu->bwp_start = NRRIV2PRBOFFSET(locationAndBandwidth, MAX_BWP_SIZE);
-  pusch_pdu->subcarrier_spacing = 0;
+  pusch_pdu->subcarrier_spacing = uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
   pusch_pdu->cyclic_prefix = 0;
   pusch_pdu->uplink_frequency_shift_7p5khz = 0;
   pusch_pdu->vrb_to_prb_mapping = 0;
   pusch_pdu->dmrs_config_type = 0;
-  pusch_pdu->data_scrambling_id = 0;
-  if (msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16) {
-    pusch_pdu->ul_dmrs_scrambling_id = *msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16;
-  } else {
-    pusch_pdu->ul_dmrs_scrambling_id = physCellId;
-  }
-  pusch_pdu->scid =
-      0; // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
+  NR_MsgA_PUSCH_Config_r16_t *msgA_pusch_cfg = msgacc->msgA_PUSCH_Config_r16;
+  pusch_pdu->data_scrambling_id =
+      msgA_pusch_cfg->msgA_DataScramblingIndex_r16 ? *msgA_pusch_cfg->msgA_DataScramblingIndex_r16 : physCellId;
+  pusch_pdu->ul_dmrs_scrambling_id = msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16
+                                         ? *msgA_PUSCH_Resource->msgA_DMRS_Config_r16.msgA_ScramblingID0_r16
+                                         : physCellId;
+  pusch_pdu->scid = 0; // n_SCID from DMRS resource mapping (TS 38.213 8.1A); only resource 0 scheduled (nrofDMRS-Sequences = 1)
   pusch_pdu->pusch_identity = 0;
   pusch_pdu->resource_alloc = 1; // type 1
   pusch_pdu->tx_direct_current_location = 0;
   pusch_pdu->mcs_index = msgA_PUSCH_Resource->msgA_MCS_r16;
   pusch_pdu->qam_mod_order = nr_get_Qm_dl(pusch_pdu->mcs_index, pusch_pdu->mcs_table);
 
-  int num_dmrs_symb = count_bits64_with_mask(pusch_pdu->ul_dmrs_symb_pos, 10, 3);
+  int num_dmrs_symb = count_bits64_with_mask(pusch_pdu->ul_dmrs_symb_pos, S, L);
   AssertFatal(pusch_pdu->mcs_index <= 28, "Exceeding MCS limit for MsgA PUSCH\n");
   int R = nr_get_code_rate_ul(pusch_pdu->mcs_index, pusch_pdu->mcs_table);
   pusch_pdu->target_code_rate = R;
   int TBS = nr_compute_tbs(pusch_pdu->qam_mod_order,
-                       R,
-                       pusch_pdu->rb_size,
-                       pusch_pdu->nr_of_symbols,
-                       num_dmrs_symb * 12, // nb dmrs set for no data in dmrs symbol
-                       0, // nb_rb_oh
-                       0, // to verify tb scaling
-                       pusch_pdu->nrOfLayers)
-        >> 3;
+                           R,
+                           pusch_pdu->rb_size,
+                           pusch_pdu->nr_of_symbols,
+                           num_dmrs_symb * 12, // nb dmrs set for no data in dmrs symbol
+                           0, // nb_rb_oh
+                           0, // to verify tb scaling
+                           pusch_pdu->nrOfLayers)
+            >> 3;
 
   pusch_pdu->pusch_data.tb_size = TBS;
   pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS << 3, R);
 
+  pusch_pdu->param_v4.numSpatialStreamIndices = cell->radio_config.pusch_AntennaPorts;
+
   LOG_D(NR_MAC, "Scheduling MsgA PUSCH in %d.%d\n", msgA_pusch_frame, msgA_pusch_slot);
+
+  LOG_D(NR_MAC,
+        "pdu_bit_map %d rnti %d handle %d rb_size %d mcs_table %d frequency_hopping %d dmrs_ports %d start_symbol_index %d "
+        "nr_of_symbols %d new_data_indicator %d num_dmrs_cdm_grps_no_data %d ul_dmrs_symb_pos %d transform_precoding %d rb_start "
+        "%d bwp_size %d bwp_start %d subcarrier_spacing %d data_scrambling_id %d ul_dmrs_scrambling_id %d mcs_index %d "
+        "qam_mod_order %d target_code_rate %d tb_size %d ldpcBaseGraph %d numSpatialStreamIndices %d\n",
+        pusch_pdu->pdu_bit_map,
+        pusch_pdu->rnti,
+        pusch_pdu->handle,
+        pusch_pdu->rb_size,
+        pusch_pdu->mcs_table,
+        pusch_pdu->frequency_hopping,
+        pusch_pdu->dmrs_ports,
+        pusch_pdu->start_symbol_index,
+        pusch_pdu->nr_of_symbols,
+        pusch_pdu->pusch_data.new_data_indicator,
+        pusch_pdu->num_dmrs_cdm_grps_no_data,
+        pusch_pdu->ul_dmrs_symb_pos,
+        pusch_pdu->transform_precoding,
+        pusch_pdu->rb_start,
+        pusch_pdu->bwp_size,
+        pusch_pdu->bwp_start,
+        pusch_pdu->subcarrier_spacing,
+        pusch_pdu->data_scrambling_id,
+        pusch_pdu->ul_dmrs_scrambling_id,
+        pusch_pdu->mcs_index,
+        pusch_pdu->qam_mod_order,
+        pusch_pdu->target_code_rate,
+        pusch_pdu->pusch_data.tb_size,
+        pusch_pdu->maintenance_parms_v3.ldpcBaseGraph,
+        pusch_pdu->param_v4.numSpatialStreamIndices);
 
   UL_tti_req->n_pdus += 1;
 }
@@ -351,9 +388,13 @@ void schedule_nr_prach(gNB_MAC_INST *gNB, nr_cell_sched_t *cell, frame_t frameP,
 
   if (is_ul_slot(slotP, &cell->frame_structure)) {
     const NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &rach_ConfigCommon->rach_ConfigGeneric;
-    uint8_t config_index = rach_ConfigGeneric->prach_ConfigurationIndex;
+    uint8_t config_index = 0;
+    ssb_ro_preambles_t ssb_ro;
+    float num_ssb_per_RO = 0;
     int slot_index = 0;
     uint16_t prach_occasion_id = -1;
+    get_config_index_and_ssb_ro(msgacc, rach_ConfigCommon, &config_index, &ssb_ro);
+    num_ssb_per_RO = ssb_ro.ssb_per_ro;
 
     int bwp_start = NRRIV2PRBOFFSET(initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
@@ -384,8 +425,6 @@ void schedule_nr_prach(gNB_MAC_INST *gNB, nr_cell_sched_t *cell, frame_t frameP,
       NR_beam_alloc_t beam = {0};
       uint32_t N_t_slot = cc->prach_info.N_t_slot;
       uint32_t start_symb = cc->prach_info.start_symbol;
-      const float num_ssb_per_RO =
-          get_ssb_ro_preambles_4step(rach_ConfigCommon->ssb_perRACH_OccasionAndCB_PreamblesPerSSB).ssb_per_ro;
       for (int fdm_index = 0; fdm_index < fdm; fdm_index++) { // one structure per frequency domain occasion
         AssertFatal(UL_tti_req->n_pdus < sizeofArray(UL_tti_req->pdus_list), "Invalid UL_tti_req->n_pdus %d\n", UL_tti_req->n_pdus);
         nfapi_nr_ul_tti_request_number_of_pdus_t *newpdu = UL_tti_req->pdus_list + UL_tti_req->n_pdus;
@@ -490,15 +529,14 @@ void schedule_nr_prach(gNB_MAC_INST *gNB, nr_cell_sched_t *cell, frame_t frameP,
               }
             }
             if (initialUplinkBWP->ext1 && initialUplinkBWP->ext1->msgA_ConfigCommon_r16) {
-              if (gNB->UE_info.connected_ue_list[0] == NULL)
-                schedule_nr_MsgA_pusch(scc->uplinkConfigCommon,
-                                       gNB,
-                                       cell,
-                                       frameP,
-                                       slotP,
-                                       prach_pdu,
-                                       scc->dmrs_TypeA_Position,
-                                       *scc->physCellId);
+              schedule_nr_MsgA_pusch(scc->uplinkConfigCommon,
+                                     gNB,
+                                     cell,
+                                     frameP,
+                                     slotP,
+                                     prach_pdu,
+                                     scc->dmrs_TypeA_Position,
+                                     *scc->physCellId);
             }
           }
           prach_pdu->num_prach_ocas = num_td_occ;
@@ -673,7 +711,8 @@ static unsigned int get_slot_RA(const NR_ServingCellConfigCommon_t *scc,
                                 frame_type_t frame_type,
                                 int slot)
 {
-  uint8_t index = rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
+  uint8_t index = msgacc ? *msgacc->rach_ConfigCommonTwoStepRA_r16.rach_ConfigGenericTwoStepRA_r16.msgA_PRACH_ConfigurationIndex_r16
+                         : rach_ConfigCommon->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint16_t prach_format =
     get_nr_prach_format_from_index(index, scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA, frame_type);
   unsigned int slot_RA;

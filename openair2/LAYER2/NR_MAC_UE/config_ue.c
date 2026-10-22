@@ -1776,6 +1776,11 @@ static void configure_common_BWP_ul(NR_UE_MAC_INST_t *mac, int bwp_id, NR_BWP_Up
       HANDLE_SETUPRELEASE_DIRECT(bwp->rach_ConfigCommon, rachcommon, NR_RACH_ConfigCommon_t, asn_DEF_NR_RACH_ConfigCommon);
     }
     if (ul_common->ext1 && ul_common->ext1->msgA_ConfigCommon_r16) {
+      NR_MsgA_ConfigCommon_r16_t *msgacc = ul_common->ext1->msgA_ConfigCommon_r16->choice.setup;
+      if (msgacc->rach_ConfigCommonTwoStepRA_r16.msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16) {
+        mac->ssb_ro_preambles =
+            get_ssb_ro_preambles_2step(msgacc->rach_ConfigCommonTwoStepRA_r16.msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16);
+      }
       HANDLE_SETUPRELEASE_DIRECT(bwp->msgA_ConfigCommon_r16,
                                  ul_common->ext1->msgA_ConfigCommon_r16,
                                  NR_MsgA_ConfigCommon_r16_t,

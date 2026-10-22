@@ -310,6 +310,23 @@ total bandwidth of 20MHz or below, it is not necessary to modify the bandwidth
 part configuration.  Then, only copy the `RedCap` and `TIMERS` sections from
 the reference configuration to the target configuration file.
 
+## 2-Step Random Access
+
+OAI supports the Rel-16 2-Step Random Access procedure (MsgA/MsgB) with the OAI UE
+only. It has not been tested with COTS UEs, since none we have support it.
+A cell runs either 2-Step or 4-Step RA, depending on its configuration;
+there is no fallback between the two.
+
+To enable 2-Step RA in any gNB configuration file:
+
+1. Copy the 2-Step RA block from `gnb.sa.band78.106PRB.usrpb210.RA_2-Step.conf`
+   into the `servingCellConfigCommon` section of the target configuration file.
+2. Set `msgA_PUSCH_TimeDomainOffset_r16` to a non-zero value. If it is set to `0`,
+   the 2-Step RA configuration is discarded and the gNB runs 4-Step RA.
+
+No additional option is needed on the UE side: `nr-uesoftmodem` uses 2-Step RA
+when the cell advertises it.
+
 ## Related documentation
 
 Further documentation not referenced above:
