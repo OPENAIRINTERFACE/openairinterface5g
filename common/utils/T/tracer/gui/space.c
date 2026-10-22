@@ -4,15 +4,19 @@
 
 #include "gui.h"
 #include "gui_defs.h"
+#include "../utils.h"
 #include <stdio.h>
 
 static void paint(gui *_gui, widget *_w)
 {
+  UNUSED(_gui);
+  UNUSED(_w);
   /* nothing */
 }
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)
 {
+  UNUSED(_gui);
   struct space_widget *w = _w;
   LOGD("HINTS space %p\n", w);
   *width = w->wanted_width;

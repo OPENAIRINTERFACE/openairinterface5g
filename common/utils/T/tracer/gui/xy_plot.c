@@ -194,6 +194,7 @@ static void paint(gui *_gui, widget *_this)
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)
 {
+  UNUSED(_gui);
   struct xy_plot_widget *w = _w;
   *width = w->wanted_width + w->vrule_width;
   *height = w->wanted_height + w->label_height * 2; /* TODO: refine */

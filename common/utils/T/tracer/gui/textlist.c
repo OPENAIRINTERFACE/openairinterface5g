@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "gui_defs.h"
 #include "x.h"
+#include "../utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,6 +31,7 @@ static void paint(gui *_gui, widget *_this)
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)
 {
+  UNUSED(_gui);
   struct textlist_widget *w = _w;
   *width = w->wanted_width;
   *height = w->wanted_nlines * w->line_height;
@@ -39,6 +41,7 @@ static void hints(gui *_gui, widget *_w, int *width, int *height)
 static void allocate(
     gui *gui, widget *_this, int x, int y, int width, int height)
 {
+  UNUSED(gui);
   struct textlist_widget *this = _this;
   this->common.x = x;
   this->common.y = y;
