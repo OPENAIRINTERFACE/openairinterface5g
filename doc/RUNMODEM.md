@@ -73,7 +73,7 @@ gNBs = (
     {
         GNB_IPV4_ADDRESS_FOR_NG_AMF = "192.168.70.129";  // N2 interface
         GNB_IPV4_ADDRESS_FOR_NGU    = "192.168.70.129";  // N3 interface
-        GNB_PORT_FOR_S1U            = 2152;
+        GNB_PORT_FOR_NGU            = 2152;
     };
 });
 ```
