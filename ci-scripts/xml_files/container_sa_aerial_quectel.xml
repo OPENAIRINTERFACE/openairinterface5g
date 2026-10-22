@@ -16,8 +16,8 @@
     <always_exec>true</always_exec>
     <desc>Configure 100 MHz bandwidth on WNC RU</desc>
     <node>gracehopper1-oai</node>
-    <script>scripts/set-wnc-bandwidth.sh</script>
-    <options>100</options>
+    <script>scripts/set-wnc-params.sh</script>
+    <options>100 c4:70:bd:57:24:cc</options>
   </testCase>
 
   <testCase>

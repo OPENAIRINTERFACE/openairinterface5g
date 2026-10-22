@@ -126,7 +126,7 @@ oc-cn5g-20897-aerial:
   LogCollect: "! scripts/oc-cn5g-logcollect.sh /opt/oai-cn5g-fed-develop-2025-jan oaicicd-core-for-nvidia-aerial %%log_dir%%"
 
 oc-cn5g-00104:
-  Host: gracehopper1-oai
+  Host: dgx3-oai
   NetworkScript: echo "inet 172.21.6.105"
   RunIperf3Server: False
   Deploy: "! scripts/oc-cn5g-deploy.sh /opt/oai-cn5g-fed-develop-00104 oaicicd-core-for-nvidia-aerial"

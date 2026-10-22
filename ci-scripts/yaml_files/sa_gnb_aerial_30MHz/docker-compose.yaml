@@ -21,11 +21,11 @@ services:
       - /dev/hugepages:/dev/hugepages
       - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket
       - /run/systemd/system:/run/systemd/system
-      - ./cuphycontroller_P5G_WNC_GH.yaml:/opt/nvidia/cuBB/cuPHY-CP/cuphycontroller/config/cuphycontroller_P5G_WNC_GH.yaml
+      - ./cuphycontroller_P5G_WNC_DGX.yaml:/opt/nvidia/cuBB/cuPHY-CP/cuphycontroller/config/cuphycontroller_P5G_WNC_DGX.yaml
       - /var/log/aerial:/var/log/aerial
     userns_mode: host
     ipc: "shareable"
-    image: nv-cubb:26-1
+    image: nv-cubb:26-1-dgx
     environment:
       - cuBB_SDK=/opt/nvidia/cuBB
     command: bash -c "/opt/nvidia/cuBB/run-l1.sh"
@@ -35,7 +35,7 @@ services:
       timeout: 5s
       retries: 5
   oai-gnb-aerial:
-    cpuset: "13-16"
+    cpuset: "17-19"
     image: ${REGISTRY-oaisoftwarealliance/}${GNB_IMG:-oai-gnb-aerial}:${TAG:-develop}
     depends_on:
       nv-cubb:
