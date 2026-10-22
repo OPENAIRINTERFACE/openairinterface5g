@@ -9,11 +9,21 @@
 
 #include "gtest/gtest.h"
 
-extern "C" void nr_mac_gnb_test_init(void);
+extern "C" {
+#include "common/config/config_load_configmodule.h"
+#include "common/utils/assertions.h"
+
+void nr_mac_gnb_test_init(void);
+extern configmodule_interface_t *uniqCfg;
+}
 
 int main(int argc, char **argv)
 {
+  uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY);
+  AssertFatal(uniqCfg != NULL, "configuration module init failed\n");
   nr_mac_gnb_test_init();
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  end_configmodule(uniqCfg);
+  return ret;
 }
