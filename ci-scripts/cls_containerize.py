@@ -13,6 +13,7 @@
 import re	       # reg
 import logging
 import os
+from typing import NamedTuple
 
 #-----------------------------------------------------------
 # OAI Testing modules
@@ -142,27 +143,22 @@ def GetDeployedServices(ssh, file):
 			deployed_services.append((s, c))
 	return deployed_services
 
+class DeploymentOpt(NamedTuple):
+	"""Options to deploy/stop/undeploy docker compose services"""
+	yaml_path: str # directory of docker-compose.yml, relative to workspace
+	services: str = '' # space-separated list of services, empty for all
+	num_attempts: int = 1 # number of deployment attempts
+
 #-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
 class Containerize():
 
-	def __init__(self):
-		
-		self.imageKind = ''
-		self.yamlPath = ''
-		self.services = ''
-		self.deploymentTag = ''
-
-		self.num_attempts = 1
-
-		self.flexricTag = ''
-
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
 
-	def BuildImage(self, ctx, node, HTML):
+	def BuildImage(ctx, node, HTML, image_kind):
 		lSourcePath = ctx.g.workspace
 		logging.debug('Building on server: ' + node)
 		cmd = cls_cmd.getConnection(node)
@@ -176,7 +172,7 @@ class Containerize():
 		forceBaseImageBuild = False
 		imageTag = 'develop'
 
-		result = re.search('native_cuda_armv8', self.imageKind)
+		result = re.search('native_cuda_armv8', image_kind)
 		if result is not None:
 			baseImage = 'ran-base-cuda'
 			buildImage = 'ran-build-cuda'
@@ -184,13 +180,13 @@ class Containerize():
 		# we always build the ran-build image with all targets
 		# Creating a tupple with the imageName, the DockerFile prefix pattern, targetName and sanitized option
 		imageNames = [(buildImage, 'build', f'{buildImage}', '')]
-		result = re.search('eNB', self.imageKind)
+		result = re.search('eNB', image_kind)
 		if result is not None:
 			imageNames.append(('oai-enb', 'eNB', 'oai-enb', ''))
-		result = re.search('gNB', self.imageKind)
+		result = re.search('gNB', image_kind)
 		if result is not None:
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
-		result = re.search('x86', self.imageKind)
+		result = re.search('x86', image_kind)
 		if result is not None:
 			imageNames.append(('oai-enb', 'eNB', 'oai-enb', ''))
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
@@ -208,26 +204,26 @@ class Containerize():
 			imageNames.append(('ran-build-fhi72', 'build.fhi72', 'ran-build-fhi72', ''))
 			imageNames.append(('oai-gnb', 'gNB.fhi72', 'oai-gnb-fhi72', ''))
 			imageNames.append(('oai-nr-oru', 'nrORU.fhi72', 'oai-nr-oru', ''))
-		result = re.search('build_cross_arm64', self.imageKind)
+		result = re.search('build_cross_arm64', image_kind)
 		if result is not None:
 			dockerfileprefix = '.ubuntu.cross-arm64'
-		result = re.search('native_armv9', self.imageKind)
+		result = re.search('native_armv9', image_kind)
 		if result is not None:
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
 			imageNames.append(('ran-build-fhi72', 'build.fhi72.native_arm', 'ran-build-fhi72', ''))
 			imageNames.append(('oai-nr-cuup', 'nr-cuup', 'oai-nr-cuup', ''))
 			imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue', ''))
 			imageNames.append(('oai-gnb-aerial', 'gNB.aerial', 'oai-gnb-aerial', ''))
-		result = re.search('native_armv8', self.imageKind)
+		result = re.search('native_armv8', image_kind)
 		if result is not None:
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
 			imageNames.append(('oai-nr-cuup', 'nr-cuup', 'oai-nr-cuup', ''))
 			imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue', ''))
-		result = re.search('fhi72-t2', self.imageKind)
+		result = re.search('fhi72-t2', image_kind)
 		if result is not None:
 			imageNames.append(('ran-build-fhi72-t2', 'build.fhi72.t2', 'ran-build-fhi72-t2', ''))
 			imageNames.append(('oai-gnb', 'gNB.fhi72.t2', 'oai-gnb-fhi72-t2', ''))
-		result = re.search('native_cuda_armv8', self.imageKind)
+		result = re.search('native_cuda_armv8', image_kind)
 		if result is not None:
 			imageNames.append(('oai-gnb', 'gNB', 'oai-gnb', ''))
 			imageNames.append(('oai-nr-ue', 'nrUE', 'oai-nr-ue', ''))
@@ -277,7 +273,7 @@ class Containerize():
 			cmd.run(f"docker image prune --force")
 			cmd.close()
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
-			HTML.CreateHtmlTestRowQueue(self.imageKind, 'KO', [])
+			HTML.CreateHtmlTestRowQueue(image_kind, 'KO', [])
 			return False
 		else:
 			result = re.search(r'Size *= *(?P<size>[0-9\-]+) *bytes', cmd.getBefore())
@@ -367,7 +363,7 @@ class Containerize():
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
 		return status
 
-	def BuildRunTests(self, ctx, node, dockerfile, runtime_opt, ctest_opt, HTML):
+	def BuildRunTests(ctx, node, dockerfile, runtime_opt, ctest_opt, HTML):
 		lSourcePath = ctx.g.workspace
 		logging.debug('Building on server: ' + node)
 		cmd = cls_cmd.getConnection(node)
@@ -545,14 +541,14 @@ class Containerize():
 			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["cannot create workspace"])
 		return success
 
-	def DeployObject(self, ctx, node, HTML):
-		num_attempts = self.num_attempts
+	def DeployObject(ctx, node, HTML, opt):
+		num_attempts = opt.num_attempts
 		lSourcePath = ctx.g.workspace
-		yaml = self.yamlPath.strip('/')
+		yaml = opt.yaml_path.strip('/')
 		wd = f'{lSourcePath}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 		with cls_cmd.getConnection(node) as ssh:
-			services = GetServices(ssh, self.services, wd_yaml)
+			services = GetServices(ssh, opt.services, wd_yaml)
 			if services == [] or services == ' ' or services == None:
 				msg = 'Cannot determine services to start'
 				logging.error(msg)
@@ -560,7 +556,7 @@ class Containerize():
 				return False
 			logging.info(f'\u001B[1mDeploying object(s) "{services}" on server {node}\u001B[0m')
 			ExistEnvFilePrint(ssh, wd)
-			WriteEnvFile(ssh, services, wd, self.deploymentTag, self.flexricTag)
+			WriteEnvFile(ssh, services, wd, ctx.g.branch, ctx.g.flexric_tag)
 			if num_attempts <= 0:
 				raise ValueError(f'Invalid value for num_attempts: {num_attempts}, must be greater than 0')
 			for attempt in range(num_attempts):
@@ -583,20 +579,20 @@ class Containerize():
 		imagesInfo = info.stdout.splitlines()[1:]
 		logging.debug(f'{info.stdout.splitlines()[1:]}')
 		if deployed:
-			HTML.CreateHtmlTestRowQueue(self.services, 'OK', ['\n'.join(imagesInfo)])
+			HTML.CreateHtmlTestRowQueue(opt.services, 'OK', ['\n'.join(imagesInfo)])
 			logging.info('\u001B[1m Deploying objects Pass\u001B[0m')
 		else:
-			HTML.CreateHtmlTestRowQueue(self.services, 'KO', ['\n'.join(imagesInfo)])
+			HTML.CreateHtmlTestRowQueue(opt.services, 'KO', ['\n'.join(imagesInfo)])
 			logging.error('\u001B[1m Deploying objects Failed\u001B[0m')
 		return deployed
 
-	def StopObject(self, ctx, node, HTML):
+	def StopObject(ctx, node, HTML, opt):
 		lSourcePath = ctx.g.workspace
-		if not self.services:
+		if not opt.services:
 			raise ValueError(f'no services provided')
-		logging.info(f'\u001B[1m Stopping objects "{self.services}" from server: {node}\u001B[0m')
-		reqServices = self.services.split()
-		yaml = self.yamlPath.strip('/')
+		logging.info(f'\u001B[1m Stopping objects "{opt.services}" from server: {node}\u001B[0m')
+		reqServices = opt.services.split()
+		yaml = opt.yaml_path.strip('/')
 		wd = f'{lSourcePath}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 		with cls_cmd.getConnection(node) as ssh:
@@ -613,16 +609,16 @@ class Containerize():
 					fail.append(s)
 		if success == reqServices:
 			logging.info('\u001B[1m Stopping object Pass\u001B[0m')
-			HTML.CreateHtmlTestRowQueue(self.services, 'OK', [f'Stopped {self.services}'])
+			HTML.CreateHtmlTestRowQueue(opt.services, 'OK', [f'Stopped {opt.services}'])
 		else:
 			logging.error('\u001B[1m Stopping object Failed\u001B[0m')
-			HTML.CreateHtmlTestRowQueue(self.services, 'KO', [f'Failed stopping {" ".join(fail)}, succeeded {" ".join(success)}'])
+			HTML.CreateHtmlTestRowQueue(opt.services, 'KO', [f'Failed stopping {" ".join(fail)}, succeeded {" ".join(success)}'])
 		return success
 
-	def UndeployObject(self, ctx, node, HTML, to_analyze):
+	def UndeployObject(ctx, node, HTML, opt, to_analyze):
 		lSourcePath = ctx.g.workspace
 		logging.info(f'\u001B[1m Undeploying all objects from server {node}\u001B[0m')
-		yaml = self.yamlPath.strip('/')
+		yaml = opt.yaml_path.strip('/')
 		wd = f'{lSourcePath}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 		with cls_cmd.getConnection(node) as ssh:
@@ -655,9 +651,9 @@ class Containerize():
 			logging.error('\u001B[1m Undeploying objects Failed\u001B[0m')
 		return success
 
-	def AnalyzeRTStatsObject(self, HTML, node, ctx, thresholds, service=None, stats_files=None):
+	def AnalyzeRTStatsObject(HTML, node, ctx, yaml_path, thresholds, service=None, stats_files=None):
 		logging.info(f'Analyzing realtime stats from server: {node}')
-		yaml = self.yamlPath.strip('/')
+		yaml = yaml_path.strip('/')
 		wd = f'{ctx.g.workspace}/{yaml}'
 		wd_yaml = f'{wd}/docker-compose.y*ml'
 

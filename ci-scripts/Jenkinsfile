@@ -7,7 +7,6 @@ def pythonExecutor = params.pythonExecutor
 def testXMLFile = params.pythonTestXmlFile
 def mainPythonAllXmlFiles = ""
 def buildStageStatus = true
-def JOB_TIMESTAMP
 
 // Name of the resource
 def lockResources = []
@@ -20,7 +19,7 @@ if (params.LockResources != null && params.LockResources.trim().length() > 0)
 def targetBranch = params.targetBranch ?: 'develop'
 def testRepository = params.repository ?: 'git@asterix:/home/git/openairinterface5g.git'
 def testBranch = params.branch ?: 'develop'
-def mergeWithTarget = params.mergeWithTarget ?: false
+def mergeWithTarget = params.mergeWithTarget ? '--merge' : ''
 def sourceBranch = params.sourceBranch ?: testBranch
 
 def flexricOption = ""
@@ -47,10 +46,6 @@ pipeline {
                  userRemoteConfigs: [[url: "${repository}"]],
                  extensions: [cleanBeforeCheckout()])
         )
-        script {
-          echo '\u2705 \u001B[94mBuild Init\u001B[0m'
-          JOB_TIMESTAMP = sh(returnStdout: true, script: 'date --utc --rfc-3339=seconds | sed -e "s#+00:00##"').trim()
-        }
         // update the build name and description
         buildName "${params.requestNumber}"
         buildDescription "Branch : ${sourceBranch}"
@@ -118,7 +113,7 @@ pipeline {
                     sh """
                       python3 main.py --repository=${testRepository} \
                                       --branch=${testBranch} \
-                                      --ranAllowMerge=${mergeWithTarget} --targetBranch=${targetBranch} \
+                                      ${mergeWithTarget} --targetBranch=${targetBranch} \
                                       --workspace=${params.workspace} \
                                       --OCUserName=${OC_Username} --OCPassword=${OC_Password} --OCProjectName=${OC_ProjectName} \
                                       ${flexricOption} \
@@ -136,7 +131,7 @@ pipeline {
                   sh """
                     python3 main.py --repository=${testRepository} \
                                     --branch=${testBranch} \
-                                    --ranAllowMerge=${mergeWithTarget} --targetBranch=${targetBranch} \
+                                    ${mergeWithTarget} --targetBranch=${targetBranch} \
                                     --workspace=${params.workspace} \
                                     ${flexricOption} \
                                     ${mainPythonAllXmlFiles}
@@ -172,8 +167,7 @@ pipeline {
               def reportName = "test_results-${env.JOB_NAME}.html"
               sh "mv test_results.html ${reportName}"
               sh """
-                sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' \
-                       -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' \
+                sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' \
 		       -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' \
                        -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' \
                        ${reportName}

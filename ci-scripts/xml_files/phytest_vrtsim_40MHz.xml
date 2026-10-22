@@ -48,6 +48,7 @@
   <testCase>
     <class>AnalyzeRTStats_Object</class>
     <desc>Analyze Real-Time Stats on gNB</desc>
+    <yaml_path>ci-scripts/yaml_files/phytest_vrtsim_40MHz</yaml_path>
     <always_exec>true</always_exec>
     <stats_cfg>datalog_rt_stats.gnb.40.vrtsim.yaml</stats_cfg>
     <service>oai-gnb</service>
@@ -58,6 +59,7 @@
   <testCase>
     <class>AnalyzeRTStats_Object</class>
     <desc>Analyze Real-Time Stats on UE</desc>
+    <yaml_path>ci-scripts/yaml_files/phytest_vrtsim_40MHz</yaml_path>
     <always_exec>true</always_exec>
     <stats_cfg>datalog_rt_stats.ue.40.vrtsim.yaml</stats_cfg>
     <service>oai-nr-ue</service>
