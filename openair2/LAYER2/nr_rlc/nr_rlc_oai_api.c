@@ -157,8 +157,13 @@ void nr_mac_rlc_data_ind(const module_id_t  module_idP,
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, ue_id);
 
-  if(ue == NULL)
-    LOG_I(RLC, "RLC instance for the given UE was not found \n");
+  /* Possible since the MAC hands UL PDUs over after releasing sched_lock: the UE may have
+     been released in between.  get_rlc_entity_from_lcid() would dereference NULL. */
+  if (ue == NULL) {
+    LOG_I(RLC, "RLC instance for UE %04x not found, dropping %d UL PDU(s)\n", ue_id, num_data);
+    nr_rlc_manager_unlock(nr_rlc_ue_manager);
+    return;
+  }
 
   for (int i = 0; i < num_data; ++i) {
     logical_chan_id_t ch = data[i].ch;
