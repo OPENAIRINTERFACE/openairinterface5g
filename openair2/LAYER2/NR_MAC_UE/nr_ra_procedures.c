@@ -981,7 +981,7 @@ void nr_Msg3_transmitted(NR_UE_MAC_INST_t *mac)
   ra->ra_state = nrRA_WAIT_CONTENTION_RESOLUTION;
 }
 
-static uint8_t *fill_msg3_crnti_pdu(RA_config_t *ra, uint8_t *pdu, uint16_t crnti)
+static uint8_t *fill_msg3_crnti_pdu(uint8_t *pdu, uint16_t crnti)
 {
   // RA triggered by UE MAC with C-RNTI in MAC CE
   LOG_D(NR_MAC, "Generating MAC CE with C-RNTI for MSG3 %x\n", crnti);
@@ -992,7 +992,6 @@ static uint8_t *fill_msg3_crnti_pdu(RA_config_t *ra, uint8_t *pdu, uint16_t crnt
   uint16_t rnti_pdu = ((crnti & 0xFF) << 8) | ((crnti >> 8) & 0xFF);
   memcpy(pdu, &rnti_pdu, sizeof(rnti_pdu));
   pdu += sizeof(rnti_pdu);
-  ra->t_crnti = crnti;
   return pdu;
 }
 
@@ -1030,7 +1029,7 @@ void nr_get_Msg3_MsgA_PUSCH_payload(NR_UE_MAC_INST_t *mac, uint8_t *buf, int TBS
 
   uint8_t *pdu = buf;
   if (mac->msg3_C_RNTI)
-    pdu = fill_msg3_crnti_pdu(ra, pdu, mac->crnti);
+    pdu = fill_msg3_crnti_pdu(pdu, mac->crnti);
   else
     pdu = fill_msg3_pdu_from_rlc(mac, pdu, TBS_max);
 
@@ -1062,7 +1061,8 @@ void nr_ra_succeeded(NR_UE_MAC_INST_t *mac, const frame_t frame, const int slot)
           frame,
           slot,
           ra->ra_type == RA_2_STEP ? 2 : 4);
-    mac->crnti = ra->t_crnti;
+    if (!mac->msg3_C_RNTI)
+      mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
     nr_timer_stop(&ra->contention_resolution_timer);
   }

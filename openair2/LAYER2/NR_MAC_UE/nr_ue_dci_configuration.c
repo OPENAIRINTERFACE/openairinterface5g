@@ -588,6 +588,16 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
         if (is_ss_monitor_occasion(frame, slot, slots_per_frame, ss))
           config_dci_pdu(mac, dl_config, TYPE_C_RNTI_, slot, ss);
       }
+      // the gNB may address the C-RNTI in a common search space
+      bool ss0_listed = false;
+      for (int i = 0; i < pdcch_config->list_common_SS.count; i++) {
+        NR_SearchSpace_t *ss = pdcch_config->list_common_SS.array[i];
+        ss0_listed |= ss->searchSpaceId == 0;
+        if (is_ss_monitor_occasion(frame, slot, slots_per_frame, ss))
+          config_dci_pdu(mac, dl_config, TYPE_C_RNTI_, slot, ss);
+      }
+      if (!ss0_listed && mac->search_space_zero && is_ss_monitor_occasion(frame, slot, slots_per_frame, mac->search_space_zero))
+        config_dci_pdu(mac, dl_config, TYPE_C_RNTI_, slot, mac->search_space_zero);
     }
   } else if (mac->state == UE_CONNECTED) {
     /*
