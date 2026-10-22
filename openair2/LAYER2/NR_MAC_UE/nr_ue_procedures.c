@@ -1136,11 +1136,11 @@ static int nr_ue_process_dci_dl_10(NR_UE_MAC_INST_t *mac,
     return -1;
   }
 
-  // Sanity check for pucch_resource_indicator value received to check for false DCI.
-  bool valid = false;
+  // SI-RNTI and RA-RNTI DCI 1_0 do not carry a PUCCH resource indicator.
+  bool valid = rnti_type == TYPE_SI_RNTI_ || rnti_type == TYPE_RA_RNTI_;
   NR_PUCCH_Config_t *pucch_Config = mac->current_UL_BWP ? mac->current_UL_BWP->pucch_Config : NULL;
 
-  if (pucch_Config && pucch_Config->resourceSetToAddModList) {
+  if (!valid && pucch_Config && pucch_Config->resourceSetToAddModList) {
     int pucch_res_set_cnt = pucch_Config->resourceSetToAddModList->list.count;
     for (int id = 0; id < pucch_res_set_cnt; id++) {
       if (dci->pucch_resource_indicator < pucch_Config->resourceSetToAddModList->list.array[id]->resourceList.list.count) {
