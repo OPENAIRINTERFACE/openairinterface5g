@@ -248,6 +248,38 @@ and check the following parameters:
   * `GNB_IPV4_ADDRESS_FOR_NG_AMF` shall match your DU N2 interface IP address
   * `GNB_IPV4_ADDRESS_FOR_NGU` shall match your DU N3 interface IP address
   
+* `Aerial` section: TXRU counts advertised to the L1
+
+```
+Aerial = {
+  num_tx_ant = 4;  # CONFIG.request numTxAnt
+  num_rx_ant = 4;  # CONFIG.request numRxAnt
+};
+```
+
+These set the TXRU counts in the FAPI CONFIG.request
+(`numTxAnt`/`numRxAnt`), decoupled from the *logical* antenna ports
+(`pdsch_AntennaPorts`/`pusch_AntennaPorts`, carried in `numTxPort`/`numRxPort`).
+`numRxAnt` sizes cuBB's UL receive processing: e.g. on a 4x4 radio with
+2-layer UL (`pusch_AntennaPorts = 2`), setting `num_rx_ant = 4` makes the
+PUSCH MMSE/IRC equalizer combine all four RX antennas per layer (~3 dB array
+gain) instead of only two. The fronthaul configuration must deliver the
+corresponding number of UL eAxC streams.
+
+The section is required for `bf_method = "predefined"` and `"dynamic"`, which
+apply the beam weights, or the SRS-based precoder, per TXRU: that count
+cannot be derived from the logical ports, and guessing it was worse than
+asking, so there is no default. For `straight-wire` and `das` the section stays
+optional, and when it is absent (or the values are 0) the counts are derived
+from the logical antenna ports as before.
+
+Note that the semantics change when cuBB runs with mMIMO enabled (cuBB-side
+yaml setting): `numRxAnt` then only sizes SRS reception (physical antenna
+elements), while PUSCH processing is dimensioned by the vendor-specific
+`numRxPort`/`numTxPort` TLVs (0xA016/0xA017), which OAI fills with the logical
+antenna port counts. Without those TLVs cuBB falls back to a compile-time
+default of 16 ports.
+
 The default amf_ip_address:ipv4 value is 192.168.70.132, when installing the
 CN5G following [this tutorial](./NR_SA_Tutorial_OAI_CN5G.md)
 Both `GNB_IPV4_ADDRESS_FOR_NG_AMF` and `GNB_IPV4_ADDRESS_FOR_NGU` need to be

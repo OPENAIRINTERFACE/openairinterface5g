@@ -1,6 +1,5 @@
-# SPDX-License-Identifier: LicenseRef-CSSL-1.0
-
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-CSSL-1.0
 
 import argparse
 import logging

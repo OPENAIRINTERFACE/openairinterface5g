@@ -776,8 +776,9 @@ void rrc_gnb_nrdc_measurement_received(gNB_RRC_INST *rrc, gNB_RRC_UE_t *ue, NR_M
   };
   /* encode the container */
   OCTET_STRING_t uecap_container_buf = { 0 };
-  uecap_container_buf.size = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList, NULL, &uecap_container, (void **)&uecap_container_buf.buf);
-  DevAssert(uecap_container_buf.size > 0);
+  ssize_t encoded = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList, NULL, &uecap_container, (void **)&uecap_container_buf.buf);
+  DevAssert(encoded > 0);
+  uecap_container_buf.size = encoded;
 
   /* create the CG Config Info containing the UE capabilities */
   NR_CG_ConfigInfo_t cg = {
@@ -797,8 +798,9 @@ void rrc_gnb_nrdc_measurement_received(gNB_RRC_INST *rrc, gNB_RRC_UE_t *ue, NR_M
   };
   /* encode the CG Config Info */
   OCTET_STRING_t cgbuf = { 0 };
-  cgbuf.size = uper_encode_to_new_buffer(&asn_DEF_NR_CG_ConfigInfo, NULL, &cg, (void **)&cgbuf.buf);
-  DevAssert(cgbuf.size > 0);
+  encoded = uper_encode_to_new_buffer(&asn_DEF_NR_CG_ConfigInfo, NULL, &cg, (void **)&cgbuf.buf);
+  DevAssert(encoded > 0);
+  cgbuf.size = encoded;
   free(uecap_container_buf.buf);
 
   /* create the F1 Context Setup Request message */
@@ -943,12 +945,14 @@ void nrdc_rrc_CU_process_ue_context_setup_response(gNB_RRC_UE_t *ue, gNB_RRC_INS
 
   /* encode it */
   OCTET_STRING_t nr_scg = { 0 };
-  nr_scg.size = uper_encode_to_new_buffer(&asn_DEF_NR_RRCReconfiguration, NULL, &scg, (void **)&nr_scg.buf);
-  if (nr_scg.size <= 0) {
-    AssertFatal(nr_scg.size > 0, "Failed to encode RRCReconfiguration\n");
+
+  ssize_t encoded = uper_encode_to_new_buffer(&asn_DEF_NR_RRCReconfiguration, NULL, &scg, (void **)&nr_scg.buf);
+  if (encoded <= 0) {
+    AssertFatal(encoded > 0, "Failed to encode RRCReconfiguration\n");
     LOG_E(NR_RRC, "go_fr2: Failed to encode RRCReconfiguration\n");
     return;
   }
+  nr_scg.size = encoded;
 
   /* we have to release rlc of drb1 in the master cell group */
   NR_CellGroupConfig_t mcg = {
@@ -967,12 +971,13 @@ void nrdc_rrc_CU_process_ue_context_setup_response(gNB_RRC_UE_t *ue, gNB_RRC_INS
 
   /* encode the mcg */
   OCTET_STRING_t nr_mcg = { 0 };
-  nr_mcg.size = uper_encode_to_new_buffer(&asn_DEF_NR_CellGroupConfig, NULL, &mcg, (void **)&nr_mcg.buf);
-  if (nr_mcg.size <= 0) {
-    AssertFatal(nr_mcg.size > 0, "Failed to encode CellGroupConfig of MCG\n");
+  encoded = uper_encode_to_new_buffer(&asn_DEF_NR_CellGroupConfig, NULL, &mcg, (void **)&nr_mcg.buf);
+  if (encoded <= 0) {
+    AssertFatal(encoded > 0, "Failed to encode CellGroupConfig of MCG\n");
     LOG_E(NR_RRC, "go_fr2: Failed to encode CellGroupConfig of MCG\n");
     return;
   }
+  nr_mcg.size = encoded;
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(rrc->module_id);
   ue->xids[xid] = RRC_F1_NRDC_IN_PROGRESS;

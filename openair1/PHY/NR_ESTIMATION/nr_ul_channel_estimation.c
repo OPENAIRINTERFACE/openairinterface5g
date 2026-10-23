@@ -151,7 +151,7 @@ static void nr_pusch_antenna_processing(void *arg)
         }
 
         c16_t ch16 = {.r = (int16_t)ch.r, .i = (int16_t)ch.i};
-        *max_ch = max(abs(ch.r), abs(ch.i));
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
         for (int k = pilot_cnt << 1; k < (pilot_cnt << 1) + 4; k++) {
           ul_ls_est[k] = ch16;
         }
@@ -261,7 +261,7 @@ static void nr_pusch_antenna_processing(void *arg)
         c16_t ch1 = c16mulShift(*pil, rx[(k0 + n + 1) % symbolSize], 15);
         pil++;
         c16_t ch = c16addShift(ch0, ch1, 1);
-        *max_ch = max(abs(ch.r), abs(ch.i));
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
         multadd_real_four_symbols_vector_complex_scalar(filt8_rep4, ch, &ul_ls_est[n]);
         ul_ls_est[n + 4] = ch;
         ul_ls_est[n + 5] = ch;
@@ -310,7 +310,7 @@ static void nr_pusch_antenna_processing(void *arg)
 
       for (int pilot_cnt = 6; pilot_cnt < 6 * (nb_rb_pusch - 1); pilot_cnt += 6) {
         ch = c32x16cumulVectVectWithSteps(pilot, &pil_offset, 1, rxF, &re_offset, 2, symbolSize, 6);
-        *max_ch = max(abs(ch.r), abs(ch.i));
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
 
 #if NO_INTERP
         for (c16_t *end = ul_ch + 12; ul_ch < end; ul_ch++)
@@ -394,7 +394,7 @@ static void nr_pusch_antenna_processing(void *arg)
         re_offset = (re_offset + 5) % symbolSize;
 
         ch = c16x32div(ch0, 4);
-        *max_ch = max(abs(ch.r), abs(ch.i));
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
 
 #if NO_INTERP
         for (c16_t *end = ul_ch + 12; ul_ch < end; ul_ch++)

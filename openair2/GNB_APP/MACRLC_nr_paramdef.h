@@ -46,10 +46,13 @@
 #define MACRLC_UL_HARQ_ROUND_MAX             "ul_harq_round_max"
 #define MACRLC_MIN_GRANT_PRB                 "min_grant_prb"
 #define MACRLC_IDENTITY_PM                   "identity_precoding_matrix"
-#define MACRLC_ANALOG_BEAMFORMING            "set_analog_beamforming"
+#define MACRLC_BF_METHOD                     "bf_method"
 #define MACRLC_BEAM_DURATION                 "beam_duration"
 #define MACRLC_BEAMS_PERIOD                  "beams_per_period"
-#define MACRLC_BEAM_WEIGHTS_LIST             "beam_weights"
+#define MACRLC_SSB_BEAMS_LIST                "ssb_beams"
+/* removed, only kept to reject stale config files */
+#define MACRLC_ANALOG_BEAMFORMING_REMOVED    "set_analog_beamforming"
+#define MACRLC_BEAM_WEIGHTS_LIST_REMOVED     "beam_weights"
 #define MACRLC_DBT_FILE                      "dbt_file"
 #define MACRLC_PUSCH_RSSI_THRESHOLD          "pusch_RSSI_Threshold"
 #define MACRLC_PUCCH_RSSI_THRESHOLD          "pucch_RSSI_Threshold"
@@ -69,9 +72,12 @@
 #define HLP_MACRLC_UL_HARQ_MAX "Maximum number of UL HARQ rounds"
 #define HLP_MACRLC_MIN_GRANT_PRB "Minimal Periodic ULSCH Grant PRBs"
 #define HLP_MACRLC_IDENTITY_PM "Flag to use only identity matrix in DL precoding"
-#define HLP_MACRLC_AB "Flag to enable analog beamforming"
+#define HLP_MACRLC_BF_METHOD \
+  "beamforming method: straight-wire (no beamforming), das (beam per logical antenna port), " \
+  "predefined (beam IDs signalled to L1), dynamic (SRS-based precoding)"
 #define HLP_MACRLC_BEAM_DURATION "number of consecutive slots for a given set of beams"
 #define HLP_MACRLC_BEAMS_PERIOD "set of beams that can be simultaneously allocated in a period"
+#define HLP_MACRLC_SSB_BEAMS "Beam indices statically allocated to SSB/PRACH, one per transmitted SSB"
 #define HLP_MACRLC_DBT_FILE "File path to CSV file to read digital beamforming table"
 #define HLP_MACRLC_PUSCH_RSSI_THRESHOLD "Limits PUSCH TPC commands based on RSSI to prevent ADC railing. Value range [-1280, 0], unit 0.1 dBm/dBFS"
 #define HLP_MACRLC_PUCCH_RSSI_THRESHOLD "Limits PUCCH TPC commands based on RSSI to prevent ADC railing. Value range [-1280, 0], unit 0.1 dBm/dBFS"
@@ -115,10 +121,10 @@
   {MACRLC_LOCAL_N_ADDRESS_F1U,         NULL,                     0, .strptr=NULL, .defstrval=NULL,            TYPE_STRING,  0}, \
   {MACRLC_TRANSPORT_S_SHM_PREFIX,      NULL,                     0, .strptr=NULL, .defstrval="nvipc",         TYPE_STRING,  0}, \
   {MACRLC_TRANSPORT_S_POLL_CORE,       NULL,                     0, .i8ptr=NULL,  .defintval=-1,              TYPE_INT8,    0}, \
-  {MACRLC_ANALOG_BEAMFORMING,          HLP_MACRLC_AB,            0, .strptr=NULL, .defstrval="none",          TYPE_STRING,  0}, \
+  {MACRLC_BF_METHOD,                   HLP_MACRLC_BF_METHOD,     0, .strptr=NULL, .defstrval="straight-wire", TYPE_STRING,  0}, \
   {MACRLC_BEAM_DURATION,               HLP_MACRLC_BEAM_DURATION, 0, .u8ptr=NULL,  .defintval=1,               TYPE_UINT8,   0}, \
   {MACRLC_BEAMS_PERIOD,                HLP_MACRLC_BEAMS_PERIOD,  0, .u8ptr=NULL,  .defintval=1,               TYPE_UINT8,   0}, \
-  {MACRLC_BEAM_WEIGHTS_LIST,           NULL,                     0, .iptr=NULL,   .defintarrayval=0,          TYPE_INTARRAY,0}, \
+  {MACRLC_SSB_BEAMS_LIST,              HLP_MACRLC_SSB_BEAMS,     0, .iptr=NULL,   .defintarrayval=0,          TYPE_INTARRAY,0}, \
   {MACRLC_DBT_FILE,                    HLP_MACRLC_DBT_FILE,      0, .strptr=NULL, .defstrval=NULL,            TYPE_STRING,  0}, \
   {MACRLC_PUSCH_RSSI_THRESHOLD,        HLP_MACRLC_PUSCH_RSSI_THRESHOLD, \
                                                                                0, .iptr=NULL,   .defintval=0,               TYPE_INT,     0}, \
@@ -127,6 +133,8 @@
   {MACRLC_STATS_MAX_UE,                HLP_MACRLC_STATS_MAX_UE,  0, .iptr=NULL,   .defintval=8,               TYPE_INT,     0}, \
   {MACRLC_SPATIAL_STREAM_IDX,          HLP_MACRLC_SPATIAL_STREAM_INDEX, \
                                                                                0, .uptr=NULL,   .defintarrayval=0,          TYPE_INTARRAY,0}, \
+  {MACRLC_ANALOG_BEAMFORMING_REMOVED,  NULL,                     0, .strptr=NULL, .defstrval=NULL,            TYPE_STRING,  0}, \
+  {MACRLC_BEAM_WEIGHTS_LIST_REMOVED,   NULL,                     0, .iptr=NULL,   .defintarrayval=0,          TYPE_INTARRAY,0}, \
 }
 // clang-format off
 
@@ -163,9 +171,9 @@
   { .s5 = { NULL } }, \
   { .s2 = { NULL } }, \
   { .s3a = { config_checkstr_assign_integer, \
-             {"none", "preconfigured", "lophy"}, \
-             {NO_BEAM_MODE, PRECONFIGURED_BEAM_IDX, LOPHY_BEAM_IDX}, \
-             3 } }, \
+             {"straight-wire", "das", "predefined", "dynamic"}, \
+             {BF_METHOD_STRAIGHT_WIRE, BF_METHOD_DAS, BF_METHOD_PREDEFINED, BF_METHOD_DYNAMIC}, \
+             4 } }, \
   { .s5 = { NULL } }, \
   { .s5 = { NULL } }, \
   { .s5 = { NULL } }, \
@@ -174,6 +182,8 @@
   { .s2 =  { config_check_intrange, {-1280, 0}} }, /* PUCCH RSSI threshold range */ \
   { .s5 = { NULL } }, \
   { .s2 = { NULL } }, /* Spatial stream index */ \
+  { .s5 = { NULL } }, /* removed set_analog_beamforming */ \
+  { .s5 = { NULL } }, /* removed beam_weights */ \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/

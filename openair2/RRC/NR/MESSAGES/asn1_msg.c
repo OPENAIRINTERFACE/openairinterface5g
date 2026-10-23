@@ -450,8 +450,9 @@ int do_NR_SA_UECapabilityEnquiry(uint8_t *const buffer, const uint8_t Transactio
 
   OCTET_STRING_t *req_freq = calloc(1, sizeof(*req_freq));
   AssertFatal(req_freq != NULL, "out of memory\n");
-  req_freq->size = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRequestFilterNR, NULL, sa_band_filter, (void **)&req_freq->buf);
-  AssertFatal(req_freq->size > 0, "ASN1 message encoding failed (encoded %lu bytes)!\n", req_freq->size);
+  ssize_t encoded = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRequestFilterNR, NULL, sa_band_filter, (void **)&req_freq->buf);
+  AssertFatal(encoded > 0, "ASN1 message encoding failed (encoded %ld)!\n", encoded);
+  req_freq->size = encoded;
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_UE_CapabilityRequestFilterNR, (void *)sa_band_filter);
@@ -1477,7 +1478,9 @@ byte_array_t get_HandoverCommandMessage(nr_rrc_reconfig_param_t *params)
 
   // Encode handoverCommand to buffer
   byte_array_t buffer = {.len = -1, .buf = NULL};
-  buffer.len = uper_encode_to_new_buffer(&asn_DEF_NR_HandoverCommand, NULL, (void *)&HoCommand, (void **)&buffer.buf);
+  ssize_t encoded = uper_encode_to_new_buffer(&asn_DEF_NR_HandoverCommand, NULL, (void *)&HoCommand, (void **)&buffer.buf);
+  AssertFatal(encoded > 0,"ASN1 message encoding failed HandoverCommand\n");
+  buffer.len = encoded;
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_HandoverCommand, &HoCommand);
 
   return buffer;
@@ -1521,8 +1524,9 @@ byte_array_t get_HandoverPreparationInformation(nr_rrc_reconfig_param_t *params)
     xer_fprint(stdout, &asn_DEF_NR_HandoverPreparationInformation, (void **)&hoPrepInfo);
 
   /* encode */
-  buffer.len = uper_encode_to_new_buffer(&asn_DEF_NR_HandoverPreparationInformation, NULL, (void *)&hoPrepInfo, (void *)&buffer.buf);
-  AssertFatal(buffer.len > 0, "ASN1 message encoding failed (%ld)!\n", buffer.len);
+  ssize_t encoded = uper_encode_to_new_buffer(&asn_DEF_NR_HandoverPreparationInformation, NULL, (void *)&hoPrepInfo, (void *)&buffer.buf);
+  AssertFatal(encoded > 0, "ASN1 message encoding failed (%ld)!\n", encoded);
+  buffer.len = encoded;
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_HandoverPreparationInformation, &hoPrepInfo);
   return buffer;
 }

@@ -19,7 +19,7 @@ services:
         #entrypoint: /bin/bash -c "sleep infinity"
         environment:
             TZ: Europe/Paris
-            USE_ADDITIONAL_OPTIONS: --usrp-args type=n3xx,name=ni-n3xx-31641B9,addr=192.168.10.2 -r 106 --numerology 1 --band 78 -C 3425010000 --ssb 509 --ue-fo-compensation --ue-rxgain 70 --ue-txgain 12 --tune-offset 20000000 -A 90 --log_config.global_log_options level,nocolor,time --uicc0.imsi 001020000000111 --uecap_file /opt/oai-nr-ue/etc/uecap.xml
+            USE_ADDITIONAL_OPTIONS: --usrp-args type=n3xx,name=ni-n3xx-31641B9,addr=192.168.10.2 -r 106 --numerology 1 --band 78 -C 3425010000 --ssb 509 --ue-fo-compensation --ue-rxgain 70 --ue-txgain 12 --tune-offset 20000000 -A 90 --log_config.global_log_options level,nocolor,time --uicc0.imsi 001020000000111 --uecap_file /opt/oai-nr-ue/etc/uecap.xml --rx_subdev A:1 --tx_subdev A:1
         volumes:
             - ../../conf_files/ue.sa.conf:/opt/oai-nr-ue/etc/nr-ue.conf
             - ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap_ports1.xml:/opt/oai-nr-ue/etc/uecap.xml

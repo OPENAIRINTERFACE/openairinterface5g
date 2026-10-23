@@ -138,9 +138,9 @@
 
   <testCase>
     <class>Custom_Command</class>
-    <desc>Simulate a disruption of DL radio channel (55 dB path loss, ploss -55)</desc>
+    <desc>Simulate a disruption of DL radio channel (55 dB path loss, ploss 55)</desc>
     <node>localhost</node>
-    <command>echo channelmod modify 0 ploss -55 | ncat 192.168.71.181 8091</command>
+    <command>echo channelmod modify 0 ploss 55 | ncat 192.168.71.181 8091</command>
   </testCase>
 
   <testCase>
@@ -158,9 +158,9 @@
 
   <testCase>
     <class>Custom_Command</class>
-    <desc>Restoration of the original DL path loss (10 dB, ploss -10)</desc>
+    <desc>Restoration of the original DL path loss (10 dB, ploss 10)</desc>
     <node>localhost</node>
-    <command>echo channelmod modify 0 ploss -10 | ncat 192.168.71.181 8091</command>
+    <command>echo channelmod modify 0 ploss 10 | ncat 192.168.71.181 8091</command>
   </testCase>
 
   <testCase>

@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "gui_defs.h"
 #include "x.h"
+#include "../utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -32,6 +33,7 @@ static void paint(gui *_gui, widget *_this)
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)
 {
+  UNUSED(_gui);
   struct timeline_widget *w = _w;
   *width = w->wanted_width;
   *height = w->n * w->subline_height;

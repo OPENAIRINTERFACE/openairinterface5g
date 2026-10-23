@@ -523,7 +523,7 @@ static void nr_configure_srs(gNB_MAC_INST *nrmac,
   const unsigned int srs_num_rx_ant_ports = cell->radio_config.pusch_AntennaPorts;
   srs_pdu->srs_parameters_v4.num_ul_spatial_streams_ports = srs_num_rx_ant_ports;
   srs_pdu->beamforming.dig_bf_interface = srs_num_rx_ant_ports;
-  const uint16_t fapi_beam = convert_to_fapi_beam(UE->UE_beam_index, cell->beam_info.beam_mode);
+  const uint16_t fapi_beam = convert_to_fapi_beam(UE->UE_beam_index, &cell->beam_info);
   for (int i = 0; i < srs_num_rx_ant_ports;i++){
     srs_pdu->beamforming.prgs_list[0].dig_bf_interface_list[i].beam_idx = fapi_beam;
     srs_pdu->srs_parameters_v4.Ul_spatial_stream_ports[i] =

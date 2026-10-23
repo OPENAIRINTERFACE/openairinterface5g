@@ -8,7 +8,6 @@ test:
   DetachScript: "true"
   NetworkScript: ip a show dev lo
   IF: lo
-  MTU: 65536
 
 test-fail:
   Host: localhost
@@ -18,7 +17,6 @@ test-fail:
   DetachScript: "true"
   NetworkScript: ip a show dev TESTDEVICEDOESNOTEXIST
   IF: TESTDEVICEDOESNOTEXIST
-  MTU: 123
 
 test-trace:
   Host: localhost
@@ -33,4 +31,3 @@ test-trace:
     Collect: "cp /tmp/tttf %%log_dir%%"
   NetworkScript: ip a show dev lo
   IF: lo
-  MTU: 65536

@@ -25,14 +25,16 @@ set -x
 # docker build . -f docker/Dockerfile.build.ubuntu -t ran-build
 # docker build . -f docker/Dockerfile.base.ubuntu -t ran-base
 
-docker tag oai-nr-ue oai-ci/oai-nr-ue:${CURRENT_BRANCH}
-docker tag oai-gnb oai-ci/oai-gnb:${CURRENT_BRANCH}
-docker tag oai-nr-cuup oai-ci/oai-nr-cuup:${CURRENT_BRANCH}
+# an existing oai-ci/<image>:<branch> is used as is, and not overwritten
+for image in oai-nr-ue oai-gnb oai-nr-cuup; do
+  if ! docker image inspect oai-ci/${image}:${CURRENT_BRANCH} > /dev/null 2>&1; then
+    docker tag ${image} oai-ci/${image}:${CURRENT_BRANCH}
+  fi
+done
 
 TESTCASES="$@"
 
 python3 main.py --repository=NONE --branch=${CURRENT_BRANCH} \
-    --ranAllowMerge=false \
     --targetBranch=NONE \
     --workspace=${REPO_PATH} \
 	--local --datefmt="%H:%M:%S" \

@@ -839,7 +839,6 @@ static int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t *config)
 void *vnf_nr_start_p7_thread(void *ptr)
 {
   NFAPI_TRACE(NFAPI_TRACE_INFO, "%s()\n", __FUNCTION__);
-  pthread_setname_np(pthread_self(), "VNF_P7");
   nfapi_vnf_p7_config_t *config = (nfapi_vnf_p7_config_t *)ptr;
   nfapi_nr_vnf_p7_start(config);
   return config;

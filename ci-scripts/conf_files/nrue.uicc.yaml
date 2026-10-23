@@ -22,14 +22,14 @@ channelmod:
   modellist_rfsimu_1:
     - model_name: rfsimu_channel_enB0
       type: AWGN
-      ploss_dB: -10
+      ploss_dB: 10
       noise_power_dB: -19
       forgetfact: 0
       offset: 0
       ds_tdl: 0
     - model_name: rfsimu_channel_ue0
       type: AWGN
-      ploss_dB: -10
+      ploss_dB: 10
       noise_power_dB: -17
       forgetfact: 0
       offset: 0

@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "gui_defs.h"
 #include "x.h"
+#include "../utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,7 @@ static void paint(gui *_gui, widget *_w)
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)
 {
+  UNUSED(_gui);
   struct image_widget *w = _w;
   LOGD("HINTS image %p\n", w);
   *width = w->width;

@@ -85,7 +85,7 @@ static void BM_nr_rlc_am_entity(benchmark::State &state)
         }
       }
       tx_entity->set_time(tx_entity, i + 1);
-      rx_entity->set_time(tx_entity, i + 1);
+      rx_entity->set_time(rx_entity, i + 1);
     }
   }
   tx_entity->delete_entity(tx_entity);

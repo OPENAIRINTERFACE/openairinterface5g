@@ -975,6 +975,7 @@ uint8_t do_DLInformationTransfer_NB_IoT(
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.choice.c1.choice.dlInformationTransfer_r13.dedicatedInfoNAS_r13.size = pdu_length;
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.choice.c1.choice.dlInformationTransfer_r13.dedicatedInfoNAS_r13.buf = pdu_buffer;
   encoded = uper_encode_to_new_buffer (&asn_DEF_LTE_DL_DCCH_Message_NB, NULL, (void *) &dl_dcch_msg_NB_IoT, (void **) buffer);
+  AssertFatal(encoded > 0, "could not encode DLInformationTransfer_NB_IoT\n");
   //only change in "asn_DEF_DL_DCCH_Message_NB"
   return encoded;
 }

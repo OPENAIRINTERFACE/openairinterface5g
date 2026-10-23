@@ -79,6 +79,7 @@ The RF simulator is using the configuration module, and its parameters are defin
 |`--rfsimulator.[0].options saviq`     | store IQs to a file for future replay                                          | disabled               |
 |`--rfsimulator.[0].options chanmod`   | enable the channel model                                                       | disabled               |
 |`--rfsimulator.[0].IQfile <file>`     | path to a file to store the IQ samples to (only with `saviq`)                  | `/tmp/rfsimulator.iqs` |
+|`--rfsimulator.[0].ploss`             | coupling loss in dB (positive = attenuation, negative = net gain) of the model created by `rfsimu setmodel` | 0 |
 |`--rfsimulator.[0].prop_delay`        | simulated receive-path (gNB: UL, UE: DL) propagation delay in ms               | 0                      |
 |`--rfsimulator.[0].wait_timeout`      | wait timeout when no UE is connected                                           | 1                      |
 
@@ -232,7 +233,7 @@ Command line parameters to be set on gNB side only.
 
 * `--rfsimulator.[0].enable_beams` : enable beam domain simulation
 * `--rfsimulator.[0].beam_gains <comma separated list>` : one gain/loss value (in dB) per gNB beam id.
-`beam_gains[k]` is the additional pathloss applied, on top of the channel model (if present), whenever
+`beam_gains[k]` is the additional gain (negative = loss) applied, on top of the channel model (if present), whenever
 the gNB's antenna is on beam `k`.
 
 Example: `0,-2,-3` means the 1st beam is the reference, the 2nd beam has 2 dB extra loss, the 3rd beam has 3 dB extra loss.

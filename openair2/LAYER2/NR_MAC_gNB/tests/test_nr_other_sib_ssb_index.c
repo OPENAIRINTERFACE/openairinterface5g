@@ -75,7 +75,7 @@ int test_other_sib_ssb_index(uint64_t ssb_bitmap)
   // config MAC
   mac_top_init_gNB(ngran_gNB, scc, &conf, &rlc_config, &cell);
   RC.nrmac[0]->if_inst->NR_PHY_config_req = phy_config_req_stub;
-  cell->beam_info = (NR_beam_info_t){.beam_mode = NO_BEAM_MODE, .beams_per_period = 1};
+  cell->beam_info = (NR_beam_info_t){.bf_method = BF_METHOD_STRAIGHT_WIRE, .beams_per_period = 1};
   nr_mac_config_scc(RC.nrmac[0], cell, scc, &conf);
 
   const plmn_id_t plmn = {.mcc = 1, .mnc = 1, .mnc_digit_length = 2};

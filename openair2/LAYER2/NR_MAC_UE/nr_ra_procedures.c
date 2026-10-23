@@ -166,48 +166,6 @@ static void select_preamble_group(NR_UE_MAC_INST_t *mac)
   // else if Msg3 is being retransmitted, we keep what used in first transmission of Msg3
 }
 
-static ssb_ro_preambles_t get_ssb_ro_preambles_2step(struct NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16 *config)
-{
-  ssb_ro_preambles_t ret = {0};
-  switch (config->present) {
-    case NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16_PR_oneEighth :
-      ret.ssb_per_ro = 0.125;
-      ret.preambles_per_ssb = (config->choice.oneEighth + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16_PR_oneFourth :
-      ret.ssb_per_ro = 0.25;
-      ret.preambles_per_ssb = (config->choice.oneFourth + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16_PR_oneHalf :
-      ret.ssb_per_ro = 0.5;
-      ret.preambles_per_ssb = (config->choice.oneHalf + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16_PR_one :
-      ret.ssb_per_ro = 1;
-      ret.preambles_per_ssb = (config->choice.one + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16_PR_two :
-      ret.ssb_per_ro = 2;
-      ret.preambles_per_ssb = (config->choice.two + 1) << 2;
-      break;
-    case NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16_PR_four :
-      ret.ssb_per_ro = 4;
-      ret.preambles_per_ssb = config->choice.four;
-      break;
-    case NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16_PR_eight :
-      ret.ssb_per_ro = 8;
-      ret.preambles_per_ssb = config->choice.eight;
-      break;
-    case NR_RACH_ConfigCommonTwoStepRA_r16__msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16_PR_sixteen :
-      ret.ssb_per_ro = 16;
-      ret.preambles_per_ssb = config->choice.sixteen;
-      break;
-    default :
-      AssertFatal(false, "Invalid msgA_SSB_PerRACH_OccasionAndCB_PreamblesPerSSB_r16\n");
-  }
-  return ret;
-}
-
 static void config_preamble_index(NR_UE_MAC_INST_t *mac)
 {
   RA_config_t *ra = &mac->ra;
@@ -636,7 +594,7 @@ static int nr_get_RA_window_2Step_v16(long msgB_ResponseWindow)
       return 160;
       break;
     case NR_RACH_ConfigGenericTwoStepRA_r16__msgB_ResponseWindow_r16_sl320:
-      return 360;
+      return 320;
       break;
     default:
       AssertFatal(false, "illegal msgB_responseWindow value %ld\n", msgB_ResponseWindow);
@@ -981,7 +939,7 @@ void nr_Msg3_transmitted(NR_UE_MAC_INST_t *mac)
   ra->ra_state = nrRA_WAIT_CONTENTION_RESOLUTION;
 }
 
-static uint8_t *fill_msg3_crnti_pdu(RA_config_t *ra, uint8_t *pdu, uint16_t crnti)
+static uint8_t *fill_msg3_crnti_pdu(uint8_t *pdu, uint16_t crnti)
 {
   // RA triggered by UE MAC with C-RNTI in MAC CE
   LOG_D(NR_MAC, "Generating MAC CE with C-RNTI for MSG3 %x\n", crnti);
@@ -992,7 +950,6 @@ static uint8_t *fill_msg3_crnti_pdu(RA_config_t *ra, uint8_t *pdu, uint16_t crnt
   uint16_t rnti_pdu = ((crnti & 0xFF) << 8) | ((crnti >> 8) & 0xFF);
   memcpy(pdu, &rnti_pdu, sizeof(rnti_pdu));
   pdu += sizeof(rnti_pdu);
-  ra->t_crnti = crnti;
   return pdu;
 }
 
@@ -1030,7 +987,7 @@ void nr_get_Msg3_MsgA_PUSCH_payload(NR_UE_MAC_INST_t *mac, uint8_t *buf, int TBS
 
   uint8_t *pdu = buf;
   if (mac->msg3_C_RNTI)
-    pdu = fill_msg3_crnti_pdu(ra, pdu, mac->crnti);
+    pdu = fill_msg3_crnti_pdu(pdu, mac->crnti);
   else
     pdu = fill_msg3_pdu_from_rlc(mac, pdu, TBS_max);
 
@@ -1062,7 +1019,8 @@ void nr_ra_succeeded(NR_UE_MAC_INST_t *mac, const frame_t frame, const int slot)
           frame,
           slot,
           ra->ra_type == RA_2_STEP ? 2 : 4);
-    mac->crnti = ra->t_crnti;
+    if (!mac->msg3_C_RNTI)
+      mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
     nr_timer_stop(&ra->contention_resolution_timer);
   }
@@ -1114,12 +1072,15 @@ void nr_ra_contention_resolution_failed(NR_UE_MAC_INST_t *mac)
 
 void nr_rar_not_successful(NR_UE_MAC_INST_t *mac)
 {
-  LOG_W(MAC, "[UE %d] RAR reception failed\n", mac->ue_id);
   RA_config_t *ra = &mac->ra;
+  LOG_W(MAC, "[UE %d] Response window timer expired, %s reception failed\n", mac->ue_id, ra->ra_type == RA_2_STEP ? "MsgB" : "RAR");
   NR_PRACH_RESOURCES_t *prach_resources = &ra->prach_resources;
   prach_resources->preamble_tx_counter++;
   bool ra_completed = false;
   if (prach_resources->preamble_tx_counter == ra->preambleTransMax + 1) {
+    if (ra->ra_type == RA_2_STEP) {
+      AssertFatal(false, "Fallback to 4-Step RA not implemented\n");
+    }
     // if the Random Access Preamble is transmitted on the SpCell
     // TODO to be verified, this means SA if I'm not mistaken
     if (IS_SA_MODE(get_softmodem_params())) {

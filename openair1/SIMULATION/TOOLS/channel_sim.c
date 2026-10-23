@@ -327,7 +327,7 @@ void do_UL_sig(sim_t *sim, uint16_t subframe, uint8_t abstraction_flag, LTE_DL_F
 
     LOG_D(OCM,"txdata for subframe %d (%d), power %d\n",subframe,sf_offset_tdd,dB_fixed(signal_energy(&txdata[0][sf_offset_tdd],frame_parms->samples_per_tti)));
 
-    if (((double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe] +
+    if (((double)PHY_vars_UE_g[UE_id][CC_id]->tx_power_dBm[subframe] -
 	 sim->UE2RU[UE_id][ru_id][CC_id]->path_loss_dB) <= -125.0) {
       // don't simulate a UE that is too weak
       LOG_D(OCM,"[SIM][UL] ULPOWERS UE %d tx_pwr %d dBm (num_RE %d) for subframe %d (sf_offset %d,sf_offset_tdd %d)\n",
@@ -370,7 +370,7 @@ void do_UL_sig(sim_t *sim, uint16_t subframe, uint8_t abstraction_flag, LTE_DL_F
       
       rx_pwr = signal_energy_fp(r_re0,r_im0,nb_antennas_rx,frame_parms->samples_per_tti,0);
       LOG_D(OCM,"[SIM][UL] RU %d (%d/%d rx antennas) : rx_pwr %f dBm (tx_pwr - PL %f) for subframe %d, sptti %d\n",
-	    ru_id,nb_antennas_rx,sim->UE2RU[UE_id][ru_id][CC_id]->nb_rx,10*log10(rx_pwr),10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])+sim->UE2RU[UE_id][ru_id][CC_id]->path_loss_dB,subframe,frame_parms->samples_per_tti);
+	    ru_id,nb_antennas_rx,sim->UE2RU[UE_id][ru_id][CC_id]->nb_rx,10*log10(rx_pwr),10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])-sim->UE2RU[UE_id][ru_id][CC_id]->path_loss_dB,subframe,frame_parms->samples_per_tti);
       /*	
 		if (abs(10*log10(rx_pwr)-10*log10(tx_pwr*PHY_vars_UE_g[UE_id][CC_id]->tx_total_RE[subframe])-UE2RU[UE_id][ru_id][CC_id]->path_loss_dB)>3) {
 		write_output("txsig_re.m","s_re",s_re[0],frame_parms->samples_per_tti,1,7);

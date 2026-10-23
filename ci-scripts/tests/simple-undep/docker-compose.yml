@@ -2,7 +2,7 @@
 
 services:
   testA:
-    image: ubuntu:${TAG:-jammy}
+    image: ubuntu:jammy
     container_name: test_container_A
     cap_drop:
       - ALL
@@ -13,7 +13,7 @@ services:
       timeout: 1s
       retries: 1
   testB:
-    image: ubuntu:${TAG:-jammy}
+    image: ubuntu:jammy
     container_name: test_container_B
     cap_drop:
       - ALL

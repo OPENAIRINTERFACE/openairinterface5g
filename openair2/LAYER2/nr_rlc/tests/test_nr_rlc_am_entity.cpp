@@ -178,7 +178,9 @@ TEST(nr_rlc_am_entity, test_ack_out_of_order)
       rx_entity->recv_pdu(rx_entity, pdu_buf, size);
     }
     tx_entity->set_time(tx_entity, time);
-    rx_entity->set_time(tx_entity, time);
+    rx_entity->set_time(rx_entity, time);
+    EXPECT_EQ(((nr_rlc_entity_am_t *)tx_entity)->t_current, time);
+    EXPECT_EQ(((nr_rlc_entity_am_t *)rx_entity)->t_current, time);
     time++;
   }
   EXPECT_EQ(sdu_delivered_count, 2) << "Expected 2 out of 3 SDUs delivered";
@@ -190,7 +192,9 @@ TEST(nr_rlc_am_entity, test_ack_out_of_order)
   // Triggers t-poll-retransmit and retransmission of the lost PDU
   for (auto i = 0; i < 5; i++) {
     tx_entity->set_time(tx_entity, time);
-    rx_entity->set_time(tx_entity, time);
+    rx_entity->set_time(rx_entity, time);
+    EXPECT_EQ(((nr_rlc_entity_am_t *)tx_entity)->t_current, time);
+    EXPECT_EQ(((nr_rlc_entity_am_t *)rx_entity)->t_current, time);
     size = tx_entity->generate_pdu(tx_entity, pdu_buf, sizeof(pdu_buf));
     if (size != 0)
       rx_entity->recv_pdu(rx_entity, pdu_buf, size);
@@ -200,6 +204,66 @@ TEST(nr_rlc_am_entity, test_ack_out_of_order)
     time++;
   }
   EXPECT_EQ(sdu_acked_count, 3);
+  EXPECT_EQ(sdu_delivered_count, 3);
+
+  tx_entity->delete_entity(tx_entity);
+  rx_entity->delete_entity(rx_entity);
+}
+
+TEST(nr_rlc_am_entity, test_receiver_reassembly_timer)
+{
+  // Disable periodic polling and keep an SDU queued to isolate receiver-timer feedback.
+  auto create_entity = []() {
+    return new_nr_rlc_entity_am(100,
+                                100,
+                                deliver_sdu,
+                                NULL,
+                                sdu_successful_delivery,
+                                NULL,
+                                max_retx_reached,
+                                NULL,
+                                45,
+                                35,
+                                0,
+                                -1,
+                                -1,
+                                8,
+                                12);
+  };
+  nr_rlc_entity_t *tx_entity = create_entity();
+  nr_rlc_entity_t *rx_entity = create_entity();
+  tx_entity->set_time(tx_entity, 1);
+  rx_entity->set_time(rx_entity, 1);
+  sdu_delivered_count = 0;
+  sdu_acked_count = 0;
+
+  char message[] = "Message";
+  for (int i = 0; i < 4; i++)
+    tx_entity->recv_sdu(tx_entity, message, sizeof(message), i);
+
+  char pdu_buf[40];
+  for (int i = 0; i < 3; i++) {
+    int size = tx_entity->generate_pdu(tx_entity, pdu_buf, sizeof(pdu_buf));
+    EXPECT_GT(size, 0);
+    if (size > 0 && i != 1)
+      rx_entity->recv_pdu(rx_entity, pdu_buf, size);
+  }
+  EXPECT_EQ(sdu_delivered_count, 2);
+  EXPECT_EQ(rx_entity->generate_pdu(rx_entity, pdu_buf, sizeof(pdu_buf)), 0);
+
+  rx_entity->set_time(rx_entity, 35);
+  EXPECT_EQ(rx_entity->generate_pdu(rx_entity, pdu_buf, sizeof(pdu_buf)), 0);
+  rx_entity->set_time(rx_entity, 40);
+  int size = rx_entity->generate_pdu(rx_entity, pdu_buf, sizeof(pdu_buf));
+  EXPECT_GT(size, 0);
+  if (size > 0) {
+    tx_entity->recv_pdu(tx_entity, pdu_buf, size);
+    size = tx_entity->generate_pdu(tx_entity, pdu_buf, sizeof(pdu_buf));
+    EXPECT_GT(size, 0);
+    if (size > 0)
+      rx_entity->recv_pdu(rx_entity, pdu_buf, size);
+  }
+  EXPECT_EQ(tx_entity->stats.txpdu_retx_pkts, 1u);
   EXPECT_EQ(sdu_delivered_count, 3);
 
   tx_entity->delete_entity(tx_entity);

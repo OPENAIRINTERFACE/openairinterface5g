@@ -8,5 +8,6 @@ add_library(tracer_gui STATIC
             gui.c label.c textarea.c event.c xy_plot.c textlist.c notify.c
             positioner.c timeline.c space.c image.c)
 
+target_compile_options(tracer_gui PRIVATE -Wunused-parameter)
 target_link_libraries(tracer_gui PRIVATE pthread m ${xft_LIBRARIES} X11)
 target_include_directories(tracer_gui PRIVATE ${xft_INCLUDE_DIRS})

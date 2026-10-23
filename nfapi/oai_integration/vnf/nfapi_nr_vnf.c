@@ -319,7 +319,26 @@ int phy_nr_slot_indication(nfapi_nr_slot_indication_scf_t *ind)
    * messages from queue into which messages have been copied.
    * TODO we should have different callbacks for received messages and call
    * into the scheduler separately for each message instead of one big one. */
-  NR_UL_IND_t ul_ind = {.frame = ind->sfn, .slot = ind->slot, };
+#define INIT_UL_IND(X, FIELD, SFN, SLOT) \
+    do {                                 \
+      (X).sfn = SFN;                     \
+      (X).slot = SLOT;                   \
+      (X).FIELD = 0;                     \
+    } while (0)
+  // Intentionally not zero-initialized: each indication fills only its used PDUs.
+  NR_UL_IND_t ul_ind;
+  ul_ind.frame = ind->sfn;
+  ul_ind.slot = ind->slot;
+  ul_ind.phy_id = 0;
+  ul_ind.module_id = 0;
+  INIT_UL_IND(ul_ind.crc_ind, number_crcs, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.rx_ind, number_of_pdus, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.rach_ind, number_of_pdus, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.srs_ind, number_of_pdus, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.uci_ind, num_ucis, ind->sfn, ind->slot);
+  INIT_UL_IND(ul_ind.srs_toa_vendor_ext_ind, num_ta, ind->sfn, ind->slot);
+
+  // the callback is picking up messages from queues
   ifi->NR_UL_indication(&ul_ind);
 
   return 1;
@@ -501,7 +520,7 @@ void *configure_nr_p7_vnf(void *ptr)
   p7_vnf->config->pack_func = &nfapi_nr_p7_message_pack;
   p7_vnf->config->send_p7_msg = &vnf_nr_send_p7_msg;
   NFAPI_TRACE(NFAPI_TRACE_INFO, "[VNF] Creating VNF NFAPI P7 start thread %s\n", __FUNCTION__);
-  threadCreate(&vnf_p7_start_pthread, &vnf_nr_start_p7_thread, p7_vnf->config, "vnf_p7_thread", -1, OAI_PRIORITY_RT);
+  threadCreate(&vnf_p7_start_pthread, &vnf_nr_start_p7_thread, p7_vnf->config, "vnf_p7_thread", -1, OAI_PRIORITY_RT_MAX);
 #endif
 
 #ifdef ENABLE_AERIAL
@@ -523,7 +542,7 @@ int pnf_nr_start_resp_cb(nfapi_nr_vnf_config_t *config, int p5_idx, nfapi_nr_pnf
 
   if(p7_vnf->thread_started == 0) {
     pthread_t vnf_p7_thread;
-    threadCreate(&vnf_p7_thread, &configure_nr_p7_vnf, p7_vnf, "vnf_p7_thread", -1, OAI_PRIORITY_RT);
+    threadCreate(&vnf_p7_thread, &configure_nr_p7_vnf, p7_vnf, "vnf_p7_thread", -1, OAI_PRIORITY_RT_MAX);
     p7_vnf->thread_started = 1;
   } else {
     // P7 thread already running.

@@ -552,13 +552,13 @@ static void decode_srs_config(const NRPPA_SRSConfig_t *in_config, nrppa_srs_conf
       NRPPA_PosSRSResourceSet_Item_t *nrppa_pos_srs_resource_set = in_config->posSRSResourceSet_List->list.array[i];
       nrppa_pos_srs_resource_set_item_t *pos_srs_resource_set = &pos_srs_resource_set_list->pos_srs_resource_set_item[i];
       pos_srs_resource_set->pos_srs_resource_set_id = nrppa_pos_srs_resource_set->possrsResourceSetID;
-      uint8_t pos_srs_resource_id_list_length = nrppa_pos_srs_resource_set->possRSResourceID_List.list.count;
+      uint8_t pos_srs_resource_id_list_length = nrppa_pos_srs_resource_set->possRSResourceIDPerSet_List.list.count;
       pos_srs_resource_set->pos_srs_resource_id_list.pos_srs_resource_id_list_length = pos_srs_resource_id_list_length;
       pos_srs_resource_set->pos_srs_resource_id_list.srs_pos_resource_id =
           calloc_or_fail(pos_srs_resource_id_list_length,
                          sizeof(*pos_srs_resource_set->pos_srs_resource_id_list.srs_pos_resource_id));
       for (int j = 0; j < pos_srs_resource_id_list_length; j++) {
-        NRPPA_SRSPosResourceID_t *nrppa_pos_srs_resource_id = nrppa_pos_srs_resource_set->possRSResourceID_List.list.array[j];
+        NRPPA_SRSPosResourceID_t *nrppa_pos_srs_resource_id = nrppa_pos_srs_resource_set->possRSResourceIDPerSet_List.list.array[j];
         pos_srs_resource_set->pos_srs_resource_id_list.srs_pos_resource_id[j] = *nrppa_pos_srs_resource_id;
       }
 

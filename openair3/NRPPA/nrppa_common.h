@@ -10,7 +10,7 @@
 #include "ds/byte_array.h"
 #include "nrppa_includes.h"
 #include "NRPPA_NRPPA-PDU.h"
-#include "NRPPA_TRPInformationItem.h"
+#include "NRPPA_TRPInformationTypeResponseItem.h"
 #include "NRPPA_SRSCarrier-List.h"
 #include "NRPPA_SRSType.h"
 #include "common/5g_platform_types.h"

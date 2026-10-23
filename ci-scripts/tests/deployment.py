@@ -15,68 +15,57 @@ import unittest
 
 sys.path.append('./') # to find OAI imports below
 import cls_oai_html
-import cls_oaicitest
 import cls_containerize
 from cls_ci_helper import GlobalTestCtx, TestCaseCtx
 import cls_cmd
 
 class TestDeploymentMethods(unittest.TestCase):
 	def _pull_image(self, cmd, image):
-		ret = cmd.run(f"docker inspect oai-ci/{image}:develop-12345678")
+		ret = cmd.run(f"docker inspect oai-ci/{image}:{self.tag}")
 		if ret.returncode == 0: # exists
 			return
 		ret = cmd.run(f"docker pull oaisoftwarealliance/{image}:develop")
 		self.assertEqual(ret.returncode, 0)
-		ret = cmd.run(f"docker tag oaisoftwarealliance/{image}:develop oai-ci/{image}:develop-12345678")
+		ret = cmd.run(f"docker tag oaisoftwarealliance/{image}:develop oai-ci/{image}:{self.tag}")
 		self.assertEqual(ret.returncode, 0)
 		ret = cmd.run(f"docker rmi oaisoftwarealliance/{image}:develop")
 		self.assertEqual(ret.returncode, 0)
 
 	def setUp(self):
+		self.tag = 'develop-12345678' # tag of images to deploy
 		with cls_cmd.getConnection("localhost") as cmd:
 			self._pull_image(cmd, "oai-gnb")
 			self._pull_image(cmd, "oai-nr-ue")
 		self.html = cls_oai_html.HTMLManagement()
 		self.html.testCaseId = "000000"
-		self.ci = cls_oaicitest.OaiCiTest()
-		self.cont = cls_containerize.Containerize()
-		self.cont.yamlPath = ''
-		self.cont.num_attempts = 3
 		self.node = 'localhost'
-		g = GlobalTestCtx(repository='', workspace=os.getcwd(), branch='', merge=True, targetBranch='')
+		g = GlobalTestCtx(repository='', workspace=os.getcwd(), branch=self.tag, merge=True, targetBranch='')
 		self.ctx = TestCaseCtx.Default(tempfile.mkdtemp(), g)
 	def tearDown(self):
 		with cls_cmd.LocalCmd() as c:
 			c.run(f'rm -rf {self.ctx.logPath}')
 
 	def test_deploy(self):
-		self.cont.yamlPath = 'tests/simple-dep/'
-		self.cont.deploymentTag = "noble"
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
-		undeploy = self.cont.UndeployObject(self.ctx, self.node, self.html, [])
+		opt = cls_containerize.DeploymentOpt('tests/simple-dep/', '', 3)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
+		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertTrue(deploy)
 		self.assertTrue(undeploy)
 
 	def test_stop_services(self):
-		self.cont.yamlPath = 'tests/simple-undep/'
-		self.cont.deploymentTag = "noble"
+		yaml_path = 'tests/simple-undep/'
 		# should deploy both testA and testB
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path, '', 3))
 		# should fail (no such service)
-		self.cont.services = "testC"
-		stopC = self.cont.StopObject(self.ctx, self.node, self.html)
+		stopC = cls_containerize.Containerize.StopObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path, "testC"))
 		# should stop testA
-		self.cont.services = "testA"
-		stopA = self.cont.StopObject(self.ctx, self.node, self.html)
+		stopA = cls_containerize.Containerize.StopObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path, "testA"))
 		# should (re-)stop testA (no-op)
-		self.cont.services = "testA"
-		stopA2 = self.cont.StopObject(self.ctx, self.node, self.html)
+		stopA2 = cls_containerize.Containerize.StopObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path, "testA"))
 		# should deploy testB
-		self.cont.services = "testB"
-		stopB = self.cont.StopObject(self.ctx, self.node, self.html)
+		stopB = cls_containerize.Containerize.StopObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path, "testB"))
 		# should not undeploy anything (everything already stopped)
-		self.cont.services = None
-		undeployAll = self.cont.UndeployObject(self.ctx, self.node, self.html, [])
+		undeployAll = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, cls_containerize.DeploymentOpt(yaml_path), [])
 		self.assertTrue(deploy)
 		self.assertFalse(stopC)
 		self.assertTrue(stopA)
@@ -86,48 +75,39 @@ class TestDeploymentMethods(unittest.TestCase):
 
 	def test_deployfails(self):
 		# fails reliably
-		old = self.cont.yamlPath
-		self.cont.yamlPath = 'tests/simple-fail/'
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
-		self.cont.UndeployObject(self.ctx, self.node, self.html, [])
+		opt = cls_containerize.DeploymentOpt('tests/simple-fail/', '', 3)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
+		cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertFalse(deploy)
-		self.cont.yamlPath = old
 
 	def test_deployfails_2svc(self):
 		# fails reliably
-		old = self.cont.yamlPath
-		self.cont.yamlPath = 'tests/simple-fail-2svc/'
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
-		self.cont.UndeployObject(self.ctx, self.node, self.html, [])
+		opt = cls_containerize.DeploymentOpt('tests/simple-fail-2svc/', '', 3)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
+		cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertFalse(deploy)
-		self.cont.yamlPath = old
 
 	def test_deploy_ran(self):
-		self.cont.yamlPath = 'yaml_files/5g_rfsimulator_tdd_dora'
-		self.cont.services = "oai-gnb"
-		self.cont.deploymentTag = 'develop-12345678'
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
-		undeploy = self.cont.UndeployObject(self.ctx, self.node, self.html, [])
+		opt = cls_containerize.DeploymentOpt('yaml_files/5g_rfsimulator_tdd_dora', "oai-gnb", 3)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
+		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertTrue(deploy)
 		self.assertTrue(undeploy)
 
 	def test_deploy_multiran(self):
-		self.cont.yamlPath = 'yaml_files/5g_rfsimulator_tdd_dora'
-		self.cont.services = "oai-gnb oai-nr-ue"
-		self.cont.deploymentTag = 'develop-12345678'
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
-		undeploy = self.cont.UndeployObject(self.ctx, self.node, self.html, [])
+		opt = cls_containerize.DeploymentOpt('yaml_files/5g_rfsimulator_tdd_dora', "oai-gnb oai-nr-ue", 3)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
+		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertTrue(deploy)
 		self.assertTrue(undeploy)
 
 	def test_deploy_staged(self):
-		self.cont.yamlPath = 'yaml_files/5g_rfsimulator_tdd_dora'
-		self.cont.services = "oai-gnb"
-		self.cont.deploymentTag = 'develop-12345678'
-		deploy1 = self.cont.DeployObject(self.ctx, self.node, self.html)
-		self.cont.services = "oai-nr-ue"
-		deploy2 = self.cont.DeployObject(self.ctx, self.node, self.html)
-		undeploy = self.cont.UndeployObject(self.ctx, self.node, self.html, [])
+		yaml_path = 'yaml_files/5g_rfsimulator_tdd_dora'
+		opt = cls_containerize.DeploymentOpt(yaml_path, "oai-gnb", 3)
+		deploy1 = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
+		opt = cls_containerize.DeploymentOpt(yaml_path, "oai-nr-ue", 3)
+		deploy2 = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
+		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, [])
 		self.assertTrue(deploy1)
 		self.assertTrue(deploy2)
 		self.assertTrue(undeploy)
@@ -143,36 +123,30 @@ class TestDeploymentMethods(unittest.TestCase):
 		self.assertTrue(ws)
 
 	def test_undeploy_loganalysis(self):
-		self.cont.yamlPath = 'yaml_files/5g_rfsimulator_tdd_dora'
-		self.cont.services = "oai-gnb"
-		self.cont.deploymentTag = 'develop-12345678'
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
+		opt = cls_containerize.DeploymentOpt('yaml_files/5g_rfsimulator_tdd_dora', "oai-gnb", 3)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		analyze = ["oai-gnb"]
-		undeploy = self.cont.UndeployObject(self.ctx, self.node, self.html, analyze)
+		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, analyze)
 		self.assertTrue(deploy)
 		self.assertTrue(undeploy)
 
 	def test_undeploy_multi_loganalysis(self):
-		self.cont.yamlPath = 'yaml_files/5g_rfsimulator_tdd_dora'
-		self.cont.services = "oai-gnb"
-		self.cont.deploymentTag = 'develop-12345678'
-		deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
+		opt = cls_containerize.DeploymentOpt('yaml_files/5g_rfsimulator_tdd_dora', "oai-gnb", 3)
+		deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 		analyze = ["oai-gnb", "oai-gnb=ContainsString=NOTFOUND"]
-		undeploy = self.cont.UndeployObject(self.ctx, self.node, self.html, analyze)
+		undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, analyze)
 		self.assertTrue(deploy)
 		self.assertFalse(undeploy)
 
 	# TODO this does not work: we don't evaluate return codes yet
 	#def test_undeploy_rc_nonnull(self):
 	#	# fails reliably
-	#	old = self.cont.yamlPath
-	#	self.cont.yamlPath = 'tests/simple-fail/'
-	#	deploy = self.cont.DeployObject(self.ctx, self.node, self.html)
+	#	opt = cls_containerize.DeploymentOpt('tests/simple-fail/', '', 3)
+	#	deploy = cls_containerize.Containerize.DeployObject(self.ctx, self.node, self.html, opt)
 	#	# should be false because wrong exit code
-	#	undeploy = self.cont.UndeployObject(self.ctx, self.node, self.html, ["test"])
+	#	undeploy = cls_containerize.Containerize.UndeployObject(self.ctx, self.node, self.html, opt, ["test"])
 	#	self.assertFalse(deploy)
 	#	self.assertFalse(undeploy)
-	#	self.cont.yamlPath = old
 
 if __name__ == '__main__':
 	unittest.main()

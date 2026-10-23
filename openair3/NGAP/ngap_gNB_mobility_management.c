@@ -328,10 +328,12 @@ int decode_ng_handover_request(ngap_handover_request_t *out, const NGAP_NGAP_PDU
   NR_HandoverPreparationInformation_IEs_t *hpi =
       hoPrepInformation->criticalExtensions.choice.c1->choice.handoverPreparationInformation;
   const NR_UE_CapabilityRAT_ContainerList_t *ue_CapabilityRAT_ContainerList = &hpi->ue_CapabilityRAT_List;
-  out->ue_cap.len = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
+  ssize_t encoded = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
                                               NULL,
                                               ue_CapabilityRAT_ContainerList,
                                               (void **)&out->ue_cap.buf);
+  DevAssert(encoded > 0);
+  out->ue_cap.len = encoded;
 
   ASN_STRUCT_FREE(asn_DEF_NR_HandoverPreparationInformation, hoPrepInformation);
 

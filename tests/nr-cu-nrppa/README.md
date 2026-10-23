@@ -50,7 +50,7 @@ Pull the required Docker images for the OAI 5G Core:
     docker pull oaisoftwarealliance/oai-upf:v2.2.1
     docker pull oaisoftwarealliance/oai-udm:v2.2.1
     docker pull oaisoftwarealliance/oai-ausf:v2.2.1
-    docker pull oaisoftwarealliance/oai-lmf:v2.2.1
+    docker pull oaisoftwarealliance/oai-lmf:nrppa-rel17
 
 Deploy the network using the positioning compose file:
 

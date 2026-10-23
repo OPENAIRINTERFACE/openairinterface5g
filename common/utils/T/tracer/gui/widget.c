@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "gui_defs.h"
 #include "x.h"
+#include "../utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -169,6 +170,7 @@ done:
 
 int widget_get_child_position(gui *_gui, widget *parent, widget *child)
 {
+  UNUSED(_gui);
   struct widget *p = parent;
   struct widget *c = child;
   struct widget_list *cur;
@@ -206,12 +208,17 @@ static void default_repack(gui *gui, widget *_this)
 static void default_add_child(
     gui *_gui, widget *_this, widget *child, int position)
 {
+  UNUSED(_gui);
+  UNUSED(child);
+  UNUSED(position);
   struct widget *this = _this;
   WARN("cannot add child to widget %s\n", widget_name(this->type));
 }
 
 static void default_del_child( gui *_gui, widget *_this, widget *child)
 {
+  UNUSED(_gui);
+  UNUSED(child);
   struct widget *this = _this;
   WARN("cannot del child from widget %s\n", widget_name(this->type));
 }
@@ -219,6 +226,7 @@ static void default_del_child( gui *_gui, widget *_this, widget *child)
 static void default_allocate(
     gui *gui, widget *_this, int x, int y, int width, int height)
 {
+  UNUSED(gui);
   struct widget *this = _this;
   this->x = x;
   this->y = y;
@@ -228,6 +236,8 @@ static void default_allocate(
 
 static void default_hints(gui *g, widget *this, int *width, int *height)
 {
+  UNUSED(g);
+  UNUSED(this);
   *width = 1;
   *height = 1;
 }
@@ -235,6 +245,13 @@ static void default_hints(gui *g, widget *this, int *width, int *height)
 static void default_button(gui *gui, widget *_this, int x, int y,
     int key_modifiers, int button, int up)
 {
+  UNUSED(gui);
+  UNUSED(_this);
+  UNUSED(x);
+  UNUSED(y);
+  UNUSED(key_modifiers);
+  UNUSED(button);
+  UNUSED(up);
   /* nothing */
 }
 

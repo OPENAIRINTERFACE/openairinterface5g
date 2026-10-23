@@ -215,11 +215,11 @@ void update_channel_model(channel_desc_t *channelDesc, int nbSamples, uint64_t T
 */
 void rxAddInput(c16_t **input_sig, cf_t *after_channel_sig, int rxAnt, channel_desc_t *channelDesc, int nbSamples)
 {
-  // channelDesc->path_loss_dB should contain the total path gain
-  // so, in actual RF: tx gain + path loss + rx gain (+antenna gain, ...)
+  // channelDesc->path_loss_dB is the total path loss (positive = attenuation)
+  // so, in actual RF: path loss - tx gain - rx gain (-antenna gain, ...)
   // UE and NB gain control to be added
   // Fixme: not sure when it is "volts" so dB is 20*log10(...) or "power", so dB is 10*log10(...)
-  const double pathLossLinear = pow(10, channelDesc->path_loss_dB / 20.0);
+  const double pathGainLinear = pow(10, -channelDesc->path_loss_dB / 20.0);
   // Energy in one sample to calibrate input noise
   // the normalized OAI value seems to be 256 as average amplitude (numerical amplification = 1)
   const double noise_per_sample = pow(10, channelDesc->noise_power_dB / 10.0) * 256;
@@ -255,8 +255,8 @@ void rxAddInput(c16_t **input_sig, cf_t *after_channel_sig, int rxAnt, channel_d
       Doppler_phase_cur += channelDesc->Doppler_phase_inc;
     }
 
-    out_ptr->r += rx_tmp.r * pathLossLinear + noise_per_sample * gaussZiggurat(0.0, 1.0);
-    out_ptr->i += rx_tmp.i * pathLossLinear + noise_per_sample * gaussZiggurat(0.0, 1.0);
+    out_ptr->r += rx_tmp.r * pathGainLinear + noise_per_sample * gaussZiggurat(0.0, 1.0);
+    out_ptr->i += rx_tmp.i * pathGainLinear + noise_per_sample * gaussZiggurat(0.0, 1.0);
     out_ptr++;
   }
 

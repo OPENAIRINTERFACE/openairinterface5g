@@ -7,9 +7,7 @@
 #
 #---------------------------------------------------------------------
 
-#to use isfile
 import logging
-#time.sleep
 import time
 import re
 import yaml
@@ -42,7 +40,6 @@ class Module_UE:
 				"dataDisable": m.get('DataDisableScript'),
 			}
 			self.interface = m.get('IF')
-			self.MTU = m.get('MTU')
 			self.cmd_prefix = m.get('CmdPrefix')
 			logging.info(f'initialized UE {self} from {filename}')
 
@@ -156,16 +153,6 @@ class Module_UE:
 			ip = result.group('ip')
 			return ip
 		return None
-
-	def checkMTU(self):
-		output = self._command(self.cmd_dict["getNetwork"], silent=True)
-		result = re.search(r'mtu (?P<mtu>[0-9]+)', output.stdout)
-		if result and result.group('mtu') and int(result.group('mtu')) == self.MTU:
-			logging.debug(f'\u001B[1mUE Module {self.module_name} NIC MTU is {self.MTU} as expected\u001B[0m')
-			return True
-		else:
-			logging.debug(f'\u001B[1;37;41m UE module {self.module_name} has incorrect Module NIC MTU or MTU not found! Expected: {self.MTU} \u001B[0m')
-			return False
 
 	def getName(self):
 		return self.module_name

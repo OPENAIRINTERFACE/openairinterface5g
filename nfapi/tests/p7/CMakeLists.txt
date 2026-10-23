@@ -19,6 +19,14 @@ add_dependencies(tests nr_fapi_p7_phy_id_test)
 add_test(nr_fapi_p7_phy_id_test nr_fapi_p7_phy_id_test)
 set_tests_properties(nr_fapi_p7_phy_id_test PROPERTIES LABELS "${Test_Labels}")
 
+add_executable(nr_fapi_p7_bounds_test nr_fapi_p7_bounds_test.c)
+target_link_libraries(nr_fapi_p7_bounds_test PUBLIC nr_fapi_p7)
+target_link_libraries(nr_fapi_p7_bounds_test PRIVATE pthread UTIL ${T_LIB} minimal_lib)
+add_dependencies(tests nr_fapi_p7_bounds_test)
+
+add_test(nr_fapi_p7_bounds_test nr_fapi_p7_bounds_test)
+set_tests_properties(nr_fapi_p7_bounds_test PROPERTIES LABELS "${Test_Labels}")
+
 # Add the dci label for the dci payload test
 set(dci_labels dci ${Test_Labels})
 set_tests_properties(nr_fapi_dci_inversion_test PROPERTIES LABELS "dci ${Test_Labels}")

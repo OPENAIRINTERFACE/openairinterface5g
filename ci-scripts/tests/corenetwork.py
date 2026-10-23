@@ -7,7 +7,6 @@ logging.basicConfig(
 	stream=sys.stdout,
 	format="[%(asctime)s] %(levelname)8s: %(message)s"
 )
-import os
 import tempfile
 
 import unittest
